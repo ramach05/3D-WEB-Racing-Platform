@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String       @id @default(cuid())
+  nickname     String       @unique
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  raceResults  RaceResult[]
+}
+
+model Track {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  isAvailable Boolean      @default(true)
+  raceResults RaceResult[]
+}
+
+model RaceResult {
+  id        String   @id @default(cuid())
+  timeMs    Int
+  userId    String
+  trackId   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([trackId, timeMs])
+}

@@ -1,0 +1,14 @@
+/** Трасса, как её видит клиент */
+export type TrackPublic = {
+  id: string;
+  slug: string;
+  name: string;
+  isAvailable: boolean;
+};
+
+export const TRACK_SLUG_COASTAL_OVAL = 'coastal-oval';
+export const TRACK_SLUG_NIGHT_CITY = 'night-city';
+
+export const TRACK_SLUGS = [TRACK_SLUG_COASTAL_OVAL, TRACK_SLUG_NIGHT_CITY] as const;
+
+export type TrackSlug = (typeof TRACK_SLUGS)[number];
