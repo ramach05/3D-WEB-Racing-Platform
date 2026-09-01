@@ -1,0 +1,377 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@font-face {
+  font-family: DotumChe;
+  src: url('../shared/assets/fonts/dotumche.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg: #f4f0ff;
+  --fg: #1a1033;
+  --muted: #5a4a78;
+  --surface: #ffffff;
+  --surface-hover: #ebe4ff;
+  --border: #0066cc;
+  --accent: #ff2bd6;
+  --accent-fg: #ffffff;
+  --danger: #d62828;
+  --sega-cyan: #0088cc;
+  --sega-magenta: #cc2299;
+  --sega-yellow: #cc9900;
+  --sega-orange: #e86a00;
+  --pixel-border: 3px;
+}
+
+.dark {
+  --bg: #08040f;
+  --fg: #f3efe6;
+  --muted: #9f8fc8;
+  --surface: #140a24;
+  --surface-hover: #22123a;
+  --border: #00b8d4;
+  --accent: #ff4fd8;
+  --accent-fg: #120018;
+  --danger: #ff7070;
+  --sega-cyan: #00e5ff;
+  --sega-magenta: #ff2bd6;
+  --sega-yellow: #ffe600;
+  --sega-orange: #ff7a00;
+  --pixel-border: 4px;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: DotumChe, 'Courier New', monospace;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  text-rendering: geometricPrecision;
+  image-rendering: pixelated;
+}
+
+a,
+button,
+.sega-nav-link,
+.sega-card-link,
+.sega-select-trigger,
+.sega-select-item,
+[role='button'] {
+  cursor: pointer;
+}
+
+button:disabled,
+.sega-btn:disabled {
+  cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: 2px solid var(--sega-yellow);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sega-panel {
+  border: var(--pixel-border) solid var(--border);
+  background: var(--surface);
+  box-shadow:
+    0 0 0 2px var(--bg),
+    4px 4px 0 0 var(--sega-magenta);
+}
+
+.sega-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--pixel-border) solid var(--border);
+  background: var(--accent);
+  color: var(--accent-fg);
+  padding: 0.5rem 1rem;
+  font: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 3px 3px 0 0 var(--sega-cyan);
+  transition:
+    transform 120ms steps(3),
+    box-shadow 120ms steps(3),
+    background-color 120ms ease;
+}
+
+.sega-btn--sm {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.75rem;
+  box-shadow: 2px 2px 0 0 var(--sega-cyan);
+}
+
+.sega-btn:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 0 var(--sega-cyan);
+}
+
+.sega-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 var(--sega-cyan);
+}
+
+.sega-btn--ghost {
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: 3px 3px 0 0 var(--sega-magenta);
+}
+
+.sega-btn--ghost:hover:not(:disabled) {
+  box-shadow: 5px 5px 0 0 var(--sega-magenta);
+}
+
+.sega-card-link {
+  color: inherit;
+  transition:
+    transform 120ms steps(3),
+    box-shadow 120ms steps(3),
+    background-color 120ms ease;
+}
+
+.sega-card-link:hover {
+  transform: translate(-2px, -2px);
+  background: var(--surface-hover);
+  box-shadow:
+    0 0 0 2px var(--bg),
+    6px 6px 0 0 var(--sega-magenta);
+}
+
+.sega-nav-link {
+  transition:
+    color 100ms ease,
+    background-color 100ms ease,
+    transform 80ms steps(2);
+}
+
+.sega-nav-link:hover {
+  transform: translateY(-1px);
+}
+
+.sega-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  border: var(--pixel-border) solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  padding: 0.35rem 0.65rem;
+  font: inherit;
+  min-width: 6.5rem;
+  box-shadow: 2px 2px 0 0 var(--sega-magenta);
+  transition:
+    transform 100ms steps(2),
+    box-shadow 100ms steps(2);
+}
+
+.sega-select-trigger--sm {
+  padding: 0.25rem 0.45rem;
+  font-size: 0.75rem;
+  min-width: 5.5rem;
+}
+
+.sega-select-trigger:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 0 var(--sega-magenta);
+}
+
+.sega-select-trigger[aria-expanded='true'] {
+  background: var(--surface-hover);
+  box-shadow: 1px 1px 0 0 var(--sega-magenta);
+}
+
+.sega-select-chevron {
+  display: inline-block;
+  margin-left: 0.35rem;
+  transition: transform 150ms steps(3);
+}
+
+.sega-select-trigger[aria-expanded='true'] .sega-select-chevron {
+  transform: rotate(180deg);
+}
+
+.sega-select-menu {
+  position: absolute;
+  right: 0;
+  z-index: 40;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  min-width: 100%;
+  border: var(--pixel-border) solid var(--border);
+  background: var(--surface);
+  box-shadow: 4px 4px 0 0 var(--sega-cyan);
+  animation: sega-menu-in 150ms steps(4) both;
+}
+
+@keyframes sega-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sega-select-item {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  font: inherit;
+  transition: background-color 80ms ease;
+}
+
+.sega-select-item--highlight,
+.sega-select-item:hover {
+  background: var(--surface-hover);
+}
+
+.sega-select-item--active {
+  color: var(--sega-yellow);
+}
+
+.sega-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sega-field input {
+  border: var(--pixel-border) solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  box-shadow: inset 2px 2px 0 0 rgba(0, 0, 0, 0.15);
+}
+
+.sega-field-error {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.sega-scanlines::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12) 0,
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.35;
+}
+
+@keyframes sega-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.2;
+  }
+}
+
+.sega-blink {
+  animation: sega-blink 1.1s steps(2, end) infinite;
+}
+
+.sega-race-strip-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  backface-visibility: hidden;
+  animation: sega-race-strip 18s linear infinite;
+}
+
+.sega-race-strip-content {
+  flex-shrink: 0;
+  padding-right: 0;
+  white-space: nowrap;
+  color: var(--sega-magenta);
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+}
+
+@keyframes sega-race-strip {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.sega-stats-panel {
+  transform: scale(1.85);
+  transform-origin: top left;
+}
+
+.sega-stats-panel canvas {
+  width: 140px !important;
+  height: 84px !important;
+}
+
+.sega-race-toast {
+  animation: sega-toast-in 200ms steps(4) both;
+}
+
+@keyframes sega-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sega-race-strip-track,
+  .sega-blink {
+    animation: none;
+  }
+
+  .sega-btn,
+  .sega-card-link,
+  .sega-nav-link,
+  .sega-select-trigger,
+  .sega-select-menu {
+    transition: none;
+  }
+}

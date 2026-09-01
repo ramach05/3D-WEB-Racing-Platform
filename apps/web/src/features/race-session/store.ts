@@ -1,0 +1,187 @@
+export type RaceStatus = 'ready' | 'racing' | 'finished' | 'paused';
+
+export type RaceHudSnapshot = {
+  timeMs: number;
+  bestMs: number | null;
+  status: RaceStatus;
+  speedKmh: number;
+  checkpointIndex: number;
+  checkpointTotal: number;
+};
+
+type Listener = () => void;
+
+const BEST_PREFIX = 'racing-best:';
+
+let snapshot: RaceHudSnapshot = {
+  timeMs: 0,
+  bestMs: null,
+  status: 'ready',
+  speedKmh: 0,
+  checkpointIndex: 0,
+  checkpointTotal: 4,
+};
+
+let startedAt = 0;
+let pausedAccumulated = 0;
+let pauseStartedAt = 0;
+let lastNotifyAt = 0;
+const listeners = new Set<Listener>();
+
+/** Читает лучшее время гостя с этой трассы */
+export const readGuestBest = (trackId: string): number | null => {
+  const raw = localStorage.getItem(`${BEST_PREFIX}${trackId}`);
+  if (!raw) {
+    return null;
+  }
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+};
+
+/** Пишет лучшее время гостя */
+export const writeGuestBest = (trackId: string, timeMs: number): void => {
+  const current = readGuestBest(trackId);
+  if (current === null || timeMs < current) {
+    localStorage.setItem(`${BEST_PREFIX}${trackId}`, String(timeMs));
+  }
+};
+
+/** Подписка HUD на снимок заезда */
+export const subscribeRaceHud = (listener: Listener): (() => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
+
+/** Текущий снимок HUD */
+export const getRaceHudSnapshot = (): RaceHudSnapshot => snapshot;
+
+const emit = (force: boolean): void => {
+  const now = performance.now();
+  if (!force && now - lastNotifyAt < 80) {
+    return;
+  }
+  lastNotifyAt = now;
+  listeners.forEach((listener) => listener());
+};
+
+const setSnapshot = (patch: Partial<RaceHudSnapshot>, force = false): void => {
+  snapshot = { ...snapshot, ...patch };
+  emit(force);
+};
+
+/** Готовит заезд к старту (countdown / ready) */
+export const resetRaceSession = (trackId: string, checkpointTotal: number): void => {
+  startedAt = 0;
+  pausedAccumulated = 0;
+  pauseStartedAt = 0;
+  setSnapshot(
+    {
+      timeMs: 0,
+      bestMs: readGuestBest(trackId),
+      status: 'ready',
+      speedKmh: 0,
+      checkpointIndex: 0,
+      checkpointTotal,
+    },
+    true,
+  );
+};
+
+/** Старт таймера после countdown */
+export const startRacing = (): void => {
+  startedAt = performance.now();
+  pausedAccumulated = 0;
+  setSnapshot({ status: 'racing', timeMs: 0 }, true);
+};
+
+/** Пауза: физика останавливается снаружи */
+export const pauseRace = (): void => {
+  if (snapshot.status !== 'racing') {
+    return;
+  }
+  pauseStartedAt = performance.now();
+  setSnapshot({ status: 'paused' }, true);
+};
+
+/** Снятие паузы */
+export const resumeRace = (): void => {
+  if (snapshot.status !== 'paused') {
+    return;
+  }
+  pausedAccumulated += performance.now() - pauseStartedAt;
+  setSnapshot({ status: 'racing' }, true);
+};
+
+/** Переключает паузу */
+export const togglePause = (): void => {
+  if (snapshot.status === 'racing') {
+    pauseRace();
+    return;
+  }
+  if (snapshot.status === 'paused') {
+    resumeRace();
+  }
+};
+
+/** Тик таймера и скорости из useFrame. Не дергает React каждый кадр. */
+export const tickRace = (speedKmh: number): void => {
+  if (snapshot.status !== 'racing' || startedAt === 0) {
+    if (snapshot.speedKmh !== speedKmh) {
+      setSnapshot({ speedKmh });
+    }
+    return;
+  }
+  const timeMs = performance.now() - startedAt - pausedAccumulated;
+  setSnapshot({ timeMs, speedKmh });
+};
+
+/** Чекпоинт по порядку. Последний — финиш. */
+export const registerCheckpoint = (index: number): boolean => {
+  if (snapshot.status !== 'racing') {
+    return false;
+  }
+  if (index !== snapshot.checkpointIndex) {
+    return false;
+  }
+  const next = index + 1;
+  if (next >= snapshot.checkpointTotal) {
+    return true;
+  }
+  setSnapshot({ checkpointIndex: next }, true);
+  return false;
+};
+
+/** Финиш: фиксирует время и best для гостя */
+export const finishRace = (trackId: string): number => {
+  const timeMs =
+    snapshot.status === 'racing' && startedAt !== 0
+      ? performance.now() - startedAt - pausedAccumulated
+      : snapshot.timeMs;
+  writeGuestBest(trackId, timeMs);
+  setSnapshot(
+    {
+      status: 'finished',
+      timeMs,
+      bestMs: readGuestBest(trackId),
+    },
+    true,
+  );
+  return timeMs;
+};
+
+/** Принудительный финиш для e2e (без вождения) */
+export const finishRaceForTest = (trackId: string, timeMs: number): number => {
+  writeGuestBest(trackId, timeMs);
+  setSnapshot(
+    {
+      status: 'finished',
+      timeMs,
+      bestMs: readGuestBest(trackId),
+      checkpointIndex: snapshot.checkpointTotal,
+    },
+    true,
+  );
+  return timeMs;
+};

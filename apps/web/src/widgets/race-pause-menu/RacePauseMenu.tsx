@@ -1,0 +1,52 @@
+import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@/shared/ui';
+
+type RacePauseMenuProps = {
+  open: boolean;
+  onResume: () => void;
+  onRestart: () => void;
+  onExit: () => void;
+};
+
+/** Модалка паузы: Esc, ловушка фокуса на кнопках */
+export const RacePauseMenu = ({ open, onResume, onRestart, onExit }: RacePauseMenuProps) => {
+  const { t } = useTranslation();
+  const firstButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      firstButton.current?.focus();
+    }
+  }, [open]);
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div
+      className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pause-title"
+    >
+      <div className="sega-panel w-full max-w-sm p-6 text-[var(--fg)]">
+        <h2 id="pause-title" className="text-xl font-semibold uppercase text-[var(--sega-yellow)]">
+          {t('race.paused')}
+        </h2>
+        <div className="mt-4 flex flex-col gap-2">
+          <Button ref={firstButton} onClick={onResume}>
+            {t('race.resume')}
+          </Button>
+          <Button variant="ghost" onClick={onRestart}>
+            {t('race.restart')}
+          </Button>
+          <Button variant="ghost" onClick={onExit}>
+            {t('race.toTracks')}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};

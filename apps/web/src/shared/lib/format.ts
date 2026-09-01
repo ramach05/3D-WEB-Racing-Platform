@@ -1,0 +1,11 @@
+/** Считает время заезда в миллисекундах и приводит к виду mm:ss.ms */
+export const formatRaceTime = (ms: number): string => {
+  const safeMs = Math.max(0, Math.floor(ms));
+  const minutes = Math.floor(safeMs / 60_000);
+  const seconds = Math.floor((safeMs % 60_000) / 1000);
+  const hundredths = Math.floor((safeMs % 1000) / 10);
+  const mm = String(minutes).padStart(2, '0');
+  const ss = String(seconds).padStart(2, '0');
+  const hs = String(hundredths).padStart(2, '0');
+  return `${mm}:${ss}.${hs}`;
+};
