@@ -1,0 +1,39 @@
+{
+  "name": "3d-web-racing-platform",
+  "private": true,
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "predev": "node scripts/check-node.mjs",
+    "dev": "pnpm --filter @racing/shared build && pnpm --filter @racing/api exec prisma migrate deploy && pnpm --parallel --filter @racing/web --filter @racing/api dev",
+    "build": "pnpm --filter @racing/shared build && pnpm --filter @racing/api build && pnpm --filter @racing/web build",
+    "typecheck": "pnpm --filter @racing/shared build && pnpm exec tsc -b --pretty false",
+    "test": "pnpm --filter @racing/api test && pnpm --filter @racing/web test",
+    "lint": "eslint apps/web/src apps/api/src packages/shared/src --max-warnings=0 --ignore-pattern '**/*.js'",
+    "e2e": "pnpm --filter @racing/web e2e",
+    "format": "prettier --write ."
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@nestjs/core",
+      "prisma",
+      "@prisma/client",
+      "@prisma/engines",
+      "bcrypt",
+      "better-sqlite3"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.69.0"
+  }
+}
