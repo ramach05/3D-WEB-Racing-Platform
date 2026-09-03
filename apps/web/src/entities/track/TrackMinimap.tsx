@@ -57,6 +57,23 @@ export const TrackMinimap = ({ config, className }: TrackMinimapProps) => {
   const outerPath = `M ${outerPoints.join(' L ')} Z`;
   const innerPath = `M ${innerPoints.join(' L ')} Z`;
 
+  const spawnSvg = toSvg(config.spawnPosition[0], config.spawnPosition[2]).split(',');
+  const line = config.startFinishLine;
+  const lineCenter = toSvg(line.position[0], line.position[2]).split(',');
+  const forwardX = Math.sin(line.rotationY);
+  const forwardZ = Math.cos(line.rotationY);
+  const perpX = -forwardZ;
+  const perpZ = forwardX;
+  const lineHalfWidth = config.roadWidth / 2 + 2;
+  const lineStart = toSvg(
+    line.position[0] + perpX * lineHalfWidth,
+    line.position[2] + perpZ * lineHalfWidth,
+  ).split(',');
+  const lineEnd = toSvg(
+    line.position[0] - perpX * lineHalfWidth,
+    line.position[2] - perpZ * lineHalfWidth,
+  ).split(',');
+
   return (
     <svg
       viewBox="0 0 200 120"
@@ -75,11 +92,35 @@ export const TrackMinimap = ({ config, className }: TrackMinimapProps) => {
         strokeWidth={14}
         strokeLinejoin="miter"
       />
+      <line
+        x1={lineStart[0]}
+        y1={lineStart[1]}
+        x2={lineEnd[0]}
+        y2={lineEnd[1]}
+        stroke="#ffffff"
+        strokeWidth={2.5}
+        strokeLinecap="round"
+      />
+      <polygon
+        points={[
+          toSvg(line.position[0] + forwardX * 5, line.position[2] + forwardZ * 5),
+          toSvg(line.position[0] + forwardX * 2.5 + perpX * 1.2, line.position[2] + forwardZ * 2.5 + perpZ * 1.2),
+          toSvg(line.position[0] + forwardX * 2.5 - perpX * 1.2, line.position[2] + forwardZ * 2.5 - perpZ * 1.2),
+        ].join(' ')}
+        fill={config.palette.accent}
+        opacity={0.9}
+      />
       <circle
-        cx={toSvg(config.spawnPosition[0], config.spawnPosition[2]).split(',')[0]}
-        cy={toSvg(config.spawnPosition[0], config.spawnPosition[2]).split(',')[1]}
+        cx={spawnSvg[0]}
+        cy={spawnSvg[1]}
         r={4}
         fill={config.palette.accent}
+      />
+      <circle
+        cx={lineCenter[0]}
+        cy={lineCenter[1]}
+        r={2.5}
+        fill="#ffffff"
       />
     </svg>
   );

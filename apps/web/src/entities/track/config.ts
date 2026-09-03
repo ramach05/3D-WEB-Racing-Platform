@@ -36,10 +36,14 @@ export type TrackAudioTheme = 'coastal' | 'night';
 
 export type TimeOfDay = 'day' | 'night';
 
+/** Сторона трибун относительно направления движения (left = внешняя сторона трассы) */
+export type StartTribuneSide = 'left' | 'right';
+
 export type TrackConfig = {
   slug: TrackSlug;
   spawnPosition: Vec3;
   spawnRotationY: number;
+  startFinishLine: OrientedBox;
   segments: OrientedBox[];
   walls: OrientedBox[];
   checkpoints: OrientedBox[];
@@ -49,6 +53,7 @@ export type TrackConfig = {
   carSkin: CarSkin;
   audioTheme: TrackAudioTheme;
   timeOfDay: TimeOfDay;
+  startTribuneSide: StartTribuneSide;
 };
 
 type BuildLoopOptions = {
@@ -59,6 +64,7 @@ type BuildLoopOptions = {
   carSkin: CarSkin;
   audioTheme: TrackAudioTheme;
   spawnRatio: number;
+  startTribuneSide: StartTribuneSide;
 };
 
 /** Строит замкнутую трассу по точкам центральной линии */
@@ -70,6 +76,7 @@ const buildLoopTrack = ({
   carSkin,
   audioTheme,
   spawnRatio,
+  startTribuneSide,
 }: BuildLoopOptions): TrackConfig => {
   const pointCount = points.length;
   const segments: OrientedBox[] = [];
@@ -149,8 +156,7 @@ const buildLoopTrack = ({
     }
   }
 
-  const checkpointRatios = [0.12, 0.37, 0.62, 0.87];
-  const checkpoints: OrientedBox[] = checkpointRatios.map((ratio) => {
+  const buildCheckpointAtRatio = (ratio: number): OrientedBox => {
     const index = Math.floor(ratio * pointCount) % pointCount;
     const current = points[index];
     const next = points[(index + 1) % pointCount];
@@ -168,18 +174,32 @@ const buildLoopTrack = ({
       size: [roadWidth + 1.5, 2.8, 3.2],
       rotationY: Math.atan2(dx, dz),
     };
-  });
+  };
+
+  const intermediateCheckpointRatios = [0.25, 0.5, 0.75];
+  const startFinishLine = buildCheckpointAtRatio(0);
+  const checkpoints: OrientedBox[] = [
+    ...intermediateCheckpointRatios.map(buildCheckpointAtRatio),
+    startFinishLine,
+  ];
 
   const spawnIndex = Math.floor(spawnRatio * pointCount) % pointCount;
   const spawn = points[spawnIndex];
   const spawnNext = points[(spawnIndex + 1) % pointCount];
   const spawnDx = (spawnNext?.x ?? 0) - (spawn?.x ?? 0);
   const spawnDz = (spawnNext?.z ?? 0) - (spawn?.z ?? 0);
+  const spawnLen = Math.hypot(spawnDx, spawnDz) || 1;
+  const spawnAdvance = 5;
 
   return {
     slug,
-    spawnPosition: [spawn?.x ?? 0, 0.85, spawn?.z ?? 0],
-    spawnRotationY: Math.atan2(spawnDx, spawnDz),
+    spawnPosition: [
+      (spawn?.x ?? 0) + (spawnDx / spawnLen) * spawnAdvance,
+      0.85,
+      (spawn?.z ?? 0) + (spawnDz / spawnLen) * spawnAdvance,
+    ],
+    spawnRotationY: Math.atan2(spawnDx, spawnDz) + Math.PI,
+    startFinishLine,
     segments,
     walls,
     checkpoints,
@@ -189,6 +209,7 @@ const buildLoopTrack = ({
     carSkin,
     audioTheme,
     timeOfDay: audioTheme === 'night' ? 'night' : 'day',
+    startTribuneSide,
   };
 };
 
@@ -274,7 +295,7 @@ const nightPalette: TrackPalette = {
   sky: '#0a0018',
   fog: '#1a0830',
   ground: '#120820',
-  road: '#1f1f28',
+  road: '#2a2a36',
   wall: '#00e5ff',
   accent: '#ff2bd6',
   minimapRoad: '#2a2a38',
@@ -290,6 +311,7 @@ export const coastalOvalTrack = buildLoopTrack({
   carSkin: { body: '#ff7a00', cabin: '#1a1208', wheel: '#222222' },
   audioTheme: 'coastal',
   spawnRatio: 0.02,
+  startTribuneSide: 'left',
 });
 
 export const nightCityTrack = buildLoopTrack({
@@ -300,6 +322,7 @@ export const nightCityTrack = buildLoopTrack({
   carSkin: { body: '#00e5ff', cabin: '#120018', wheel: '#ff2bd6' },
   audioTheme: 'night',
   spawnRatio: 0.04,
+  startTribuneSide: 'left',
 });
 
 const TRACKS_BY_SLUG: Record<TrackSlug, TrackConfig> = {
