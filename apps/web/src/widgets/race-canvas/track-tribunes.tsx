@@ -1,0 +1,263 @@
+import { useMemo } from 'react';
+import type { OrientedBox, StartTribuneSide, TrackPalette } from '@/entities/track';
+import { buildSpectatorSeats, SpectatorCrowd } from './spectator-crowd';
+
+type TrackTribunesProps = {
+  line: OrientedBox;
+  roadWidth: number;
+  palette: TrackPalette;
+  side: StartTribuneSide;
+  isNight: boolean;
+  paused: boolean;
+};
+
+const SECTION_Z_OFFSETS = [-6, 0, 6] as const;
+const TRIBUNE_ROWS = 5;
+const ROW_HEIGHT = 0.65;
+const ROW_DEPTH = 0.75;
+const SECTION_WIDTH = 8;
+const WALL_OFFSET = 0.5;
+const TRIBUNE_MARGIN = 2.5;
+const SPECTATORS_PER_SECTION = 40;
+const ROAD_TOP_Y = 0.1;
+
+type TribuneSectionProps = {
+  sectionZ: number;
+  tribuneInnerX: number;
+  sideSign: number;
+  palette: TrackPalette;
+  isNight: boolean;
+  paused: boolean;
+};
+
+const rowCenterX = (tribuneInnerX: number, sideSign: number, row: number) =>
+  tribuneInnerX + sideSign * (row * ROW_DEPTH + ROW_DEPTH / 2);
+
+const rowTopY = (row: number) => (row + 1) * ROW_HEIGHT;
+
+type TribuneNightLightsProps = {
+  tribuneInnerX: number;
+  sideSign: number;
+  sectionZ: number;
+  accent: string;
+  wall: string;
+};
+
+/** Прожекторы и подсветка рядов для ночной трассы */
+const TribuneNightLights = ({
+  tribuneInnerX,
+  sideSign,
+  sectionZ,
+  accent,
+  wall,
+}: TribuneNightLightsProps) => {
+  const tribuneCenterX = tribuneInnerX + (sideSign * TRIBUNE_ROWS * ROW_DEPTH) / 2;
+  const frontLightX = tribuneInnerX - sideSign * 1.8;
+
+  return (
+    <group position={[0, ROAD_TOP_Y, sectionZ]}>
+      <pointLight position={[frontLightX, 5.5, 0]} intensity={2.2} color={wall} distance={16} />
+      <pointLight
+        position={[tribuneCenterX, 4.8, 0]}
+        intensity={1.4}
+        color={accent}
+        distance={13}
+      />
+      <pointLight
+        position={[tribuneCenterX, 2.5, SECTION_WIDTH * 0.35]}
+        intensity={0.9}
+        color={wall}
+        distance={10}
+      />
+      <pointLight
+        position={[tribuneCenterX, 2.5, -SECTION_WIDTH * 0.35]}
+        intensity={0.9}
+        color={wall}
+        distance={10}
+      />
+
+      {Array.from({ length: TRIBUNE_ROWS }, (_, row) => (
+        <group key={`row-light-${row}`}>
+          <mesh
+            position={[
+              rowCenterX(tribuneInnerX, sideSign, row) - sideSign * (ROW_DEPTH / 2 + 0.04),
+              rowTopY(row) - 0.04,
+              0,
+            ]}
+          >
+            <boxGeometry args={[0.06, 0.08, SECTION_WIDTH - 0.2]} />
+            <meshStandardMaterial
+              color={accent}
+              emissive={accent}
+              emissiveIntensity={1.4}
+              toneMapped={false}
+            />
+          </mesh>
+          <pointLight
+            position={[
+              rowCenterX(tribuneInnerX, sideSign, row) - sideSign * 0.35,
+              rowTopY(row) + 0.15,
+              0,
+            ]}
+            intensity={0.55}
+            color={row % 2 === 0 ? accent : wall}
+            distance={5.5}
+          />
+        </group>
+      ))}
+    </group>
+  );
+};
+
+/** Одна секция трибуны: ступени, перила, навес и зрители */
+const TribuneSection = ({
+  sectionZ,
+  tribuneInnerX,
+  sideSign,
+  palette,
+  isNight,
+  paused,
+}: TribuneSectionProps) => {
+  const seats = useMemo(
+    () =>
+      buildSpectatorSeats({
+        tribuneInnerX,
+        sideSign,
+        count: SPECTATORS_PER_SECTION,
+        sectionWidth: SECTION_WIDTH,
+      }),
+    [tribuneInnerX, sideSign],
+  );
+
+  const structureColor = isNight ? '#5a4878' : '#9a9288';
+  const stepColor = isNight ? '#6e5c8e' : '#b8b0a4';
+  const structureEmissive = isNight ? palette.wall : '#000000';
+  const structureEmissiveIntensity = isNight ? 0.12 : 0;
+  const backRowX = rowCenterX(tribuneInnerX, sideSign, TRIBUNE_ROWS - 1);
+  const backOuterX = tribuneInnerX + sideSign * TRIBUNE_ROWS * ROW_DEPTH;
+
+  return (
+    <group position={[0, ROAD_TOP_Y, sectionZ]}>
+      <mesh
+        position={[
+          tribuneInnerX + (sideSign * TRIBUNE_ROWS * ROW_DEPTH) / 2,
+          ROW_HEIGHT / 2 - 0.02,
+          0,
+        ]}
+        receiveShadow
+      >
+        <boxGeometry args={[TRIBUNE_ROWS * ROW_DEPTH + 0.4, ROW_HEIGHT, SECTION_WIDTH + 0.6]} />
+        <meshStandardMaterial
+          color={isNight ? '#3a2858' : '#a89e90'}
+          emissive={structureEmissive}
+          emissiveIntensity={structureEmissiveIntensity}
+          roughness={0.95}
+        />
+      </mesh>
+
+      {Array.from({ length: TRIBUNE_ROWS }, (_, row) => (
+        <mesh
+          key={`step-${row}`}
+          position={[
+            rowCenterX(tribuneInnerX, sideSign, row),
+            row * ROW_HEIGHT + ROW_HEIGHT / 2,
+            0,
+          ]}
+          castShadow={!isNight}
+          receiveShadow
+        >
+          <boxGeometry args={[ROW_DEPTH, ROW_HEIGHT, SECTION_WIDTH]} />
+          <meshStandardMaterial
+            color={row % 2 === 0 ? stepColor : structureColor}
+            emissive={isNight ? (row % 2 === 0 ? palette.accent : palette.wall) : '#000000'}
+            emissiveIntensity={isNight ? 0.1 : 0}
+            roughness={0.92}
+          />
+        </mesh>
+      ))}
+
+      <mesh
+        position={[backOuterX + sideSign * 0.06, rowTopY(TRIBUNE_ROWS - 1) + 0.42, 0]}
+        castShadow={!isNight}
+      >
+        <boxGeometry args={[0.1, 0.85, SECTION_WIDTH + 0.3]} />
+        <meshStandardMaterial
+          color={palette.accent}
+          emissive={palette.accent}
+          emissiveIntensity={isNight ? 1.2 : 0.25}
+          toneMapped={false}
+          roughness={0.55}
+        />
+      </mesh>
+
+      <mesh
+        position={[
+          tribuneInnerX + (sideSign * (TRIBUNE_ROWS * ROW_DEPTH + 0.5)) / 2,
+          rowTopY(TRIBUNE_ROWS - 1) + 1.1,
+          0,
+        ]}
+        castShadow={!isNight}
+        receiveShadow
+      >
+        <boxGeometry args={[TRIBUNE_ROWS * ROW_DEPTH + 0.8, 0.12, SECTION_WIDTH + 1]} />
+        <meshStandardMaterial
+          color={isNight ? '#7a6898' : structureColor}
+          emissive={isNight ? palette.wall : '#000000'}
+          emissiveIntensity={isNight ? 0.18 : 0}
+          roughness={0.85}
+          metalness={0.15}
+        />
+      </mesh>
+
+      <mesh position={[backRowX, rowTopY(TRIBUNE_ROWS - 1) + 0.43, 0]} castShadow={!isNight}>
+        <boxGeometry args={[ROW_DEPTH, 0.08, SECTION_WIDTH + 0.2]} />
+        <meshStandardMaterial color={stepColor} roughness={0.9} />
+      </mesh>
+
+      <SpectatorCrowd seats={seats} palette={palette} isNight={isNight} paused={paused} />
+    </group>
+  );
+};
+
+/** Трибуны с зрителями у линии старт/финиш */
+export const TrackTribunes = ({
+  line,
+  roadWidth,
+  palette,
+  side,
+  isNight,
+  paused,
+}: TrackTribunesProps) => {
+  const sideSign = side === 'left' ? 1 : -1;
+  const tribuneInnerX = sideSign * (roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);
+
+  return (
+    <group position={[line.position[0], 0, line.position[2]]} rotation={[0, line.rotationY, 0]}>
+      {SECTION_Z_OFFSETS.map((sectionZ) => (
+        <TribuneSection
+          key={`tribune-${sectionZ}`}
+          sectionZ={sectionZ}
+          tribuneInnerX={tribuneInnerX}
+          sideSign={sideSign}
+          palette={palette}
+          isNight={isNight}
+          paused={paused}
+        />
+      ))}
+      {isNight ? (
+        <>
+          {SECTION_Z_OFFSETS.map((sectionZ) => (
+            <TribuneNightLights
+              key={`tribune-light-${sectionZ}`}
+              tribuneInnerX={tribuneInnerX}
+              sideSign={sideSign}
+              sectionZ={sectionZ}
+              accent={palette.accent}
+              wall={palette.wall}
+            />
+          ))}
+        </>
+      ) : null}
+    </group>
+  );
+};
