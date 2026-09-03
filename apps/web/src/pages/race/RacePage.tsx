@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useGetLeaderboardQuery } from '@/entities/leaderboard';
 import { useCreateRaceResultMutation } from '@/entities/race-result';
 import { getTrackConfig, useGetTracksQuery } from '@/entities/track';
 import { useAuthUser } from '@/features/auth';
@@ -9,18 +10,29 @@ import {
   bindRaceInput,
   finishRace,
   finishRaceForTest,
+  readGuestBest,
   resetRaceSession,
   togglePause,
   useRaceHud,
 } from '@/features/race-session';
 import { PageShell, StatusText } from '@/shared/ui';
-import { RaceHud } from '@/widgets/hud';
+import { RaceHud, RacePerfHud } from '@/widgets/hud';
 import { RaceCanvas } from '@/widgets/race-canvas';
 import { RaceControls } from '@/widgets/race-controls';
+import {
+  RaceFinishOverlay,
+  type FinishSubmitState,
+} from '@/widgets/race-finish-overlay';
 import { RacePauseMenu } from '@/widgets/race-pause-menu';
 
 type RaceTestApi = {
   __finishRaceForTest?: () => void;
+};
+
+type FinishMeta = {
+  timeMs: number;
+  isNewBest: boolean;
+  submitState: FinishSubmitState;
 };
 
 /** Страница заезда: 3D-сцена, HUD, пауза, отправка результата */
@@ -35,10 +47,14 @@ export const RacePage = () => {
   const user = useAuthUser();
   const [createResult] = useCreateRaceResultMutation();
   const [resetNonce, setResetNonce] = useState(0);
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const [restartToast, setRestartToast] = useState(false);
+  const [finishMeta, setFinishMeta] = useState<FinishMeta | null>(null);
   const submittedRef = useRef(false);
   const toastTimerRef = useRef<number | null>(null);
+
+  const { data: leaderboard } = useGetLeaderboardQuery(trackId ?? '', {
+    skip: !trackId || hud.status !== 'finished' || !user,
+  });
 
   useRaceAudio({
     theme: config?.audioTheme ?? null,
@@ -51,7 +67,7 @@ export const RacePage = () => {
       return;
     }
     submittedRef.current = false;
-    setSubmitError(null);
+    setFinishMeta(null);
     setResetNonce((value) => value + 1);
     resetRaceSession(trackId, config.checkpoints.length);
     setRestartToast(true);
@@ -69,20 +85,37 @@ export const RacePage = () => {
       return;
     }
     submittedRef.current = true;
+    const prevBest = readGuestBest(trackId);
     const timeMs = finishRace(trackId);
+    const isNewBest = prevBest === null || timeMs < prevBest;
+
     if (!user) {
+      setFinishMeta({ timeMs, isNewBest, submitState: 'idle' });
       return;
     }
+
+    setFinishMeta({ timeMs, isNewBest, submitState: 'loading' });
     void createResult({ trackId, timeMs })
       .unwrap()
-      .catch(() => setSubmitError(t('race.submitError')));
-  }, [createResult, t, trackId, user]);
+      .then(() => {
+        setFinishMeta((prev) =>
+          prev ? { ...prev, submitState: 'done' } : { timeMs, isNewBest, submitState: 'done' },
+        );
+      })
+      .catch(() => {
+        setFinishMeta((prev) =>
+          prev ? { ...prev, submitState: 'error' } : { timeMs, isNewBest, submitState: 'error' },
+        );
+      });
+  }, [createResult, trackId, user]);
 
   useEffect(() => {
     if (!trackId || !config) {
       return;
     }
     submittedRef.current = false;
+    setFinishMeta(null);
+    setResetNonce((value) => value + 1);
     resetRaceSession(trackId, config.checkpoints.length);
   }, [config, trackId]);
 
@@ -112,10 +145,28 @@ export const RacePage = () => {
         return;
       }
       submittedRef.current = true;
+      const prevBest = readGuestBest(trackId);
       const timeMs = finishRaceForTest(trackId, 33_000);
-      if (user) {
-        void createResult({ trackId, timeMs });
+      const isNewBest = prevBest === null || timeMs < prevBest;
+
+      if (!user) {
+        setFinishMeta({ timeMs, isNewBest, submitState: 'idle' });
+        return;
       }
+
+      setFinishMeta({ timeMs, isNewBest, submitState: 'loading' });
+      void createResult({ trackId, timeMs })
+        .unwrap()
+        .then(() => {
+          setFinishMeta((prev) =>
+            prev ? { ...prev, submitState: 'done' } : { timeMs, isNewBest, submitState: 'done' },
+          );
+        })
+        .catch(() => {
+          setFinishMeta((prev) =>
+            prev ? { ...prev, submitState: 'error' } : { timeMs, isNewBest, submitState: 'error' },
+          );
+        });
     };
     return () => {
       delete raceWindow.__finishRaceForTest;
@@ -145,17 +196,32 @@ export const RacePage = () => {
     <div className="sega-scanlines relative h-[calc(100vh-4.5rem)] w-full overflow-hidden bg-black">
       <RaceCanvas
         config={config}
-        paused={hud.status !== 'racing'}
+        paused={hud.status === 'paused' || hud.status === 'finished'}
         resetNonce={resetNonce}
         onFinished={onFinished}
       />
       <RaceHud />
+      <RacePerfHud />
       <RaceControls />
       <RacePauseMenu
         open={hud.status === 'paused'}
         onResume={togglePause}
         onRestart={restart}
         onExit={() => navigate('/tracks')}
+      />
+      <RaceFinishOverlay
+        open={hud.status === 'finished'}
+        trackName={track.name}
+        timeMs={finishMeta?.timeMs ?? hud.timeMs}
+        bestMs={hud.bestMs}
+        isNewBest={finishMeta?.isNewBest ?? false}
+        isGuest={!user}
+        submitState={finishMeta?.submitState ?? 'idle'}
+        leaderboard={leaderboard}
+        userId={user?.id}
+        onRestart={restart}
+        onExit={() => navigate('/tracks')}
+        onOpenLeaderboard={() => navigate('/leaderboard')}
       />
       {restartToast ? (
         <p
@@ -166,14 +232,9 @@ export const RacePage = () => {
           {t('race.restarted')}
         </p>
       ) : null}
-      {!user ? (
+      {!user && hud.status !== 'finished' ? (
         <p className="pointer-events-none absolute bottom-4 right-4 max-w-xs text-right text-xs text-white/70">
           {t('race.guestHint')}
-        </p>
-      ) : null}
-      {submitError ? (
-        <p role="alert" className="absolute bottom-4 right-4 text-sm text-red-200">
-          {submitError}
         </p>
       ) : null}
     </div>

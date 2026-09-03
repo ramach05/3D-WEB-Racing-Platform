@@ -1,7 +1,8 @@
 import { type RefObject, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Sky, Stars, Stats } from '@react-three/drei';
+import { Sky, Stars } from '@react-three/drei';
 import { PCFSoftShadowMap } from 'three';
+import { FramePerfTracker } from './frame-perf-tracker';
 import { Physics, type RapierRigidBody } from '@react-three/rapier';
 import type { TrackConfig } from '@/entities/track';
 import { ChaseCamera } from './chase-camera';
@@ -108,7 +109,7 @@ const RaceSceneInner = ({
         onFinished={onFinished}
       />
       <ChaseCamera target={bodyRef} />
-      {import.meta.env.DEV ? <Stats className="sega-stats-panel" /> : null}
+      {import.meta.env.DEV ? <FramePerfTracker /> : null}
     </>
   );
 };

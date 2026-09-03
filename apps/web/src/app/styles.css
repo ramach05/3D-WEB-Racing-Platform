@@ -336,16 +336,6 @@ button:disabled,
   }
 }
 
-.sega-stats-panel {
-  transform: scale(1.85);
-  transform-origin: top left;
-}
-
-.sega-stats-panel canvas {
-  width: 140px !important;
-  height: 84px !important;
-}
-
 .sega-race-toast {
   animation: sega-toast-in 200ms steps(4) both;
 }
@@ -361,9 +351,103 @@ button:disabled,
   }
 }
 
+.sega-finish-overlay {
+  animation: sega-finish-fade 220ms steps(4) both;
+}
+
+@keyframes sega-finish-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sega-finish-title {
+  animation: sega-finish-pop 320ms steps(5) both, sega-blink 1.1s steps(2, end) 400ms infinite;
+}
+
+@keyframes sega-finish-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.sega-finish-confetti {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.sega-finish-confetti__piece {
+  position: absolute;
+  top: -12%;
+  width: 0.55rem;
+  height: 1.4rem;
+  border-radius: 1px;
+  animation: sega-finish-fall 2.4s linear infinite;
+}
+
+.sega-finish-confetti__piece--1 {
+  left: 12%;
+  background: var(--sega-yellow);
+  animation-delay: 0s;
+}
+
+.sega-finish-confetti__piece--2 {
+  left: 28%;
+  background: var(--sega-magenta);
+  animation-delay: 0.35s;
+}
+
+.sega-finish-confetti__piece--3 {
+  left: 44%;
+  background: var(--sega-cyan);
+  animation-delay: 0.7s;
+}
+
+.sega-finish-confetti__piece--4 {
+  left: 58%;
+  background: var(--sega-yellow);
+  animation-delay: 0.15s;
+}
+
+.sega-finish-confetti__piece--5 {
+  left: 72%;
+  background: var(--sega-magenta);
+  animation-delay: 0.9s;
+}
+
+.sega-finish-confetti__piece--6 {
+  left: 86%;
+  background: var(--sega-cyan);
+  animation-delay: 0.5s;
+}
+
+@keyframes sega-finish-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(12px, 120vh, 0) rotate(220deg);
+    opacity: 0.2;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sega-race-strip-track,
-  .sega-blink {
+  .sega-blink,
+  .sega-finish-title,
+  .sega-finish-overlay,
+  .sega-finish-confetti__piece {
     animation: none;
   }
 

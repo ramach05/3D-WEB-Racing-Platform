@@ -30,8 +30,12 @@ export const RacePauseMenu = ({ open, onResume, onRestart, onExit }: RacePauseMe
       role="dialog"
       aria-modal="true"
       aria-labelledby="pause-title"
+      onClick={onResume}
     >
-      <div className="sega-panel w-full max-w-sm p-6 text-[var(--fg)]">
+      <div
+        className="sega-panel w-full max-w-sm p-6 text-[var(--fg)]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 id="pause-title" className="text-xl font-semibold uppercase text-[var(--sega-yellow)]">
           {t('race.paused')}
         </h2>

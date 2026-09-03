@@ -26,6 +26,11 @@ test('register, stub a finish, see time on profile and leaderboard', async ({ pa
     (window as Window & { __finishRaceForTest?: () => void }).__finishRaceForTest?.();
   });
 
+  const finishDialog = page.getByRole('dialog');
+  await expect(finishDialog).toBeVisible();
+  await expect(finishDialog.getByRole('heading', { name: /финиш|finish/i })).toBeVisible();
+  await expect(finishDialog.getByText(/00:33/)).toBeVisible();
+
   await page.goto('/profile');
   await expect(page.getByText(/00:33/)).toBeVisible();
 
