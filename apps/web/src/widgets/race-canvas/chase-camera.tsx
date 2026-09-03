@@ -25,7 +25,7 @@ export const ChaseCamera = ({ target }: ChaseCameraProps) => {
     const translation = body.translation();
     const rotation = body.rotation();
     quat.set(rotation.x, rotation.y, rotation.z, rotation.w);
-    offset.set(0, 5.5, 12).applyQuaternion(quat);
+    offset.set(0, 5.5, -12).applyQuaternion(quat);
     desired.set(translation.x, translation.y, translation.z).add(offset);
     look.set(translation.x, translation.y + 1.1, translation.z);
     const alpha = 1 - Math.pow(0.001, dt);

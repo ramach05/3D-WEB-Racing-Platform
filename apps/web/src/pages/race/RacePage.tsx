@@ -10,7 +10,6 @@ import {
   finishRace,
   finishRaceForTest,
   resetRaceSession,
-  startRacing,
   togglePause,
   useRaceHud,
 } from '@/features/race-session';
@@ -86,16 +85,6 @@ export const RacePage = () => {
     submittedRef.current = false;
     resetRaceSession(trackId, config.checkpoints.length);
   }, [config, trackId]);
-
-  useEffect(() => {
-    if (!trackId || !config) {
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      startRacing();
-    }, 3000);
-    return () => window.clearTimeout(timer);
-  }, [config, resetNonce, trackId]);
 
   useEffect(() => {
     return bindRaceInput({
