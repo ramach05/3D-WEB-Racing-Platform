@@ -1,35 +1,19 @@
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
-import type { IntersectionEnterPayload } from '@react-three/rapier';
+import { DoubleSide } from 'three';
 import type { TrackConfig } from '@/entities/track';
-import { getRaceHudSnapshot, registerCheckpoint } from '@/features/race-session';
 
 type TrackWorldProps = {
   config: TrackConfig;
-  onFinished: () => void;
-};
-
-/** Если пересечение с машиной — засчитываем чекпоинт */
-const handleCheckpointEnter = (
-  index: number,
-  payload: IntersectionEnterPayload,
-  onFinished: () => void,
-): void => {
-  const name = payload.other.rigidBodyObject?.name;
-  if (name !== 'vehicle') {
-    return;
-  }
-  if (getRaceHudSnapshot().status !== 'racing') {
-    return;
-  }
-  const finished = registerCheckpoint(index);
-  if (finished) {
-    onFinished();
-  }
 };
 
 /** Дорога (визуал), единый пол и стены с низким трением */
-export const TrackWorld = ({ config, onFinished }: TrackWorldProps) => {
+export const TrackWorld = ({ config }: TrackWorldProps) => {
   const { palette } = config;
+  const isNight = config.timeOfDay === 'night';
+  const roadRoughness = isNight ? 0.75 : 0.9;
+  const wallEmissiveIntensity = isNight ? 0.05 : 0.15;
+  const wallRoughness = isNight ? 0.45 : 0.65;
+  const wallMetalness = isNight ? 0.2 : 0;
 
   return (
     <group>
@@ -49,7 +33,7 @@ export const TrackWorld = ({ config, onFinished }: TrackWorldProps) => {
           receiveShadow
         >
           <boxGeometry args={[...segment.size]} />
-          <meshStandardMaterial color={palette.road} roughness={0.9} />
+          <meshStandardMaterial color={palette.road} roughness={roadRoughness} />
         </mesh>
       ))}
 
@@ -68,38 +52,16 @@ export const TrackWorld = ({ config, onFinished }: TrackWorldProps) => {
             friction={0}
             restitution={0}
           />
-          <mesh castShadow>
-            <boxGeometry args={[...wall.size]} />
+          {/* Визуал чуть глубже в пол — иначе SpotLight протекает под нижней кромкой */}
+          <mesh castShadow receiveShadow position={[0, -0.12, 0]}>
+            <boxGeometry args={[wall.size[0], wall.size[1] + 0.24, wall.size[2]]} />
             <meshStandardMaterial
               color={palette.wall}
               emissive={palette.accent}
-              emissiveIntensity={0.15}
-              roughness={0.65}
-            />
-          </mesh>
-        </RigidBody>
-      ))}
-
-      {config.checkpoints.map((checkpoint, index) => (
-        <RigidBody
-          key={`cp-${index}`}
-          type="fixed"
-          colliders={false}
-          position={checkpoint.position}
-          rotation={[0, checkpoint.rotationY, 0]}
-          sensor
-        >
-          <CuboidCollider
-            args={[checkpoint.size[0] / 2, checkpoint.size[1] / 2, checkpoint.size[2] / 2]}
-            sensor
-            onIntersectionEnter={(payload) => handleCheckpointEnter(index, payload, onFinished)}
-          />
-          <mesh>
-            <boxGeometry args={[...checkpoint.size]} />
-            <meshStandardMaterial
-              color={index === config.checkpoints.length - 1 ? palette.accent : palette.wall}
-              transparent
-              opacity={0.14}
+              emissiveIntensity={wallEmissiveIntensity}
+              roughness={wallRoughness}
+              metalness={wallMetalness}
+              shadowSide={DoubleSide}
             />
           </mesh>
         </RigidBody>

@@ -1,5 +1,8 @@
 export type RaceStatus = 'ready' | 'racing' | 'finished' | 'paused';
 
+/** Число кругов на любой трассе */
+export const RACE_LAP_TOTAL = 3;
+
 export type RaceHudSnapshot = {
   timeMs: number;
   bestMs: number | null;
@@ -7,6 +10,9 @@ export type RaceHudSnapshot = {
   speedKmh: number;
   checkpointIndex: number;
   checkpointTotal: number;
+  /** 0-based индекс текущего круга */
+  lapIndex: number;
+  lapTotal: number;
 };
 
 type Listener = () => void;
@@ -20,6 +26,8 @@ let snapshot: RaceHudSnapshot = {
   speedKmh: 0,
   checkpointIndex: 0,
   checkpointTotal: 4,
+  lapIndex: 0,
+  lapTotal: RACE_LAP_TOTAL,
 };
 
 let startedAt = 0;
@@ -72,7 +80,11 @@ const setSnapshot = (patch: Partial<RaceHudSnapshot>, force = false): void => {
 };
 
 /** Готовит заезд к старту (countdown / ready) */
-export const resetRaceSession = (trackId: string, checkpointTotal: number): void => {
+export const resetRaceSession = (
+  trackId: string,
+  checkpointTotal: number,
+  lapTotal: number = RACE_LAP_TOTAL,
+): void => {
   startedAt = 0;
   pausedAccumulated = 0;
   pauseStartedAt = 0;
@@ -84,6 +96,8 @@ export const resetRaceSession = (trackId: string, checkpointTotal: number): void
       speedKmh: 0,
       checkpointIndex: 0,
       checkpointTotal,
+      lapIndex: 0,
+      lapTotal,
     },
     true,
   );
@@ -137,7 +151,30 @@ export const tickRace = (speedKmh: number): void => {
   setSnapshot({ timeMs, speedKmh });
 };
 
-/** Чекпоинт по порядку. Последний — финиш. */
+/**
+ * Засчитывает завершённый круг (пересечение финишной линии после достаточного прогресса).
+ * Возвращает true, когда пройдены все круги заезда.
+ */
+export const registerLapComplete = (): boolean => {
+  if (snapshot.status !== 'racing') {
+    return false;
+  }
+
+  const nextLap = snapshot.lapIndex + 1;
+  if (nextLap < snapshot.lapTotal) {
+    setSnapshot({ lapIndex: nextLap }, true);
+    return false;
+  }
+
+  setSnapshot({ lapIndex: snapshot.lapTotal }, true);
+  return true;
+};
+
+/**
+ * Чекпоинт по порядку внутри текущего круга.
+ * Возвращает true только когда пройдены все круги (финиш заезда).
+ * @deprecated Используется только в unit-тестах; в игре круги считает registerLapComplete.
+ */
 export const registerCheckpoint = (index: number): boolean => {
   if (snapshot.status !== 'racing') {
     return false;
@@ -146,11 +183,25 @@ export const registerCheckpoint = (index: number): boolean => {
     return false;
   }
   const next = index + 1;
-  if (next >= snapshot.checkpointTotal) {
-    return true;
+  if (next < snapshot.checkpointTotal) {
+    setSnapshot({ checkpointIndex: next }, true);
+    return false;
   }
-  setSnapshot({ checkpointIndex: next }, true);
-  return false;
+
+  const nextLap = snapshot.lapIndex + 1;
+  if (nextLap < snapshot.lapTotal) {
+    setSnapshot({ checkpointIndex: 0, lapIndex: nextLap }, true);
+    return false;
+  }
+
+  setSnapshot(
+    {
+      checkpointIndex: snapshot.checkpointTotal,
+      lapIndex: snapshot.lapTotal,
+    },
+    true,
+  );
+  return true;
 };
 
 /** Финиш: фиксирует время и best для гостя */
@@ -180,6 +231,7 @@ export const finishRaceForTest = (trackId: string, timeMs: number): number => {
       timeMs,
       bestMs: readGuestBest(trackId),
       checkpointIndex: snapshot.checkpointTotal,
+      lapIndex: snapshot.lapTotal,
     },
     true,
   );

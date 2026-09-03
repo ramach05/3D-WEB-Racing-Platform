@@ -16,7 +16,7 @@ export const RaceHud = () => {
           : t('race.finished');
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center p-4">
+    <div className="pointer-events-none absolute top-4 right-4">
       <div
         className="sega-panel bg-black/70 px-4 py-3 text-sm text-[var(--sega-yellow)]"
         aria-live="polite"
@@ -32,7 +32,7 @@ export const RaceHud = () => {
           {t('race.best')}: {hud.bestMs === null ? '—' : formatRaceTime(hud.bestMs)}
         </p>
         <p className="font-mono">
-          {Math.round(hud.speedKmh)} km/h · {hud.checkpointIndex}/{hud.checkpointTotal}
+          {Math.round(hud.speedKmh)} km/h · {t('race.lap')}: {hud.lapIndex}/{hud.lapTotal}
         </p>
       </div>
     </div>
