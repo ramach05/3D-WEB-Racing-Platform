@@ -17,10 +17,7 @@ export const TrackStartFinishLine = ({ line, roadWidth, palette }: TrackStartFin
   const gateHalfWidth = roadWidth / 2 + 0.75;
 
   return (
-    <group
-      position={[line.position[0], 0, line.position[2]]}
-      rotation={[0, line.rotationY, 0]}
-    >
+    <group position={[line.position[0], 0, line.position[2]]} rotation={[0, line.rotationY, 0]}>
       {Array.from({ length: CHECKER_COUNT }, (_, index) => {
         const x = -roadWidth / 2 + segmentWidth / 2 + index * segmentWidth;
         const isWhite = index % 2 === 0;
@@ -39,7 +36,11 @@ export const TrackStartFinishLine = ({ line, roadWidth, palette }: TrackStartFin
       })}
 
       {[-1, 1].map((sign) => (
-        <mesh key={`post-${sign}`} position={[sign * gateHalfWidth, ROAD_TOP_Y + 1.4, 0]} castShadow>
+        <mesh
+          key={`post-${sign}`}
+          position={[sign * gateHalfWidth, ROAD_TOP_Y + 1.4, 0]}
+          castShadow
+        >
           <boxGeometry args={[0.25, 2.8, 0.25]} />
           <meshStandardMaterial
             color={palette.accent}

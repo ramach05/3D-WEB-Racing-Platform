@@ -14,7 +14,6 @@ export const computeSteerStrength = (forwardSpeed: number): number => {
   const engage = Math.min(1, absSpeed / VEHICLE_STEER_ENGAGE_SPEED);
   const speedRatio = Math.min(1, absSpeed / VEHICLE_MAX_SPEED);
   const curve =
-    VEHICLE_LOW_SPEED_STEER +
-    (VEHICLE_HIGH_SPEED_STEER - VEHICLE_LOW_SPEED_STEER) * speedRatio;
+    VEHICLE_LOW_SPEED_STEER + (VEHICLE_HIGH_SPEED_STEER - VEHICLE_LOW_SPEED_STEER) * speedRatio;
   return curve * engage;
 };

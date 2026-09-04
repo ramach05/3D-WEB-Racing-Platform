@@ -52,9 +52,7 @@ export const HomePage = () => {
               key={config.slug}
               to="/tracks"
               className="sega-panel sega-card-link block p-4 no-underline"
-              aria-label={
-                config.slug === 'coastal-oval' ? t('home.coastal') : t('home.nightCity')
-              }
+              aria-label={config.slug === 'coastal-oval' ? t('home.coastal') : t('home.nightCity')}
             >
               <h3 className="text-lg text-[var(--sega-yellow)]">
                 {config.slug === 'coastal-oval' ? t('home.coastal') : t('home.nightCity')}

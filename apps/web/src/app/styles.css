@@ -365,7 +365,9 @@ button:disabled,
 }
 
 .sega-finish-title {
-  animation: sega-finish-pop 320ms steps(5) both, sega-blink 1.1s steps(2, end) 400ms infinite;
+  animation:
+    sega-finish-pop 320ms steps(5) both,
+    sega-blink 1.1s steps(2, end) 400ms infinite;
 }
 
 @keyframes sega-finish-pop {

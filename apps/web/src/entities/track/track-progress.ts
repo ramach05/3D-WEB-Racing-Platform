@@ -27,10 +27,7 @@ export const getTrackProgress = (x: number, z: number, centerline: LoopPoint[]):
     const dx = b.x - a.x;
     const dz = b.z - a.z;
     const lenSq = dx * dx + dz * dz;
-    const t =
-      lenSq === 0
-        ? 0
-        : Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / lenSq));
+    const t = lenSq === 0 ? 0 : Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / lenSq));
     const px = a.x + dx * t;
     const pz = a.z + dz * t;
     const distSq = (x - px) ** 2 + (z - pz) ** 2;

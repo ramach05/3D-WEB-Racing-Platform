@@ -1,10 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  getRaceHudSnapshot,
-  registerCheckpoint,
-  resetRaceSession,
-  startRacing,
-} from './store';
+import { getRaceHudSnapshot, registerCheckpoint, resetRaceSession, startRacing } from './store';
 
 describe('registerCheckpoint multi-lap', () => {
   afterEach(() => {

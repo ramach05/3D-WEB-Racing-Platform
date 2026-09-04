@@ -30,7 +30,7 @@ ffmpeg -i recording.mov -vf "fps=15,scale=960:-1" docs/screenshots/gameplay.gif
 | ---------------------------------- | -------------------------------------------------------------------------------------------- |
 | **Vite + React 19**, не Next.js    | Это SPA-игра. SSR/hydration с canvas и Rapier WASM только мешают.                            |
 | **pnpm workspaces**, не Turborepo  | Два приложения. Оркестратор не нужен.                                                        |
-| **SQLite + Prisma 7**              | Один файл БД, без Docker. Prisma 7 + SQLite driver adapter (`better-sqlite3`). |
+| **SQLite + Prisma 7**              | Один файл БД, без Docker. Prisma 7 + SQLite driver adapter (`better-sqlite3`).               |
 | **Rapier (`@react-three/rapier`)** | WASM-физика в том же дереве, что R3F. Arcade, не симулятор F1.                               |
 | **FSD**                            | Границы модулей читаются на собеседовании.                                                   |
 | **Redux Toolkit + RTK Query**      | Auth/API. Симуляция гонки **не** в Redux: vanilla-store + `useSyncExternalStore`.            |
@@ -89,11 +89,11 @@ pnpm dev
 
 ### Если `pnpm` не запускается
 
-| Симптом | Решение |
-| ------- | ------- |
-| `Требуется Node.js 22.12+` | `nvm use` |
-| `Cannot find matching keyid` (corepack) | `corepack disable && npm install -g pnpm@10.15.0` |
-| Временный обход без глобальной установки | `npx pnpm@10.15.0 dev` |
+| Симптом                                  | Решение                                           |
+| ---------------------------------------- | ------------------------------------------------- |
+| `Требуется Node.js 22.12+`               | `nvm use`                                         |
+| `Cannot find matching keyid` (corepack)  | `corepack disable && npm install -g pnpm@10.15.0` |
+| Временный обход без глобальной установки | `npx pnpm@10.15.0 dev`                            |
 
 ### Тестовые аккаунты (seed)
 

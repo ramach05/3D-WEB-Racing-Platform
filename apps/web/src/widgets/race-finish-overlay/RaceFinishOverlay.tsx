@@ -96,9 +96,7 @@ export const RaceFinishOverlay = ({
           ) : null}
         </div>
 
-        {isGuest ? (
-          <p className="mt-3 text-xs text-[var(--muted)]">{t('race.guestHint')}</p>
-        ) : null}
+        {isGuest ? <p className="mt-3 text-xs text-[var(--muted)]">{t('race.guestHint')}</p> : null}
 
         {!isGuest && submitState === 'loading' ? (
           <p className="mt-3 text-sm text-[var(--sega-cyan)]" role="status" aria-live="polite">
@@ -123,11 +121,7 @@ export const RaceFinishOverlay = ({
             <p className="text-xs uppercase tracking-wide text-[var(--sega-yellow)]">
               {t('race.topResults')}
             </p>
-            <LeaderboardTable
-              entries={leaderboard}
-              highlightUserId={userId}
-              maxRows={5}
-            />
+            <LeaderboardTable entries={leaderboard} highlightUserId={userId} maxRows={5} />
           </div>
         ) : null}
 

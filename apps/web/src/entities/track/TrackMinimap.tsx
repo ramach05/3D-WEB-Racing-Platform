@@ -104,24 +104,20 @@ export const TrackMinimap = ({ config, className }: TrackMinimapProps) => {
       <polygon
         points={[
           toSvg(line.position[0] + forwardX * 5, line.position[2] + forwardZ * 5),
-          toSvg(line.position[0] + forwardX * 2.5 + perpX * 1.2, line.position[2] + forwardZ * 2.5 + perpZ * 1.2),
-          toSvg(line.position[0] + forwardX * 2.5 - perpX * 1.2, line.position[2] + forwardZ * 2.5 - perpZ * 1.2),
+          toSvg(
+            line.position[0] + forwardX * 2.5 + perpX * 1.2,
+            line.position[2] + forwardZ * 2.5 + perpZ * 1.2,
+          ),
+          toSvg(
+            line.position[0] + forwardX * 2.5 - perpX * 1.2,
+            line.position[2] + forwardZ * 2.5 - perpZ * 1.2,
+          ),
         ].join(' ')}
         fill={config.palette.accent}
         opacity={0.9}
       />
-      <circle
-        cx={spawnSvg[0]}
-        cy={spawnSvg[1]}
-        r={4}
-        fill={config.palette.accent}
-      />
-      <circle
-        cx={lineCenter[0]}
-        cy={lineCenter[1]}
-        r={2.5}
-        fill="#ffffff"
-      />
+      <circle cx={spawnSvg[0]} cy={spawnSvg[1]} r={4} fill={config.palette.accent} />
+      <circle cx={lineCenter[0]} cy={lineCenter[1]} r={2.5} fill="#ffffff" />
     </svg>
   );
 };

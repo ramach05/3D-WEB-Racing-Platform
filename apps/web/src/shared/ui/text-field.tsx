@@ -18,11 +18,7 @@ export const TextField = ({ label, error, id, className, ...rest }: TextFieldPro
       </label>
       <input id={fieldId} aria-invalid={Boolean(error)} aria-describedby={errorId} {...rest} />
       {error ? (
-        <p
-          id={errorId}
-          role="alert"
-          className="sega-field-error text-sm text-[var(--danger)]"
-        >
+        <p id={errorId} role="alert" className="sega-field-error text-sm text-[var(--danger)]">
           {error}
         </p>
       ) : null}

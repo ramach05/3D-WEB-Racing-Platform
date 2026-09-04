@@ -1,11 +1,4 @@
-import {
-  type KeyboardEvent,
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from 'react';
+import { type KeyboardEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { cx } from '@/shared/lib';
 
 export type SelectOption<T extends string> = {
