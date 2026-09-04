@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { coastalOvalTrack, nightCityTrack } from '@/entities/track/config';
-import { advanceLapProgress, getTrackProgress } from '@/entities/track/track-progress';
+import {
+  advanceLapProgress,
+  coastalOvalTrack,
+  getTrackProgress,
+  nightCityTrack,
+} from '@/entities/track';
 import {
   getRaceHudSnapshot,
   registerLapComplete,
   resetRaceSession,
   startRacing,
-} from '@/features/race-session/store';
+} from '@/features/race-session';
 import {
   MIN_LAP_PROGRESS,
   passedFinishLine,
