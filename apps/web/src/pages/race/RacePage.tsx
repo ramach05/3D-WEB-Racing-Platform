@@ -15,14 +15,11 @@ import {
   togglePause,
   useRaceHud,
 } from '@/features/race-session';
-import { PageShell, StatusText } from '@/shared/ui';
+import { Button, PageShell, StatusText } from '@/shared/ui';
 import { RaceHud, RacePerfHud } from '@/widgets/hud';
 import { RaceCanvas } from '@/widgets/race-canvas';
 import { RaceControls } from '@/widgets/race-controls';
-import {
-  RaceFinishOverlay,
-  type FinishSubmitState,
-} from '@/widgets/race-finish-overlay';
+import { RaceFinishOverlay, type FinishSubmitState } from '@/widgets/race-finish-overlay';
 import { RacePauseMenu } from '@/widgets/race-pause-menu';
 
 type RaceTestApi = {
@@ -49,8 +46,19 @@ export const RacePage = () => {
   const [resetNonce, setResetNonce] = useState(0);
   const [restartToast, setRestartToast] = useState(false);
   const [finishMeta, setFinishMeta] = useState<FinishMeta | null>(null);
+  const [musicMuted, setMusicMuted] = useState(false);
+  const sessionKey = trackId && config ? `${trackId}:${config.checkpoints.length}` : '';
+  const [prevSessionKey, setPrevSessionKey] = useState(sessionKey);
   const submittedRef = useRef(false);
   const toastTimerRef = useRef<number | null>(null);
+
+  if (sessionKey !== prevSessionKey) {
+    setPrevSessionKey(sessionKey);
+    if (sessionKey) {
+      setFinishMeta(null);
+      setResetNonce((value) => value + 1);
+    }
+  }
 
   const { data: leaderboard } = useGetLeaderboardQuery(trackId ?? '', {
     skip: !trackId || hud.status !== 'finished' || !user,
@@ -60,6 +68,7 @@ export const RacePage = () => {
     theme: config?.audioTheme ?? null,
     paused: hud.status !== 'racing',
     enabled: Boolean(config),
+    muted: musicMuted,
   });
 
   const restart = useCallback(() => {
@@ -114,8 +123,6 @@ export const RacePage = () => {
       return;
     }
     submittedRef.current = false;
-    setFinishMeta(null);
-    setResetNonce((value) => value + 1);
     resetRaceSession(trackId, config.checkpoints.length);
   }, [config, trackId]);
 
@@ -200,7 +207,20 @@ export const RacePage = () => {
         resetNonce={resetNonce}
         onFinished={onFinished}
       />
-      <RaceHud />
+      <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
+        <div className="pointer-events-none">
+          <RaceHud />
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="sega-panel bg-black/70 text-[var(--sega-yellow)]"
+          aria-pressed={!musicMuted}
+          onClick={() => setMusicMuted((value) => !value)}
+        >
+          {musicMuted ? t('race.musicOff') : t('race.musicOn')}
+        </Button>
+      </div>
       <RacePerfHud />
       <RaceControls />
       <RacePauseMenu

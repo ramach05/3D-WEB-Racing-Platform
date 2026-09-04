@@ -74,6 +74,8 @@ export const ruMessages = {
     topResults: 'Лучшие результаты',
     viewLeaderboard: 'Таблица лидеров',
     lap: 'Круг',
+    musicOn: 'Музыка',
+    musicOff: 'Музыка выкл.',
   },
   leaderboard: {
     title: 'Таблица лидеров',
@@ -199,6 +201,8 @@ export const enMessages = {
     topResults: 'Top results',
     viewLeaderboard: 'Leaderboard',
     lap: 'Lap',
+    musicOn: 'Music',
+    musicOff: 'Music off',
   },
   leaderboard: {
     title: 'Leaderboard',
