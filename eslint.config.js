@@ -22,11 +22,19 @@ const noFunctionDeclaration = {
 const fsdPublicApiPatterns = [
   {
     group: [
-      '@/app/*/**',
+      // app: запрет deep-файлов (@/app/i18n), public API — только @/app
+      '@/app/*',
+      // slices: запрет внутренностей (@/pages/home/X), public API — @/pages/home
+      '@/pages/*/*',
       '@/pages/*/**',
+      '@/widgets/*/*',
       '@/widgets/*/**',
+      '@/features/*/*',
       '@/features/*/**',
+      '@/entities/*/*',
       '@/entities/*/**',
+      // shared segments: запрет @/shared/ui/button, public API — @/shared/ui
+      '@/shared/*/*',
       '@/shared/*/**',
     ],
     message: 'Импортируй только public API слайса (index.ts), не внутренние файлы.',

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { i18n } from '@/app/i18n';
+import { i18n } from '@/test/i18n';
 import { LocaleSwitcher } from './LocaleSwitcher';
 
 describe('LocaleSwitcher', () => {

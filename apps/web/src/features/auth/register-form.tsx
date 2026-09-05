@@ -2,9 +2,8 @@ import { type FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getRtkErrorMessage } from '@/shared/lib';
-import { Button, PageShell, TextField } from '@/shared/ui';
+import { Button, TextField } from '@/shared/ui';
 import { useRegisterMutation } from './api';
-
 import { isValidNickname, isValidPassword } from './validation';
 
 /** Форма регистрации с клиентской валидацией и ошибками API */
@@ -42,7 +41,7 @@ export const RegisterForm = () => {
   };
 
   return (
-    <PageShell>
+    <>
       <h1 className="text-3xl font-semibold">{t('auth.registerTitle')}</h1>
       <form
         className="mt-6 flex max-w-md flex-col gap-4"
@@ -82,6 +81,6 @@ export const RegisterForm = () => {
           {t('auth.toLogin')}
         </Link>
       </p>
-    </PageShell>
+    </>
   );
 };
