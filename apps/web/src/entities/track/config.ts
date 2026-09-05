@@ -9,6 +9,10 @@ export type OrientedBox = {
   rotationY: number;
 };
 
+export type ObstacleKind = 'tireStack';
+
+export type TrackObstacle = OrientedBox & { kind: ObstacleKind };
+
 export type LoopPoint = {
   x: number;
   z: number;
@@ -47,6 +51,7 @@ export type TrackConfig = {
   segments: OrientedBox[];
   walls: OrientedBox[];
   checkpoints: OrientedBox[];
+  obstacles: TrackObstacle[];
   centerline: LoopPoint[];
   roadWidth: number;
   palette: TrackPalette;
@@ -203,6 +208,7 @@ const buildLoopTrack = ({
     segments,
     walls,
     checkpoints,
+    obstacles: [],
     centerline: points,
     roadWidth,
     palette,
@@ -211,6 +217,65 @@ const buildLoopTrack = ({
     timeOfDay: audioTheme === 'night' ? 'night' : 'day',
     startTribuneSide,
   };
+};
+
+/** Размещает препятствие вдоль centerline с боковым смещением (нормаль влево). */
+const placeAlongCenterline = (
+  points: LoopPoint[],
+  ratio: number,
+  lateral: number,
+  size: Vec3,
+  kind: ObstacleKind,
+): TrackObstacle => {
+  const pointCount = points.length;
+  const index = Math.floor(((((ratio % 1) + 1) % 1) * pointCount) % pointCount);
+  const current = points[index];
+  const next = points[(index + 1) % pointCount];
+  if (!current || !next) {
+    return {
+      position: [0, size[1] / 2, 0],
+      size,
+      rotationY: 0,
+      kind,
+    };
+  }
+  const dx = next.x - current.x;
+  const dz = next.z - current.z;
+  const len = Math.hypot(dx, dz) || 1;
+  const nx = -dz / len;
+  const nz = dx / len;
+  return {
+    position: [current.x + nx * lateral, size[1] / 2, current.z + nz * lateral],
+    size,
+    rotationY: Math.atan2(dx, dz),
+    kind,
+  };
+};
+
+/** Стопки шин у стенок Coastal Oval: несколько рядов от бордюра. */
+const buildCoastalOvalObstacles = (points: LoopPoint[], roadWidth: number): TrackObstacle[] => {
+  const tireSize: Vec3 = [1.05, 1.2, 1.05];
+  /** Отступы от стены к центру полосы — каждый inset = отдельный ряд */
+  const rowInsets = [0.7, 1.85, 3.0] as const;
+  const obstacles: TrackObstacle[] = [];
+
+  const banks: { ratios: number[]; side: 1 | -1 }[] = [
+    { ratios: [0.27, 0.285, 0.3, 0.315], side: -1 },
+    { ratios: [0.44, 0.455, 0.47, 0.485], side: 1 },
+    { ratios: [0.61, 0.625, 0.64, 0.655], side: -1 },
+    { ratios: [0.78, 0.795, 0.81, 0.825], side: 1 },
+  ];
+
+  for (const bank of banks) {
+    for (const ratio of bank.ratios) {
+      for (const inset of rowInsets) {
+        const lateral = bank.side * (roadWidth / 2 - inset);
+        obstacles.push(placeAlongCenterline(points, ratio, lateral, tireSize, 'tireStack'));
+      }
+    }
+  }
+
+  return obstacles;
 };
 
 /** Эллиптическая трасса */
@@ -303,16 +368,22 @@ const nightPalette: TrackPalette = {
   minimapBg: '#140a24',
 };
 
-export const coastalOvalTrack = buildLoopTrack({
-  slug: TRACK_SLUG_COASTAL_OVAL,
-  points: buildEllipsePoints(58, 36, 44),
-  roadWidth: 10,
-  palette: coastalPalette,
-  carSkin: { body: '#ff7a00', cabin: '#1a1208', wheel: '#222222' },
-  audioTheme: 'coastal',
-  spawnRatio: 0.02,
-  startTribuneSide: 'left',
-});
+const coastalOvalPoints = buildEllipsePoints(58, 36, 44);
+const coastalOvalRoadWidth = 10;
+
+export const coastalOvalTrack: TrackConfig = {
+  ...buildLoopTrack({
+    slug: TRACK_SLUG_COASTAL_OVAL,
+    points: coastalOvalPoints,
+    roadWidth: coastalOvalRoadWidth,
+    palette: coastalPalette,
+    carSkin: { body: '#ff7a00', cabin: '#1a1208', wheel: '#222222' },
+    audioTheme: 'coastal',
+    spawnRatio: 0.02,
+    startTribuneSide: 'left',
+  }),
+  obstacles: buildCoastalOvalObstacles(coastalOvalPoints, coastalOvalRoadWidth),
+};
 
 export const nightCityTrack = buildLoopTrack({
   slug: TRACK_SLUG_NIGHT_CITY,

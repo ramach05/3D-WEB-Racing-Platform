@@ -1,6 +1,7 @@
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import { DoubleSide } from 'three';
 import type { TrackConfig } from '@/entities/track';
+import { TrackObstacles } from './track-obstacles';
 
 type TrackWorldProps = {
   config: TrackConfig;
@@ -66,6 +67,8 @@ export const TrackWorld = ({ config }: TrackWorldProps) => {
           </mesh>
         </RigidBody>
       ))}
+
+      <TrackObstacles obstacles={config.obstacles} />
     </group>
   );
 };

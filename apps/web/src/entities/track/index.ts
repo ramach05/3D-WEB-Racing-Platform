@@ -3,11 +3,13 @@ export { TRACK_SLUGS, TRACK_SLUG_COASTAL_OVAL, TRACK_SLUG_NIGHT_CITY } from '@ra
 export { trackApi, useGetTracksQuery } from './api';
 export type {
   CarSkin,
+  ObstacleKind,
   OrientedBox,
   StartTribuneSide,
   TrackAudioTheme,
   TimeOfDay,
   TrackConfig,
+  TrackObstacle,
   TrackPalette,
   Vec3,
 } from './config';

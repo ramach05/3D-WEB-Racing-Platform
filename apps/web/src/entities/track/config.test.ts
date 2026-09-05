@@ -50,4 +50,27 @@ describe('track config geometry', () => {
       expect(config.startTribuneSide).toBe('left');
     }
   });
+
+  it('places obstacles only on the daytime coastal track', () => {
+    expect(coastalOvalTrack.obstacles.length).toBeGreaterThan(0);
+    expect(nightCityTrack.obstacles).toEqual([]);
+  });
+
+  it('uses only tire stacks as coastal obstacles', () => {
+    expect(coastalOvalTrack.obstacles.every((obstacle) => obstacle.kind === 'tireStack')).toBe(
+      true,
+    );
+  });
+
+  it('keeps coastal obstacles clear of the spawn point', () => {
+    const spawn = coastalOvalTrack.spawnPosition;
+    const minClearance = 6;
+    for (const obstacle of coastalOvalTrack.obstacles) {
+      const dx = obstacle.position[0] - spawn[0];
+      const dz = obstacle.position[2] - spawn[2];
+      const distance = Math.hypot(dx, dz);
+      const obstacleRadius = Math.hypot(obstacle.size[0], obstacle.size[2]) / 2;
+      expect(distance - obstacleRadius).toBeGreaterThan(minClearance);
+    }
+  });
 });
