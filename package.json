@@ -7,7 +7,7 @@
   },
   "scripts": {
     "predev": "node scripts/check-node.mjs",
-    "dev": "pnpm --filter @racing/shared build && pnpm --filter @racing/api exec prisma migrate deploy && pnpm --parallel --filter @racing/web --filter @racing/api dev",
+    "dev": "pnpm --filter @racing/shared build && pnpm --filter @racing/api exec prisma migrate deploy && pnpm --filter @racing/api run prisma:seed && pnpm --parallel --filter @racing/web --filter @racing/api dev",
     "build": "pnpm --filter @racing/shared build && pnpm --filter @racing/api build && pnpm --filter @racing/web build",
     "typecheck": "pnpm --filter @racing/shared build && pnpm exec tsc -b --pretty false",
     "test": "pnpm --filter @racing/api test && pnpm --filter @racing/web test",
