@@ -1,4 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import type { PointLight } from 'three';
 import type { OrientedBox, StartTribuneSide, TrackPalette } from '@/entities/track';
 import { buildSpectatorSeats, SpectatorCrowd } from './spectator-crowd';
 
@@ -53,11 +55,31 @@ const TribuneNightLights = ({
 }: TribuneNightLightsProps) => {
   const tribuneCenterX = tribuneInnerX + (sideSign * TRIBUNE_ROWS * ROW_DEPTH) / 2;
   const frontLightX = tribuneInnerX - sideSign * 1.8;
+  const pulseA = useRef<PointLight>(null);
+  const pulseB = useRef<PointLight>(null);
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    const breathe = 1 + Math.sin(t * 2.4 + sectionZ * 0.2) * 0.22;
+    if (pulseA.current) {
+      pulseA.current.intensity = 2.2 * breathe;
+    }
+    if (pulseB.current) {
+      pulseB.current.intensity = 1.4 * (1 + Math.sin(t * 3.1 + 1.2) * 0.28);
+    }
+  });
 
   return (
     <group position={[0, ROAD_TOP_Y, sectionZ]}>
-      <pointLight position={[frontLightX, 5.5, 0]} intensity={2.2} color={wall} distance={16} />
       <pointLight
+        ref={pulseA}
+        position={[frontLightX, 5.5, 0]}
+        intensity={2.2}
+        color={wall}
+        distance={16}
+      />
+      <pointLight
+        ref={pulseB}
         position={[tribuneCenterX, 4.8, 0]}
         intensity={1.4}
         color={accent}

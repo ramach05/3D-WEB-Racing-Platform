@@ -19,7 +19,9 @@ import { Button, PageShell, StatusText } from '@/shared/ui';
 import { RaceHud, RacePerfHud } from '@/widgets/hud';
 import { RaceCanvas } from '@/widgets/race-canvas';
 import { RaceControls } from '@/widgets/race-controls';
+import { RaceCountdownOverlay } from '@/widgets/race-countdown';
 import { RaceFinishOverlay, type FinishSubmitState } from '@/widgets/race-finish-overlay';
+import { LeaderboardTable } from '@/widgets/leaderboard-table';
 import { RacePauseMenu } from '@/widgets/race-pause-menu';
 
 type RaceTestApi = {
@@ -31,6 +33,8 @@ type FinishMeta = {
   isNewBest: boolean;
   submitState: FinishSubmitState;
 };
+
+const FINISH_OVERLAY_DELAY_MS = 900;
 
 /** Страница заезда: 3D-сцена, HUD, пауза, отправка результата */
 export const RacePage = () => {
@@ -46,6 +50,7 @@ export const RacePage = () => {
   const [resetNonce, setResetNonce] = useState(0);
   const [restartToast, setRestartToast] = useState(false);
   const [finishMeta, setFinishMeta] = useState<FinishMeta | null>(null);
+  const [showFinishOverlay, setShowFinishOverlay] = useState(false);
   const [musicMuted, setMusicMuted] = useState(false);
   const sessionKey = trackId && config ? `${trackId}:${config.checkpoints.length}` : '';
   const [prevSessionKey, setPrevSessionKey] = useState(sessionKey);
@@ -56,6 +61,7 @@ export const RacePage = () => {
     setPrevSessionKey(sessionKey);
     if (sessionKey) {
       setFinishMeta(null);
+      setShowFinishOverlay(false);
       setResetNonce((value) => value + 1);
     }
   }
@@ -77,6 +83,7 @@ export const RacePage = () => {
     }
     submittedRef.current = false;
     setFinishMeta(null);
+    setShowFinishOverlay(false);
     setResetNonce((value) => value + 1);
     resetRaceSession(trackId, config.checkpoints.length);
     setRestartToast(true);
@@ -143,6 +150,18 @@ export const RacePage = () => {
   }, []);
 
   useEffect(() => {
+    if (hud.status !== 'finished') {
+      return;
+    }
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const delay = reduced ? 0 : FINISH_OVERLAY_DELAY_MS;
+    const id = window.setTimeout(() => setShowFinishOverlay(true), delay);
+    return () => window.clearTimeout(id);
+  }, [hud.status]);
+
+  useEffect(() => {
     if (!trackId) {
       return;
     }
@@ -199,11 +218,15 @@ export const RacePage = () => {
     );
   }
 
+  const physicsPaused =
+    hud.status === 'paused' || hud.status === 'finished' || hud.status === 'countdown';
+
   return (
     <div className="sega-scanlines relative h-[calc(100vh-4.5rem)] w-full overflow-hidden bg-black">
       <RaceCanvas
         config={config}
-        paused={hud.status === 'paused' || hud.status === 'finished'}
+        physicsPaused={physicsPaused}
+        crowdPaused={hud.status === 'paused'}
         resetNonce={resetNonce}
         onFinished={onFinished}
       />
@@ -223,6 +246,7 @@ export const RacePage = () => {
       </div>
       <RacePerfHud />
       <RaceControls />
+      <RaceCountdownOverlay />
       <RacePauseMenu
         open={hud.status === 'paused'}
         onResume={togglePause}
@@ -230,15 +254,23 @@ export const RacePage = () => {
         onExit={() => navigate('/tracks')}
       />
       <RaceFinishOverlay
-        open={hud.status === 'finished'}
+        open={hud.status === 'finished' && showFinishOverlay}
         trackName={track.name}
         timeMs={finishMeta?.timeMs ?? hud.timeMs}
         bestMs={hud.bestMs}
         isNewBest={finishMeta?.isNewBest ?? false}
         isGuest={!user}
         submitState={finishMeta?.submitState ?? 'idle'}
-        leaderboard={leaderboard}
-        userId={user?.id}
+        userRank={
+          user?.id && leaderboard
+            ? (leaderboard.find((entry) => entry.userId === user.id)?.rank ?? null)
+            : null
+        }
+        leaderboardSlot={
+          leaderboard && leaderboard.length > 0 ? (
+            <LeaderboardTable entries={leaderboard} highlightUserId={user?.id} maxRows={5} />
+          ) : null
+        }
         onRestart={restart}
         onExit={() => navigate('/tracks')}
         onOpenLeaderboard={() => navigate('/leaderboard')}

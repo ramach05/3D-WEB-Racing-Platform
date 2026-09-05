@@ -1,5 +1,6 @@
-export type { RaceHudSnapshot, RaceStatus } from './store';
+export type { CountdownStep, RaceHudSnapshot, RaceStatus } from './store';
 export {
+  beginCountdown,
   finishRace,
   finishRaceForTest,
   getRaceHudSnapshot,
@@ -10,6 +11,7 @@ export {
   registerLapComplete,
   resetRaceSession,
   resumeRace,
+  setCountdownStep,
   startRacing,
   tickRace,
   togglePause,
@@ -23,4 +25,13 @@ export {
   VEHICLE_LOW_SPEED_STEER,
   computeSteerStrength,
 } from './vehicle-physics';
+export {
+  MIN_LAP_PROGRESS,
+  START_FINISH_COOLDOWN_RATIO,
+  canRegisterLapCrossing,
+  crossedFinishLine,
+  getTrackLineLocalCoords,
+  passedCheckpointZone,
+  passedFinishLine,
+} from './checkpoint-rules';
 export { useRaceHud } from './hooks';

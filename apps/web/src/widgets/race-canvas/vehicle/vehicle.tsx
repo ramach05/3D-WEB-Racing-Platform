@@ -7,24 +7,24 @@ import type { Group, Object3D, SpotLight } from 'three';
 import type { CarSkin } from '@/entities/track';
 import type { Vec3 } from '@/entities/track';
 import {
+  beginCountdown,
   computeSteerStrength,
   getDriveInput,
   getRaceHudSnapshot,
-  startRacing,
   tickRace,
   VEHICLE_MAX_SPEED,
   VEHICLE_REVERSE_MAX,
 } from '@/features/race-session';
 
 /** Физические канделы — левая и правая фары (с запасом под decay=2) */
-const HEADLIGHT_INTENSITY = 100;
-const HEADLIGHT_ANGLE = 0.48;
-const HEADLIGHT_PENUMBRA = 0.85;
-const HEADLIGHT_DISTANCE = 20;
+const HEADLIGHT_INTENSITY = 75;
+const HEADLIGHT_ANGLE = 0.42;
+const HEADLIGHT_PENUMBRA = 0.7;
+const HEADLIGHT_DISTANCE = 24;
 const HEADLIGHT_DECAY = 2;
 const HEADLIGHT_COLOR = '#fff8e0';
-/** Прицел: дорога и препятствия впереди */
-const HEADLIGHT_TARGET: Vec3 = [0, 0.2, 12];
+/** Прицел: в плоскость асфальта впереди */
+const HEADLIGHT_TARGET: Vec3 = [0, -1.0, 11];
 const HEADLIGHT_LOCAL_LEFT: Vec3 = [-0.55, 0.5, 1.7];
 const HEADLIGHT_LOCAL_RIGHT: Vec3 = [0.55, 0.5, 1.7];
 const HEADLIGHT_SHADOW_MAP = 1024;
@@ -305,7 +305,7 @@ export const Vehicle = ({
     if (awaitingLand.current && hud.status === 'ready') {
       if (wheelGrounded && Math.abs(linvel.y) < LAND_SETTLE_VY) {
         awaitingLand.current = false;
-        startRacing();
+        beginCountdown();
       }
       return;
     }
@@ -419,11 +419,11 @@ export const Vehicle = ({
             <>
               <mesh position={[-0.55, 0.38, 1.62]}>
                 <boxGeometry args={[0.2, 0.12, 0.08]} />
-                <meshStandardMaterial color="#ffffcc" emissive="#ffffaa" emissiveIntensity={1.2} />
+                <meshStandardMaterial color="#ffffcc" emissive="#ffffaa" emissiveIntensity={0.45} />
               </mesh>
               <mesh position={[0.55, 0.38, 1.62]}>
                 <boxGeometry args={[0.2, 0.12, 0.08]} />
-                <meshStandardMaterial color="#ffffcc" emissive="#ffffaa" emissiveIntensity={1.2} />
+                <meshStandardMaterial color="#ffffcc" emissive="#ffffaa" emissiveIntensity={0.45} />
               </mesh>
             </>
           ) : null}

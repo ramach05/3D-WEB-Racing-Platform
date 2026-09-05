@@ -1,1 +1,1 @@
-export { RaceCanvas } from './RaceCanvas';
+export { RaceCanvas } from './ui/RaceCanvas';

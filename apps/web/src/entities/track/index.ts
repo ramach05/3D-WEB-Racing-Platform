@@ -18,4 +18,3 @@ export { getCheckpointLocalCoords, isInsideCheckpoint } from './oriented-box';
 export type { CheckpointLocalCoords } from './oriented-box';
 export { advanceLapProgress, getTrackProgress } from './track-progress';
 export type { TrackProgress } from './track-progress';
-export { TrackMinimap } from './TrackMinimap';

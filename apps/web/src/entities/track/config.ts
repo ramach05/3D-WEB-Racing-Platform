@@ -357,13 +357,13 @@ const coastalPalette: TrackPalette = {
 };
 
 const nightPalette: TrackPalette = {
-  sky: '#0a0018',
-  fog: '#1a0830',
-  ground: '#120820',
-  road: '#2a2a36',
+  sky: '#120828',
+  fog: '#241038',
+  ground: '#6a5848',
+  road: '#5a5a66',
   wall: '#00e5ff',
   accent: '#ff2bd6',
-  minimapRoad: '#2a2a38',
+  minimapRoad: '#3a3a48',
   minimapWall: '#ff2bd6',
   minimapBg: '#140a24',
 };

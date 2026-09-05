@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { LeaderboardEntry } from '@/entities/leaderboard';
 import { formatRaceTime } from '@/shared/lib';
 import { Button } from '@/shared/ui';
-import { LeaderboardTable } from '@/widgets/leaderboard-table';
 
 export type FinishSubmitState = 'idle' | 'loading' | 'done' | 'error';
 
@@ -15,8 +13,10 @@ type RaceFinishOverlayProps = {
   isNewBest: boolean;
   isGuest: boolean;
   submitState: FinishSubmitState;
-  leaderboard: LeaderboardEntry[] | undefined;
-  userId?: string;
+  /** Rank текущего игрока (считается на page) */
+  userRank?: number | null;
+  /** Слот таблицы лидеров — композиция со слоя pages */
+  leaderboardSlot?: ReactNode;
   onRestart: () => void;
   onExit: () => void;
   onOpenLeaderboard: () => void;
@@ -31,21 +31,14 @@ export const RaceFinishOverlay = ({
   isNewBest,
   isGuest,
   submitState,
-  leaderboard,
-  userId,
+  userRank = null,
+  leaderboardSlot,
   onRestart,
   onExit,
   onOpenLeaderboard,
 }: RaceFinishOverlayProps) => {
   const { t } = useTranslation();
   const firstButton = useRef<HTMLButtonElement>(null);
-
-  const userRank = useMemo(() => {
-    if (!userId || !leaderboard) {
-      return null;
-    }
-    return leaderboard.find((entry) => entry.userId === userId)?.rank ?? null;
-  }, [leaderboard, userId]);
 
   useEffect(() => {
     if (open) {
@@ -82,7 +75,7 @@ export const RaceFinishOverlay = ({
         </h2>
         <p className="mt-2 text-sm text-[var(--muted)]">{t('race.finishCongrats')}</p>
 
-        <div className="mt-4 space-y-1 font-mono text-sm text-[var(--sega-yellow)]">
+        <div className="mt-4 space-y-1 text-sm text-[var(--sega-yellow)]">
           <p>
             {t('race.time')}: {formatRaceTime(timeMs)}
           </p>
@@ -90,7 +83,7 @@ export const RaceFinishOverlay = ({
             {t('race.best')}: {bestMs === null ? '—' : formatRaceTime(bestMs)}
           </p>
           {isNewBest ? (
-            <p className="sega-blink font-sans uppercase text-[var(--sega-magenta)]">
+            <p className="sega-blink uppercase text-[var(--sega-magenta)]">
               {t('race.newBest')}
             </p>
           ) : null}
@@ -116,12 +109,12 @@ export const RaceFinishOverlay = ({
           </p>
         ) : null}
 
-        {!isGuest && leaderboard && leaderboard.length > 0 ? (
+        {!isGuest && leaderboardSlot ? (
           <div className="mt-4">
             <p className="text-xs uppercase tracking-wide text-[var(--sega-yellow)]">
               {t('race.topResults')}
             </p>
-            <LeaderboardTable entries={leaderboard} highlightUserId={userId} maxRows={5} />
+            {leaderboardSlot}
           </div>
         ) : null}
 

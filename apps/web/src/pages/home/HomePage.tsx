@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthUser } from '@/features/auth';
-import { getAllTrackConfigs, TrackMinimap } from '@/entities/track';
+import { getAllTrackConfigs } from '@/entities/track';
 import { PageShell } from '@/shared/ui';
+import { TrackMinimap } from '@/widgets/track-minimap';
 import { RaceMarquee } from './RaceMarquee';
 
 /** Лендинг в стиле SEGA title screen */

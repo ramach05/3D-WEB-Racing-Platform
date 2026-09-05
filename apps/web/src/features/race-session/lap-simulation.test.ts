@@ -6,16 +6,15 @@ import {
   nightCityTrack,
 } from '@/entities/track';
 import {
+  canRegisterLapCrossing,
   getRaceHudSnapshot,
-  registerLapComplete,
-  resetRaceSession,
-  startRacing,
-} from '@/features/race-session';
-import {
   MIN_LAP_PROGRESS,
   passedFinishLine,
+  registerLapComplete,
+  resetRaceSession,
   START_FINISH_COOLDOWN_RATIO,
-} from './checkpoint-detector';
+  startRacing,
+} from '@/features/race-session';
 
 const driveCenterline = (
   config: typeof coastalOvalTrack,
@@ -68,7 +67,7 @@ const simulateRaceLaps = (
         }
 
         const crossed = passedFinishLine(prev?.x ?? null, prev?.z ?? null, curr.x, curr.z, line);
-        if (!crossed || lapCooldown || maxProgress < MIN_LAP_PROGRESS) {
+        if (!canRegisterLapCrossing(crossed, lapCooldown, maxProgress)) {
           return;
         }
 
@@ -132,7 +131,7 @@ describe('multi-lap race simulation', () => {
           lapCooldown = false;
         }
         const crossed = passedFinishLine(prev?.x ?? null, prev?.z ?? null, curr.x, curr.z, line);
-        if (crossed && !lapCooldown && maxProgress >= MIN_LAP_PROGRESS) {
+        if (canRegisterLapCrossing(crossed, lapCooldown, maxProgress)) {
           registerLapComplete();
         }
       },

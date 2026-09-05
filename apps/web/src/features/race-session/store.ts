@@ -1,12 +1,17 @@
-export type RaceStatus = 'ready' | 'racing' | 'finished' | 'paused';
+export type RaceStatus = 'ready' | 'countdown' | 'racing' | 'finished' | 'paused';
 
 /** Число кругов на любой трассе */
 export const RACE_LAP_TOTAL = 3;
+
+/** Шаг отсчёта: 3→2→1→0(GO), null вне countdown */
+export type CountdownStep = 3 | 2 | 1 | 0;
 
 export type RaceHudSnapshot = {
   timeMs: number;
   bestMs: number | null;
   status: RaceStatus;
+  /** Активный шаг 3-2-1-GO во время countdown */
+  countdownStep: CountdownStep | null;
   speedKmh: number;
   checkpointIndex: number;
   checkpointTotal: number;
@@ -23,6 +28,7 @@ let snapshot: RaceHudSnapshot = {
   timeMs: 0,
   bestMs: null,
   status: 'ready',
+  countdownStep: null,
   speedKmh: 0,
   checkpointIndex: 0,
   checkpointTotal: 4,
@@ -93,6 +99,7 @@ export const resetRaceSession = (
       timeMs: 0,
       bestMs: readGuestBest(trackId),
       status: 'ready',
+      countdownStep: null,
       speedKmh: 0,
       checkpointIndex: 0,
       checkpointTotal,
@@ -103,11 +110,27 @@ export const resetRaceSession = (
   );
 };
 
+/** После касания земли: 3-2-1-GO перед стартом таймера */
+export const beginCountdown = (): void => {
+  if (snapshot.status !== 'ready') {
+    return;
+  }
+  setSnapshot({ status: 'countdown', countdownStep: 3 }, true);
+};
+
+/** Обновляет цифру/GO на оверлее и стартовых огнях */
+export const setCountdownStep = (step: CountdownStep): void => {
+  if (snapshot.status !== 'countdown') {
+    return;
+  }
+  setSnapshot({ countdownStep: step }, true);
+};
+
 /** Старт таймера после countdown */
 export const startRacing = (): void => {
   startedAt = performance.now();
   pausedAccumulated = 0;
-  setSnapshot({ status: 'racing', timeMs: 0 }, true);
+  setSnapshot({ status: 'racing', timeMs: 0, countdownStep: null }, true);
 };
 
 /** Пауза: физика останавливается снаружи */

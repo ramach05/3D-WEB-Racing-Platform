@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Color, Matrix4, Object3D, type InstancedMesh } from 'three';
 import type { TrackPalette } from '@/entities/track';
+import { getRaceHudSnapshot } from '@/features/race-session';
 
 export type SpectatorSeat = {
   x: number;
@@ -146,6 +147,12 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: SpectatorCrowdProps) 
     }
 
     const time = paused ? 0 : state.clock.elapsedTime;
+    const status = getRaceHudSnapshot().status;
+    const cheer = status === 'countdown' || status === 'finished';
+    const bobAmp = cheer ? 0.09 : 0.03;
+    const bobSpeed = cheer ? 5.5 : 2;
+    const waveAmp = cheer ? 1.15 : 0.6;
+    const waveSpeed = cheer ? 7 : 3;
 
     for (let i = 0; i < coloredSeats.length; i += 1) {
       const seat = coloredSeats[i];
@@ -153,7 +160,7 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: SpectatorCrowdProps) 
         continue;
       }
 
-      const bob = paused ? 0 : Math.sin(time * 2 + seat.phase) * 0.03;
+      const bob = paused ? 0 : Math.sin(time * bobSpeed + seat.phase) * bobAmp;
       const baseY = seat.y + bob;
 
       dummy.position.set(seat.x, baseY, seat.z);
@@ -168,7 +175,8 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: SpectatorCrowdProps) 
       dummy.updateMatrix();
       headMesh.setMatrixAt(i, dummy.matrix);
 
-      const waveAngle = !paused && seat.waves ? Math.sin(time * 3 + seat.phase) * 0.6 : 0;
+      const waveAngle =
+        !paused && (seat.waves || cheer) ? Math.sin(time * waveSpeed + seat.phase) * waveAmp : 0;
       shoulder.position.set(seat.x, baseY + 0.25 * seat.scaleY, seat.z);
       shoulder.rotation.set(0, seat.yaw, 0);
       shoulder.updateMatrix();

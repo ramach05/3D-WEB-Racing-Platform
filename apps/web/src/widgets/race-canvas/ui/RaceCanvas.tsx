@@ -1,22 +1,24 @@
 import { type RefObject, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { Sky, Stars } from '@react-three/drei';
-import { PCFSoftShadowMap } from 'three';
-import { FramePerfTracker } from './frame-perf-tracker';
+import { PCFSoftShadowMap, type PointLight } from 'three';
 import { Physics, type RapierRigidBody } from '@react-three/rapier';
 import type { TrackConfig } from '@/entities/track';
 import { ChaseCamera } from './chase-camera';
-import { CheckpointDetector } from './checkpoint-detector';
-import { TrackWorld } from './track-world';
-import { TrackStartFinishLine } from './track-start-finish-line';
-import { TrackTribunes } from './track-tribunes';
-import { Vehicle } from './vehicle';
-import { HorizonSun } from './horizon-sun';
-import { HorizonMoon } from './horizon-moon';
+import { CheckpointDetector } from '../model/checkpoint-detector';
+import { FramePerfTracker } from './frame-perf-tracker';
+import { HorizonMoon } from '../world/horizon-moon';
+import { HorizonSun } from '../world/horizon-sun';
+import { RacePostFx } from './race-postfx';
+import { TrackStartFinishLine } from '../world/track-start-finish-line';
+import { TrackTribunes } from '../world/track-tribunes';
+import { TrackWorld } from '../world/track-world';
+import { Vehicle } from '../vehicle/vehicle';
 
 type RaceSceneProps = {
   config: TrackConfig;
-  paused: boolean;
+  physicsPaused: boolean;
+  crowdPaused: boolean;
   resetNonce: number;
   onFinished: () => void;
 };
@@ -42,10 +44,28 @@ const CelestialBody = ({ config }: CelestialBodyProps) => {
   return <HorizonSun position={SUN_HORIZON_POSITION} />;
 };
 
+/** Пульсирующий accent light для night neon */
+const NeonAccentLight = ({ color }: { color: string }) => {
+  const lightRef = useRef<PointLight>(null);
+
+  useFrame((state) => {
+    if (!lightRef.current) {
+      return;
+    }
+    const breathe = 1 + Math.sin(state.clock.elapsedTime * 2.8) * 0.35;
+    lightRef.current.intensity = 1.2 * breathe;
+  });
+
+  return (
+    <pointLight ref={lightRef} position={[0, 12, 0]} intensity={1.2} color={color} distance={80} />
+  );
+};
+
 /** Свет, физика, трасса и машина */
 const RaceSceneInner = ({
   config,
-  paused,
+  physicsPaused,
+  crowdPaused,
   resetNonce,
   onFinished,
   bodyRef,
@@ -56,10 +76,10 @@ const RaceSceneInner = ({
     <>
       <color attach="background" args={[config.palette.sky]} />
       <fog attach="fog" args={[config.palette.fog, 80, 220]} />
-      <hemisphereLight args={[config.palette.sky, config.palette.ground, isNight ? 0.35 : 0.75]} />
+      <hemisphereLight args={[config.palette.sky, config.palette.ground, isNight ? 0.58 : 0.75]} />
       <directionalLight
         position={isNight ? MOON_LIGHT_POSITION : SUN_LIGHT_POSITION}
-        intensity={isNight ? 0.55 : 1.2}
+        intensity={isNight ? 0.85 : 1.2}
         castShadow={!isNight}
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
@@ -68,17 +88,12 @@ const RaceSceneInner = ({
       {isNight ? (
         <>
           <Stars radius={120} depth={40} count={2500} factor={3} saturation={0} fade speed={0.4} />
-          <pointLight
-            position={[0, 12, 0]}
-            intensity={1.2}
-            color={config.palette.accent}
-            distance={80}
-          />
+          <NeonAccentLight color={config.palette.accent} />
         </>
       ) : (
         <Sky sunPosition={SKY_SUN_POSITION} />
       )}
-      <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} paused={paused}>
+      <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} paused={physicsPaused}>
         <TrackWorld config={config} />
         <Vehicle
           spawnPosition={config.spawnPosition}
@@ -100,7 +115,7 @@ const RaceSceneInner = ({
         palette={config.palette}
         side={config.startTribuneSide}
         isNight={isNight}
-        paused={paused}
+        paused={crowdPaused}
       />
       <CheckpointDetector
         config={config}
@@ -108,14 +123,26 @@ const RaceSceneInner = ({
         resetNonce={resetNonce}
         onFinished={onFinished}
       />
-      <ChaseCamera target={bodyRef} />
+      <ChaseCamera
+        target={bodyRef}
+        spawnPosition={config.spawnPosition}
+        spawnRotationY={config.spawnRotationY}
+        resetNonce={resetNonce}
+      />
+      <RacePostFx enabled={isNight} />
       {import.meta.env.DEV ? <FramePerfTracker /> : null}
     </>
   );
 };
 
 /** Canvas гонки: отдельно от HUD, чтобы React не убивал FPS */
-export const RaceCanvas = ({ config, paused, resetNonce, onFinished }: RaceSceneProps) => {
+export const RaceCanvas = ({
+  config,
+  physicsPaused,
+  crowdPaused,
+  resetNonce,
+  onFinished,
+}: RaceSceneProps) => {
   const bodyRef = useRef<RapierRigidBody>(null);
 
   return (
@@ -131,7 +158,8 @@ export const RaceCanvas = ({ config, paused, resetNonce, onFinished }: RaceScene
     >
       <RaceSceneInner
         config={config}
-        paused={paused}
+        physicsPaused={physicsPaused}
+        crowdPaused={crowdPaused}
         resetNonce={resetNonce}
         onFinished={onFinished}
         bodyRef={bodyRef}

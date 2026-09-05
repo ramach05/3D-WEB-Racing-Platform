@@ -48,6 +48,12 @@ export const ruMessages = {
     empty: 'Трасс пока нет.',
     error: 'Не удалось загрузить трассы.',
     mapLabel: 'План трассы',
+    descriptions: {
+      'coastal-oval':
+        'Солнце жжёт асфальт, солёный ветер бьёт в лобовое, а стопки шин ждут ошибку на каждом вираже. Один идеальный овал — и рекорд твой.',
+      'night-city':
+        'Неон режет тьму, трибуны гудят, а стадион не прощает слабости. Здесь ночь не спит — и твой круг тоже.',
+    },
   },
   race: {
     title: 'Заезд',
@@ -56,6 +62,8 @@ export const ruMessages = {
     best: 'Лучшее',
     status: 'Статус',
     ready: 'Готов',
+    countdown: 'Отсчёт',
+    countdownGo: 'GO!',
     racing: 'Заезд',
     finished: 'Финиш',
     paused: 'Пауза',
@@ -175,6 +183,12 @@ export const enMessages = {
     empty: 'No tracks yet.',
     error: 'Failed to load tracks.',
     mapLabel: 'Track map',
+    descriptions: {
+      'coastal-oval':
+        'Sun-scorched asphalt, salt wind in your face, tire stacks waiting for one wrong line. Nail the oval — claim the record.',
+      'night-city':
+        'Neon cuts the dark, the stands roar, and the stadium forgives nothing. Night never sleeps — neither does your lap.',
+    },
   },
   race: {
     title: 'Race',
@@ -183,6 +197,8 @@ export const enMessages = {
     best: 'Best',
     status: 'Status',
     ready: 'Ready',
+    countdown: 'Countdown',
+    countdownGo: 'GO!',
     racing: 'Racing',
     finished: 'Finished',
     paused: 'Paused',

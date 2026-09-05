@@ -9,11 +9,13 @@ export const RaceHud = () => {
   const statusLabel =
     hud.status === 'ready'
       ? t('race.ready')
-      : hud.status === 'racing'
-        ? t('race.racing')
-        : hud.status === 'paused'
-          ? t('race.paused')
-          : t('race.finished');
+      : hud.status === 'countdown'
+        ? t('race.countdown')
+        : hud.status === 'racing'
+          ? t('race.racing')
+          : hud.status === 'paused'
+            ? t('race.paused')
+            : t('race.finished');
 
   return (
     <div
@@ -24,13 +26,13 @@ export const RaceHud = () => {
       <p>
         {t('race.status')}: {statusLabel}
       </p>
-      <p className="font-mono">
+      <p>
         {t('race.time')}: {formatRaceTime(hud.timeMs)}
       </p>
-      <p className="font-mono">
+      <p>
         {t('race.best')}: {hud.bestMs === null ? '—' : formatRaceTime(hud.bestMs)}
       </p>
-      <p className="font-mono">
+      <p>
         {Math.round(hud.speedKmh)} km/h · {t('race.lap')}: {hud.lapIndex}/{hud.lapTotal}
       </p>
     </div>

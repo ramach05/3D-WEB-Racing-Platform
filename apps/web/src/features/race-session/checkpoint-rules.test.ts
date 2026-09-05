@@ -1,22 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { coastalOvalTrack, isInsideCheckpoint } from '@/entities/track';
-import { crossedFinishLine, getTrackLineLocalCoords } from './checkpoint-detector';
-
-describe('isInsideCheckpoint', () => {
-  it('detects center of checkpoint box', () => {
-    const checkpoint = coastalOvalTrack.checkpoints[0]!;
-    expect(isInsideCheckpoint(checkpoint.position[0], checkpoint.position[2], checkpoint)).toBe(
-      true,
-    );
-  });
-
-  it('ignores spawn position for distant checkpoints', () => {
-    const spawn = coastalOvalTrack.spawnPosition;
-    for (const checkpoint of coastalOvalTrack.checkpoints) {
-      expect(isInsideCheckpoint(spawn[0], spawn[2], checkpoint)).toBe(false);
-    }
-  });
-});
+import { coastalOvalTrack } from '@/entities/track';
+import { crossedFinishLine, getTrackLineLocalCoords } from './checkpoint-rules';
 
 describe('crossedFinishLine', () => {
   it('detects forward crossing within track width', () => {

@@ -1,13 +1,20 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @font-face {
   font-family: DotumChe;
-  src: url('../shared/assets/fonts/dotumche.ttf') format('truetype');
+  src: url("../shared/assets/fonts/dotumche.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+}
+
+/* Один шрифт на всё приложение */
+@theme {
+  --font-sans: DotumChe, "Courier New", monospace;
+  --font-serif: DotumChe, "Courier New", monospace;
+  --font-mono: DotumChe, "Courier New", monospace;
 }
 
 :root {
@@ -54,7 +61,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: DotumChe, 'Courier New', monospace;
+  font-family: DotumChe, "Courier New", monospace;
   -webkit-font-smoothing: none;
   font-smooth: never;
   text-rendering: geometricPrecision;
@@ -67,7 +74,7 @@ button,
 .sega-card-link,
 .sega-select-trigger,
 .sega-select-item,
-[role='button'] {
+[role="button"] {
   cursor: pointer;
 }
 
@@ -198,7 +205,7 @@ button:disabled,
   box-shadow: 3px 3px 0 0 var(--sega-magenta);
 }
 
-.sega-select-trigger[aria-expanded='true'] {
+.sega-select-trigger[aria-expanded="true"] {
   background: var(--surface-hover);
   box-shadow: 1px 1px 0 0 var(--sega-magenta);
 }
@@ -209,7 +216,7 @@ button:disabled,
   transition: transform 150ms steps(3);
 }
 
-.sega-select-trigger[aria-expanded='true'] .sega-select-chevron {
+.sega-select-trigger[aria-expanded="true"] .sega-select-chevron {
   transform: rotate(180deg);
 }
 
@@ -259,6 +266,53 @@ button:disabled,
   color: var(--sega-yellow);
 }
 
+.sega-track-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0;
+  max-width: 100%;
+  border: var(--pixel-border) solid var(--border);
+  background: var(--surface);
+  box-shadow: 3px 3px 0 0 var(--sega-magenta);
+}
+
+.sega-track-tab {
+  flex: 1 1 auto;
+  min-width: 8rem;
+  border: 0;
+  border-right: var(--pixel-border) solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  padding: 0.55rem 1.1rem;
+  font: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition:
+    background-color 100ms ease,
+    color 100ms ease,
+    transform 100ms steps(2);
+}
+
+.sega-track-tab:last-child {
+  border-right: 0;
+}
+
+.sega-track-tab:hover {
+  background: var(--surface-hover);
+  color: var(--fg);
+}
+
+.sega-track-tab--active {
+  background: var(--sega-yellow);
+  color: #120018;
+  font-weight: 600;
+}
+
+.sega-track-tab--active:hover {
+  background: var(--sega-yellow);
+  color: #120018;
+}
+
 .sega-field {
   display: flex;
   flex-direction: column;
@@ -281,7 +335,7 @@ button:disabled,
 }
 
 .sega-scanlines::after {
-  content: '';
+  content: "";
   pointer-events: none;
   position: absolute;
   inset: 0;
@@ -444,12 +498,52 @@ button:disabled,
   }
 }
 
+.sega-countdown {
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.35) 0%, transparent 65%);
+}
+
+.sega-countdown__digit {
+  margin: 0;
+  font-size: clamp(4.5rem, 18vw, 9rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sega-yellow);
+  text-shadow:
+    4px 4px 0 var(--sega-magenta),
+    -2px -2px 0 var(--sega-cyan);
+  animation: sega-countdown-pop 280ms steps(4) both;
+}
+
+.sega-countdown__digit--go {
+  color: var(--sega-cyan);
+  text-shadow:
+    4px 4px 0 var(--sega-yellow),
+    -2px -2px 0 var(--sega-magenta);
+  animation:
+    sega-countdown-pop 280ms steps(4) both,
+    sega-blink 0.45s steps(2, end) 280ms 2;
+}
+
+@keyframes sega-countdown-pop {
+  from {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sega-race-strip-track,
   .sega-blink,
   .sega-finish-title,
   .sega-finish-overlay,
-  .sega-finish-confetti__piece {
+  .sega-finish-confetti__piece,
+  .sega-countdown__digit {
     animation: none;
   }
 
@@ -457,7 +551,8 @@ button:disabled,
   .sega-card-link,
   .sega-nav-link,
   .sega-select-trigger,
-  .sega-select-menu {
+  .sega-select-menu,
+  .sega-track-tab {
     transition: none;
   }
 }

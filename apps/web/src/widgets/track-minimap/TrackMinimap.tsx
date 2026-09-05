@@ -1,4 +1,4 @@
-import type { TrackConfig } from './config';
+import type { TrackConfig } from '@/entities/track';
 
 type TrackMinimapProps = {
   config: TrackConfig;

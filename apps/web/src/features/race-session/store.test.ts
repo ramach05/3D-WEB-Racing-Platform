@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { getRaceHudSnapshot, registerCheckpoint, resetRaceSession, startRacing } from './store';
+import {
+  beginCountdown,
+  getRaceHudSnapshot,
+  registerCheckpoint,
+  resetRaceSession,
+  setCountdownStep,
+  startRacing,
+} from './store';
 
 describe('registerCheckpoint multi-lap', () => {
   afterEach(() => {
@@ -46,5 +53,35 @@ describe('registerCheckpoint multi-lap', () => {
     expect(registerCheckpoint(3)).toBe(true);
     expect(getRaceHudSnapshot().lapIndex).toBe(3);
     expect(getRaceHudSnapshot().checkpointIndex).toBe(4);
+  });
+});
+
+describe('countdown session', () => {
+  afterEach(() => {
+    resetRaceSession('track-test', 4, 3);
+  });
+
+  it('moves from ready to countdown then racing', () => {
+    resetRaceSession('track-test', 4, 3);
+    expect(getRaceHudSnapshot().status).toBe('ready');
+    expect(getRaceHudSnapshot().countdownStep).toBeNull();
+
+    beginCountdown();
+    expect(getRaceHudSnapshot().status).toBe('countdown');
+    expect(getRaceHudSnapshot().countdownStep).toBe(3);
+
+    setCountdownStep(0);
+    expect(getRaceHudSnapshot().countdownStep).toBe(0);
+
+    startRacing();
+    expect(getRaceHudSnapshot().status).toBe('racing');
+    expect(getRaceHudSnapshot().countdownStep).toBeNull();
+  });
+
+  it('ignores beginCountdown when not ready', () => {
+    resetRaceSession('track-test', 4, 3);
+    startRacing();
+    beginCountdown();
+    expect(getRaceHudSnapshot().status).toBe('racing');
   });
 });

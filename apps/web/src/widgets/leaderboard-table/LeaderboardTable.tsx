@@ -47,8 +47,17 @@ export const LeaderboardTable = ({ entries, highlightUserId, maxRows }: Leaderbo
                 )}
               >
                 <td className="px-3 py-2">{entry.rank}</td>
-                <td className="px-3 py-2 text-[var(--sega-magenta)]">{entry.nickname}</td>
-                <td className="px-3 py-2 font-mono">{formatRaceTime(entry.timeMs)}</td>
+                <td
+                  className={cx(
+                    'px-3 py-2',
+                    isHighlight
+                      ? 'font-semibold text-[var(--sega-yellow)]'
+                      : 'text-[var(--sega-magenta)]',
+                  )}
+                >
+                  {entry.nickname}
+                </td>
+                <td className="px-3 py-2">{formatRaceTime(entry.timeMs)}</td>
                 <td className="px-3 py-2">{new Date(entry.createdAt).toLocaleDateString()}</td>
               </tr>
             );
