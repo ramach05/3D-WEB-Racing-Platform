@@ -10,8 +10,8 @@ import {
   createAsphaltRoughnessMap,
   createAsphaltTexture,
   createGroundTexture,
-} from '../lib/asphalt-texture';
-import { WORLD_GROUPS } from '../lib/collision-groups';
+} from '@/widgets/race-canvas/lib/asphalt-texture';
+import { WORLD_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
 import { TrackObstacles } from './track-obstacles';
 
 type TTrackWorldProps = {

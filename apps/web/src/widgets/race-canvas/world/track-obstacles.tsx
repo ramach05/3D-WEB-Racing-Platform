@@ -2,8 +2,8 @@ import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import type { CollisionEnterPayload } from '@react-three/rapier';
 import type { TTrackObstacle } from '@/entities/track';
 import { scenePalette } from '@/shared/config';
-import { TIRE_GROUPS } from '../lib/collision-groups';
-import { registerTireHit } from '../lib/tire-hit-damping';
+import { TIRE_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
+import { registerTireHit } from '@/widgets/race-canvas/lib/tire-hit-damping';
 
 type TTrackObstaclesProps = {
   obstacles: TTrackObstacle[];

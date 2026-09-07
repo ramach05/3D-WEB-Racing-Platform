@@ -5,17 +5,17 @@ import { PCFSoftShadowMap, type Group, type PointLight } from 'three';
 import { Physics, type RapierRigidBody } from '@react-three/rapier';
 import type { TTrackConfig } from '@/entities/track';
 import { scenePalette } from '@/shared/config';
+import { CheckpointDetector } from '@/widgets/race-canvas/model/checkpoint-detector';
+import { Vehicle } from '@/widgets/race-canvas/vehicle/vehicle';
+import { HorizonMoon } from '@/widgets/race-canvas/world/horizon-moon';
+import { HorizonSun } from '@/widgets/race-canvas/world/horizon-sun';
+import { TrackStartFinishLine } from '@/widgets/race-canvas/world/track-start-finish-line';
+import { TrackTrees } from '@/widgets/race-canvas/world/track-trees';
+import { TrackTribunes } from '@/widgets/race-canvas/world/track-tribunes';
+import { TrackWorld } from '@/widgets/race-canvas/world/track-world';
 import { ChaseCamera } from './chase-camera';
-import { CheckpointDetector } from '../model/checkpoint-detector';
 import { FramePerfTracker } from './frame-perf-tracker';
-import { HorizonMoon } from '../world/horizon-moon';
-import { HorizonSun } from '../world/horizon-sun';
 import { RacePostFx } from './race-postfx';
-import { TrackStartFinishLine } from '../world/track-start-finish-line';
-import { TrackTrees } from '../world/track-trees';
-import { TrackTribunes } from '../world/track-tribunes';
-import { TrackWorld } from '../world/track-world';
-import { Vehicle } from '../vehicle/vehicle';
 
 type TRaceSceneProps = {
   config: TTrackConfig;

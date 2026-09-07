@@ -19,30 +19,57 @@ const noFunctionDeclaration = {
   message: 'Используй стрелочные функции (const fn = () => {}).',
 };
 
-const fsdPublicApiPatterns = [
+const fsdDeepImportBan = {
+  group: [
+    // app: запрет deep-файлов (@/app/i18n), public API — только @/app
+    '@/app/*',
+    // slices: запрет внутренностей (@/pages/home/X), public API — @/pages/home
+    '@/pages/*/*',
+    '@/pages/*/**',
+    '@/widgets/*/*',
+    '@/widgets/*/**',
+    '@/features/*/*',
+    '@/features/*/**',
+    '@/entities/*/*',
+    '@/entities/*/**',
+    // shared segments: запрет @/shared/ui/button, public API — @/shared/ui
+    '@/shared/*/*',
+    '@/shared/*/**',
+  ],
+  message: 'Импортируй только public API слайса (index.ts), не внутренние файлы.',
+};
+
+const fsdRelativeParentBan = {
+  group: ['../*', '../**'],
+  message: 'Не используй относительные импорты через родителя. Нужен алиас @/.',
+};
+
+/** Снаружи слайса — только public API; родительские относительные пути запрещены */
+const fsdPublicApiPatterns = [fsdDeepImportBan, fsdRelativeParentBan];
+
+/**
+ * Внутри race-canvas разрешены deep-импорты своего слайса через @/,
+ * чужие слайсы и родительские относительные пути по-прежнему запрещены.
+ */
+const raceCanvasInternalPatterns = [
   {
     group: [
-      // app: запрет deep-файлов (@/app/i18n), public API — только @/app
       '@/app/*',
-      // slices: запрет внутренностей (@/pages/home/X), public API — @/pages/home
       '@/pages/*/*',
       '@/pages/*/**',
-      '@/widgets/*/*',
-      '@/widgets/*/**',
+      // чужие widgets — только public API; свой слайс (@/widgets/race-canvas/...) разрешён
+      '@/widgets/!(race-canvas)/*',
+      '@/widgets/!(race-canvas)/**',
       '@/features/*/*',
       '@/features/*/**',
       '@/entities/*/*',
       '@/entities/*/**',
-      // shared segments: запрет @/shared/ui/button, public API — @/shared/ui
       '@/shared/*/*',
       '@/shared/*/**',
     ],
     message: 'Импортируй только public API слайса (index.ts), не внутренние файлы.',
   },
-  {
-    group: ['../../*', '../../**'],
-    message: 'Не используй относительные импорты через родителя. Нужен алиас @/.',
-  },
+  fsdRelativeParentBan,
 ];
 
 /** Общие правила стиля кода для всего monorepo */
@@ -117,6 +144,12 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       'no-restricted-imports': ['error', { patterns: fsdPublicApiPatterns }],
+    },
+  },
+  {
+    files: ['apps/web/src/widgets/race-canvas/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: raceCanvasInternalPatterns }],
     },
   },
   {

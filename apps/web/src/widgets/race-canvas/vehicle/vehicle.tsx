@@ -16,8 +16,8 @@ import {
   VEHICLE_REVERSE_MAX,
 } from '@/features/race-session';
 import { vehiclePalette } from '@/shared/config';
-import { VEHICLE_GROUPS, WALL_PROBE_GROUPS } from '../lib/collision-groups';
-import { resetTireHitDamping, tickTireHitDamping } from '../lib/tire-hit-damping';
+import { VEHICLE_GROUPS, WALL_PROBE_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
+import { resetTireHitDamping, tickTireHitDamping } from '@/widgets/race-canvas/lib/tire-hit-damping';
 
 /** Физические канделы — левая и правая фары (с запасом под decay=2) */
 const HEADLIGHT_INTENSITY = 75;
