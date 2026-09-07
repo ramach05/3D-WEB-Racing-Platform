@@ -259,11 +259,12 @@ const buildCoastalOvalObstacles = (points: LoopPoint[], roadWidth: number): Trac
   const rowInsets = [0.7, 1.85, 3.0] as const;
   const obstacles: TrackObstacle[] = [];
 
+  /** По 2 стопки вдоль трассы на банк (было 4) — вдвое меньше */
   const banks: { ratios: number[]; side: 1 | -1 }[] = [
-    { ratios: [0.27, 0.285, 0.3, 0.315], side: -1 },
-    { ratios: [0.44, 0.455, 0.47, 0.485], side: 1 },
-    { ratios: [0.61, 0.625, 0.64, 0.655], side: -1 },
-    { ratios: [0.78, 0.795, 0.81, 0.825], side: 1 },
+    { ratios: [0.27, 0.315], side: -1 },
+    { ratios: [0.44, 0.485], side: 1 },
+    { ratios: [0.61, 0.655], side: -1 },
+    { ratios: [0.78, 0.825], side: 1 },
   ];
 
   for (const bank of banks) {

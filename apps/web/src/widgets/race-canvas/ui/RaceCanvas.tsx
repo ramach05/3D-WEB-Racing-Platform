@@ -94,7 +94,7 @@ const RaceSceneInner = ({
         <Sky sunPosition={SKY_SUN_POSITION} />
       )}
       <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} paused={physicsPaused}>
-        <TrackWorld config={config} />
+        <TrackWorld config={config} resetNonce={resetNonce} />
         <Vehicle
           spawnPosition={config.spawnPosition}
           spawnRotationY={config.spawnRotationY}

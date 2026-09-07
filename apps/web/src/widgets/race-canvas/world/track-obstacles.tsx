@@ -1,9 +1,20 @@
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
+import type { CollisionEnterPayload } from '@react-three/rapier';
 import type { TrackObstacle } from '@/entities/track';
+import { TIRE_GROUPS } from '../lib/collision-groups';
+import { registerTireHit } from '../lib/tire-hit-damping';
 
 type TrackObstaclesProps = {
   obstacles: TrackObstacle[];
+  resetNonce: number;
 };
+
+const TIRE_RADIUS = 0.38;
+const TIRE_TUBE = 0.14;
+const TIRE_MASS = 12;
+const TIRE_HIT_FACTOR = 0.45;
+const TIRE_IMPULSE_SCALE = 0.2;
+const TIRE_TORQUE_SCALE = 0.08;
 
 const TireStackVisual = () => (
   <group>
@@ -15,35 +26,82 @@ const TireStackVisual = () => (
         position={[0, -0.4 + tier * 0.38, 0]}
         rotation={[Math.PI / 2, 0, 0]}
       >
-        <torusGeometry args={[0.38, 0.14, 10, 18]} />
-        <meshStandardMaterial color="#1a1a1a" roughness={0.95} />
+        <torusGeometry args={[TIRE_RADIUS, TIRE_TUBE, 10, 18]} />
+        <meshStandardMaterial color="#1c1c1e" roughness={0.92} metalness={0} />
       </mesh>
     ))}
   </group>
 );
 
-/** Стопки шин у стенок с cuboid-коллайдерами */
-export const TrackObstacles = ({ obstacles }: TrackObstaclesProps) => {
+const handleTireHit = (payload: CollisionEnterPayload) => {
+  const otherName = payload.other.rigidBodyObject?.name;
+  if (otherName !== 'vehicle') {
+    return;
+  }
+
+  const vehicleBody = payload.other.rigidBody;
+  const tireBody = payload.target.rigidBody;
+  if (!vehicleBody || !tireBody) {
+    return;
+  }
+
+  registerTireHit(TIRE_HIT_FACTOR);
+
+  const vel = vehicleBody.linvel();
+  const speed = Math.hypot(vel.x, vel.z);
+  if (speed < 0.5) {
+    return;
+  }
+
+  const invSpeed = 1 / speed;
+  const dirX = vel.x * invSpeed;
+  const dirZ = vel.z * invSpeed;
+  const impulse = TIRE_MASS * speed * TIRE_IMPULSE_SCALE;
+
+  tireBody.applyImpulse({ x: dirX * impulse, y: 0, z: dirZ * impulse }, true);
+  tireBody.applyTorqueImpulse(
+    { x: -dirZ * impulse * TIRE_TORQUE_SCALE, y: 0, z: dirX * impulse * TIRE_TORQUE_SCALE },
+    true,
+  );
+
+  // Не даём машине взлететь от реакции столкновения
+  const vehicleVel = vehicleBody.linvel();
+  if (vehicleVel.y > 0) {
+    vehicleBody.setLinvel({ x: vehicleVel.x, y: 0, z: vehicleVel.z }, true);
+  }
+};
+
+/** Стопки шин у стенок — dynamic, отлетают при ударе */
+export const TrackObstacles = ({ obstacles, resetNonce }: TrackObstaclesProps) => {
   if (obstacles.length === 0) {
     return null;
   }
 
   return (
-    <group>
+    <group key={`tires-${resetNonce}`}>
       {obstacles.map((obstacle, index) => (
         <RigidBody
           key={`obstacle-${obstacle.kind}-${index}`}
-          type="fixed"
+          name={`tire-${index}`}
+          type="dynamic"
           colliders={false}
           position={obstacle.position}
           rotation={[0, obstacle.rotationY, 0]}
+          mass={TIRE_MASS}
           restitution={0}
-          friction={0.2}
+          friction={0.85}
+          linearDamping={0.55}
+          angularDamping={0.7}
+          canSleep
+          ccd
+          collisionGroups={TIRE_GROUPS}
+          onCollisionEnter={handleTireHit}
         >
           <CuboidCollider
             args={[obstacle.size[0] / 2, obstacle.size[1] / 2, obstacle.size[2] / 2]}
-            friction={0.2}
+            friction={0.85}
             restitution={0}
+            collisionGroups={TIRE_GROUPS}
           />
           <TireStackVisual />
         </RigidBody>

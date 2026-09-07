@@ -11,10 +11,12 @@ import {
   createAsphaltTexture,
   createGroundTexture,
 } from '../lib/asphalt-texture';
+import { WORLD_GROUPS } from '../lib/collision-groups';
 import { TrackObstacles } from './track-obstacles';
 
 type TrackWorldProps = {
   config: TrackConfig;
+  resetNonce: number;
 };
 
 type RoadSegmentMeshProps = {
@@ -68,7 +70,7 @@ const RoadSegmentMesh = ({
 };
 
 /** Дорога (визуал), единый пол и стены с низким трением */
-export const TrackWorld = ({ config }: TrackWorldProps) => {
+export const TrackWorld = ({ config, resetNonce }: TrackWorldProps) => {
   const { palette } = config;
   const isNight = config.timeOfDay === 'night';
   const roadRoughness = isNight ? 0.78 : 0.88;
@@ -98,8 +100,12 @@ export const TrackWorld = ({ config }: TrackWorldProps) => {
 
   return (
     <group>
-      <RigidBody type="fixed" colliders={false} friction={0.9}>
-        <CuboidCollider args={[500, 0.15, 500]} position={[0, -0.05, 0]} />
+      <RigidBody type="fixed" colliders={false} friction={0.9} collisionGroups={WORLD_GROUPS}>
+        <CuboidCollider
+          args={[500, 0.15, 500]}
+          position={[0, -0.05, 0]}
+          collisionGroups={WORLD_GROUPS}
+        />
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]} receiveShadow>
           <planeGeometry args={[1000, 1000]} />
           <meshStandardMaterial
@@ -133,11 +139,13 @@ export const TrackWorld = ({ config }: TrackWorldProps) => {
           rotation={[0, wall.rotationY, 0]}
           restitution={0}
           friction={0}
+          collisionGroups={WORLD_GROUPS}
         >
           <CuboidCollider
             args={[wall.size[0] / 2, wall.size[1] / 2, wall.size[2] / 2]}
             friction={0}
             restitution={0}
+            collisionGroups={WORLD_GROUPS}
           />
           {/* Визуал чуть глубже в пол — иначе SpotLight протекает под нижней кромкой */}
           <mesh castShadow receiveShadow position={[0, -0.12, 0]}>
@@ -154,7 +162,7 @@ export const TrackWorld = ({ config }: TrackWorldProps) => {
         </RigidBody>
       ))}
 
-      <TrackObstacles obstacles={config.obstacles} />
+      <TrackObstacles obstacles={config.obstacles} resetNonce={resetNonce} />
     </group>
   );
 };

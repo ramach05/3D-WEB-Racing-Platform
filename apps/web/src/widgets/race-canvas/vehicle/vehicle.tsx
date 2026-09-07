@@ -15,6 +15,8 @@ import {
   VEHICLE_MAX_SPEED,
   VEHICLE_REVERSE_MAX,
 } from '@/features/race-session';
+import { VEHICLE_GROUPS, WALL_PROBE_GROUPS } from '../lib/collision-groups';
+import { resetTireHitDamping, tickTireHitDamping } from '../lib/tire-hit-damping';
 
 /** Физические канделы — левая и правая фары (с запасом под decay=2) */
 const HEADLIGHT_INTENSITY = 75;
@@ -222,7 +224,15 @@ const slideAlongWalls = (
       { x: translation.x, y: translation.y + COLLIDER_Y, z: translation.z },
       { x: dir.x, y: 0, z: dir.z },
     );
-    const hit = world.castRay(ray, probeLen, true, undefined, undefined, undefined, body);
+    const hit = world.castRay(
+      ray,
+      probeLen,
+      true,
+      undefined,
+      WALL_PROBE_GROUPS,
+      undefined,
+      body,
+    );
     if (!hit) {
       continue;
     }
@@ -263,6 +273,7 @@ export const Vehicle = ({
     if (lastNonce.current !== resetNonce) {
       lastNonce.current = resetNonce;
       awaitingLand.current = true;
+      resetTireHitDamping();
       body.setTranslation(elevatedSpawn(spawnPosition), true);
       body.setRotation(
         { x: 0, y: Math.sin(spawnRotationY / 2), z: 0, w: Math.cos(spawnRotationY / 2) },
@@ -331,6 +342,7 @@ export const Vehicle = ({
     }
 
     targetForward = Math.max(-REVERSE_MAX, Math.min(MAX_SPEED, targetForward));
+    targetForward *= tickTireHitDamping(clampedDt);
 
     const lateral = tmpVel.dot(tmpRight);
     const dampedLateral = lateral * Math.exp(-LATERAL_GRIP * clampedDt);
@@ -341,7 +353,8 @@ export const Vehicle = ({
       .add(tmpRight.clone().multiplyScalar(dampedLateral));
 
     const slid = slideAlongWalls(world, rapier, body, tmpDesired);
-    body.setLinvel({ x: slid.x, y: linvel.y, z: slid.z }, true);
+    // На земле не даём коллизиям (шины) подбрасывать машину вверх
+    body.setLinvel({ x: slid.x, y: Math.min(linvel.y, 0), z: slid.z }, true);
 
     const steerStrength = computeSteerStrength(forwardSpeed);
     const angvel = body.angvel();
@@ -377,6 +390,7 @@ export const Vehicle = ({
         canSleep={false}
         friction={0.1}
         restitution={0}
+        collisionGroups={VEHICLE_GROUPS}
       >
         <CapsuleCollider
           args={[COLLIDER_HALF_HEIGHT, COLLIDER_RADIUS]}
@@ -384,6 +398,7 @@ export const Vehicle = ({
           rotation={[Math.PI / 2, 0, 0]}
           friction={0.08}
           restitution={0}
+          collisionGroups={VEHICLE_GROUPS}
         />
         <group>
           {/* Ночью кузов не кастит тени: иначе self-shadow режет пучки фар */}
