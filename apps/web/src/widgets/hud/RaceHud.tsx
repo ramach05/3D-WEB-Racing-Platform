@@ -1,21 +1,32 @@
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import { useRaceHud } from '@/features/race-session';
+import { type CountdownStep, type RaceStatus, useRaceHud } from '@/features/race-session';
 import { formatRaceTime } from '@/shared/lib';
+
+const getStatusLabel = (
+  status: RaceStatus,
+  countdownStep: CountdownStep | null,
+  t: TFunction,
+): string => {
+  switch (status) {
+    case 'ready':
+      return t('race.ready');
+    case 'countdown':
+      return countdownStep === 0 ? t('race.countdownGo') : String(countdownStep ?? '');
+    case 'racing':
+      return t('race.racing');
+    case 'paused':
+      return t('race.paused');
+    case 'finished':
+      return t('race.finished');
+  }
+};
 
 /** Текстовый HUD поверх канваса. Обновляется с троттлингом из vanilla-store. */
 export const RaceHud = () => {
   const { t } = useTranslation();
   const hud = useRaceHud();
-  const statusLabel =
-    hud.status === 'ready'
-      ? t('race.ready')
-      : hud.status === 'countdown'
-        ? t('race.countdown')
-        : hud.status === 'racing'
-          ? t('race.racing')
-          : hud.status === 'paused'
-            ? t('race.paused')
-            : t('race.finished');
+  const statusLabel = getStatusLabel(hud.status, hud.countdownStep, t);
 
   return (
     <div

@@ -38,7 +38,7 @@ export const TracksPage = () => {
                     </div>
                   ) : null}
                   {track.isAvailable ? (
-                    <Link to={`/race/${track.id}`} className="sega-btn mt-4 inline-flex text-sm">
+                    <Link to={`/race/${track.slug}`} className="sega-btn mt-4 inline-flex text-sm">
                       {t('tracks.start')}
                     </Link>
                   ) : (

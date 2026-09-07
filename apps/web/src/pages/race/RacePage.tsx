@@ -42,9 +42,10 @@ const FINISH_OVERLAY_DELAY_MS = 4000;
 export const RacePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { trackId } = useParams<{ trackId: string }>();
+  const { trackSlug } = useParams<{ trackSlug: string }>();
   const { data: tracks, isLoading, isError } = useGetTracksQuery();
-  const track = tracks?.find((item) => item.id === trackId) ?? null;
+  const track = tracks?.find((item) => item.slug === trackSlug) ?? null;
+  const trackId = track?.id;
   const config = track ? getTrackConfig(track.slug) : null;
   const hud = useRaceHud();
   const user = useAuthUser();
@@ -54,7 +55,8 @@ export const RacePage = () => {
   const [finishMeta, setFinishMeta] = useState<FinishMeta | null>(null);
   const [showFinishOverlay, setShowFinishOverlay] = useState(false);
   const [musicMuted, setMusicMuted] = useState(false);
-  const sessionKey = trackId && config ? `${trackId}:${config.checkpoints.length}` : '';
+  const sessionKey =
+    trackSlug && trackId && config ? `${trackSlug}:${config.checkpoints.length}` : '';
   const [prevSessionKey, setPrevSessionKey] = useState(sessionKey);
   const submittedRef = useRef(false);
   const toastTimerRef = useRef<number | null>(null);
@@ -207,7 +209,7 @@ export const RacePage = () => {
     );
   }
 
-  if (isError || !track || !config || !trackId) {
+  if (isError || !track || !config || !trackSlug || !trackId) {
     return (
       <PageShell>
         <StatusText>{t('tracks.error')}</StatusText>
@@ -222,14 +224,16 @@ export const RacePage = () => {
     hud.status === 'paused' || hud.status === 'finished' || hud.status === 'countdown';
 
   return (
-    <div className="sega-scanlines relative h-[calc(100vh-4.5rem)] w-full overflow-hidden bg-black">
-      <RaceCanvas
-        config={config}
-        physicsPaused={physicsPaused}
-        crowdPaused={hud.status === 'paused'}
-        resetNonce={resetNonce}
-        onFinished={onFinished}
-      />
+    <div className="sega-scanlines relative min-h-0 w-full flex-1 overflow-hidden bg-black">
+      <div className="absolute inset-0">
+        <RaceCanvas
+          config={config}
+          physicsPaused={physicsPaused}
+          crowdPaused={hud.status === 'paused'}
+          resetNonce={resetNonce}
+          onFinished={onFinished}
+        />
+      </div>
       <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
         <div className="pointer-events-none">
           <RaceHud />

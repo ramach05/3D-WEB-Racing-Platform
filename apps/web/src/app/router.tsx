@@ -19,7 +19,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
+    <div className="flex min-h-dvh flex-col bg-[var(--bg)] text-[var(--fg)]">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-[var(--surface)] focus:px-3 focus:py-2"
@@ -27,7 +27,9 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         {t('a11y.skip')}
       </a>
       <AppHeader />
-      <main id="main">{children}</main>
+      <main id="main" className="flex min-h-0 flex-1 flex-col">
+        {children}
+      </main>
     </div>
   );
 };
@@ -40,7 +42,7 @@ export const AppRouter = () => {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/tracks" element={<TracksPage />} />
-          <Route path="/race/:trackId" element={<RacePage />} />
+          <Route path="/race/:trackSlug" element={<RacePage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/login" element={<LoginPage />} />
