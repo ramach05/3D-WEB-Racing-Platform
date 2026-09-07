@@ -1,6 +1,7 @@
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import type { CollisionEnterPayload } from '@react-three/rapier';
 import type { TTrackObstacle } from '@/entities/track';
+import { scenePalette } from '@/shared/config';
 import { TIRE_GROUPS } from '../lib/collision-groups';
 import { registerTireHit } from '../lib/tire-hit-damping';
 
@@ -27,7 +28,7 @@ const TireStackVisual = () => (
         rotation={[Math.PI / 2, 0, 0]}
       >
         <torusGeometry args={[TIRE_RADIUS, TIRE_TUBE, 10, 18]} />
-        <meshStandardMaterial color="#1c1c1e" roughness={0.92} metalness={0} />
+        <meshStandardMaterial color={scenePalette.obstacle} roughness={0.92} metalness={0} />
       </mesh>
     ))}
   </group>

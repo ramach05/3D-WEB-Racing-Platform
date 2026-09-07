@@ -1,4 +1,5 @@
 import type { TTrackConfig } from '@/entities/track';
+import { scenePalette } from '@/shared/config';
 
 type TTrackMinimapProps = {
   config: TTrackConfig;
@@ -97,7 +98,7 @@ export const TrackMinimap = ({ config, className }: TTrackMinimapProps) => {
         y1={lineStart[1]}
         x2={lineEnd[0]}
         y2={lineEnd[1]}
-        stroke="#ffffff"
+        stroke={scenePalette.white}
         strokeWidth={2.5}
         strokeLinecap="round"
       />
@@ -117,7 +118,7 @@ export const TrackMinimap = ({ config, className }: TTrackMinimapProps) => {
         opacity={0.9}
       />
       <circle cx={spawnSvg[0]} cy={spawnSvg[1]} r={4} fill={config.palette.accent} />
-      <circle cx={lineCenter[0]} cy={lineCenter[1]} r={2.5} fill="#ffffff" />
+      <circle cx={lineCenter[0]} cy={lineCenter[1]} r={2.5} fill={scenePalette.white} />
     </svg>
   );
 };

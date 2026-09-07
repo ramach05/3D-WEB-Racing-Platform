@@ -7,10 +7,12 @@ import {
   SRGBColorSpace,
   type Texture,
 } from 'three';
+import { horizonMoonStops, type TRadialColorStop } from '@/shared/config';
 
-type TRadialStop = { stop: number; color: string };
-
-const createRadialGradientTexture = (stops: TRadialStop[], size = 256): CanvasTexture => {
+const createRadialGradientTexture = (
+  stops: readonly TRadialColorStop[],
+  size = 256,
+): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -66,10 +68,9 @@ const createMoonDiskTexture = (size = 256): CanvasTexture => {
   ctx.clearRect(0, 0, size, size);
 
   const disk = ctx.createRadialGradient(center, center, radius * 0.1, center, center, radius);
-  disk.addColorStop(0, 'rgba(248, 246, 238, 1)');
-  disk.addColorStop(0.55, 'rgba(220, 218, 208, 0.98)');
-  disk.addColorStop(0.82, 'rgba(185, 188, 198, 0.85)');
-  disk.addColorStop(1, 'rgba(140, 148, 168, 0)');
+  for (const { stop, color } of horizonMoonStops.disk) {
+    disk.addColorStop(stop, color);
+  }
 
   ctx.fillStyle = disk;
   ctx.beginPath();
@@ -98,8 +99,9 @@ const createMoonDiskTexture = (size = 256): CanvasTexture => {
   }
 
   const limb = ctx.createRadialGradient(center, center, radius * 0.72, center, center, radius);
-  limb.addColorStop(0, 'rgba(0, 0, 0, 0)');
-  limb.addColorStop(1, 'rgba(40, 50, 80, 0.22)');
+  for (const { stop, color } of horizonMoonStops.limb) {
+    limb.addColorStop(stop, color);
+  }
   ctx.fillStyle = limb;
   ctx.beginPath();
   ctx.arc(center, center, radius, 0, Math.PI * 2);
@@ -109,18 +111,6 @@ const createMoonDiskTexture = (size = 256): CanvasTexture => {
   texture.colorSpace = SRGBColorSpace;
   return texture;
 };
-
-const MOON_GLOW_STOPS: TRadialStop[] = [
-  { stop: 0, color: 'rgba(210, 220, 245, 0.22)' },
-  { stop: 0.4, color: 'rgba(170, 185, 220, 0.1)' },
-  { stop: 1, color: 'rgba(120, 140, 190, 0)' },
-];
-
-const MOON_HALO_STOPS: TRadialStop[] = [
-  { stop: 0, color: 'rgba(230, 235, 250, 0.12)' },
-  { stop: 0.55, color: 'rgba(180, 195, 230, 0.05)' },
-  { stop: 1, color: 'rgba(140, 160, 210, 0)' },
-];
 
 type TMoonLayerProps = {
   map: Texture;
@@ -153,8 +143,8 @@ export const HorizonMoon = ({ position }: THorizonMoonProps) => {
   const textures = useMemo(
     () => ({
       disk: createMoonDiskTexture(),
-      halo: createRadialGradientTexture(MOON_HALO_STOPS),
-      glow: createRadialGradientTexture(MOON_GLOW_STOPS),
+      halo: createRadialGradientTexture(horizonMoonStops.halo),
+      glow: createRadialGradientTexture(horizonMoonStops.glow),
     }),
     [],
   );

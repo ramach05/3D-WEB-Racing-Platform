@@ -10,6 +10,7 @@ import {
 } from 'three';
 import type { TTrackPalette } from '@/entities/track';
 import { getRaceHudSnapshot } from '@/features/race-session';
+import { crowdPalette } from '@/shared/config';
 
 export type TSpectatorSeat = {
   x: number;
@@ -35,42 +36,6 @@ type TSpectatorCrowdProps = {
   paused: boolean;
 };
 
-const SHIRT_COLORS_DAY = [
-  '#e63946',
-  '#1d3557',
-  '#2a9d8f',
-  '#f4a261',
-  '#264653',
-  '#8338ec',
-  '#f1faee',
-  '#ffd60a',
-  '#06d6a0',
-  '#118ab2',
-];
-
-/** Как днём, плюс чуть более насыщенные акценты под неон */
-const SHIRT_COLORS_NIGHT = [
-  '#e63946',
-  '#1d3557',
-  '#2a9d8f',
-  '#f4a261',
-  '#264653',
-  '#8338ec',
-  '#f1faee',
-  '#ffd60a',
-  '#06d6a0',
-  '#118ab2',
-  '#ff2bd6',
-  '#00e5ff',
-  '#ff6b35',
-  '#c77dff',
-];
-
-const SKIN_COLORS = ['#f0d4b8', '#e0b090', '#c6865a', '#8d5524', '#f5c9a0'];
-
-const PANTS_COLORS_DAY = ['#4a5a72', '#3d4a5c', '#2f3b4c', '#5a6578'];
-const PANTS_COLORS_NIGHT = ['#4a5a72', '#3d4a5c', '#2f3b4c', '#5a6578', '#1b2838', '#3b2f4a'];
-
 type TBuildSpectatorSeatsOptions = {
   tribuneInnerX: number;
   sideSign: number;
@@ -80,7 +45,7 @@ type TBuildSpectatorSeatsOptions = {
   sectionPitch: number;
 };
 
-const pick = <T,>(items: T[], index: number): T => items[index % items.length] as T;
+const pick = <T,>(items: readonly T[], index: number): T => items[index % items.length] as T;
 
 /** Создаёт места зрителей на секции трибуны (локальные координаты секции) */
 export const buildSpectatorSeats = ({
@@ -207,8 +172,8 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
   const shoulder = useMemo(() => new Object3D(), []);
   const armLocal = useMemo(() => new Object3D(), []);
   const armMatrix = useMemo(() => new Matrix4(), []);
-  const shirtColors = isNight ? SHIRT_COLORS_NIGHT : SHIRT_COLORS_DAY;
-  const pantsColors = isNight ? PANTS_COLORS_NIGHT : PANTS_COLORS_DAY;
+  const shirtColors = isNight ? crowdPalette.shirtNight : crowdPalette.shirtDay;
+  const pantsColors = isNight ? crowdPalette.pantsNight : crowdPalette.pantsDay;
 
   const coloredSeats = useMemo(
     () =>
@@ -217,7 +182,7 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
         return {
           ...seat,
           shirtColor: seat.shirtColor || pick(shirtColors, salt),
-          skinColor: seat.skinColor || pick(SKIN_COLORS, salt + 2),
+          skinColor: seat.skinColor || pick(crowdPalette.skin, salt + 2),
           pantsColor: seat.pantsColor || pick(pantsColors, salt + 5),
         };
       }),
@@ -374,16 +339,16 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
     <group>
       <instancedMesh ref={legsRef} args={[undefined, undefined, count]} castShadow={!isNight}>
         <boxGeometry args={[0.32, 0.14, 0.38]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.92} />
+        <meshStandardMaterial color={crowdPalette.meshBase} roughness={0.92} />
       </instancedMesh>
 
       <instancedMesh ref={bodyRef} args={[undefined, undefined, count]} castShadow={!isNight}>
         <boxGeometry args={[0.3, 0.46, 0.22]} />
         <meshStandardMaterial
           ref={bodyMatRef}
-          color="#ffffff"
+          color={crowdPalette.meshBase}
           roughness={0.72}
-          emissive={isNight ? '#ffffff' : '#000000'}
+          emissive={isNight ? crowdPalette.meshBase : crowdPalette.emissiveOff}
           emissiveIntensity={shirtEmissiveIntensity}
         />
       </instancedMesh>
@@ -391,8 +356,8 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
       <instancedMesh ref={headRef} args={[undefined, undefined, count]} castShadow={!isNight}>
         <sphereGeometry args={[0.15, 10, 10]} />
         <meshStandardMaterial
-          color="#ffffff"
-          emissive={isNight ? '#c4a080' : '#000000'}
+          color={crowdPalette.meshBase}
+          emissive={isNight ? crowdPalette.skinEmissiveNight : crowdPalette.emissiveOff}
           emissiveIntensity={headEmissiveIntensity}
           roughness={0.85}
         />
@@ -402,9 +367,9 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
         <boxGeometry args={[0.1, 0.4, 0.1]} />
         <meshStandardMaterial
           ref={rightArmMatRef}
-          color="#ffffff"
+          color={crowdPalette.meshBase}
           roughness={0.72}
-          emissive={isNight ? '#ffffff' : '#000000'}
+          emissive={isNight ? crowdPalette.meshBase : crowdPalette.emissiveOff}
           emissiveIntensity={armEmissiveIntensity}
         />
       </instancedMesh>
@@ -413,9 +378,9 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
         <boxGeometry args={[0.1, 0.4, 0.1]} />
         <meshStandardMaterial
           ref={leftArmMatRef}
-          color="#ffffff"
+          color={crowdPalette.meshBase}
           roughness={0.72}
-          emissive={isNight ? '#ffffff' : '#000000'}
+          emissive={isNight ? crowdPalette.meshBase : crowdPalette.emissiveOff}
           emissiveIntensity={armEmissiveIntensity}
         />
       </instancedMesh>
