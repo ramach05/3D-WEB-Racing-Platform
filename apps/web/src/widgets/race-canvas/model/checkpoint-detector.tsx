@@ -1,7 +1,7 @@
 import { type RefObject, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { RapierRigidBody } from '@react-three/rapier';
-import type { TrackConfig } from '@/entities/track';
+import type { TTrackConfig } from '@/entities/track';
 import { advanceLapProgress, getTrackProgress } from '@/entities/track';
 import {
   canRegisterLapCrossing,
@@ -11,8 +11,8 @@ import {
   START_FINISH_COOLDOWN_RATIO,
 } from '@/features/race-session';
 
-type CheckpointDetectorProps = {
-  config: TrackConfig;
+type TCheckpointDetectorProps = {
+  config: TTrackConfig;
   bodyRef: RefObject<RapierRigidBody | null>;
   resetNonce: number;
   onFinished: () => void;
@@ -24,7 +24,7 @@ export const CheckpointDetector = ({
   bodyRef,
   resetNonce,
   onFinished,
-}: CheckpointDetectorProps) => {
+}: TCheckpointDetectorProps) => {
   const prevPosRef = useRef<{ x: number; z: number } | null>(null);
   const maxProgressRef = useRef(0);
   const lapCooldownRef = useRef(true);

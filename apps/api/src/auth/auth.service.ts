@@ -6,15 +6,15 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import type { AuthResponse, AuthTokens, MeResponse } from '@racing/shared';
+import type { TAuthResponse, TAuthTokens, TMeResponse } from '@racing/shared';
 import * as bcrypt from 'bcrypt';
 import { toUserPublic } from '../common/user-mapper';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   ACCESS_TOKEN_EXPIRES,
   REFRESH_TOKEN_EXPIRES,
-  type JwtPayload,
-  type JwtUser,
+  type TJwtPayload,
+  type TJwtUser,
 } from './auth.types';
 import type { LoginDto } from './dto/login.dto';
 import type { RefreshDto } from './dto/refresh.dto';
@@ -34,7 +34,7 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  register = async (dto: RegisterDto): Promise<AuthResponse> => {
+  register = async (dto: RegisterDto): Promise<TAuthResponse> => {
     const nickname = normalizeNickname(dto.nickname);
     const existing = await this.prisma.user.findUnique({ where: { nickname } });
     if (existing) {
@@ -55,7 +55,7 @@ export class AuthService {
     };
   };
 
-  login = async (dto: LoginDto): Promise<AuthResponse> => {
+  login = async (dto: LoginDto): Promise<TAuthResponse> => {
     const nickname = normalizeNickname(dto.nickname);
     const user = await this.prisma.user.findUnique({ where: { nickname } });
     if (!user) {
@@ -73,9 +73,9 @@ export class AuthService {
     };
   };
 
-  refresh = async (dto: RefreshDto): Promise<{ tokens: AuthTokens }> => {
+  refresh = async (dto: RefreshDto): Promise<{ tokens: TAuthTokens }> => {
     try {
-      const payload = this.jwtService.verify<JwtPayload>(dto.refreshToken, {
+      const payload = this.jwtService.verify<TJwtPayload>(dto.refreshToken, {
         secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
       });
       const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
@@ -88,7 +88,7 @@ export class AuthService {
     }
   };
 
-  me = async (jwtUser: JwtUser): Promise<MeResponse> => {
+  me = async (jwtUser: TJwtUser): Promise<TMeResponse> => {
     const user = await this.prisma.user.findUnique({
       where: { id: jwtUser.userId },
       include: { raceResults: { include: { track: true }, orderBy: { timeMs: 'asc' } } },
@@ -126,7 +126,7 @@ export class AuthService {
   };
 
   /** Выпускает пару access/refresh с разными секретами */
-  private issueTokens = (payload: JwtPayload): AuthTokens => {
+  private issueTokens = (payload: TJwtPayload): TAuthTokens => {
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.getOrThrow<string>('JWT_SECRET'),
       expiresIn: ACCESS_TOKEN_EXPIRES,

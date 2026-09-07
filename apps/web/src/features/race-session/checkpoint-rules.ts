@@ -1,7 +1,7 @@
-import type { CheckpointLocalCoords, OrientedBox } from '@/entities/track';
+import type { TCheckpointLocalCoords, TOrientedBox } from '@/entities/track';
 import { isInsideCheckpoint } from '@/entities/track';
 
-type Vec2 = {
+type TVec2 = {
   x: number;
   z: number;
 };
@@ -16,8 +16,8 @@ export const START_FINISH_COOLDOWN_RATIO = 0.14;
 export const getTrackLineLocalCoords = (
   x: number,
   z: number,
-  line: OrientedBox,
-): CheckpointLocalCoords => {
+  line: TOrientedBox,
+): TCheckpointLocalCoords => {
   const dx = x - line.position[0];
   const dz = z - line.position[2];
   const sin = Math.sin(line.rotationY);
@@ -34,7 +34,7 @@ export const passedCheckpointZone = (
   prevZ: number | null,
   x: number,
   z: number,
-  checkpoint: OrientedBox,
+  checkpoint: TOrientedBox,
 ): boolean => {
   if (isInsideCheckpoint(x, z, checkpoint)) {
     return true;
@@ -57,7 +57,7 @@ export const passedCheckpointZone = (
   return false;
 };
 
-const segmentsIntersect = (a: Vec2, b: Vec2, c: Vec2, d: Vec2): boolean => {
+const segmentsIntersect = (a: TVec2, b: TVec2, c: TVec2, d: TVec2): boolean => {
   const denom = (b.x - a.x) * (d.z - c.z) - (b.z - a.z) * (d.x - c.x);
   if (Math.abs(denom) < 1e-9) {
     return false;
@@ -73,7 +73,7 @@ export const crossedFinishLine = (
   prevZ: number,
   x: number,
   z: number,
-  line: OrientedBox,
+  line: TOrientedBox,
 ): boolean => {
   const halfWidth = line.size[0] / 2;
   const acrossX = Math.cos(line.rotationY);
@@ -99,7 +99,7 @@ export const passedFinishLine = (
   prevZ: number | null,
   x: number,
   z: number,
-  line: OrientedBox,
+  line: TOrientedBox,
 ): boolean => {
   if (prevX === null || prevZ === null) {
     return false;

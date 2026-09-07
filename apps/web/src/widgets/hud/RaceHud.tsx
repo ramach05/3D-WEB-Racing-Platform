@@ -1,11 +1,11 @@
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import { type CountdownStep, type RaceStatus, useRaceHud } from '@/features/race-session';
+import { type TCountdownStep, type TRaceStatus, useRaceHud } from '@/features/race-session';
 import { formatRaceTime } from '@/shared/lib';
 
 const getStatusLabel = (
-  status: RaceStatus,
-  countdownStep: CountdownStep | null,
+  status: TRaceStatus,
+  countdownStep: TCountdownStep | null,
   t: TFunction,
 ): string => {
   switch (status) {

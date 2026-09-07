@@ -1,10 +1,10 @@
-import type { AuthResponse, LoginRequest, MeResponse, RegisterRequest } from '@racing/shared';
+import type { TAuthResponse, TLoginRequest, TMeResponse, TRegisterRequest } from '@racing/shared';
 import { racingApi } from '@/shared/api';
 import { persistTokens, logout, setUser } from './model';
 
 export const authApi = racingApi.injectEndpoints({
   endpoints: (build) => ({
-    register: build.mutation<AuthResponse, RegisterRequest>({
+    register: build.mutation<TAuthResponse, TRegisterRequest>({
       query: (body) => ({ url: '/auth/register', method: 'POST', body }),
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         const { data } = await queryFulfilled;
@@ -13,7 +13,7 @@ export const authApi = racingApi.injectEndpoints({
       },
       invalidatesTags: ['Me'],
     }),
-    login: build.mutation<AuthResponse, LoginRequest>({
+    login: build.mutation<TAuthResponse, TLoginRequest>({
       query: (body) => ({ url: '/auth/login', method: 'POST', body }),
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         const { data } = await queryFulfilled;
@@ -22,7 +22,7 @@ export const authApi = racingApi.injectEndpoints({
       },
       invalidatesTags: ['Me'],
     }),
-    getMe: build.query<MeResponse, void>({
+    getMe: build.query<TMeResponse, void>({
       query: () => '/auth/me',
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         try {

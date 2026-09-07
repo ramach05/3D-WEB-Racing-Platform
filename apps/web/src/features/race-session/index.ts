@@ -1,4 +1,4 @@
-export type { CountdownStep, RaceHudSnapshot, RaceStatus } from './store';
+export type { TCountdownStep, TRaceHudSnapshot, TRaceStatus } from './store';
 export {
   beginCountdown,
   finishRace,
@@ -17,7 +17,7 @@ export {
   togglePause,
 } from './store';
 export { bindRaceInput, getDriveInput } from './input';
-export type { DriveInput } from './input';
+export type { TDriveInput } from './input';
 export {
   VEHICLE_MAX_SPEED,
   VEHICLE_REVERSE_MAX,

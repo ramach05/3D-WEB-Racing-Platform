@@ -1,24 +1,24 @@
-export type RacePerfSnapshot = {
+export type TRacePerfSnapshot = {
   fps: number;
   cpuPercent: number;
   memMb: number | null;
 };
 
-type Listener = () => void;
+type TListener = () => void;
 
-type PerformanceMemory = {
+type TPerformanceMemory = {
   usedJSHeapSize: number;
 };
 
-let snapshot: RacePerfSnapshot = { fps: 0, cpuPercent: 0, memMb: null };
+let snapshot: TRacePerfSnapshot = { fps: 0, cpuPercent: 0, memMb: null };
 let frameCount = 0;
 let accumulatedWorkMs = 0;
 let lastSampleAt = 0;
 let lastNotifyAt = 0;
-const listeners = new Set<Listener>();
+const listeners = new Set<TListener>();
 
 /** Подписка HUD на снимок производительности */
-export const subscribeRacePerf = (listener: Listener): (() => void) => {
+export const subscribeRacePerf = (listener: TListener): (() => void) => {
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
@@ -26,11 +26,11 @@ export const subscribeRacePerf = (listener: Listener): (() => void) => {
 };
 
 /** Текущий снимок производительности */
-export const getRacePerfSnapshot = (): RacePerfSnapshot => snapshot;
+export const getRacePerfSnapshot = (): TRacePerfSnapshot => snapshot;
 
 /** Получить используемую память в МБ */
 const readMemMb = (): number | null => {
-  const memory = (performance as Performance & { memory?: PerformanceMemory }).memory;
+  const memory = (performance as Performance & { memory?: TPerformanceMemory }).memory;
   if (!memory) {
     return null;
   }

@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Get, Post, Query, UseGuards } fr
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type { JwtUser } from '../auth/auth.types';
+import type { TJwtUser } from '../auth/auth.types';
 import { CreateRaceResultDto } from './dto/create-race-result.dto';
 import { RaceResultsService } from './race-results.service';
 
@@ -16,7 +16,7 @@ export class RaceResultsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Сохранить время заезда' })
-  create(@CurrentUser() user: JwtUser, @Body() dto: CreateRaceResultDto) {
+  create(@CurrentUser() user: TJwtUser, @Body() dto: CreateRaceResultDto) {
     return this.raceResultsService.create(user, dto);
   }
 

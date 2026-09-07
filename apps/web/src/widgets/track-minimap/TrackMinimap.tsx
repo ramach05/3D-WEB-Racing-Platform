@@ -1,12 +1,12 @@
-import type { TrackConfig } from '@/entities/track';
+import type { TTrackConfig } from '@/entities/track';
 
-type TrackMinimapProps = {
-  config: TrackConfig;
+type TTrackMinimapProps = {
+  config: TTrackConfig;
   className?: string;
 };
 
 /** SVG-план трассы видом сверху */
-export const TrackMinimap = ({ config, className }: TrackMinimapProps) => {
+export const TrackMinimap = ({ config, className }: TTrackMinimapProps) => {
   const points = config.centerline;
   if (points.length < 2) {
     return null;

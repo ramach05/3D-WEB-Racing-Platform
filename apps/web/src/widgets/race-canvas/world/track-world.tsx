@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import { DoubleSide, type Texture } from 'three';
-import type { TrackConfig, Vec3 } from '@/entities/track';
+import type { TTrackConfig, TVec3 } from '@/entities/track';
 import {
   ASPHALT_TILE_SIZE,
   GROUND_TILE_SIZE,
@@ -14,16 +14,16 @@ import {
 import { WORLD_GROUPS } from '../lib/collision-groups';
 import { TrackObstacles } from './track-obstacles';
 
-type TrackWorldProps = {
-  config: TrackConfig;
+type TTrackWorldProps = {
+  config: TTrackConfig;
   resetNonce: number;
 };
 
-type RoadSegmentMeshProps = {
+type TRoadSegmentMeshProps = {
   asphaltSource: Texture;
   roughnessSource: Texture;
-  position: Vec3;
-  size: Vec3;
+  position: TVec3;
+  size: TVec3;
   rotationY: number;
   roadColor: string;
   roadRoughness: number;
@@ -37,7 +37,7 @@ const RoadSegmentMesh = ({
   rotationY,
   roadColor,
   roadRoughness,
-}: RoadSegmentMeshProps) => {
+}: TRoadSegmentMeshProps) => {
   const roadWidth = size[0];
   const roadLength = size[2];
 
@@ -70,7 +70,7 @@ const RoadSegmentMesh = ({
 };
 
 /** Дорога (визуал), единый пол и стены с низким трением */
-export const TrackWorld = ({ config, resetNonce }: TrackWorldProps) => {
+export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
   const { palette } = config;
   const isNight = config.timeOfDay === 'night';
   const roadRoughness = isNight ? 0.78 : 0.82;

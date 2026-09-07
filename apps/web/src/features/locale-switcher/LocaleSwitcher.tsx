@@ -1,20 +1,20 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { persistLocale } from './model';
-import type { AppLocale } from '@/shared/config';
+import type { TAppLocale } from '@/shared/config';
 import { Select } from '@/shared/ui';
 
-type LocaleSwitcherProps = {
+type TLocaleSwitcherProps = {
   size?: 'md' | 'sm';
 };
 
 /** Дропдаун языка ru/en */
-export const LocaleSwitcher = ({ size = 'md' }: LocaleSwitcherProps) => {
+export const LocaleSwitcher = ({ size = 'md' }: TLocaleSwitcherProps) => {
   const { t, i18n } = useTranslation();
-  const locale = (i18n.language === 'en' ? 'en' : 'ru') as AppLocale;
+  const locale = (i18n.language === 'en' ? 'en' : 'ru') as TAppLocale;
 
   const onChange = useCallback(
-    (next: AppLocale) => {
+    (next: TAppLocale) => {
       persistLocale(next);
       void i18n.changeLanguage(next);
       document.documentElement.lang = next;

@@ -1,5 +1,5 @@
 /** Строка глобальной таблицы лидеров */
-export type LeaderboardEntry = {
+export type TLeaderboardEntry = {
   rank: number;
   userId: string;
   nickname: string;

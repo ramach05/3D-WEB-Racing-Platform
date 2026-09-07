@@ -1,23 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ThemeName } from '@/shared/config';
+import type { TThemeName } from '@/shared/config';
 import { Select } from '@/shared/ui';
 import { applyTheme, readStoredTheme } from './model';
 
-type ThemeSwitcherProps = {
+type TThemeSwitcherProps = {
   size?: 'md' | 'sm';
 };
 
 /** Дропдаун светлая/тёмная тема с сохранением в localStorage */
-export const ThemeSwitcher = ({ size = 'md' }: ThemeSwitcherProps) => {
+export const ThemeSwitcher = ({ size = 'md' }: TThemeSwitcherProps) => {
   const { t } = useTranslation();
-  const [theme, setTheme] = useState<ThemeName>(readStoredTheme);
+  const [theme, setTheme] = useState<TThemeName>(readStoredTheme);
 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
-  const onChange = useCallback((value: ThemeName) => {
+  const onChange = useCallback((value: TThemeName) => {
     setTheme(value);
     applyTheme(value);
   }, []);

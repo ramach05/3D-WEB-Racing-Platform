@@ -3,12 +3,12 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { RapierRigidBody } from '@react-three/rapier';
 import { MathUtils, Quaternion, Vector3 } from 'three';
-import type { Vec3 } from '@/entities/track';
+import type { TVec3 } from '@/entities/track';
 import { getRaceHudSnapshot } from '@/features/race-session';
 
-type ChaseCameraProps = {
+type TChaseCameraProps = {
   target: RefObject<RapierRigidBody | null>;
-  spawnPosition: Vec3;
+  spawnPosition: TVec3;
   spawnRotationY: number;
   resetNonce: number;
 };
@@ -37,7 +37,7 @@ export const ChaseCamera = ({
   spawnPosition,
   spawnRotationY,
   resetNonce,
-}: ChaseCameraProps) => {
+}: TChaseCameraProps) => {
   const lastNonce = useRef(resetNonce);
   const introElapsed = useRef(0);
   const reduced = useRef(prefersReducedMotion());

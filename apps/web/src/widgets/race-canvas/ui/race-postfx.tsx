@@ -1,11 +1,11 @@
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing';
 
-type RacePostFxProps = {
+type TRacePostFxProps = {
   enabled: boolean;
 };
 
 /** Bloom + vignette для ночной трассы (кинематографичный neon look) */
-export const RacePostFx = ({ enabled }: RacePostFxProps) => {
+export const RacePostFx = ({ enabled }: TRacePostFxProps) => {
   if (!enabled) {
     return null;
   }

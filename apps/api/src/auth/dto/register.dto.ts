@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, Matches, MinLength } from 'class-validator';
-import type { RegisterRequest } from '@racing/shared';
+import type { TRegisterRequest } from '@racing/shared';
 
 /** DTO регистрации. Class нужен class-validator и Swagger. */
-export class RegisterDto implements RegisterRequest {
+export class RegisterDto implements TRegisterRequest {
   @ApiProperty({ example: 'racer_01', minLength: 3, maxLength: 20 })
   @IsString()
   @MinLength(3)

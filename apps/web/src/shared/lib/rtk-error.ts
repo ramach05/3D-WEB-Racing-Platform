@@ -1,5 +1,5 @@
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
-import type { ApiErrorBody } from '@racing/shared';
+import type { TApiErrorBody } from '@racing/shared';
 import { flattenApiMessage } from '@racing/shared';
 
 /** Достаёт текст ошибки RTK Query для форм */
@@ -15,7 +15,7 @@ export const getRtkErrorMessage = (error: FetchBaseQueryError): string => {
     return error.error;
   }
 
-  const data = error.data as ApiErrorBody | string | null;
+  const data = error.data as TApiErrorBody | string | null;
   if (typeof data === 'string' && data.length > 0) {
     return data;
   }

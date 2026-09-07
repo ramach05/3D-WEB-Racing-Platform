@@ -1,14 +1,14 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { PointLight } from 'three';
-import type { OrientedBox, StartTribuneSide, TrackPalette } from '@/entities/track';
+import type { TOrientedBox, TStartTribuneSide, TTrackPalette } from '@/entities/track';
 import { buildSpectatorSeats, SpectatorCrowd } from './spectator-crowd';
 
-type TrackTribunesProps = {
-  line: OrientedBox;
+type TTrackTribunesProps = {
+  line: TOrientedBox;
   roadWidth: number;
-  palette: TrackPalette;
-  side: StartTribuneSide;
+  palette: TTrackPalette;
+  side: TStartTribuneSide;
   isNight: boolean;
   paused: boolean;
 };
@@ -25,11 +25,11 @@ const TRIBUNE_MARGIN = 2.5;
 const SPECTATORS_PER_SECTION = 30;
 const ROAD_TOP_Y = 0.1;
 
-type TribuneSectionProps = {
+type TTribuneSectionProps = {
   sectionZ: number;
   tribuneInnerX: number;
   sideSign: number;
-  palette: TrackPalette;
+  palette: TTrackPalette;
   isNight: boolean;
   paused: boolean;
 };
@@ -39,7 +39,7 @@ const rowCenterX = (tribuneInnerX: number, sideSign: number, row: number) =>
 
 const rowTopY = (row: number) => (row + 1) * ROW_HEIGHT;
 
-type TribuneNightLightsProps = {
+type TTribuneNightLightsProps = {
   tribuneInnerX: number;
   sideSign: number;
   sectionZ: number;
@@ -54,7 +54,7 @@ const TribuneNightLights = ({
   sectionZ,
   accent,
   wall,
-}: TribuneNightLightsProps) => {
+}: TTribuneNightLightsProps) => {
   const tribuneCenterX = tribuneInnerX + (sideSign * TRIBUNE_ROWS * ROW_DEPTH) / 2;
   const frontLightX = tribuneInnerX - sideSign * 1.8;
   const pulseA = useRef<PointLight>(null);
@@ -141,7 +141,7 @@ const TribuneSection = ({
   palette,
   isNight,
   paused,
-}: TribuneSectionProps) => {
+}: TTribuneSectionProps) => {
   const seats = useMemo(
     () =>
       buildSpectatorSeats({
@@ -259,7 +259,7 @@ export const TrackTribunes = ({
   side,
   isNight,
   paused,
-}: TrackTribunesProps) => {
+}: TTrackTribunesProps) => {
   const sideSign = side === 'left' ? 1 : -1;
   const tribuneInnerX = sideSign * (roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);
 

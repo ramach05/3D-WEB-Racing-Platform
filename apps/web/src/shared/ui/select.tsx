@@ -1,15 +1,15 @@
 import { type KeyboardEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { cx } from '@/shared/lib';
 
-export type SelectOption<T extends string> = {
+export type TSelectOption<T extends string> = {
   value: T;
   label: string;
 };
 
-type SelectProps<T extends string> = {
+type TSelectProps<T extends string> = {
   label: string;
   value: T;
-  options: SelectOption<T>[];
+  options: TSelectOption<T>[];
   onChange: (value: T) => void;
   className?: string;
   size?: 'md' | 'sm';
@@ -23,7 +23,7 @@ export const Select = <T extends string>({
   onChange,
   className,
   size = 'md',
-}: SelectProps<T>) => {
+}: TSelectProps<T>) => {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);

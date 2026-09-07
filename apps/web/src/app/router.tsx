@@ -10,12 +10,12 @@ import { RegisterPage } from '@/pages/register';
 import { TracksPage } from '@/pages/tracks';
 import { AppHeader } from '@/widgets/header';
 
-type AppLayoutProps = {
+type TAppLayoutProps = {
   children: ReactNode;
 };
 
 /** Корневой layout: шапка + main */
-const AppLayout = ({ children }: AppLayoutProps) => {
+const AppLayout = ({ children }: TAppLayoutProps) => {
   const { t } = useTranslation();
 
   return (

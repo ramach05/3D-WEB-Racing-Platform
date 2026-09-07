@@ -1,12 +1,12 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { UserPublic } from '@racing/shared';
+import type { TUserPublic } from '@racing/shared';
 import { clearAuthSession, writeAuthSession } from '@/shared/lib';
 
-export type AuthState = {
-  user: UserPublic | null;
+export type TAuthState = {
+  user: TUserPublic | null;
 };
 
-const initialState: AuthState = {
+const initialState: TAuthState = {
   user: null,
 };
 
@@ -18,7 +18,7 @@ export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<UserPublic | null>) => {
+    setUser: (state, action: PayloadAction<TUserPublic | null>) => {
       state.user = action.payload;
     },
     logout: (state) => {
@@ -31,12 +31,12 @@ export const authSlice = createSlice({
 export const { setUser, logout } = authSlice.actions;
 export const authReducer = authSlice.reducer;
 
-type AuthRoot = {
-  auth: AuthState;
+type TAuthRoot = {
+  auth: TAuthState;
 };
 
 /** Текущий пользователь или null */
-export const selectUser = (state: AuthRoot): UserPublic | null => state.auth.user;
+export const selectUser = (state: TAuthRoot): TUserPublic | null => state.auth.user;
 
 /** Есть ли сохранённая сессия */
 export const persistTokens = (accessToken: string, refreshToken: string): void => {

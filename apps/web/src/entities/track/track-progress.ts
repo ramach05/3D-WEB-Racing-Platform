@@ -1,6 +1,6 @@
-import type { LoopPoint } from './config';
+import type { TLoopPoint } from './config';
 
-export type TrackProgress = {
+export type TTrackProgress = {
   segmentIndex: number;
   segmentT: number;
   /** Позиция на круге: 0..1 */
@@ -8,7 +8,7 @@ export type TrackProgress = {
 };
 
 /** Ближайшая точка на центральной линии и доля пройденного круга */
-export const getTrackProgress = (x: number, z: number, centerline: LoopPoint[]): TrackProgress => {
+export const getTrackProgress = (x: number, z: number, centerline: TLoopPoint[]): TTrackProgress => {
   if (centerline.length === 0) {
     return { segmentIndex: 0, segmentT: 0, ratio: 0 };
   }

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 
-type RaceMarqueeProps = {
+type TRaceMarqueeProps = {
   text: string;
 };
 
 /** Бегущая строка с бесшовным зацикливанием */
-export const RaceMarquee = ({ text }: RaceMarqueeProps) => {
+export const RaceMarquee = ({ text }: TRaceMarqueeProps) => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const [copiesPerSegment, setCopiesPerSegment] = useState(2);

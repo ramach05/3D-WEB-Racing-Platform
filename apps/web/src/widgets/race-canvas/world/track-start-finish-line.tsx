@@ -1,13 +1,13 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { MeshStandardMaterial } from 'three';
-import type { OrientedBox, TrackPalette } from '@/entities/track';
+import type { TOrientedBox, TTrackPalette } from '@/entities/track';
 import { getRaceHudSnapshot } from '@/features/race-session';
 
-type TrackStartFinishLineProps = {
-  line: OrientedBox;
+type TTrackStartFinishLineProps = {
+  line: TOrientedBox;
   roadWidth: number;
-  palette: TrackPalette;
+  palette: TTrackPalette;
 };
 
 const CHECKER_COUNT = 10;
@@ -23,7 +23,7 @@ const LIGHT_COLORS = {
 } as const;
 
 /** Шахматная линия старт/финиш, стрелки и огни 3-2-1 */
-export const TrackStartFinishLine = ({ line, roadWidth, palette }: TrackStartFinishLineProps) => {
+export const TrackStartFinishLine = ({ line, roadWidth, palette }: TTrackStartFinishLineProps) => {
   const segmentWidth = roadWidth / CHECKER_COUNT;
   const gateHalfWidth = roadWidth / 2 + 0.75;
   const leftLightRef = useRef<MeshStandardMaterial>(null);

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/ui';
 
-type RacePauseMenuProps = {
+type TRacePauseMenuProps = {
   open: boolean;
   onResume: () => void;
   onRestart: () => void;
@@ -10,7 +10,7 @@ type RacePauseMenuProps = {
 };
 
 /** Модалка паузы: Esc, ловушка фокуса на кнопках */
-export const RacePauseMenu = ({ open, onResume, onRestart, onExit }: RacePauseMenuProps) => {
+export const RacePauseMenu = ({ open, onResume, onRestart, onExit }: TRacePauseMenuProps) => {
   const { t } = useTranslation();
   const firstButton = useRef<HTMLButtonElement>(null);
 

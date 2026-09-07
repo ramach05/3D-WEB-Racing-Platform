@@ -1,16 +1,16 @@
 import { useEffect, useEffectEvent, useRef } from 'react';
-import type { TrackAudioTheme } from '@/entities/track';
+import type { TTrackAudioTheme } from '@/entities/track';
 import { ChiptuneEngine } from './engine';
 
-type UseRaceAudioOptions = {
-  theme: TrackAudioTheme | null;
+type TUseRaceAudioOptions = {
+  theme: TTrackAudioTheme | null;
   paused: boolean;
   enabled: boolean;
   muted: boolean;
 };
 
 /** Запускает чиптюн на странице заезда */
-export const useRaceAudio = ({ theme, paused, enabled, muted }: UseRaceAudioOptions): void => {
+export const useRaceAudio = ({ theme, paused, enabled, muted }: TUseRaceAudioOptions): void => {
   const engineRef = useRef<ChiptuneEngine | null>(null);
 
   const applyTransport = useEffectEvent((engine: ChiptuneEngine) => {

@@ -8,9 +8,9 @@ import {
   type Texture,
 } from 'three';
 
-type RadialStop = { stop: number; color: string };
+type TRadialStop = { stop: number; color: string };
 
-const createRadialGradientTexture = (stops: RadialStop[], size = 256): CanvasTexture => {
+const createRadialGradientTexture = (stops: TRadialStop[], size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -32,17 +32,17 @@ const createRadialGradientTexture = (stops: RadialStop[], size = 256): CanvasTex
   return texture;
 };
 
-type MoonPatch = { x: number; y: number; r: number; shade: number };
+type TMoonPatch = { x: number; y: number; r: number; shade: number };
 
 /** Фиксированные «моря» и кратеры — стабильный вид при каждом рендере */
-const MOON_MARIA: MoonPatch[] = [
+const MOON_MARIA: TMoonPatch[] = [
   { x: 0.38, y: 0.42, r: 0.18, shade: 0.22 },
   { x: 0.58, y: 0.55, r: 0.14, shade: 0.18 },
   { x: 0.48, y: 0.68, r: 0.1, shade: 0.15 },
   { x: 0.32, y: 0.58, r: 0.09, shade: 0.12 },
 ];
 
-const MOON_CRATERS: MoonPatch[] = [
+const MOON_CRATERS: TMoonPatch[] = [
   { x: 0.44, y: 0.34, r: 0.035, shade: 0.28 },
   { x: 0.62, y: 0.38, r: 0.025, shade: 0.24 },
   { x: 0.52, y: 0.48, r: 0.02, shade: 0.2 },
@@ -76,7 +76,7 @@ const createMoonDiskTexture = (size = 256): CanvasTexture => {
   ctx.arc(center, center, radius, 0, Math.PI * 2);
   ctx.fill();
 
-  const drawPatch = (patch: MoonPatch, alpha: number) => {
+  const drawPatch = (patch: TMoonPatch, alpha: number) => {
     const x = patch.x * size;
     const y = patch.y * size;
     const r = patch.r * size;
@@ -110,26 +110,26 @@ const createMoonDiskTexture = (size = 256): CanvasTexture => {
   return texture;
 };
 
-const MOON_GLOW_STOPS: RadialStop[] = [
+const MOON_GLOW_STOPS: TRadialStop[] = [
   { stop: 0, color: 'rgba(210, 220, 245, 0.22)' },
   { stop: 0.4, color: 'rgba(170, 185, 220, 0.1)' },
   { stop: 1, color: 'rgba(120, 140, 190, 0)' },
 ];
 
-const MOON_HALO_STOPS: RadialStop[] = [
+const MOON_HALO_STOPS: TRadialStop[] = [
   { stop: 0, color: 'rgba(230, 235, 250, 0.12)' },
   { stop: 0.55, color: 'rgba(180, 195, 230, 0.05)' },
   { stop: 1, color: 'rgba(140, 160, 210, 0)' },
 ];
 
-type MoonLayerProps = {
+type TMoonLayerProps = {
   map: Texture;
   size: number;
   renderOrder: number;
   additive?: boolean;
 };
 
-const MoonLayer = ({ map, size, renderOrder, additive = true }: MoonLayerProps) => (
+const MoonLayer = ({ map, size, renderOrder, additive = true }: TMoonLayerProps) => (
   <mesh renderOrder={renderOrder}>
     <planeGeometry args={[size, size]} />
     <meshBasicMaterial
@@ -144,12 +144,12 @@ const MoonLayer = ({ map, size, renderOrder, additive = true }: MoonLayerProps) 
   </mesh>
 );
 
-type HorizonMoonProps = {
+type THorizonMoonProps = {
   position: [number, number, number];
 };
 
 /** Луна на горизонте: billboard с кратерами и мягким лунным свечением */
-export const HorizonMoon = ({ position }: HorizonMoonProps) => {
+export const HorizonMoon = ({ position }: THorizonMoonProps) => {
   const textures = useMemo(
     () => ({
       disk: createMoonDiskTexture(),

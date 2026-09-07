@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { LeaderboardEntry } from '@racing/shared';
+import type { TLeaderboardEntry } from '@racing/shared';
 import { LeaderboardTable } from './LeaderboardTable';
 
 describe('LeaderboardTable', () => {
   it('renders ranks and racer names from mocked entries', () => {
-    const entries: LeaderboardEntry[] = [
+    const entries: TLeaderboardEntry[] = [
       {
         rank: 1,
         userId: 'u1',
@@ -23,7 +23,7 @@ describe('LeaderboardTable', () => {
   });
 
   it('highlights the current user nickname', () => {
-    const entries: LeaderboardEntry[] = [
+    const entries: TLeaderboardEntry[] = [
       {
         rank: 1,
         userId: 'u1',

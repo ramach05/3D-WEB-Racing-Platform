@@ -1,24 +1,24 @@
-import type { TrackSlug } from '@racing/shared';
+import type { TTrackSlug } from '@racing/shared';
 import { TRACK_SLUG_COASTAL_OVAL, TRACK_SLUG_NIGHT_CITY } from '@racing/shared';
 
-export type Vec3 = readonly [number, number, number];
+export type TVec3 = readonly [number, number, number];
 
-export type OrientedBox = {
-  position: Vec3;
-  size: Vec3;
+export type TOrientedBox = {
+  position: TVec3;
+  size: TVec3;
   rotationY: number;
 };
 
-export type ObstacleKind = 'tireStack';
+export type TObstacleKind = 'tireStack';
 
-export type TrackObstacle = OrientedBox & { kind: ObstacleKind };
+export type TTrackObstacle = TOrientedBox & { kind: TObstacleKind };
 
-export type LoopPoint = {
+export type TLoopPoint = {
   x: number;
   z: number;
 };
 
-export type TrackPalette = {
+export type TTrackPalette = {
   sky: string;
   fog: string;
   ground: string;
@@ -30,46 +30,46 @@ export type TrackPalette = {
   minimapBg: string;
 };
 
-export type CarSkin = {
+export type TCarSkin = {
   body: string;
   cabin: string;
   wheel: string;
 };
 
-export type TrackAudioTheme = 'coastal' | 'night';
+export type TTrackAudioTheme = 'coastal' | 'night';
 
-export type TimeOfDay = 'day' | 'night';
+export type TTimeOfDay = 'day' | 'night';
 
 /** Сторона трибун относительно направления движения (left = внешняя сторона трассы) */
-export type StartTribuneSide = 'left' | 'right';
+export type TStartTribuneSide = 'left' | 'right';
 
-export type TrackConfig = {
-  slug: TrackSlug;
-  spawnPosition: Vec3;
+export type TTrackConfig = {
+  slug: TTrackSlug;
+  spawnPosition: TVec3;
   spawnRotationY: number;
-  startFinishLine: OrientedBox;
-  segments: OrientedBox[];
-  walls: OrientedBox[];
-  checkpoints: OrientedBox[];
-  obstacles: TrackObstacle[];
-  centerline: LoopPoint[];
+  startFinishLine: TOrientedBox;
+  segments: TOrientedBox[];
+  walls: TOrientedBox[];
+  checkpoints: TOrientedBox[];
+  obstacles: TTrackObstacle[];
+  centerline: TLoopPoint[];
   roadWidth: number;
-  palette: TrackPalette;
-  carSkin: CarSkin;
-  audioTheme: TrackAudioTheme;
-  timeOfDay: TimeOfDay;
-  startTribuneSide: StartTribuneSide;
+  palette: TTrackPalette;
+  carSkin: TCarSkin;
+  audioTheme: TTrackAudioTheme;
+  timeOfDay: TTimeOfDay;
+  startTribuneSide: TStartTribuneSide;
 };
 
-type BuildLoopOptions = {
-  slug: TrackSlug;
-  points: LoopPoint[];
+type TBuildLoopOptions = {
+  slug: TTrackSlug;
+  points: TLoopPoint[];
   roadWidth: number;
-  palette: TrackPalette;
-  carSkin: CarSkin;
-  audioTheme: TrackAudioTheme;
+  palette: TTrackPalette;
+  carSkin: TCarSkin;
+  audioTheme: TTrackAudioTheme;
   spawnRatio: number;
-  startTribuneSide: StartTribuneSide;
+  startTribuneSide: TStartTribuneSide;
 };
 
 /** Строит замкнутую трассу по точкам центральной линии */
@@ -82,10 +82,10 @@ const buildLoopTrack = ({
   audioTheme,
   spawnRatio,
   startTribuneSide,
-}: BuildLoopOptions): TrackConfig => {
+}: TBuildLoopOptions): TTrackConfig => {
   const pointCount = points.length;
-  const segments: OrientedBox[] = [];
-  const walls: OrientedBox[] = [];
+  const segments: TOrientedBox[] = [];
+  const walls: TOrientedBox[] = [];
   const wallHeight = 1.35;
   const wallThickness = 0.5;
 
@@ -161,14 +161,14 @@ const buildLoopTrack = ({
     }
   }
 
-  const buildCheckpointAtRatio = (ratio: number): OrientedBox => {
+  const buildCheckpointAtRatio = (ratio: number): TOrientedBox => {
     const index = Math.floor(ratio * pointCount) % pointCount;
     const current = points[index];
     const next = points[(index + 1) % pointCount];
     if (!current || !next) {
       return {
-        position: [0, 1.4, 0] as Vec3,
-        size: [roadWidth + 1.5, 2.8, 3.2] as Vec3,
+        position: [0, 1.4, 0] as TVec3,
+        size: [roadWidth + 1.5, 2.8, 3.2] as TVec3,
         rotationY: 0,
       };
     }
@@ -183,7 +183,7 @@ const buildLoopTrack = ({
 
   const intermediateCheckpointRatios = [0.25, 0.5, 0.75];
   const startFinishLine = buildCheckpointAtRatio(0);
-  const checkpoints: OrientedBox[] = [
+  const checkpoints: TOrientedBox[] = [
     ...intermediateCheckpointRatios.map(buildCheckpointAtRatio),
     startFinishLine,
   ];
@@ -221,12 +221,12 @@ const buildLoopTrack = ({
 
 /** Размещает препятствие вдоль centerline с боковым смещением (нормаль влево). */
 const placeAlongCenterline = (
-  points: LoopPoint[],
+  points: TLoopPoint[],
   ratio: number,
   lateral: number,
-  size: Vec3,
-  kind: ObstacleKind,
-): TrackObstacle => {
+  size: TVec3,
+  kind: TObstacleKind,
+): TTrackObstacle => {
   const pointCount = points.length;
   const index = Math.floor(((((ratio % 1) + 1) % 1) * pointCount) % pointCount);
   const current = points[index];
@@ -253,11 +253,11 @@ const placeAlongCenterline = (
 };
 
 /** Стопки шин у стенок Coastal Oval: несколько рядов от бордюра. */
-const buildCoastalOvalObstacles = (points: LoopPoint[], roadWidth: number): TrackObstacle[] => {
-  const tireSize: Vec3 = [1.05, 1.2, 1.05];
+const buildCoastalOvalObstacles = (points: TLoopPoint[], roadWidth: number): TTrackObstacle[] => {
+  const tireSize: TVec3 = [1.05, 1.2, 1.05];
   /** Отступы от стены к центру полосы — каждый inset = отдельный ряд */
   const rowInsets = [0.7, 1.85, 3.0] as const;
-  const obstacles: TrackObstacle[] = [];
+  const obstacles: TTrackObstacle[] = [];
 
   /** По 2 стопки вдоль трассы на банк (было 4) — вдвое меньше */
   const banks: { ratios: number[]; side: 1 | -1 }[] = [
@@ -280,8 +280,8 @@ const buildCoastalOvalObstacles = (points: LoopPoint[], roadWidth: number): Trac
 };
 
 /** Эллиптическая трасса */
-const buildEllipsePoints = (radiusX: number, radiusZ: number, count: number): LoopPoint[] => {
-  const points: LoopPoint[] = [];
+const buildEllipsePoints = (radiusX: number, radiusZ: number, count: number): TLoopPoint[] => {
+  const points: TLoopPoint[] = [];
   for (let i = 0; i < count; i += 1) {
     const t = (i / count) * Math.PI * 2;
     points.push({ x: Math.cos(t) * radiusX, z: Math.sin(t) * radiusZ });
@@ -295,15 +295,15 @@ const buildStadiumPoints = (
   depth: number,
   cornerRadius: number,
   count: number,
-): LoopPoint[] => {
+): TLoopPoint[] => {
   const hw = width / 2 - cornerRadius;
   const hd = depth / 2 - cornerRadius;
-  type StadiumSegment = {
+  type TStadiumSegment = {
     from: readonly [number, number];
     to: readonly [number, number];
     arc?: readonly [number, number];
   };
-  const segments: StadiumSegment[] = [
+  const segments: TStadiumSegment[] = [
     { from: [-hw, -hd - cornerRadius], to: [hw, -hd - cornerRadius] },
     {
       from: [hw + cornerRadius, -hd],
@@ -318,7 +318,7 @@ const buildStadiumPoints = (
     },
   ];
 
-  const points: LoopPoint[] = [];
+  const points: TLoopPoint[] = [];
   const perSegment = Math.floor(count / 4);
   for (let s = 0; s < 4; s += 1) {
     const seg = segments[s];
@@ -345,7 +345,7 @@ const buildStadiumPoints = (
   return points;
 };
 
-const coastalPalette: TrackPalette = {
+const coastalPalette: TTrackPalette = {
   sky: '#6ec8ff',
   fog: '#9ed8ff',
   ground: '#d4b483',
@@ -357,7 +357,7 @@ const coastalPalette: TrackPalette = {
   minimapBg: '#87c8e8',
 };
 
-const nightPalette: TrackPalette = {
+const nightPalette: TTrackPalette = {
   sky: '#120828',
   fog: '#241038',
   ground: '#6a5848',
@@ -372,7 +372,7 @@ const nightPalette: TrackPalette = {
 const coastalOvalPoints = buildEllipsePoints(58, 36, 44);
 const coastalOvalRoadWidth = 10;
 
-export const coastalOvalTrack: TrackConfig = {
+export const coastalOvalTrack: TTrackConfig = {
   ...buildLoopTrack({
     slug: TRACK_SLUG_COASTAL_OVAL,
     points: coastalOvalPoints,
@@ -397,13 +397,13 @@ export const nightCityTrack = buildLoopTrack({
   startTribuneSide: 'left',
 });
 
-const TRACKS_BY_SLUG: Record<TrackSlug, TrackConfig> = {
+const TRACKS_BY_SLUG: Record<TTrackSlug, TTrackConfig> = {
   [TRACK_SLUG_COASTAL_OVAL]: coastalOvalTrack,
   [TRACK_SLUG_NIGHT_CITY]: nightCityTrack,
 };
 
 /** Конфиг трассы по slug с API */
-export const getTrackConfig = (slug: string): TrackConfig | null => {
+export const getTrackConfig = (slug: string): TTrackConfig | null => {
   if (slug === TRACK_SLUG_COASTAL_OVAL || slug === TRACK_SLUG_NIGHT_CITY) {
     return TRACKS_BY_SLUG[slug];
   }
@@ -411,6 +411,6 @@ export const getTrackConfig = (slug: string): TrackConfig | null => {
 };
 
 /** Все локальные конфиги трасс */
-export const getAllTrackConfigs = (): TrackConfig[] => {
+export const getAllTrackConfigs = (): TTrackConfig[] => {
   return [coastalOvalTrack, nightCityTrack];
 };

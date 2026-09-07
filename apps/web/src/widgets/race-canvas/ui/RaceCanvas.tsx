@@ -3,7 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Sky, Stars } from '@react-three/drei';
 import { PCFSoftShadowMap, type PointLight } from 'three';
 import { Physics, type RapierRigidBody } from '@react-three/rapier';
-import type { TrackConfig } from '@/entities/track';
+import type { TTrackConfig } from '@/entities/track';
 import { ChaseCamera } from './chase-camera';
 import { CheckpointDetector } from '../model/checkpoint-detector';
 import { FramePerfTracker } from './frame-perf-tracker';
@@ -15,16 +15,16 @@ import { TrackTribunes } from '../world/track-tribunes';
 import { TrackWorld } from '../world/track-world';
 import { Vehicle } from '../vehicle/vehicle';
 
-type RaceSceneProps = {
-  config: TrackConfig;
+type TRaceSceneProps = {
+  config: TTrackConfig;
   physicsPaused: boolean;
   crowdPaused: boolean;
   resetNonce: number;
   onFinished: () => void;
 };
 
-type CelestialBodyProps = {
-  config: TrackConfig;
+type TCelestialBodyProps = {
+  config: TTrackConfig;
 };
 
 const SUN_HORIZON_POSITION: [number, number, number] = [90, 24, -260];
@@ -34,7 +34,7 @@ const MOON_LIGHT_POSITION: [number, number, number] = [-30, 50, -25];
 const SKY_SUN_POSITION: [number, number, number] = [55, 42, 25];
 
 /** Солнце днём или луна ночью на уровне горизонта */
-const CelestialBody = ({ config }: CelestialBodyProps) => {
+const CelestialBody = ({ config }: TCelestialBodyProps) => {
   const isNight = config.timeOfDay === 'night';
 
   if (isNight) {
@@ -69,7 +69,7 @@ const RaceSceneInner = ({
   resetNonce,
   onFinished,
   bodyRef,
-}: RaceSceneProps & { bodyRef: RefObject<RapierRigidBody | null> }) => {
+}: TRaceSceneProps & { bodyRef: RefObject<RapierRigidBody | null> }) => {
   const isNight = config.timeOfDay === 'night';
 
   return (
@@ -143,7 +143,7 @@ export const RaceCanvas = ({
   crowdPaused,
   resetNonce,
   onFinished,
-}: RaceSceneProps) => {
+}: TRaceSceneProps) => {
   const bodyRef = useRef<RapierRigidBody>(null);
 
   return (

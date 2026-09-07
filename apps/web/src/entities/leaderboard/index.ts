@@ -1,2 +1,2 @@
-export type { LeaderboardEntry } from '@racing/shared';
+export type { TLeaderboardEntry } from '@racing/shared';
 export { leaderboardApi, useGetLeaderboardQuery } from './api';

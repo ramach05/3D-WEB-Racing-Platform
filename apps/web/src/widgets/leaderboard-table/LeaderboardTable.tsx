@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import type { LeaderboardEntry } from '@/entities/leaderboard';
+import type { TLeaderboardEntry } from '@/entities/leaderboard';
 import { cx, formatRaceTime } from '@/shared/lib';
 
-type LeaderboardTableProps = {
-  entries: LeaderboardEntry[];
+type TLeaderboardTableProps = {
+  entries: TLeaderboardEntry[];
   /** Подсветить строку текущего игрока */
   highlightUserId?: string;
   /** Ограничить число видимых строк (топ-N) */
@@ -11,7 +11,7 @@ type LeaderboardTableProps = {
 };
 
 /** Таблица лидеров с семантической разметкой */
-export const LeaderboardTable = ({ entries, highlightUserId, maxRows }: LeaderboardTableProps) => {
+export const LeaderboardTable = ({ entries, highlightUserId, maxRows }: TLeaderboardTableProps) => {
   const { t } = useTranslation();
   const rows = maxRows === undefined ? entries : entries.slice(0, maxRows);
 

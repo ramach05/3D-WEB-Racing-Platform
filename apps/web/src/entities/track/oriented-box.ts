@@ -1,6 +1,6 @@
-import type { OrientedBox } from './config';
+import type { TOrientedBox } from './config';
 
-export type CheckpointLocalCoords = {
+export type TCheckpointLocalCoords = {
   lx: number;
   lz: number;
 };
@@ -9,8 +9,8 @@ export type CheckpointLocalCoords = {
 export const getCheckpointLocalCoords = (
   x: number,
   z: number,
-  checkpoint: OrientedBox,
-): CheckpointLocalCoords => {
+  checkpoint: TOrientedBox,
+): TCheckpointLocalCoords => {
   const dx = x - checkpoint.position[0];
   const dz = z - checkpoint.position[2];
   const sin = Math.sin(-checkpoint.rotationY);
@@ -22,7 +22,7 @@ export const getCheckpointLocalCoords = (
 };
 
 /** Проверяет, находится ли точка внутри ориентированного чекпоинта (XZ). */
-export const isInsideCheckpoint = (x: number, z: number, checkpoint: OrientedBox): boolean => {
+export const isInsideCheckpoint = (x: number, z: number, checkpoint: TOrientedBox): boolean => {
   const { lx, lz } = getCheckpointLocalCoords(x, z, checkpoint);
   return Math.abs(lx) <= checkpoint.size[0] / 2 && Math.abs(lz) <= checkpoint.size[2] / 2;
 };

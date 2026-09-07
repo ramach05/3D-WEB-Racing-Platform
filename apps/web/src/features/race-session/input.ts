@@ -1,10 +1,10 @@
-export type DriveInput = {
+export type TDriveInput = {
   throttle: number;
   steer: number;
   brake: number;
 };
 
-const state: DriveInput = {
+const state: TDriveInput = {
   throttle: 0,
   steer: 0,
   brake: 0,
@@ -44,16 +44,16 @@ const syncAxes = (): void => {
 };
 
 /** Текущий ввод машины */
-export const getDriveInput = (): DriveInput => state;
+export const getDriveInput = (): TDriveInput => state;
 
-type InputHandlers = {
+type TInputHandlers = {
   onRestart: () => void;
   onTogglePause: () => void;
   isRaceActive: () => boolean;
 };
 
 /** Подписывается на клавиши гонки. preventDefault только на WASD/стрелках во время заезда. */
-export const bindRaceInput = (handlers: InputHandlers): (() => void) => {
+export const bindRaceInput = (handlers: TInputHandlers): (() => void) => {
   const onKeyDown = (event: KeyboardEvent): void => {
     if (event.repeat) {
       return;

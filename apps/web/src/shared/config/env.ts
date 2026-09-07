@@ -7,5 +7,5 @@ export const THEME_STORAGE_KEY = 'racing-theme';
 export const LOCALE_STORAGE_KEY = 'racing-locale';
 export const AUTH_STORAGE_KEY = 'racing-auth';
 
-export type ThemeName = 'light' | 'dark';
-export type AppLocale = 'ru' | 'en';
+export type TThemeName = 'light' | 'dark';
+export type TAppLocale = 'ru' | 'en';

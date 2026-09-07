@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsString, Max, Min } from 'class-validator';
-import { RACE_TIME_MAX_MS, RACE_TIME_MIN_MS, type CreateRaceResultRequest } from '@racing/shared';
+import { RACE_TIME_MAX_MS, RACE_TIME_MIN_MS, type TCreateRaceResultRequest } from '@racing/shared';
 
 /** DTO результата заезда. Class нужен class-validator и Swagger. */
-export class CreateRaceResultDto implements CreateRaceResultRequest {
+export class CreateRaceResultDto implements TCreateRaceResultRequest {
   @ApiProperty()
   @IsString()
   trackId: string;

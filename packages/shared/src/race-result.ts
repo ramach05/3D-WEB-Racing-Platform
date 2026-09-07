@@ -1,5 +1,5 @@
 /** Сохранённый результат заезда */
-export type RaceResultPublic = {
+export type TRaceResultPublic = {
   id: string;
   timeMs: number;
   userId: string;
@@ -8,7 +8,7 @@ export type RaceResultPublic = {
 };
 
 /** Создание результата после финиша */
-export type CreateRaceResultRequest = {
+export type TCreateRaceResultRequest = {
   trackId: string;
   timeMs: number;
 };

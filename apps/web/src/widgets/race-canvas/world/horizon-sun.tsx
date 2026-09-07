@@ -2,9 +2,9 @@ import { useEffect, useMemo } from 'react';
 import { Billboard } from '@react-three/drei';
 import { AdditiveBlending, CanvasTexture, SRGBColorSpace, type Texture } from 'three';
 
-type RadialStop = { stop: number; color: string };
+type TRadialStop = { stop: number; color: string };
 
-const createRadialGradientTexture = (stops: RadialStop[], size = 256): CanvasTexture => {
+const createRadialGradientTexture = (stops: TRadialStop[], size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -26,7 +26,7 @@ const createRadialGradientTexture = (stops: RadialStop[], size = 256): CanvasTex
   return texture;
 };
 
-const SUN_CORE_STOPS: RadialStop[] = [
+const SUN_CORE_STOPS: TRadialStop[] = [
   { stop: 0, color: 'rgba(255, 252, 245, 1)' },
   { stop: 0.2, color: 'rgba(255, 238, 170, 0.98)' },
   { stop: 0.45, color: 'rgba(255, 200, 80, 0.75)' },
@@ -34,26 +34,26 @@ const SUN_CORE_STOPS: RadialStop[] = [
   { stop: 1, color: 'rgba(255, 110, 20, 0)' },
 ];
 
-const SUN_CORONA_STOPS: RadialStop[] = [
+const SUN_CORONA_STOPS: TRadialStop[] = [
   { stop: 0, color: 'rgba(255, 210, 90, 0.55)' },
   { stop: 0.35, color: 'rgba(255, 160, 50, 0.28)' },
   { stop: 0.7, color: 'rgba(255, 110, 30, 0.1)' },
   { stop: 1, color: 'rgba(255, 80, 10, 0)' },
 ];
 
-const SUN_GLOW_STOPS: RadialStop[] = [
+const SUN_GLOW_STOPS: TRadialStop[] = [
   { stop: 0, color: 'rgba(255, 190, 100, 0.18)' },
   { stop: 0.45, color: 'rgba(255, 140, 60, 0.08)' },
   { stop: 1, color: 'rgba(255, 100, 40, 0)' },
 ];
 
-type SunLayerProps = {
+type TSunLayerProps = {
   map: Texture;
   size: number;
   renderOrder: number;
 };
 
-const SunLayer = ({ map, size, renderOrder }: SunLayerProps) => (
+const SunLayer = ({ map, size, renderOrder }: TSunLayerProps) => (
   <mesh renderOrder={renderOrder}>
     <planeGeometry args={[size, size]} />
     <meshBasicMaterial
@@ -68,12 +68,12 @@ const SunLayer = ({ map, size, renderOrder }: SunLayerProps) => (
   </mesh>
 );
 
-type HorizonSunProps = {
+type THorizonSunProps = {
   position: [number, number, number];
 };
 
 /** Солнце на горизонте: billboard с многослойным градиентом */
-export const HorizonSun = ({ position }: HorizonSunProps) => {
+export const HorizonSun = ({ position }: THorizonSunProps) => {
   const textures = useMemo(
     () => ({
       core: createRadialGradientTexture(SUN_CORE_STOPS),

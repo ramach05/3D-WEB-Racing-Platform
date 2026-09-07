@@ -8,10 +8,10 @@ import {
   type MeshStandardMaterial,
   type WebGLProgramParametersWithUniforms,
 } from 'three';
-import type { TrackPalette } from '@/entities/track';
+import type { TTrackPalette } from '@/entities/track';
 import { getRaceHudSnapshot } from '@/features/race-session';
 
-export type SpectatorSeat = {
+export type TSpectatorSeat = {
   x: number;
   y: number;
   z: number;
@@ -28,9 +28,9 @@ export type SpectatorSeat = {
   pantsColor: string;
 };
 
-type SpectatorCrowdProps = {
-  seats: SpectatorSeat[];
-  palette: TrackPalette;
+type TSpectatorCrowdProps = {
+  seats: TSpectatorSeat[];
+  palette: TTrackPalette;
   isNight: boolean;
   paused: boolean;
 };
@@ -71,7 +71,7 @@ const SKIN_COLORS = ['#f0d4b8', '#e0b090', '#c6865a', '#8d5524', '#f5c9a0'];
 const PANTS_COLORS_DAY = ['#4a5a72', '#3d4a5c', '#2f3b4c', '#5a6578'];
 const PANTS_COLORS_NIGHT = ['#4a5a72', '#3d4a5c', '#2f3b4c', '#5a6578', '#1b2838', '#3b2f4a'];
 
-type BuildSpectatorSeatsOptions = {
+type TBuildSpectatorSeatsOptions = {
   tribuneInnerX: number;
   sideSign: number;
   count: number;
@@ -89,8 +89,8 @@ export const buildSpectatorSeats = ({
   count,
   sectionWidth,
   sectionPitch,
-}: BuildSpectatorSeatsOptions): SpectatorSeat[] => {
-  const seats: SpectatorSeat[] = [];
+}: TBuildSpectatorSeatsOptions): TSpectatorSeat[] => {
+  const seats: TSpectatorSeat[] = [];
   const rows = 5;
   const rowDepth = 0.75;
   const rowHeight = 0.65;
@@ -131,7 +131,7 @@ export const buildSpectatorSeats = ({
   return seats;
 };
 
-type EnergyLevel = {
+type TEnergyLevel = {
   bobAmp: number;
   bobSpeed: number;
   waveAmp: number;
@@ -139,7 +139,7 @@ type EnergyLevel = {
   leanAmp: number;
 };
 
-const ENERGY_IDLE: EnergyLevel = {
+const ENERGY_IDLE: TEnergyLevel = {
   bobAmp: 0.07,
   bobSpeed: 2.8,
   waveAmp: 0.85,
@@ -147,7 +147,7 @@ const ENERGY_IDLE: EnergyLevel = {
   leanAmp: 0.07,
 };
 
-const ENERGY_RACING: EnergyLevel = {
+const ENERGY_RACING: TEnergyLevel = {
   bobAmp: 0.1,
   bobSpeed: 4,
   waveAmp: 0.95,
@@ -155,7 +155,7 @@ const ENERGY_RACING: EnergyLevel = {
   leanAmp: 0.1,
 };
 
-const ENERGY_CHEER: EnergyLevel = {
+const ENERGY_CHEER: TEnergyLevel = {
   bobAmp: 0.14,
   bobSpeed: 5.8,
   waveAmp: 1.1,
@@ -194,7 +194,7 @@ const enableInstanceEmissiveTint = (material: MeshStandardMaterial): void => {
 };
 
 /** Анимированная толпа зрителей через InstancedMesh */
-export const SpectatorCrowd = ({ seats, isNight, paused }: SpectatorCrowdProps) => {
+export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps) => {
   const bodyRef = useRef<InstancedMesh>(null);
   const headRef = useRef<InstancedMesh>(null);
   const leftArmRef = useRef<InstancedMesh>(null);
@@ -275,14 +275,14 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: SpectatorCrowdProps) 
     const status = getRaceHudSnapshot().status;
     const cheer = status === 'finished';
     const racing = status === 'racing' || status === 'countdown';
-    let baseEnergy: EnergyLevel = ENERGY_IDLE;
+    let baseEnergy: TEnergyLevel = ENERGY_IDLE;
     if (cheer) {
       baseEnergy = ENERGY_CHEER;
     } else if (racing) {
       baseEnergy = ENERGY_RACING;
     }
     const nightMul = isNight ? ENERGY_NIGHT_BOOST : 1;
-    const energy: EnergyLevel = {
+    const energy: TEnergyLevel = {
       bobAmp: baseEnergy.bobAmp * nightMul,
       bobSpeed: baseEnergy.bobSpeed * (isNight ? 1.08 : 1),
       waveAmp: baseEnergy.waveAmp * nightMul,

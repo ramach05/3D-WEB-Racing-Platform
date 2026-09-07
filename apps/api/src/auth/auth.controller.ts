@@ -6,7 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import type { JwtUser } from './auth.types';
+import type { TJwtUser } from './auth.types';
 
 /**
  * HTTP-слой auth.
@@ -39,7 +39,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Текущий пользователь и личные лучшие времена' })
-  me(@CurrentUser() user: JwtUser) {
+  me(@CurrentUser() user: TJwtUser) {
     return this.authService.me(user);
   }
 }

@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, Matches, MinLength } from 'class-validator';
-import type { LoginRequest } from '@racing/shared';
+import type { TLoginRequest } from '@racing/shared';
 
 /** DTO логина. Class нужен class-validator и Swagger. */
-export class LoginDto implements LoginRequest {
+export class LoginDto implements TLoginRequest {
   @ApiProperty({ example: 'test_user', minLength: 3, maxLength: 20 })
   @IsString()
   @MinLength(3)

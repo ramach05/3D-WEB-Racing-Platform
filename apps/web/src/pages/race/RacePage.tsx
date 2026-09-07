@@ -21,18 +21,18 @@ import { RaceCanvas } from '@/widgets/race-canvas';
 import { RaceControls } from '@/widgets/race-controls';
 import { RaceCountdownOverlay } from '@/widgets/race-countdown';
 import { RaceFinishMomentOverlay } from '@/widgets/race-finish-moment';
-import { RaceFinishOverlay, type FinishSubmitState } from '@/widgets/race-finish-overlay';
+import { RaceFinishOverlay, type TFinishSubmitState } from '@/widgets/race-finish-overlay';
 import { LeaderboardTable } from '@/widgets/leaderboard-table';
 import { RacePauseMenu } from '@/widgets/race-pause-menu';
 
-type RaceTestApi = {
+type TRaceTestApi = {
   __finishRaceForTest?: () => void;
 };
 
-type FinishMeta = {
+type TFinishMeta = {
   timeMs: number;
   isNewBest: boolean;
-  submitState: FinishSubmitState;
+  submitState: TFinishSubmitState;
 };
 
 /** FINISH! + время до модалки результатов */
@@ -52,7 +52,7 @@ export const RacePage = () => {
   const [createResult] = useCreateRaceResultMutation();
   const [resetNonce, setResetNonce] = useState(0);
   const [restartToast, setRestartToast] = useState(false);
-  const [finishMeta, setFinishMeta] = useState<FinishMeta | null>(null);
+  const [finishMeta, setFinishMeta] = useState<TFinishMeta | null>(null);
   const [showFinishOverlay, setShowFinishOverlay] = useState(false);
   const [musicMuted, setMusicMuted] = useState(false);
   const sessionKey =
@@ -68,6 +68,10 @@ export const RacePage = () => {
       setShowFinishOverlay(false);
       setResetNonce((value) => value + 1);
     }
+  }
+
+  if (hud.status !== 'finished' && showFinishOverlay) {
+    setShowFinishOverlay(false);
   }
 
   const { data: leaderboard } = useGetLeaderboardQuery(trackId ?? '', {
@@ -155,7 +159,6 @@ export const RacePage = () => {
 
   useEffect(() => {
     if (hud.status !== 'finished') {
-      setShowFinishOverlay(false);
       return;
     }
     // Всегда даём сыграть finish-moment (FINISH! → время); CSS сам глушит motion
@@ -167,7 +170,7 @@ export const RacePage = () => {
     if (!trackId) {
       return;
     }
-    const raceWindow = window as Window & RaceTestApi;
+    const raceWindow = window as Window & TRaceTestApi;
     raceWindow.__finishRaceForTest = () => {
       if (submittedRef.current) {
         return;

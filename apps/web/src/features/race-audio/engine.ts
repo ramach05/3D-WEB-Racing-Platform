@@ -1,13 +1,13 @@
-import type { TrackAudioTheme } from '@/entities/track';
+import type { TTrackAudioTheme } from '@/entities/track';
 
-type Note = {
+type TNote = {
   freq: number;
   start: number;
   duration: number;
   type: OscillatorType;
 };
 
-const COASTAL_LOOP: Note[] = [
+const COASTAL_LOOP: TNote[] = [
   { freq: 196, start: 0, duration: 0.18, type: 'square' },
   { freq: 247, start: 0.2, duration: 0.18, type: 'square' },
   { freq: 294, start: 0.4, duration: 0.18, type: 'square' },
@@ -19,7 +19,7 @@ const COASTAL_LOOP: Note[] = [
   { freq: 330, start: 1.8, duration: 0.35, type: 'square' },
 ];
 
-const NIGHT_LOOP: Note[] = [
+const NIGHT_LOOP: TNote[] = [
   { freq: 147, start: 0, duration: 0.22, type: 'sawtooth' },
   { freq: 175, start: 0.24, duration: 0.22, type: 'sawtooth' },
   { freq: 220, start: 0.48, duration: 0.22, type: 'sawtooth' },
@@ -30,7 +30,7 @@ const NIGHT_LOOP: Note[] = [
   { freq: 262, start: 1.92, duration: 0.44, type: 'square' },
 ];
 
-const LOOPS: Record<TrackAudioTheme, { notes: Note[]; loopSec: number }> = {
+const LOOPS: Record<TTrackAudioTheme, { notes: TNote[]; loopSec: number }> = {
   coastal: { notes: COASTAL_LOOP, loopSec: 2.4 },
   night: { notes: NIGHT_LOOP, loopSec: 2.4 },
 };
@@ -41,7 +41,7 @@ const MASTER_GAIN = 0.08;
 export class ChiptuneEngine {
   private ctx: AudioContext | null = null;
   private gain: GainNode | null = null;
-  private theme: TrackAudioTheme | null = null;
+  private theme: TTrackAudioTheme | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private paused = false;
   private muted = false;
@@ -94,7 +94,7 @@ export class ChiptuneEngine {
     this.activeOscillators.clear();
   };
 
-  private playNote = (note: Note, when: number): void => {
+  private playNote = (note: TNote, when: number): void => {
     const ctx = this.ensureContext();
     if (!ctx || !this.gain) {
       return;
@@ -160,7 +160,7 @@ export class ChiptuneEngine {
     this.clearTimer();
   };
 
-  start = async (theme: TrackAudioTheme): Promise<void> => {
+  start = async (theme: TTrackAudioTheme): Promise<void> => {
     const generation = ++this.generation;
     this.running = true;
     this.theme = theme;

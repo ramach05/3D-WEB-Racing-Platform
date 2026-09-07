@@ -1,17 +1,17 @@
-export type RaceStatus = 'ready' | 'countdown' | 'racing' | 'finished' | 'paused';
+export type TRaceStatus = 'ready' | 'countdown' | 'racing' | 'finished' | 'paused';
 
 /** Число кругов на любой трассе */
 export const RACE_LAP_TOTAL = 3;
 
 /** Шаг отсчёта: 3→2→1→0(GO), null вне countdown */
-export type CountdownStep = 3 | 2 | 1 | 0;
+export type TCountdownStep = 3 | 2 | 1 | 0;
 
-export type RaceHudSnapshot = {
+export type TRaceHudSnapshot = {
   timeMs: number;
   bestMs: number | null;
-  status: RaceStatus;
+  status: TRaceStatus;
   /** Активный шаг 3-2-1-GO во время countdown */
-  countdownStep: CountdownStep | null;
+  countdownStep: TCountdownStep | null;
   speedKmh: number;
   checkpointIndex: number;
   checkpointTotal: number;
@@ -20,11 +20,11 @@ export type RaceHudSnapshot = {
   lapTotal: number;
 };
 
-type Listener = () => void;
+type TListener = () => void;
 
 const BEST_PREFIX = 'racing-best:';
 
-let snapshot: RaceHudSnapshot = {
+let snapshot: TRaceHudSnapshot = {
   timeMs: 0,
   bestMs: null,
   status: 'ready',
@@ -40,7 +40,7 @@ let startedAt = 0;
 let pausedAccumulated = 0;
 let pauseStartedAt = 0;
 let lastNotifyAt = 0;
-const listeners = new Set<Listener>();
+const listeners = new Set<TListener>();
 
 /** Читает лучшее время гостя с этой трассы */
 export const readGuestBest = (trackId: string): number | null => {
@@ -61,7 +61,7 @@ export const writeGuestBest = (trackId: string, timeMs: number): void => {
 };
 
 /** Подписка HUD на снимок заезда */
-export const subscribeRaceHud = (listener: Listener): (() => void) => {
+export const subscribeRaceHud = (listener: TListener): (() => void) => {
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
@@ -69,7 +69,7 @@ export const subscribeRaceHud = (listener: Listener): (() => void) => {
 };
 
 /** Текущий снимок HUD */
-export const getRaceHudSnapshot = (): RaceHudSnapshot => snapshot;
+export const getRaceHudSnapshot = (): TRaceHudSnapshot => snapshot;
 
 const emit = (force: boolean): void => {
   const now = performance.now();
@@ -80,7 +80,7 @@ const emit = (force: boolean): void => {
   listeners.forEach((listener) => listener());
 };
 
-const setSnapshot = (patch: Partial<RaceHudSnapshot>, force = false): void => {
+const setSnapshot = (patch: Partial<TRaceHudSnapshot>, force = false): void => {
   snapshot = { ...snapshot, ...patch };
   emit(force);
 };
@@ -119,7 +119,7 @@ export const beginCountdown = (): void => {
 };
 
 /** Обновляет цифру/GO на оверлее и стартовых огнях */
-export const setCountdownStep = (step: CountdownStep): void => {
+export const setCountdownStep = (step: TCountdownStep): void => {
   if (snapshot.status !== 'countdown') {
     return;
   }

@@ -1,2 +1,2 @@
 export { RaceFinishOverlay } from './RaceFinishOverlay';
-export type { FinishSubmitState } from './RaceFinishOverlay';
+export type { TFinishSubmitState } from './RaceFinishOverlay';

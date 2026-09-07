@@ -1,11 +1,11 @@
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import type { CollisionEnterPayload } from '@react-three/rapier';
-import type { TrackObstacle } from '@/entities/track';
+import type { TTrackObstacle } from '@/entities/track';
 import { TIRE_GROUPS } from '../lib/collision-groups';
 import { registerTireHit } from '../lib/tire-hit-damping';
 
-type TrackObstaclesProps = {
-  obstacles: TrackObstacle[];
+type TTrackObstaclesProps = {
+  obstacles: TTrackObstacle[];
   resetNonce: number;
 };
 
@@ -72,7 +72,7 @@ const handleTireHit = (payload: CollisionEnterPayload) => {
 };
 
 /** Стопки шин у стенок — dynamic, отлетают при ударе */
-export const TrackObstacles = ({ obstacles, resetNonce }: TrackObstaclesProps) => {
+export const TrackObstacles = ({ obstacles, resetNonce }: TTrackObstaclesProps) => {
   if (obstacles.length === 0) {
     return null;
   }

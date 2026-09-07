@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { useRaceHud } from '@/features/race-session';
 import { formatRaceTime } from '@/shared/lib';
 
-type FinishMomentPhase = 'finish' | 'time';
+type TFinishMomentPhase = 'finish' | 'time';
 
-type RaceFinishMomentOverlayProps = {
+type TRaceFinishMomentOverlayProps = {
   /** Показывать момент (до модалки результатов) */
   active: boolean;
   timeMs: number;
@@ -19,11 +19,11 @@ export const RaceFinishMomentOverlay = ({
   active,
   timeMs,
   isNewBest,
-}: RaceFinishMomentOverlayProps) => {
+}: TRaceFinishMomentOverlayProps) => {
   const { t } = useTranslation();
   const hud = useRaceHud();
   const visible = active && hud.status === 'finished';
-  const [phase, setPhase] = useState<FinishMomentPhase>('finish');
+  const [phase, setPhase] = useState<TFinishMomentPhase>('finish');
   const [wasVisible, setWasVisible] = useState(false);
 
   if (visible !== wasVisible) {

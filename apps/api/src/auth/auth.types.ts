@@ -1,9 +1,9 @@
-export type JwtUser = {
+export type TJwtUser = {
   userId: string;
   nickname: string;
 };
 
-export type JwtPayload = {
+export type TJwtPayload = {
   sub: string;
   nickname: string;
 };

@@ -15,12 +15,12 @@ process.env.DATABASE_URL = 'file:./test.db';
 
 const apiRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 
-type AuthBody = {
+type TAuthBody = {
   user: { id: string; nickname: string };
   tokens: { accessToken: string; refreshToken: string };
 };
 
-type TrackBody = {
+type TTrackBody = {
   id: string;
   slug: string;
   isAvailable: boolean;
@@ -76,7 +76,7 @@ describe('API e2e', () => {
       .send({ nickname, password: '1234' })
       .expect(201);
 
-    const registerBody = register.body as AuthBody;
+    const registerBody = register.body as TAuthBody;
     expect(registerBody.user.nickname).toBe(nickname.toLowerCase());
     expect(registerBody.tokens.accessToken.length).toBeGreaterThan(10);
 
@@ -85,7 +85,7 @@ describe('API e2e', () => {
       .send({ nickname, password: '1234' })
       .expect(201);
 
-    const loginBody = login.body as AuthBody;
+    const loginBody = login.body as TAuthBody;
     const me = await request(server)
       .get('/auth/me')
       .set('Authorization', `Bearer ${loginBody.tokens.accessToken}`)
@@ -110,10 +110,10 @@ describe('API e2e', () => {
       .post('/auth/login')
       .send({ nickname: 'test_user', password: '1234' })
       .expect(201);
-    const accessToken = (login.body as AuthBody).tokens.accessToken;
+    const accessToken = (login.body as TAuthBody).tokens.accessToken;
 
     const tracks = await request(server).get('/tracks').expect(200);
-    const coastal = (tracks.body as TrackBody[]).find((track) => track.slug === 'coastal-oval');
+    const coastal = (tracks.body as TTrackBody[]).find((track) => track.slug === 'coastal-oval');
     expect(coastal).toBeDefined();
     const trackId = coastal?.id ?? '';
 

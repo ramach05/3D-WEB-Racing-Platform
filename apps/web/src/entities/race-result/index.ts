@@ -1,2 +1,2 @@
-export type { CreateRaceResultRequest, RaceResultPublic } from '@racing/shared';
+export type { TCreateRaceResultRequest, TRaceResultPublic } from '@racing/shared';
 export { raceResultApi, useCreateRaceResultMutation } from './api';

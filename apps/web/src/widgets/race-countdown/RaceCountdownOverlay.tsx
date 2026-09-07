@@ -4,12 +4,12 @@ import {
   setCountdownStep,
   startRacing,
   useRaceHud,
-  type CountdownStep,
+  type TCountdownStep,
 } from '@/features/race-session';
 
 const STEP_MS = 750;
 const GO_MS = 550;
-const STEPS: CountdownStep[] = [3, 2, 1, 0];
+const STEPS: TCountdownStep[] = [3, 2, 1, 0];
 
 const prefersReducedMotion = (): boolean => {
   if (typeof window === 'undefined' || !window.matchMedia) {

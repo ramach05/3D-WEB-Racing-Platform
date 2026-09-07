@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { TrackPublic } from '@racing/shared';
+import type { TTrackPublic } from '@racing/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** Список трасс. Класс нужен Nest DI. */
@@ -7,7 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class TracksService {
   constructor(private readonly prisma: PrismaService) {}
 
-  list = async (): Promise<TrackPublic[]> => {
+  list = async (): Promise<TTrackPublic[]> => {
     const tracks = await this.prisma.track.findMany({ orderBy: { name: 'asc' } });
     return tracks.map((track) => ({
       id: track.id,

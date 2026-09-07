@@ -1,18 +1,18 @@
 /** Тело ошибки Nest / ValidationPipe */
-export type ApiErrorBody = {
+export type TApiErrorBody = {
   statusCode: number;
   message: string | string[];
   error: string;
 };
 
 /** Значение, которое можно безопасно превратить в текст ошибки */
-export type CaughtError = {
+export type TCaughtError = {
   message?: string;
   toString: () => string;
 };
 
 /** Достаёт человекочитаемый текст из ошибки без any/unknown */
-export const getErrorMessage = (error: CaughtError): string => {
+export const getErrorMessage = (error: TCaughtError): string => {
   if (typeof error.message === 'string' && error.message.length > 0) {
     return error.message;
   }

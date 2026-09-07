@@ -4,8 +4,8 @@ import { CapsuleCollider, RigidBody, useRapier } from '@react-three/rapier';
 import type { RapierRigidBody } from '@react-three/rapier';
 import { Quaternion, Vector3 } from 'three';
 import type { Group, Object3D, SpotLight } from 'three';
-import type { CarSkin } from '@/entities/track';
-import type { Vec3 } from '@/entities/track';
+import type { TCarSkin } from '@/entities/track';
+import type { TVec3 } from '@/entities/track';
 import {
   beginCountdown,
   computeSteerStrength,
@@ -26,24 +26,24 @@ const HEADLIGHT_DISTANCE = 24;
 const HEADLIGHT_DECAY = 2;
 const HEADLIGHT_COLOR = '#fff8e0';
 /** Прицел: в плоскость асфальта впереди */
-const HEADLIGHT_TARGET: Vec3 = [0, -1.0, 11];
-const HEADLIGHT_LOCAL_LEFT: Vec3 = [-0.55, 0.5, 1.7];
-const HEADLIGHT_LOCAL_RIGHT: Vec3 = [0.55, 0.5, 1.7];
+const HEADLIGHT_TARGET: TVec3 = [0, -1.0, 11];
+const HEADLIGHT_LOCAL_LEFT: TVec3 = [-0.55, 0.5, 1.7];
+const HEADLIGHT_LOCAL_RIGHT: TVec3 = [0.55, 0.5, 1.7];
 const HEADLIGHT_SHADOW_MAP = 1024;
 const HEADLIGHT_SHADOW_NEAR = 0.5;
 const HEADLIGHT_SHADOW_BIAS = -0.00002;
 const HEADLIGHT_SHADOW_NORMAL_BIAS = 0.02;
 
-type VehicleProps = {
-  spawnPosition: Vec3;
+type TVehicleProps = {
+  spawnPosition: TVec3;
   spawnRotationY: number;
   resetNonce: number;
   bodyRef: RefObject<RapierRigidBody | null>;
-  carSkin: CarSkin;
+  carSkin: TCarSkin;
   headlightsOn: boolean;
 };
 
-type VehicleHeadlightsProps = {
+type TVehicleHeadlightsProps = {
   bodyRef: RefObject<RapierRigidBody | null>;
 };
 
@@ -58,7 +58,7 @@ const configureHeadlightShadow = (light: SpotLight) => {
 };
 
 /** Фары вне RigidBody — иначе shadow map SpotLight не окклюдирует стены */
-const VehicleHeadlights = ({ bodyRef }: VehicleHeadlightsProps) => {
+const VehicleHeadlights = ({ bodyRef }: TVehicleHeadlightsProps) => {
   const groupRef = useRef<Group>(null);
   const headlightTargetRef = useRef<Object3D>(null);
   const leftHeadlightRef = useRef<SpotLight>(null);
@@ -156,7 +156,7 @@ const VehicleHeadlights = ({ bodyRef }: VehicleHeadlightsProps) => {
   );
 };
 
-const WHEEL_LOCAL: Vec3[] = [
+const WHEEL_LOCAL: TVec3[] = [
   [-0.72, 0.05, 1.05],
   [0.72, 0.05, 1.05],
   [-0.72, 0.05, -1.05],
@@ -183,7 +183,7 @@ const SPAWN_DROP_HEIGHT = 3.2;
 /** После касания ждём почти нулевую вертикальную скорость */
 const LAND_SETTLE_VY = 1.2;
 
-const elevatedSpawn = (spawnPosition: Vec3): { x: number; y: number; z: number } => ({
+const elevatedSpawn = (spawnPosition: TVec3): { x: number; y: number; z: number } => ({
   x: spawnPosition[0],
   y: spawnPosition[1] + SPAWN_DROP_HEIGHT,
   z: spawnPosition[2],
@@ -259,7 +259,7 @@ export const Vehicle = ({
   bodyRef,
   carSkin,
   headlightsOn,
-}: VehicleProps) => {
+}: TVehicleProps) => {
   const { world, rapier } = useRapier();
   const lastNonce = useRef(resetNonce);
   const awaitingLand = useRef(true);
@@ -368,7 +368,7 @@ export const Vehicle = ({
     }
   });
 
-  const dropSpawn: Vec3 = [
+  const dropSpawn: TVec3 = [
     spawnPosition[0],
     spawnPosition[1] + SPAWN_DROP_HEIGHT,
     spawnPosition[2],

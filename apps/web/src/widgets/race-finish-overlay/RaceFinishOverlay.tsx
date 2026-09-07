@@ -3,16 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { formatRaceTime } from '@/shared/lib';
 import { Button } from '@/shared/ui';
 
-export type FinishSubmitState = 'idle' | 'loading' | 'done' | 'error';
+export type TFinishSubmitState = 'idle' | 'loading' | 'done' | 'error';
 
-type RaceFinishOverlayProps = {
+type TRaceFinishOverlayProps = {
   open: boolean;
   trackName: string;
   timeMs: number;
   bestMs: number | null;
   isNewBest: boolean;
   isGuest: boolean;
-  submitState: FinishSubmitState;
+  submitState: TFinishSubmitState;
   /** Rank текущего игрока (считается на page) */
   userRank?: number | null;
   /** Слот таблицы лидеров — композиция со слоя pages */
@@ -36,7 +36,7 @@ export const RaceFinishOverlay = ({
   onRestart,
   onExit,
   onOpenLeaderboard,
-}: RaceFinishOverlayProps) => {
+}: TRaceFinishOverlayProps) => {
   const { t } = useTranslation();
   const firstButton = useRef<HTMLButtonElement>(null);
 

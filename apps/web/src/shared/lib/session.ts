@@ -1,23 +1,23 @@
 import { AUTH_STORAGE_KEY } from '@/shared/config';
 
-export type AuthSession = {
+export type TAuthSession = {
   accessToken: string;
   refreshToken: string;
 };
 
-type StoredSession = {
+type TStoredSession = {
   accessToken?: string;
   refreshToken?: string;
 };
 
 /** Читает JWT из localStorage */
-export const readAuthSession = (): AuthSession | null => {
+export const readAuthSession = (): TAuthSession | null => {
   const raw = localStorage.getItem(AUTH_STORAGE_KEY);
   if (!raw) {
     return null;
   }
   try {
-    const parsed = JSON.parse(raw) as StoredSession;
+    const parsed = JSON.parse(raw) as TStoredSession;
     if (typeof parsed.accessToken === 'string' && typeof parsed.refreshToken === 'string') {
       return { accessToken: parsed.accessToken, refreshToken: parsed.refreshToken };
     }
@@ -28,7 +28,7 @@ export const readAuthSession = (): AuthSession | null => {
 };
 
 /** Пишет JWT в localStorage */
-export const writeAuthSession = (session: AuthSession): void => {
+export const writeAuthSession = (session: TAuthSession): void => {
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
 };
 

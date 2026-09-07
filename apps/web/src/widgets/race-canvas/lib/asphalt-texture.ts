@@ -6,9 +6,9 @@ export const ASPHALT_TILE_SIZE = 2.2;
 /** Мировой размер тайла грунта */
 export const GROUND_TILE_SIZE = 10;
 
-type Rng = () => number;
+type TRng = () => number;
 
-const createRng = (seedInit: number): Rng => {
+const createRng = (seedInit: number): TRng => {
   let seed = seedInit >>> 0;
   return () => {
     seed = (seed * 1664525 + 1013904223) >>> 0;

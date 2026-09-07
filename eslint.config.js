@@ -53,6 +53,19 @@ const sharedRules = {
     'error',
     { prefer: 'type-imports', fixStyle: 'separate-type-imports' },
   ],
+  '@typescript-eslint/naming-convention': [
+    'error',
+    {
+      selector: 'typeAlias',
+      format: ['PascalCase'],
+      prefix: ['T'],
+    },
+    {
+      selector: 'interface',
+      format: ['PascalCase'],
+      prefix: ['I'],
+    },
+  ],
   'no-restricted-syntax': ['error', noAnyUnknown, noUnknown, noFunctionDeclaration],
 };
 
@@ -104,6 +117,12 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       'no-restricted-imports': ['error', { patterns: fsdPublicApiPatterns }],
+    },
+  },
+  {
+    files: ['apps/web/src/vite-env.d.ts'],
+    rules: {
+      '@typescript-eslint/naming-convention': 'off',
     },
   },
   {

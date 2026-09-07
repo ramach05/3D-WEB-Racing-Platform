@@ -1,17 +1,17 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cx } from '@/shared/lib';
 
-type ButtonVariant = 'primary' | 'ghost' | 'danger';
-type ButtonSize = 'md' | 'sm';
+type TButtonVariant = 'primary' | 'ghost' | 'danger';
+type TButtonSize = 'md' | 'sm';
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
+type TButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: TButtonVariant;
+  size?: TButtonSize;
   children: ReactNode;
 };
 
 /** Кнопка в стиле SEGA с видимым фокусом */
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+export const Button = forwardRef<HTMLButtonElement, TButtonProps>(
   ({ variant = 'primary', size = 'md', className, type = 'button', children, ...rest }, ref) => {
     return (
       <button

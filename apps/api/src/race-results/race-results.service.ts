@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { LeaderboardEntry, RaceResultPublic } from '@racing/shared';
-import type { JwtUser } from '../auth/auth.types';
+import type { TLeaderboardEntry, TRaceResultPublic } from '@racing/shared';
+import type { TJwtUser } from '../auth/auth.types';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateRaceResultDto } from './dto/create-race-result.dto';
 
@@ -11,7 +11,7 @@ const LEADERBOARD_LIMIT = 20;
 export class RaceResultsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create = async (user: JwtUser, dto: CreateRaceResultDto): Promise<RaceResultPublic> => {
+  create = async (user: TJwtUser, dto: CreateRaceResultDto): Promise<TRaceResultPublic> => {
     const track = await this.prisma.track.findUnique({ where: { id: dto.trackId } });
     if (!track) {
       throw new NotFoundException('Трасса не найдена');
@@ -37,7 +37,7 @@ export class RaceResultsService {
     };
   };
 
-  leaderboard = async (trackId: string): Promise<LeaderboardEntry[]> => {
+  leaderboard = async (trackId: string): Promise<TLeaderboardEntry[]> => {
     const track = await this.prisma.track.findUnique({ where: { id: trackId } });
     if (!track) {
       throw new NotFoundException('Трасса не найдена');

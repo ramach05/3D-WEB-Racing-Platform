@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { AuthTokens } from '@racing/shared';
+import type { TAuthTokens } from '@racing/shared';
 import { getApiBaseUrl } from '@/shared/config';
 import { clearAuthSession, readAuthSession, writeAuthSession } from '@/shared/lib';
 
@@ -14,8 +14,8 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
-type RefreshResponse = {
-  tokens: AuthTokens;
+type TRefreshResponse = {
+  tokens: TAuthTokens;
 };
 
 /** Повторяет запрос после refresh, если access истёк */
@@ -41,7 +41,7 @@ const baseQueryWithReauth: typeof rawBaseQuery = async (args, api, extraOptions)
   );
 
   if (refreshResult.data) {
-    const data = refreshResult.data as RefreshResponse;
+    const data = refreshResult.data as TRefreshResponse;
     writeAuthSession(data.tokens);
     return rawBaseQuery(args, api, extraOptions);
   }
