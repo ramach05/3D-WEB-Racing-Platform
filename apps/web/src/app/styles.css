@@ -17,37 +17,12 @@
   --font-mono: DotumChe, "Courier New", monospace;
 }
 
+/* Цветовые --* задаёт applyTheme из @/shared/config uiPalette / uiChrome */
 :root {
-  --bg: #f4f0ff;
-  --fg: #1a1033;
-  --muted: #5a4a78;
-  --surface: #ffffff;
-  --surface-hover: #ebe4ff;
-  --border: #0066cc;
-  --accent: #ff2bd6;
-  --accent-fg: #ffffff;
-  --danger: #d62828;
-  --sega-cyan: #0088cc;
-  --sega-magenta: #cc2299;
-  --sega-yellow: #cc9900;
-  --sega-orange: #e86a00;
   --pixel-border: 3px;
 }
 
 .dark {
-  --bg: #08040f;
-  --fg: #f3efe6;
-  --muted: #9f8fc8;
-  --surface: #140a24;
-  --surface-hover: #22123a;
-  --border: #00b8d4;
-  --accent: #ff4fd8;
-  --accent-fg: #120018;
-  --danger: #ff7070;
-  --sega-cyan: #00e5ff;
-  --sega-magenta: #ff2bd6;
-  --sega-yellow: #ffe600;
-  --sega-orange: #ff7a00;
   --pixel-border: 4px;
 }
 
@@ -304,13 +279,13 @@ button:disabled,
 
 .sega-track-tab--active {
   background: var(--sega-yellow);
-  color: #120018;
+  color: var(--on-yellow);
   font-weight: 600;
 }
 
 .sega-track-tab--active:hover {
   background: var(--sega-yellow);
-  color: #120018;
+  color: var(--on-yellow);
 }
 
 .sega-field {
@@ -508,7 +483,11 @@ button:disabled,
 .sega-finish-moment__wipe {
   position: absolute;
   inset: 38% -20% 38% -20%;
-  background: repeating-linear-gradient(90deg, #111 0 12px, #f5f5f5 12px 24px);
+  background: repeating-linear-gradient(
+    90deg,
+    var(--finish-wipe-dark) 0 12px,
+    var(--finish-wipe-light) 12px 24px
+  );
   opacity: 0;
   transform: translateX(-30%) skewX(-12deg);
   animation: sega-finish-moment-wipe 520ms steps(6) both;
