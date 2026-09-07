@@ -2,6 +2,7 @@ import type { TAuthResponse, TLoginRequest, TMeResponse, TRegisterRequest } from
 import { racingApi } from '@/shared/api';
 import { persistTokens, logout, setUser } from './model';
 
+/** RTK endpoints: register / login / me */
 export const authApi = racingApi.injectEndpoints({
   endpoints: (build) => ({
     register: build.mutation<TAuthResponse, TRegisterRequest>({

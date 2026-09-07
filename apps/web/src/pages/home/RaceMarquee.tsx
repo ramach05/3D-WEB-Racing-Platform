@@ -1,20 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
 
 type TRaceMarqueeProps = {
+  /** Текст бегущей строки */
   text: string;
 };
 
-/** Бегущая строка с бесшовным зацикливанием */
+/** Бегущая строка с бесшовным зациклированием */
 export const RaceMarquee = ({ text }: TRaceMarqueeProps) => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const [copiesPerSegment, setCopiesPerSegment] = useState(2);
 
+  // Подбираем число копий текста под ширину viewport
   useEffect(() => {
     const viewport = viewportRef.current;
     const measure = measureRef.current;
     if (!viewport || !measure) return;
 
+    /** Пересчёт копий при ресайзе */
     const update = () => {
       const viewportWidth = viewport.clientWidth;
       const unitWidth = measure.getBoundingClientRect().width;

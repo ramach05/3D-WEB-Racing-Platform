@@ -15,8 +15,11 @@ export const TRIBUNE_MARGIN = 2.5;
 export const TREE_EXCLUSION_PADDING = 4;
 
 type TBuildTribuneExclusionOptions = {
+  /** Линия старт/финиш — якорь ориентации */
   startFinishLine: TOrientedBox;
+  /** Ширина дороги */
   roadWidth: number;
+  /** Сторона трибун относительно движения */
   side: TStartTribuneSide;
 };
 

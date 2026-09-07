@@ -3,9 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/ui';
 
 type TRacePauseMenuProps = {
+  /** Показать меню паузы */
   open: boolean;
+  /** Продолжить заезд */
   onResume: () => void;
+  /** Рестарт заезда */
   onRestart: () => void;
+  /** Выход к списку трасс */
   onExit: () => void;
 };
 
@@ -14,6 +18,7 @@ export const RacePauseMenu = ({ open, onResume, onRestart, onExit }: TRacePauseM
   const { t } = useTranslation();
   const firstButton = useRef<HTMLButtonElement>(null);
 
+  // Фокус на первую кнопку при открытии паузы.
   useEffect(() => {
     if (open) {
       firstButton.current?.focus();

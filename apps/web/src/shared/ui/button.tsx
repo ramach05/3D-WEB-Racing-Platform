@@ -5,8 +5,11 @@ type TButtonVariant = 'primary' | 'ghost' | 'danger';
 type TButtonSize = 'md' | 'sm';
 
 type TButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  /** Визуальный вариант */
   variant?: TButtonVariant;
+  /** Размер */
   size?: TButtonSize;
+  /** Подпись / иконка */
   children: ReactNode;
 };
 

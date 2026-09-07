@@ -6,8 +6,11 @@ import { getRaceHudSnapshot } from '@/features/race-session';
 import { scenePalette, startLightPalette } from '@/shared/config';
 
 type TTrackStartFinishLineProps = {
+  /** Ориентированный бокс линии */
   line: TOrientedBox;
+  /** Ширина дороги для разметки */
   roadWidth: number;
+  /** Палитра трассы (accent огней) */
   palette: TTrackPalette;
 };
 
@@ -26,6 +29,7 @@ export const TrackStartFinishLine = ({ line, roadWidth, palette }: TTrackStartFi
   const rightPostRef = useRef<MeshStandardMaterial>(null);
   const pulseRef = useRef(0);
 
+  // Обновляет цвет/интенсивность стартовых огней по HUD-статусу.
   useFrame((_, dt) => {
     const hud = getRaceHudSnapshot();
     pulseRef.current += dt;

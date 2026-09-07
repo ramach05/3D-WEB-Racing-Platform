@@ -23,6 +23,7 @@ const createRng = (seed: number): (() => number) => {
   };
 };
 
+/** Хэш slug трассы → seed для RNG */
 const hashSlug = (slug: string): number => {
   let hash = 2166136261;
   for (let i = 0; i < slug.length; i += 1) {
@@ -58,6 +59,7 @@ const distanceToCenterlineSq = (x: number, z: number, centerline: TLoopPoint[]):
   return best;
 };
 
+/** Точка внутри любой из exclusion-зон */
 const isInsideAnyZone = (x: number, z: number, zones: TOrientedBox[]): boolean => {
   for (const zone of zones) {
     if (isInsideCheckpoint(x, z, zone)) {
@@ -67,6 +69,7 @@ const isInsideAnyZone = (x: number, z: number, zones: TOrientedBox[]): boolean =
   return false;
 };
 
+/** Достаточно ли далеко от уже поставленных деревьев */
 const isFarEnough = (x: number, z: number, placed: TPlacedTree[], minDist: number): boolean => {
   const minSq = minDist * minDist;
   for (const tree of placed) {

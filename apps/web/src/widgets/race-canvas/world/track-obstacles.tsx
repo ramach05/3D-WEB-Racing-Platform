@@ -6,7 +6,9 @@ import { TIRE_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
 import { registerTireHit } from '@/widgets/race-canvas/lib/tire-hit-damping';
 
 type TTrackObstaclesProps = {
+  /** Список препятствий (стопки шин) */
   obstacles: TTrackObstacle[];
+  /** Счётчик рестарта — сбрасывает позу шин */
   resetNonce: number;
 };
 
@@ -17,6 +19,7 @@ const TIRE_HIT_FACTOR = 0.45;
 const TIRE_IMPULSE_SCALE = 0.2;
 const TIRE_TORQUE_SCALE = 0.08;
 
+/** Визуал стопки из трёх шин */
 const TireStackVisual = () => (
   <group>
     {[0, 1, 2].map((tier) => (
@@ -34,6 +37,7 @@ const TireStackVisual = () => (
   </group>
 );
 
+/** Регистрирует удар машины о шину и даёт импульс стопке */
 const handleTireHit = (payload: CollisionEnterPayload) => {
   const otherName = payload.other.rigidBodyObject?.name;
   if (otherName !== 'vehicle') {

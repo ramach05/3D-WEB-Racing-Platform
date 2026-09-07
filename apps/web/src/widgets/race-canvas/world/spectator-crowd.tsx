@@ -14,12 +14,17 @@ import { crowdPalette } from '@/shared/config';
 import type { TBuildSpectatorSeatsOptions, TSpectatorSeat } from './spectator-crowd.types';
 
 type TSpectatorCrowdProps = {
+  /** Места зрителей секции */
   seats: TSpectatorSeat[];
+  /** Палитра трассы (зарезервировано) */
   palette: TTrackPalette;
+  /** Ночной неон футболок */
   isNight: boolean;
+  /** Пауза анимации */
   paused: boolean;
 };
 
+/** Берёт элемент массива по модулю индекса */
 const pick = <T,>(items: readonly T[], index: number): T => items[index % items.length] as T;
 
 /** Создаёт места зрителей на секции трибуны (локальные координаты секции) */
@@ -72,10 +77,15 @@ export const buildSpectatorSeats = ({
 };
 
 type TEnergyLevel = {
+  /** Амплитуда покачивания */
   bobAmp: number;
+  /** Множитель скорости bob */
   bobSpeed: number;
+  /** Амплитуда маха руками */
   waveAmp: number;
+  /** Множитель скорости маха */
   waveSpeed: number;
+  /** Амплитуда наклона */
   leanAmp: number;
 };
 
@@ -105,6 +115,7 @@ const ENERGY_CHEER: TEnergyLevel = {
 
 const ENERGY_NIGHT_BOOST = 1.12;
 
+/** Записывает instanceColor для InstancedMesh */
 const applyInstanceColors = (mesh: InstancedMesh, colors: Color[]): void => {
   for (let i = 0; i < colors.length; i += 1) {
     const color = colors[i];
@@ -164,6 +175,7 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
     [seats, shirtColors, pantsColors],
   );
 
+  // Красит инстансы и включает emissive-tint ночью.
   useLayoutEffect(() => {
     const bodyMesh = bodyRef.current;
     const leftArmMesh = leftArmRef.current;
@@ -197,6 +209,7 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
     }
   }, [coloredSeats, isNight]);
 
+  // Анимирует bob/wave/lean зрителей по статусу гонки.
   useFrame((state) => {
     if (coloredSeats.length === 0) {
       return;

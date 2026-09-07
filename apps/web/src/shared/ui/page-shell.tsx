@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
 
 type TPageShellProps = {
+  /** Контент страницы */
   children: ReactNode;
+  /** Доп. классы обёртки */
   className?: string;
 };
 

@@ -17,6 +17,7 @@ export const LoginForm = () => {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
+  /** Валидация и вызов login mutation */
   const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     const nextNicknameError = isValidNickname(nickname) ? null : t('auth.invalidNickname');

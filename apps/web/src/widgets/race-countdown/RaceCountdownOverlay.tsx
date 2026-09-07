@@ -11,6 +11,7 @@ const STEP_MS = 750;
 const GO_MS = 550;
 const STEPS: TCountdownStep[] = [3, 2, 1, 0];
 
+/** Проверяет prefers-reduced-motion в браузере */
 const prefersReducedMotion = (): boolean => {
   if (typeof window === 'undefined' || !window.matchMedia) {
     return false;
@@ -23,6 +24,7 @@ export const RaceCountdownOverlay = () => {
   const { t } = useTranslation();
   const hud = useRaceHud();
 
+  // Ведёт таймеры шагов 3-2-1-GO и стартует гонку.
   useEffect(() => {
     if (hud.status !== 'countdown') {
       return;

@@ -2,7 +2,9 @@ import type { InputHTMLAttributes, ReactNode } from 'react';
 import { cx } from '@/shared/lib';
 
 type TTextFieldProps = InputHTMLAttributes<HTMLInputElement> & {
+  /** Подпись поля */
   label: string;
+  /** Текст ошибки или null */
   error?: string | null;
 };
 
@@ -27,6 +29,7 @@ export const TextField = ({ label, error, id, className, ...rest }: TTextFieldPr
 };
 
 type TStatusTextProps = {
+  /** Текст статуса */
   children: ReactNode;
 };
 

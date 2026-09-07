@@ -15,20 +15,30 @@ import { WORLD_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
 import { TrackObstacles } from './track-obstacles';
 
 type TTrackWorldProps = {
+  /** Конфиг трассы: сегменты, стены, препятствия */
   config: TTrackConfig;
+  /** Счётчик рестарта — пересоздаёт dynamic-шины */
   resetNonce: number;
 };
 
 type TRoadSegmentMeshProps = {
+  /** Исходная albedo-текстура асфальта */
   asphaltSource: Texture;
+  /** Исходная roughness-карта асфальта */
   roughnessSource: Texture;
+  /** Центр сегмента дороги */
   position: TVec3;
+  /** Габариты сегмента [width, height, length] */
   size: TVec3;
+  /** Поворот сегмента вокруг Y (рад) */
   rotationY: number;
+  /** Цвет дороги из палитры */
   roadColor: string;
+  /** Базовая roughness материала */
   roadRoughness: number;
 };
 
+/** Визуальный меш сегмента дороги с тайловыми картами */
 const RoadSegmentMesh = ({
   asphaltSource,
   roughnessSource,
@@ -47,6 +57,7 @@ const RoadSegmentMesh = ({
     return { map, roughnessMap };
   }, [asphaltSource, roughnessSource, roadWidth, roadLength]);
 
+  // Освобождает клоны текстур сегмента при размонтировании.
   useEffect(
     () => () => {
       maps.map.dispose();
@@ -88,6 +99,7 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
     [groundSource],
   );
 
+  // Освобождает исходные текстуры пола и асфальта при размонтировании.
   useEffect(
     () => () => {
       asphaltSource.dispose();

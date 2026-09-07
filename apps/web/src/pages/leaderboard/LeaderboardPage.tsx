@@ -23,6 +23,7 @@ export const LeaderboardPage = () => {
 
   const { data, isLoading, isError } = useGetLeaderboardQuery(selectedId, { skip: !selectedId });
 
+  /** Переключение трассы стрелками / Home / End */
   const onTrackKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (!tracks || tracks.length === 0) {
       return;

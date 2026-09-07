@@ -1,9 +1,13 @@
 import type { TTrackAudioTheme } from '@/entities/track';
 
 type TNote = {
+  /** Частота, Гц */
   freq: number;
+  /** Старт относительно начала петли, с */
   start: number;
+  /** Длительность ноты, с */
   duration: number;
+  /** Форма осциллятора */
   type: OscillatorType;
 };
 
@@ -49,15 +53,18 @@ export class ChiptuneEngine {
   private generation = 0;
   private readonly activeOscillators = new Set<OscillatorNode>();
 
+  /** Можно ли сейчас звучать */
   private isAudible = (): boolean =>
     this.running && !this.paused && !this.muted && this.theme !== null;
 
+  /** Выставляет master gain по audible */
   private applyGain = (): void => {
     if (this.gain) {
       this.gain.gain.value = this.isAudible() ? MASTER_GAIN : 0;
     }
   };
 
+  /** Лениво создаёт AudioContext и GainNode */
   private ensureContext = (): AudioContext | null => {
     if (!this.running) {
       return null;
@@ -71,6 +78,7 @@ export class ChiptuneEngine {
     return this.ctx;
   };
 
+  /** Сбрасывает интервал петли */
   private clearTimer = (): void => {
     if (this.timer) {
       clearInterval(this.timer);
@@ -78,6 +86,7 @@ export class ChiptuneEngine {
     }
   };
 
+  /** Останавливает все активные осцилляторы */
   private stopAllNotes = (): void => {
     for (const osc of this.activeOscillators) {
       try {
@@ -94,6 +103,7 @@ export class ChiptuneEngine {
     this.activeOscillators.clear();
   };
 
+  /** Планирует одну ноту в AudioContext */
   private playNote = (note: TNote, when: number): void => {
     const ctx = this.ensureContext();
     if (!ctx || !this.gain) {
@@ -121,6 +131,7 @@ export class ChiptuneEngine {
     osc.stop(when + note.duration + 0.02);
   };
 
+  /** Ставит в очередь одну итерацию петли темы */
   private scheduleLoop = (): void => {
     if (!this.isAudible() || !this.theme) {
       return;
@@ -136,6 +147,7 @@ export class ChiptuneEngine {
     }
   };
 
+  /** Запускает интервал повтора петли */
   private startLoopTimer = (): void => {
     this.clearTimer();
     if (!this.theme || !this.running) {
@@ -160,6 +172,7 @@ export class ChiptuneEngine {
     this.clearTimer();
   };
 
+  /** Стартует тему (resume AudioContext при необходимости) */
   start = async (theme: TTrackAudioTheme): Promise<void> => {
     const generation = ++this.generation;
     this.running = true;
@@ -180,6 +193,7 @@ export class ChiptuneEngine {
     this.syncPlayback();
   };
 
+  /** Пауза/снятие паузы без смены темы */
   setPaused = (paused: boolean): void => {
     if (this.paused === paused) {
       return;
@@ -188,6 +202,7 @@ export class ChiptuneEngine {
     this.syncPlayback();
   };
 
+  /** Mute/unmute без смены темы */
   setMuted = (muted: boolean): void => {
     if (this.muted === muted) {
       return;
@@ -196,6 +211,7 @@ export class ChiptuneEngine {
     this.syncPlayback();
   };
 
+  /** Полная остановка и закрытие AudioContext */
   stop = (): void => {
     this.generation += 1;
     this.running = false;

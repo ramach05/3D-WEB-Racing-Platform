@@ -3,6 +3,7 @@ import type { TRacePerfSnapshot } from './store.types';
 type TListener = () => void;
 
 type TPerformanceMemory = {
+  /** Использованная JS-куча, байты */
   usedJSHeapSize: number;
 };
 
@@ -33,6 +34,7 @@ const readMemMb = (): number | null => {
   return Math.round(memory.usedJSHeapSize / (1024 * 1024));
 };
 
+/** Уведомляет подписчиков perf HUD не чаще ~250 мс */
 const emit = (): void => {
   const now = performance.now();
   if (now - lastNotifyAt < 250) {

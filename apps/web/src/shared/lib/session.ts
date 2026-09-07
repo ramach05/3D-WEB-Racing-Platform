@@ -2,7 +2,9 @@ import { AUTH_STORAGE_KEY } from '@/shared/config';
 import type { TAuthSession } from './session.types';
 
 type TStoredSession = {
+  /** JWT access из localStorage */
   accessToken?: string;
+  /** JWT refresh из localStorage */
   refreshToken?: string;
 };
 

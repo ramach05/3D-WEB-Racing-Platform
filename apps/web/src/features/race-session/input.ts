@@ -8,6 +8,7 @@ const state: TDriveInput = {
 
 const pressed = new Set<string>();
 
+/** true, если фокус в поле ввода — клавиши гонки не трогаем */
 const isTypingTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) {
     return false;
@@ -43,13 +44,17 @@ const syncAxes = (): void => {
 export const getDriveInput = (): TDriveInput => state;
 
 type TInputHandlers = {
+  /** Рестарт заезда (R) */
   onRestart: () => void;
+  /** Пауза / снятие паузы (Escape) */
   onTogglePause: () => void;
+  /** true, пока можно принимать WASD/стрелки */
   isRaceActive: () => boolean;
 };
 
 /** Подписывается на клавиши гонки. preventDefault только на WASD/стрелках во время заезда. */
 export const bindRaceInput = (handlers: TInputHandlers): (() => void) => {
+  /** keydown: оси, Escape, рестарт */
   const onKeyDown = (event: KeyboardEvent): void => {
     if (event.repeat) {
       return;
@@ -77,6 +82,7 @@ export const bindRaceInput = (handlers: TInputHandlers): (() => void) => {
     syncAxes();
   };
 
+  /** keyup: сброс нажатой клавиши */
   const onKeyUp = (event: KeyboardEvent): void => {
     if (!RACE_KEYS.has(event.code)) {
       return;

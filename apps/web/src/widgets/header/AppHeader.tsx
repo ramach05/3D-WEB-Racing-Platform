@@ -6,8 +6,13 @@ import { ThemeSwitcher } from '@/features/theme-switcher';
 import { cx } from '@/shared/lib';
 import { Button } from '@/shared/ui';
 
+type TNavClassArgs = {
+  /** Активен ли текущий маршрут */
+  isActive: boolean;
+};
+
 /** Класс пункта меню: активный маршрут выделяем фоном */
-const navClass = ({ isActive }: { isActive: boolean }): string =>
+const navClass = ({ isActive }: TNavClassArgs): string =>
   cx(
     'sega-nav-link px-2 py-1.5 text-xs font-medium uppercase md:px-3 md:text-sm',
     isActive

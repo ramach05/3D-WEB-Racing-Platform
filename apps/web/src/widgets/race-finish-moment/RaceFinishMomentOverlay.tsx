@@ -8,7 +8,9 @@ type TFinishMomentPhase = 'finish' | 'time';
 type TRaceFinishMomentOverlayProps = {
   /** Показывать момент (до модалки результатов) */
   active: boolean;
+  /** Время заезда, мс */
   timeMs: number;
+  /** Новый личный рекорд */
   isNewBest: boolean;
 };
 
@@ -33,6 +35,7 @@ export const RaceFinishMomentOverlay = ({
     }
   }
 
+  // После фазы FINISH! переключает на показ времени.
   useEffect(() => {
     if (!visible) {
       return;

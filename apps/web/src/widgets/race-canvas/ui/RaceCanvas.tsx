@@ -18,14 +18,20 @@ import { FramePerfTracker } from './frame-perf-tracker';
 import { RacePostFx } from './race-postfx';
 
 type TRaceSceneProps = {
+  /** Конфиг трассы и палитры */
   config: TTrackConfig;
+  /** Пауза физики Rapier */
   physicsPaused: boolean;
+  /** Пауза анимации толпы */
   crowdPaused: boolean;
+  /** Счётчик рестарта гонки */
   resetNonce: number;
+  /** Колбэк завершения гонки */
   onFinished: () => void;
 };
 
 type TCelestialBodyProps = {
+  /** Конфиг трассы (день/ночь) */
   config: TTrackConfig;
 };
 
@@ -46,10 +52,16 @@ const CelestialBody = ({ config }: TCelestialBodyProps) => {
   return <HorizonSun position={SUN_HORIZON_POSITION} />;
 };
 
+type TNeonAccentLightProps = {
+  /** Цвет point light */
+  color: string;
+};
+
 /** Пульсирующий accent light для night neon */
-const NeonAccentLight = ({ color }: { color: string }) => {
+const NeonAccentLight = ({ color }: TNeonAccentLightProps) => {
   const lightRef = useRef<PointLight>(null);
 
+  // Пульсирует intensity accent light по sin-времени.
   useFrame((state) => {
     if (!lightRef.current) {
       return;
@@ -63,6 +75,13 @@ const NeonAccentLight = ({ color }: { color: string }) => {
   );
 };
 
+type TRaceSceneInnerProps = TRaceSceneProps & {
+  /** Ref физического тела машины */
+  bodyRef: RefObject<RapierRigidBody | null>;
+  /** Ref визуальной группы кузова */
+  visualRef: RefObject<Group | null>;
+};
+
 /** Свет, физика, трасса и машина */
 const RaceSceneInner = ({
   config,
@@ -72,10 +91,7 @@ const RaceSceneInner = ({
   onFinished,
   bodyRef,
   visualRef,
-}: TRaceSceneProps & {
-  bodyRef: RefObject<RapierRigidBody | null>;
-  visualRef: RefObject<Group | null>;
-}) => {
+}: TRaceSceneInnerProps) => {
   const isNight = config.timeOfDay === 'night';
 
   return (

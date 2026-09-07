@@ -1,6 +1,7 @@
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing';
 
 type TRacePostFxProps = {
+  /** Включить Bloom/Vignette (ночь) */
   enabled: boolean;
 };
 

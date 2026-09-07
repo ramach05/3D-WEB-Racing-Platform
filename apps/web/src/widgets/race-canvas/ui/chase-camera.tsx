@@ -6,9 +6,13 @@ import type { TVec3 } from '@/entities/track';
 import { getRaceHudSnapshot } from '@/features/race-session';
 
 type TChaseCameraProps = {
+  /** Визуальная группа машины */
   target: RefObject<Object3D | null>;
+  /** Позиция спавна для intro-орбиты */
   spawnPosition: TVec3;
+  /** Угол спавна (рад) */
   spawnRotationY: number;
+  /** Счётчик рестарта — сбрасывает intro */
   resetNonce: number;
 };
 
@@ -25,6 +29,7 @@ const INTRO_DURATION = 3.2;
 const CHASE_Y = 5.5;
 const CHASE_Z = -12;
 
+/** Проверяет prefers-reduced-motion в браузере */
 const prefersReducedMotion = (): boolean => {
   if (typeof window === 'undefined' || !window.matchMedia) {
     return false;
@@ -44,6 +49,7 @@ export const ChaseCamera = ({
   const reduced = useRef(prefersReducedMotion());
   const lookInitialized = useRef(false);
 
+  // Intro → chase → finish pull-back по статусу гонки.
   useFrame((state, dt) => {
     if (lastNonce.current !== resetNonce) {
       lastNonce.current = resetNonce;

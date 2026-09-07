@@ -4,17 +4,25 @@ import type { TCarSkinColors, TTrackPaletteColors } from '@/shared/config';
 export type TVec3 = readonly [number, number, number];
 
 export type TOrientedBox = {
+  /** Центр бокса */
   position: TVec3;
+  /** Габариты [x, y, z] */
   size: TVec3;
+  /** Поворот вокруг Y (рад) */
   rotationY: number;
 };
 
 export type TObstacleKind = 'tireStack';
 
-export type TTrackObstacle = TOrientedBox & { kind: TObstacleKind };
+export type TTrackObstacle = TOrientedBox & {
+  /** Тип препятствия */
+  kind: TObstacleKind;
+};
 
 export type TLoopPoint = {
+  /** X на плоскости трассы */
   x: number;
+  /** Z на плоскости трассы */
   z: number;
 };
 
@@ -32,32 +40,55 @@ export type TTimeOfDay = 'day' | 'night';
 export type TStartTribuneSide = 'left' | 'right';
 
 export type TTrackConfig = {
+  /** Идентификатор трассы */
   slug: TTrackSlug;
+  /** Точка спавна машины */
   spawnPosition: TVec3;
+  /** Угол спавна (рад) */
   spawnRotationY: number;
+  /** Линия старт/финиш */
   startFinishLine: TOrientedBox;
+  /** Сегменты дороги (визуал) */
   segments: TOrientedBox[];
+  /** Стены трассы */
   walls: TOrientedBox[];
+  /** Чекпоинты (legacy / запас) */
   checkpoints: TOrientedBox[];
+  /** Динамические препятствия */
   obstacles: TTrackObstacle[];
+  /** Центровая линия для прогресса круга */
   centerline: TLoopPoint[];
+  /** Ширина дороги */
   roadWidth: number;
+  /** Палитра материалов */
   palette: TTrackPalette;
+  /** Окраска машины */
   carSkin: TCarSkin;
+  /** Тема чиптюна */
   audioTheme: TTrackAudioTheme;
+  /** День или ночь */
   timeOfDay: TTimeOfDay;
+  /** Сторона трибун у старта */
   startTribuneSide: TStartTribuneSide;
   /** Зоны, где деревья нельзя размещать (трибуны и т.п.) */
   treeExclusionZones: TOrientedBox[];
 };
 
 export type TBuildLoopOptions = {
+  /** Идентификатор трассы */
   slug: TTrackSlug;
+  /** Точки петли centerline */
   points: TLoopPoint[];
+  /** Ширина дороги */
   roadWidth: number;
+  /** Палитра */
   palette: TTrackPalette;
+  /** Окраска машины */
   carSkin: TCarSkin;
+  /** Тема аудио */
   audioTheme: TTrackAudioTheme;
+  /** Доля петли для спавна 0..1 */
   spawnRatio: number;
+  /** Сторона трибун */
   startTribuneSide: TStartTribuneSide;
 };

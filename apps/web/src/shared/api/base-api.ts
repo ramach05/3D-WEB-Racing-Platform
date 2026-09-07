@@ -15,6 +15,7 @@ const rawBaseQuery = fetchBaseQuery({
 });
 
 type TRefreshResponse = {
+  /** Новая пара JWT после /auth/refresh */
   tokens: TAuthTokens;
 };
 

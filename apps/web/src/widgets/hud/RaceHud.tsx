@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { type TCountdownStep, type TRaceStatus, useRaceHud } from '@/features/race-session';
 import { formatRaceTime } from '@/shared/lib';
 
+/** Локализованная подпись статуса заезда для HUD */
 const getStatusLabel = (
   status: TRaceStatus,
   countdownStep: TCountdownStep | null,

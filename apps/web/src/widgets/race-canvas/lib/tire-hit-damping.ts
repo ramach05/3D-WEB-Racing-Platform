@@ -15,6 +15,7 @@ export const tickTireHitDamping = (dt: number): number => {
   return current;
 };
 
+/** Сбрасывает штраф скорости после удара о шину */
 export const resetTireHitDamping = () => {
   tireHitDamping = 1;
 };

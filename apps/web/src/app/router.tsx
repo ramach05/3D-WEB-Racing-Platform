@@ -11,6 +11,7 @@ import { TracksPage } from '@/pages/tracks';
 import { AppHeader } from '@/widgets/header';
 
 type TAppLayoutProps = {
+  /** Содержимое main */
   children: ReactNode;
 };
 

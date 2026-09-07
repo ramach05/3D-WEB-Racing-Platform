@@ -54,6 +54,7 @@ export const subscribeRaceHud = (listener: TListener): (() => void) => {
 /** Текущий снимок HUD */
 export const getRaceHudSnapshot = (): TRaceHudSnapshot => snapshot;
 
+/** Уведомляет подписчиков HUD; без force — не чаще ~80 мс */
 const emit = (force: boolean): void => {
   const now = performance.now();
   if (!force && now - lastNotifyAt < 80) {
@@ -63,6 +64,7 @@ const emit = (force: boolean): void => {
   listeners.forEach((listener) => listener());
 };
 
+/** Патчит снимок HUD и шлёт emit */
 const setSnapshot = (patch: Partial<TRaceHudSnapshot>, force = false): void => {
   snapshot = { ...snapshot, ...patch };
   emit(force);

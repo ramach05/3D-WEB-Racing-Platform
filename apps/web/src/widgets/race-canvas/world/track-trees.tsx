@@ -9,6 +9,7 @@ import {
 import { treePalette } from '@/shared/config';
 
 type TTrackTreesProps = {
+  /** Конфиг трассы для расстановки деревьев */
   config: TTrackConfig;
 };
 
@@ -19,13 +20,19 @@ const tmpQuat = new Quaternion();
 const tmpMatrix = new Matrix4();
 
 type TTreePartProps = {
+  /** Размещённые деревья */
   trees: TPlacedTree[];
+  /** Слой: ствол или вид кроны */
   kind: TTreeKind | 'trunk';
+  /** Цвет материала */
   color: string;
+  /** Кастить тени */
   castShadow: boolean;
+  /** Тип геометрии инстанса */
   geometry: 'cylinder' | 'cone' | 'sphere';
   /** Смещение по Y в локальных единицах до scale */
   localY: number;
+  /** Аргументы геометрии Three.js */
   args: number[];
 };
 
@@ -37,6 +44,7 @@ const TreePart = ({ trees, kind, color, castShadow, geometry, localY, args }: TT
     [trees, kind],
   );
 
+  // Заполняет instanceMatrix для стволов/крон.
   useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) {

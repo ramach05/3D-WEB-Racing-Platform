@@ -3,6 +3,7 @@ import type { TLeaderboardEntry } from '@/entities/leaderboard';
 import { cx, formatRaceTime } from '@/shared/lib';
 
 type TLeaderboardTableProps = {
+  /** Строки таблицы */
   entries: TLeaderboardEntry[];
   /** Подсветить строку текущего игрока */
   highlightUserId?: string;

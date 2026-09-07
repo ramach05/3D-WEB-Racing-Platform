@@ -2,7 +2,9 @@ import type { TCheckpointLocalCoords, TOrientedBox } from '@/entities/track';
 import { isInsideCheckpoint } from '@/entities/track';
 
 type TVec2 = {
+  /** Мировая X */
   x: number;
+  /** Мировая Z */
   z: number;
 };
 
@@ -57,6 +59,7 @@ export const passedCheckpointZone = (
   return false;
 };
 
+/** Пересекаются ли отрезки AB и CD на плоскости XZ */
 const segmentsIntersect = (a: TVec2, b: TVec2, c: TVec2, d: TVec2): boolean => {
   const denom = (b.x - a.x) * (d.z - c.z) - (b.z - a.z) * (d.x - c.x);
   if (Math.abs(denom) < 1e-9) {

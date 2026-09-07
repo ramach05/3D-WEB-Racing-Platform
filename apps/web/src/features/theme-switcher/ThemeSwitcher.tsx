@@ -5,6 +5,7 @@ import { Select } from '@/shared/ui';
 import { applyTheme, readStoredTheme } from './model';
 
 type TThemeSwitcherProps = {
+  /** Размер триггера селекта */
   size?: 'md' | 'sm';
 };
 
@@ -13,10 +14,12 @@ export const ThemeSwitcher = ({ size = 'md' }: TThemeSwitcherProps) => {
   const { t } = useTranslation();
   const [theme, setTheme] = useState<TThemeMode>(readStoredTheme);
 
+  // Синхронизируем CSS-переменные и class dark с выбранной темой
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
+  /** Применяет выбранную тему и сохраняет в state */
   const onChange = useCallback((value: TThemeMode) => {
     setTheme(value);
     applyTheme(value);

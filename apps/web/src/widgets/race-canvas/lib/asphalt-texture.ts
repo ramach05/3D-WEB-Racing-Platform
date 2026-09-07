@@ -8,6 +8,7 @@ export const GROUND_TILE_SIZE = 10;
 
 type TRng = () => number;
 
+/** LCG-генератор 0..1 из seed */
 const createRng = (seedInit: number): TRng => {
   let seed = seedInit >>> 0;
   return () => {
@@ -16,6 +17,7 @@ const createRng = (seedInit: number): TRng => {
   };
 };
 
+/** Детерминированный хэш 2D-координат в 0..1 */
 const hash2 = (x: number, y: number, seed: number): number => {
   let n = (x * 374761393 + y * 668265263 + seed) | 0;
   n = (n ^ (n >>> 13)) * 1274126177;
@@ -37,6 +39,7 @@ const valueNoise = (x: number, y: number, seed: number): number => {
   return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
 };
 
+/** Fractional Brownian motion: сумма октав value-noise */
 const fbm = (x: number, y: number, seed: number, octaves: number): number => {
   let amp = 0.5;
   let freq = 1;
@@ -51,6 +54,7 @@ const fbm = (x: number, y: number, seed: number, octaves: number): number => {
   return sum / norm;
 };
 
+/** Собирает CanvasTexture с repeat/anisotropy из canvas */
 const finishTexture = (canvas: HTMLCanvasElement, colorSpace = true): CanvasTexture => {
   const texture = new CanvasTexture(canvas);
   if (colorSpace) {
@@ -197,6 +201,7 @@ export const createGroundTexture = (size = 512): CanvasTexture => {
   return finishTexture(canvas);
 };
 
+/** Клонирует карту и выставляет repeat под мировой размер */
 export const cloneMapForSize = (
   source: Texture,
   worldWidth: number,
@@ -211,6 +216,7 @@ export const cloneMapForSize = (
   return map;
 };
 
+/** Клон асфальта с тайлом ASPHALT_TILE_SIZE */
 export const cloneAsphaltMapForSegment = (
   source: Texture,
   width: number,

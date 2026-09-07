@@ -5,6 +5,7 @@ import '@/entities/leaderboard';
 import '@/entities/race-result';
 import '@/entities/track';
 
+/** Redux store: auth + RTK Query */
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -13,5 +14,7 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(racingApi.middleware),
 });
 
+/** Корневой state */
 export type TRootState = ReturnType<typeof store.getState>;
+/** Тип dispatch */
 export type TAppDispatch = typeof store.dispatch;

@@ -3,6 +3,7 @@ import { Billboard } from '@react-three/drei';
 import { AdditiveBlending, CanvasTexture, SRGBColorSpace, type Texture } from 'three';
 import { horizonSunStops, type TRadialColorStop } from '@/shared/config';
 
+/** Рисует радиальный градиент в CanvasTexture */
 const createRadialGradientTexture = (
   stops: readonly TRadialColorStop[],
   size = 256,
@@ -29,11 +30,15 @@ const createRadialGradientTexture = (
 };
 
 type TSunLayerProps = {
+  /** Текстура слоя */
   map: Texture;
+  /** Размер плоскости */
   size: number;
+  /** Порядок отрисовки (меньше = дальше) */
   renderOrder: number;
 };
 
+/** Один billboard-слой солнца */
 const SunLayer = ({ map, size, renderOrder }: TSunLayerProps) => (
   <mesh renderOrder={renderOrder}>
     <planeGeometry args={[size, size]} />
@@ -50,6 +55,7 @@ const SunLayer = ({ map, size, renderOrder }: TSunLayerProps) => (
 );
 
 type THorizonSunProps = {
+  /** Мировая позиция солнца */
   position: [number, number, number];
 };
 
@@ -64,6 +70,7 @@ export const HorizonSun = ({ position }: THorizonSunProps) => {
     [],
   );
 
+  // Освобождает текстуры солнца при размонтировании.
   useEffect(
     () => () => {
       textures.core.dispose();

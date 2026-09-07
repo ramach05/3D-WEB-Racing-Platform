@@ -17,7 +17,10 @@ import {
 } from '@/features/race-session';
 import { vehiclePalette } from '@/shared/config';
 import { VEHICLE_GROUPS, WALL_PROBE_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
-import { resetTireHitDamping, tickTireHitDamping } from '@/widgets/race-canvas/lib/tire-hit-damping';
+import {
+  resetTireHitDamping,
+  tickTireHitDamping,
+} from '@/widgets/race-canvas/lib/tire-hit-damping';
 
 /** Физические канделы — левая и правая фары (с запасом под decay=2) */
 const HEADLIGHT_INTENSITY = 75;
@@ -35,19 +38,28 @@ const HEADLIGHT_SHADOW_BIAS = -0.00002;
 const HEADLIGHT_SHADOW_NORMAL_BIAS = 0.02;
 
 type TVehicleProps = {
+  /** Позиция спавна на трассе */
   spawnPosition: TVec3;
+  /** Угол поворота при спавне (рад) */
   spawnRotationY: number;
+  /** Счётчик рестарта гонки */
   resetNonce: number;
+  /** Ref физического тела Rapier */
   bodyRef: RefObject<RapierRigidBody | null>;
+  /** Ref визуальной группы кузова */
   visualRef: RefObject<Group | null>;
+  /** Раскраска кузова / кабины / колёс */
   carSkin: TCarSkin;
+  /** Включить фары (ночь) */
   headlightsOn: boolean;
 };
 
 type TVehicleHeadlightsProps = {
+  /** Ref физического тела для синхронизации фар */
   bodyRef: RefObject<RapierRigidBody | null>;
 };
 
+/** Настраивает shadow map SpotLight фары */
 const configureHeadlightShadow = (light: SpotLight) => {
   light.castShadow = true;
   light.shadow.mapSize.set(HEADLIGHT_SHADOW_MAP, HEADLIGHT_SHADOW_MAP);
@@ -65,6 +77,7 @@ const VehicleHeadlights = ({ bodyRef }: TVehicleHeadlightsProps) => {
   const leftHeadlightRef = useRef<SpotLight>(null);
   const rightHeadlightRef = useRef<SpotLight>(null);
 
+  /** Привязывает target и shadow к обеим фарам */
   const bindTargets = () => {
     const aim = headlightTargetRef.current;
     const left = leftHeadlightRef.current;
@@ -87,10 +100,12 @@ const VehicleHeadlights = ({ bodyRef }: TVehicleHeadlightsProps) => {
     }
   };
 
+  // Привязывает aim-target к фарам после монтирования.
   useLayoutEffect(() => {
     bindTargets();
   }, []);
 
+  // Синхронизирует группу фар с позой RigidBody каждый кадр.
   useFrame(() => {
     const body = bodyRef.current;
     const group = groupRef.current;
@@ -184,6 +199,7 @@ const SPAWN_DROP_HEIGHT = 3.2;
 /** После касания ждём почти нулевую вертикальную скорость */
 const LAND_SETTLE_VY = 1.2;
 
+/** Поднимает точку спавна на SPAWN_DROP_HEIGHT над асфальтом */
 const elevatedSpawn = (spawnPosition: TVec3): { x: number; y: number; z: number } => ({
   x: spawnPosition[0],
   y: spawnPosition[1] + SPAWN_DROP_HEIGHT,
@@ -258,6 +274,7 @@ export const Vehicle = ({
   const lastNonce = useRef(resetNonce);
   const awaitingLand = useRef(true);
 
+  // Arcade-физика: рестарт, ввод, grip и скольжение вдоль стен.
   useFrame((_, dt) => {
     const body = bodyRef.current;
     if (!body) {

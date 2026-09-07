@@ -12,9 +12,13 @@ import {
 } from '@/features/race-session';
 
 type TCheckpointDetectorProps = {
+  /** Конфиг трассы (centerline, финиш) */
   config: TTrackConfig;
+  /** Ref физического тела машины */
   bodyRef: RefObject<RapierRigidBody | null>;
+  /** Счётчик рестарта — сбрасывает прогресс круга */
   resetNonce: number;
+  /** Колбэк при завершении гонки */
   onFinished: () => void;
 };
 
@@ -30,6 +34,7 @@ export const CheckpointDetector = ({
   const lapCooldownRef = useRef(true);
   const resetNonceRef = useRef(resetNonce);
 
+  // Отслеживает пересечение финиша и прогресс по centerline.
   useFrame(() => {
     if (resetNonceRef.current !== resetNonce) {
       resetNonceRef.current = resetNonce;

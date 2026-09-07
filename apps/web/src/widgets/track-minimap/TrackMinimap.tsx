@@ -2,7 +2,9 @@ import type { TTrackConfig } from '@/entities/track';
 import { scenePalette } from '@/shared/config';
 
 type TTrackMinimapProps = {
+  /** Конфиг трассы для отрисовки плана */
   config: TTrackConfig;
+  /** CSS-класс корневого SVG */
   className?: string;
 };
 
@@ -27,6 +29,7 @@ export const TrackMinimap = ({ config, className }: TTrackMinimapProps) => {
   const width = viewMaxX - viewMinX;
   const height = viewMaxZ - viewMinZ;
 
+  /** Мировые XZ → координаты viewBox SVG */
   const toSvg = (x: number, z: number): string => {
     const sx = ((x - viewMinX) / width) * 200;
     const sy = ((z - viewMinZ) / height) * 120;

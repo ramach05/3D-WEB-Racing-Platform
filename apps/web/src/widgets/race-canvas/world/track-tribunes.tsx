@@ -16,11 +16,17 @@ import { tribunePalette } from '@/shared/config';
 import { buildSpectatorSeats, SpectatorCrowd } from './spectator-crowd';
 
 type TTrackTribunesProps = {
+  /** Ориентированный бокс линии старт/финиш */
   line: TOrientedBox;
+  /** Ширина дороги */
   roadWidth: number;
+  /** Палитра трассы */
   palette: TTrackPalette;
+  /** Сторона трибуны относительно старта */
   side: TStartTribuneSide;
+  /** Ночной режим освещения */
   isNight: boolean;
+  /** Пауза анимации толпы */
   paused: boolean;
 };
 
@@ -28,24 +34,37 @@ const SPECTATORS_PER_SECTION = 30;
 const ROAD_TOP_Y = 0.1;
 
 type TTribuneSectionProps = {
+  /** Z-центр секции */
   sectionZ: number;
+  /** Внутренний X трибуны */
   tribuneInnerX: number;
+  /** Знак стороны (−1 / +1) */
   sideSign: number;
+  /** Палитра трассы */
   palette: TTrackPalette;
+  /** Ночной режим */
   isNight: boolean;
+  /** Пауза анимации толпы */
   paused: boolean;
 };
 
+/** X центра ряда трибуны */
 const rowCenterX = (tribuneInnerX: number, sideSign: number, row: number) =>
   tribuneInnerX + sideSign * (row * ROW_DEPTH + ROW_DEPTH / 2);
 
+/** Y верхней кромки ряда */
 const rowTopY = (row: number) => (row + 1) * ROW_HEIGHT;
 
 type TTribuneNightLightsProps = {
+  /** Внутренний X трибуны */
   tribuneInnerX: number;
+  /** Знак стороны (−1 / +1) */
   sideSign: number;
+  /** Z-центр секции */
   sectionZ: number;
+  /** Accent-цвет неона */
   accent: string;
+  /** Цвет стены / прожекторов */
   wall: string;
 };
 
@@ -62,6 +81,7 @@ const TribuneNightLights = ({
   const pulseA = useRef<PointLight>(null);
   const pulseB = useRef<PointLight>(null);
 
+  // Пульсирует прожекторы трибуны по sin-времени.
   useFrame((state) => {
     const t = state.clock.elapsedTime;
     const breathe = 1 + Math.sin(t * 2.4 + sectionZ * 0.2) * 0.22;

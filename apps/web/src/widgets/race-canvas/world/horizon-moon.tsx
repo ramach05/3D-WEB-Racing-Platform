@@ -9,6 +9,7 @@ import {
 } from 'three';
 import { horizonMoonStops, type TRadialColorStop } from '@/shared/config';
 
+/** Рисует радиальный градиент в CanvasTexture */
 const createRadialGradientTexture = (
   stops: readonly TRadialColorStop[],
   size = 256,
@@ -34,7 +35,16 @@ const createRadialGradientTexture = (
   return texture;
 };
 
-type TMoonPatch = { x: number; y: number; r: number; shade: number };
+type TMoonPatch = {
+  /** Нормализованная X на диске */
+  x: number;
+  /** Нормализованная Y на диске */
+  y: number;
+  /** Радиус пятна (доля размера) */
+  r: number;
+  /** Затемнение 0..1 */
+  shade: number;
+};
 
 /** Фиксированные «моря» и кратеры — стабильный вид при каждом рендере */
 const MOON_MARIA: TMoonPatch[] = [
@@ -53,6 +63,7 @@ const MOON_CRATERS: TMoonPatch[] = [
   { x: 0.42, y: 0.72, r: 0.018, shade: 0.16 },
 ];
 
+/** Рисует диск луны с морями и кратерами */
 const createMoonDiskTexture = (size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -77,6 +88,7 @@ const createMoonDiskTexture = (size = 256): CanvasTexture => {
   ctx.arc(center, center, radius, 0, Math.PI * 2);
   ctx.fill();
 
+  /** Рисует пятно/кратер на диске луны */
   const drawPatch = (patch: TMoonPatch, alpha: number) => {
     const x = patch.x * size;
     const y = patch.y * size;
@@ -113,12 +125,17 @@ const createMoonDiskTexture = (size = 256): CanvasTexture => {
 };
 
 type TMoonLayerProps = {
+  /** Текстура слоя */
   map: Texture;
+  /** Размер плоскости */
   size: number;
+  /** Порядок отрисовки */
   renderOrder: number;
+  /** Additive blending (glow) */
   additive?: boolean;
 };
 
+/** Один billboard-слой луны */
 const MoonLayer = ({ map, size, renderOrder, additive = true }: TMoonLayerProps) => (
   <mesh renderOrder={renderOrder}>
     <planeGeometry args={[size, size]} />
@@ -135,6 +152,7 @@ const MoonLayer = ({ map, size, renderOrder, additive = true }: TMoonLayerProps)
 );
 
 type THorizonMoonProps = {
+  /** Мировая позиция луны */
   position: [number, number, number];
 };
 
@@ -149,6 +167,7 @@ export const HorizonMoon = ({ position }: THorizonMoonProps) => {
     [],
   );
 
+  // Освобождает текстуры луны при размонтировании.
   useEffect(
     () => () => {
       textures.disk.dispose();

@@ -26,12 +26,16 @@ import { LeaderboardTable } from '@/widgets/leaderboard-table';
 import { RacePauseMenu } from '@/widgets/race-pause-menu';
 
 type TRaceTestApi = {
+  /** Тестовый хук для мгновенного финиша (e2e) */
   __finishRaceForTest?: () => void;
 };
 
 type TFinishMeta = {
+  /** Время заезда в мс */
   timeMs: number;
+  /** Новый личный рекорд */
   isNewBest: boolean;
+  /** Статус отправки результата на сервер */
   submitState: TFinishSubmitState;
 };
 
@@ -85,6 +89,7 @@ export const RacePage = () => {
     muted: musicMuted,
   });
 
+  /** Рестарт заезда: сброс сессии, canvas и toast */
   const restart = useCallback(() => {
     if (!trackId || !config) {
       return;
@@ -104,6 +109,7 @@ export const RacePage = () => {
     }, 2000);
   }, [config, trackId]);
 
+  /** Финиш: фиксирует время и отправляет результат (если авторизован) */
   const onFinished = useCallback(() => {
     if (!trackId || submittedRef.current) {
       return;
@@ -133,6 +139,7 @@ export const RacePage = () => {
       });
   }, [createResult, trackId, user]);
 
+  // Сбрасывает сессию при смене трассы/конфига.
   useEffect(() => {
     if (!trackId || !config) {
       return;
@@ -141,6 +148,7 @@ export const RacePage = () => {
     resetRaceSession(trackId, config.checkpoints.length);
   }, [config, trackId]);
 
+  // Биндит клавиатуру: рестарт и пауза.
   useEffect(() => {
     return bindRaceInput({
       onRestart: restart,
@@ -149,6 +157,7 @@ export const RacePage = () => {
     });
   }, [restart]);
 
+  // Чистит таймер toast при размонтировании.
   useEffect(() => {
     return () => {
       if (toastTimerRef.current !== null) {
@@ -157,6 +166,7 @@ export const RacePage = () => {
     };
   }, []);
 
+  // После финиша показывает overlay с задержкой.
   useEffect(() => {
     if (hud.status !== 'finished') {
       return;
@@ -166,6 +176,7 @@ export const RacePage = () => {
     return () => window.clearTimeout(id);
   }, [hud.status]);
 
+  // E2E: вешает __finishRaceForTest на window.
   useEffect(() => {
     if (!trackId) {
       return;

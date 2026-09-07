@@ -29,6 +29,7 @@ export const { setUser, logout } = authSlice.actions;
 export const authReducer = authSlice.reducer;
 
 type TAuthRoot = {
+  /** Слайс авторизации в корневом store */
   auth: TAuthState;
 };
 

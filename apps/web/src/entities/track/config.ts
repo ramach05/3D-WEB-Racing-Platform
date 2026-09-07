@@ -102,6 +102,7 @@ const buildLoopTrack = ({
     }
   }
 
+  /** Чекпоинт на доле петли centerline (0..1) */
   const buildCheckpointAtRatio = (ratio: number): TOrientedBox => {
     const index = Math.floor(ratio * pointCount) % pointCount;
     const current = points[index];
@@ -247,8 +248,11 @@ const buildStadiumPoints = (
   const hw = width / 2 - cornerRadius;
   const hd = depth / 2 - cornerRadius;
   type TStadiumSegment = {
+    /** Начало прямого участка */
     from: readonly [number, number];
+    /** Конец прямого участка */
     to: readonly [number, number];
+    /** Центр дуги поворота, если сегмент угловой */
     arc?: readonly [number, number];
   };
   const segments: TStadiumSegment[] = [
