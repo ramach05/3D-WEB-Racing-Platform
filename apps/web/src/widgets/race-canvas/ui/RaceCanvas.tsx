@@ -1,9 +1,10 @@
 import { type RefObject, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Sky, Stars } from '@react-three/drei';
-import { PCFSoftShadowMap, type PointLight } from 'three';
+import { PCFSoftShadowMap, type Group, type PointLight } from 'three';
 import { Physics, type RapierRigidBody } from '@react-three/rapier';
 import type { TTrackConfig } from '@/entities/track';
+import { scenePalette } from '@/shared/config';
 import { ChaseCamera } from './chase-camera';
 import { CheckpointDetector } from '../model/checkpoint-detector';
 import { FramePerfTracker } from './frame-perf-tracker';
@@ -70,7 +71,11 @@ const RaceSceneInner = ({
   resetNonce,
   onFinished,
   bodyRef,
-}: TRaceSceneProps & { bodyRef: RefObject<RapierRigidBody | null> }) => {
+  visualRef,
+}: TRaceSceneProps & {
+  bodyRef: RefObject<RapierRigidBody | null>;
+  visualRef: RefObject<Group | null>;
+}) => {
   const isNight = config.timeOfDay === 'night';
 
   return (
@@ -81,7 +86,7 @@ const RaceSceneInner = ({
       <directionalLight
         position={isNight ? MOON_LIGHT_POSITION : SUN_LIGHT_POSITION}
         intensity={isNight ? 0.85 : 1.55}
-        color={isNight ? '#ffffff' : '#fff4e6'}
+        color={isNight ? scenePalette.sunNight : scenePalette.sunDay}
         castShadow={!isNight}
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
@@ -95,13 +100,14 @@ const RaceSceneInner = ({
       ) : (
         <Sky sunPosition={SKY_SUN_POSITION} />
       )}
-      <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} paused={physicsPaused}>
+      <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} updatePriority={-1} paused={physicsPaused}>
         <TrackWorld config={config} resetNonce={resetNonce} />
         <Vehicle
           spawnPosition={config.spawnPosition}
           spawnRotationY={config.spawnRotationY}
           resetNonce={resetNonce}
           bodyRef={bodyRef}
+          visualRef={visualRef}
           carSkin={config.carSkin}
           headlightsOn={isNight}
         />
@@ -127,7 +133,7 @@ const RaceSceneInner = ({
         onFinished={onFinished}
       />
       <ChaseCamera
-        target={bodyRef}
+        target={visualRef}
         spawnPosition={config.spawnPosition}
         spawnRotationY={config.spawnRotationY}
         resetNonce={resetNonce}
@@ -147,6 +153,7 @@ export const RaceCanvas = ({
   onFinished,
 }: TRaceSceneProps) => {
   const bodyRef = useRef<RapierRigidBody>(null);
+  const visualRef = useRef<Group>(null);
 
   return (
     <Canvas
@@ -166,6 +173,7 @@ export const RaceCanvas = ({
         resetNonce={resetNonce}
         onFinished={onFinished}
         bodyRef={bodyRef}
+        visualRef={visualRef}
       />
     </Canvas>
   );

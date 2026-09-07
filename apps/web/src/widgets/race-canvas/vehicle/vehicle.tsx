@@ -15,6 +15,7 @@ import {
   VEHICLE_MAX_SPEED,
   VEHICLE_REVERSE_MAX,
 } from '@/features/race-session';
+import { vehiclePalette } from '@/shared/config';
 import { VEHICLE_GROUPS, WALL_PROBE_GROUPS } from '../lib/collision-groups';
 import { resetTireHitDamping, tickTireHitDamping } from '../lib/tire-hit-damping';
 
@@ -24,7 +25,6 @@ const HEADLIGHT_ANGLE = 0.42;
 const HEADLIGHT_PENUMBRA = 0.7;
 const HEADLIGHT_DISTANCE = 24;
 const HEADLIGHT_DECAY = 2;
-const HEADLIGHT_COLOR = '#fff8e0';
 /** Прицел: в плоскость асфальта впереди */
 const HEADLIGHT_TARGET: TVec3 = [0, -1.0, 11];
 const HEADLIGHT_LOCAL_LEFT: TVec3 = [-0.55, 0.5, 1.7];
@@ -39,6 +39,7 @@ type TVehicleProps = {
   spawnRotationY: number;
   resetNonce: number;
   bodyRef: RefObject<RapierRigidBody | null>;
+  visualRef: RefObject<Group | null>;
   carSkin: TCarSkin;
   headlightsOn: boolean;
 };
@@ -126,7 +127,7 @@ const VehicleHeadlights = ({ bodyRef }: TVehicleHeadlightsProps) => {
         intensity={HEADLIGHT_INTENSITY}
         distance={HEADLIGHT_DISTANCE}
         decay={HEADLIGHT_DECAY}
-        color={HEADLIGHT_COLOR}
+        color={vehiclePalette.headlight}
         castShadow
         shadow-mapSize-width={HEADLIGHT_SHADOW_MAP}
         shadow-mapSize-height={HEADLIGHT_SHADOW_MAP}
@@ -143,7 +144,7 @@ const VehicleHeadlights = ({ bodyRef }: TVehicleHeadlightsProps) => {
         intensity={HEADLIGHT_INTENSITY}
         distance={HEADLIGHT_DISTANCE}
         decay={HEADLIGHT_DECAY}
-        color={HEADLIGHT_COLOR}
+        color={vehiclePalette.headlight}
         castShadow
         shadow-mapSize-width={HEADLIGHT_SHADOW_MAP}
         shadow-mapSize-height={HEADLIGHT_SHADOW_MAP}
@@ -224,15 +225,7 @@ const slideAlongWalls = (
       { x: translation.x, y: translation.y + COLLIDER_Y, z: translation.z },
       { x: dir.x, y: 0, z: dir.z },
     );
-    const hit = world.castRay(
-      ray,
-      probeLen,
-      true,
-      undefined,
-      WALL_PROBE_GROUPS,
-      undefined,
-      body,
-    );
+    const hit = world.castRay(ray, probeLen, true, undefined, WALL_PROBE_GROUPS, undefined, body);
     if (!hit) {
       continue;
     }
@@ -257,6 +250,7 @@ export const Vehicle = ({
   spawnRotationY,
   resetNonce,
   bodyRef,
+  visualRef,
   carSkin,
   headlightsOn,
 }: TVehicleProps) => {
@@ -400,7 +394,7 @@ export const Vehicle = ({
           restitution={0}
           collisionGroups={VEHICLE_GROUPS}
         />
-        <group>
+        <group ref={visualRef}>
           {/* Ночью кузов не кастит тени: иначе self-shadow режет пучки фар */}
           <mesh position={[0, 0.32, 0.15]} castShadow={!headlightsOn}>
             <boxGeometry args={[1.6, 0.28, 2.9]} />
@@ -412,7 +406,12 @@ export const Vehicle = ({
           </mesh>
           <mesh position={[0, 0.58, -0.35]} castShadow={!headlightsOn}>
             <boxGeometry args={[1.1, 0.12, 0.9]} />
-            <meshStandardMaterial color="#88ccff" transparent opacity={0.55} metalness={0.4} />
+            <meshStandardMaterial
+              color={vehiclePalette.glass}
+              transparent
+              opacity={0.55}
+              metalness={0.4}
+            />
           </mesh>
           <mesh position={[0, 0.28, 1.55]}>
             <boxGeometry args={[1.5, 0.18, 0.25]} />
@@ -424,21 +423,37 @@ export const Vehicle = ({
           </mesh>
           <mesh position={[-0.62, 0.42, -1.35]} castShadow={!headlightsOn}>
             <boxGeometry args={[0.12, 0.1, 0.08]} />
-            <meshStandardMaterial color="#ff3333" emissive="#ff2222" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color={vehiclePalette.brake}
+              emissive={vehiclePalette.brakeEmissive}
+              emissiveIntensity={0.8}
+            />
           </mesh>
           <mesh position={[0.62, 0.42, -1.35]} castShadow={!headlightsOn}>
             <boxGeometry args={[0.12, 0.1, 0.08]} />
-            <meshStandardMaterial color="#ff3333" emissive="#ff2222" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color={vehiclePalette.brake}
+              emissive={vehiclePalette.brakeEmissive}
+              emissiveIntensity={0.8}
+            />
           </mesh>
           {headlightsOn ? (
             <>
               <mesh position={[-0.55, 0.38, 1.62]}>
                 <boxGeometry args={[0.2, 0.12, 0.08]} />
-                <meshStandardMaterial color="#ffffcc" emissive="#ffffaa" emissiveIntensity={0.45} />
+                <meshStandardMaterial
+                  color={vehiclePalette.headlamp}
+                  emissive={vehiclePalette.headlampEmissive}
+                  emissiveIntensity={0.45}
+                />
               </mesh>
               <mesh position={[0.55, 0.38, 1.62]}>
                 <boxGeometry args={[0.2, 0.12, 0.08]} />
-                <meshStandardMaterial color="#ffffcc" emissive="#ffffaa" emissiveIntensity={0.45} />
+                <meshStandardMaterial
+                  color={vehiclePalette.headlamp}
+                  emissive={vehiclePalette.headlampEmissive}
+                  emissiveIntensity={0.45}
+                />
               </mesh>
             </>
           ) : null}
@@ -450,7 +465,7 @@ export const Vehicle = ({
               </mesh>
               <mesh rotation={[0, 0, Math.PI / 2]}>
                 <cylinderGeometry args={[0.14, 0.14, 0.24, 8]} />
-                <meshStandardMaterial color="#aaaaaa" metalness={0.6} roughness={0.3} />
+                <meshStandardMaterial color={vehiclePalette.rim} metalness={0.6} roughness={0.3} />
               </mesh>
             </group>
           ))}
