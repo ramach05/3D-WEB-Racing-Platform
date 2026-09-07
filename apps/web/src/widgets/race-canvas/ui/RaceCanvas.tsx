@@ -11,6 +11,7 @@ import { HorizonMoon } from '../world/horizon-moon';
 import { HorizonSun } from '../world/horizon-sun';
 import { RacePostFx } from './race-postfx';
 import { TrackStartFinishLine } from '../world/track-start-finish-line';
+import { TrackTrees } from '../world/track-trees';
 import { TrackTribunes } from '../world/track-tribunes';
 import { TrackWorld } from '../world/track-world';
 import { Vehicle } from '../vehicle/vehicle';
@@ -118,6 +119,7 @@ const RaceSceneInner = ({
         isNight={isNight}
         paused={crowdPaused}
       />
+      <TrackTrees config={config} />
       <CheckpointDetector
         config={config}
         bodyRef={bodyRef}

@@ -1,5 +1,8 @@
 import type { TTrackSlug } from '@racing/shared';
 import { TRACK_SLUG_COASTAL_OVAL, TRACK_SLUG_NIGHT_CITY } from '@racing/shared';
+import type { TCarSkinColors, TTrackPaletteColors } from '@/shared/config';
+import { carSkins, trackPalettes } from '@/shared/config';
+import { buildTribuneTreeExclusionZone } from './tribune-layout';
 
 export type TVec3 = readonly [number, number, number];
 
@@ -18,23 +21,11 @@ export type TLoopPoint = {
   z: number;
 };
 
-export type TTrackPalette = {
-  sky: string;
-  fog: string;
-  ground: string;
-  road: string;
-  wall: string;
-  accent: string;
-  minimapRoad: string;
-  minimapWall: string;
-  minimapBg: string;
-};
+/** Палитра материалов трассы — значения из shared/config trackPalettes */
+export type TTrackPalette = TTrackPaletteColors;
 
-export type TCarSkin = {
-  body: string;
-  cabin: string;
-  wheel: string;
-};
+/** Окраска машины — значения из shared/config carSkins */
+export type TCarSkin = TCarSkinColors;
 
 export type TTrackAudioTheme = 'coastal' | 'night';
 
@@ -59,6 +50,8 @@ export type TTrackConfig = {
   audioTheme: TTrackAudioTheme;
   timeOfDay: TTimeOfDay;
   startTribuneSide: TStartTribuneSide;
+  /** Зоны, где деревья нельзя размещать (трибуны и т.п.) */
+  treeExclusionZones: TOrientedBox[];
 };
 
 type TBuildLoopOptions = {
@@ -216,6 +209,13 @@ const buildLoopTrack = ({
     audioTheme,
     timeOfDay: audioTheme === 'night' ? 'night' : 'day',
     startTribuneSide,
+    treeExclusionZones: [
+      buildTribuneTreeExclusionZone({
+        startFinishLine,
+        roadWidth,
+        side: startTribuneSide,
+      }),
+    ],
   };
 };
 
@@ -345,30 +345,6 @@ const buildStadiumPoints = (
   return points;
 };
 
-const coastalPalette: TTrackPalette = {
-  sky: '#6ec8ff',
-  fog: '#9ed8ff',
-  ground: '#d4b483',
-  road: '#8a8a90',
-  wall: '#f0e6c8',
-  accent: '#ff7a00',
-  minimapRoad: '#9a9aa2',
-  minimapWall: '#ff7a00',
-  minimapBg: '#87c8e8',
-};
-
-const nightPalette: TTrackPalette = {
-  sky: '#120828',
-  fog: '#241038',
-  ground: '#6a5848',
-  road: '#5a5a66',
-  wall: '#00e5ff',
-  accent: '#ff2bd6',
-  minimapRoad: '#3a3a48',
-  minimapWall: '#ff2bd6',
-  minimapBg: '#140a24',
-};
-
 const coastalOvalPoints = buildEllipsePoints(58, 36, 44);
 const coastalOvalRoadWidth = 10;
 
@@ -377,8 +353,8 @@ export const coastalOvalTrack: TTrackConfig = {
     slug: TRACK_SLUG_COASTAL_OVAL,
     points: coastalOvalPoints,
     roadWidth: coastalOvalRoadWidth,
-    palette: coastalPalette,
-    carSkin: { body: '#ff7a00', cabin: '#1a1208', wheel: '#222222' },
+    palette: trackPalettes.coastal,
+    carSkin: carSkins.coastal,
     audioTheme: 'coastal',
     spawnRatio: 0.02,
     startTribuneSide: 'left',
@@ -390,8 +366,8 @@ export const nightCityTrack = buildLoopTrack({
   slug: TRACK_SLUG_NIGHT_CITY,
   points: buildStadiumPoints(72, 48, 14, 48),
   roadWidth: 9,
-  palette: nightPalette,
-  carSkin: { body: '#00e5ff', cabin: '#120018', wheel: '#ff2bd6' },
+  palette: trackPalettes.night,
+  carSkin: carSkins.night,
   audioTheme: 'night',
   spawnRatio: 0.04,
   startTribuneSide: 'left',

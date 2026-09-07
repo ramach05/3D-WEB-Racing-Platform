@@ -2,6 +2,17 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { PointLight } from 'three';
 import type { TOrientedBox, TStartTribuneSide, TTrackPalette } from '@/entities/track';
+import {
+  ROW_DEPTH,
+  ROW_HEIGHT,
+  SECTION_PITCH,
+  SECTION_WIDTH,
+  SECTION_Z_OFFSETS,
+  TRIBUNE_MARGIN,
+  TRIBUNE_ROWS,
+  WALL_OFFSET,
+} from '@/entities/track';
+import { tribunePalette } from '@/shared/config';
 import { buildSpectatorSeats, SpectatorCrowd } from './spectator-crowd';
 
 type TTrackTribunesProps = {
@@ -13,15 +24,6 @@ type TTrackTribunesProps = {
   paused: boolean;
 };
 
-const TRIBUNE_ROWS = 5;
-const ROW_HEIGHT = 0.65;
-const ROW_DEPTH = 0.75;
-/** Геометрия чуть шире шага — непрерывные ступени; зрители укладываются в sectionPitch */
-const SECTION_WIDTH = 8;
-const SECTION_PITCH = 6;
-const SECTION_Z_OFFSETS = [-SECTION_PITCH, 0, SECTION_PITCH] as const;
-const WALL_OFFSET = 0.5;
-const TRIBUNE_MARGIN = 2.5;
 const SPECTATORS_PER_SECTION = 30;
 const ROAD_TOP_Y = 0.1;
 
@@ -154,9 +156,9 @@ const TribuneSection = ({
     [tribuneInnerX, sideSign],
   );
 
-  const structureColor = isNight ? '#5a4878' : '#9a9288';
-  const stepColor = isNight ? '#6e5c8e' : '#b8b0a4';
-  const structureEmissive = isNight ? palette.wall : '#000000';
+  const structureColor = isNight ? tribunePalette.night.structure : tribunePalette.day.structure;
+  const stepColor = isNight ? tribunePalette.night.step : tribunePalette.day.step;
+  const structureEmissive = isNight ? palette.wall : tribunePalette.emissiveOff;
   const structureEmissiveIntensity = isNight ? 0.12 : 0;
   const backRowX = rowCenterX(tribuneInnerX, sideSign, TRIBUNE_ROWS - 1);
   const backOuterX = tribuneInnerX + sideSign * TRIBUNE_ROWS * ROW_DEPTH;
@@ -173,7 +175,7 @@ const TribuneSection = ({
       >
         <boxGeometry args={[TRIBUNE_ROWS * ROW_DEPTH + 0.4, ROW_HEIGHT, SECTION_WIDTH + 0.6]} />
         <meshStandardMaterial
-          color={isNight ? '#3a2858' : '#a89e90'}
+          color={isNight ? tribunePalette.night.platform : tribunePalette.day.platform}
           emissive={structureEmissive}
           emissiveIntensity={structureEmissiveIntensity}
           roughness={0.95}
@@ -181,7 +183,7 @@ const TribuneSection = ({
       </mesh>
 
       {Array.from({ length: TRIBUNE_ROWS }, (_, row) => {
-        let emissive = '#000000';
+        let emissive: string = tribunePalette.emissiveOff;
         if (isNight) {
           emissive = row % 2 === 0 ? palette.accent : palette.wall;
         }
@@ -233,8 +235,8 @@ const TribuneSection = ({
       >
         <boxGeometry args={[TRIBUNE_ROWS * ROW_DEPTH + 0.8, 0.12, SECTION_WIDTH + 1]} />
         <meshStandardMaterial
-          color={isNight ? '#7a6898' : structureColor}
-          emissive={isNight ? palette.wall : '#000000'}
+          color={isNight ? tribunePalette.night.rail : structureColor}
+          emissive={isNight ? palette.wall : tribunePalette.emissiveOff}
           emissiveIntensity={isNight ? 0.18 : 0}
           roughness={0.85}
           metalness={0.15}

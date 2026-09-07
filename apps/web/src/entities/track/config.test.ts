@@ -51,6 +51,15 @@ describe('track config geometry', () => {
     }
   });
 
+  it('defines tree exclusion zones around grandstands', () => {
+    for (const config of getAllTrackConfigs()) {
+      expect(config.treeExclusionZones.length).toBeGreaterThan(0);
+      const zone = config.treeExclusionZones[0]!;
+      expect(zone.size[0]).toBeGreaterThan(config.roadWidth);
+      expect(zone.size[2]).toBeGreaterThan(8);
+    }
+  });
+
   it('places obstacles only on the daytime coastal track', () => {
     expect(coastalOvalTrack.obstacles.length).toBeGreaterThan(0);
     expect(nightCityTrack.obstacles).toEqual([]);

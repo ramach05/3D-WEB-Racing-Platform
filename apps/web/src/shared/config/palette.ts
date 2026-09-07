@@ -1,0 +1,223 @@
+import type {
+  TCarSkins,
+  TCrowdPalette,
+  THorizonMoonStops,
+  THorizonSunStops,
+  TScenePalette,
+  TStartLightPalette,
+  TTrackPalettes,
+  TTreePalette,
+  TTribunePalette,
+  TUiChrome,
+  TUiPalette,
+  TVehiclePalette,
+} from './palette.types';
+
+/** UI-токены (мапятся в CSS-переменные --bg, --fg, …) */
+export const uiPalette = {
+  light: {
+    bg: '#f4f0ff',
+    fg: '#1a1033',
+    muted: '#5a4a78',
+    surface: '#ffffff',
+    'surface-hover': '#ebe4ff',
+    border: '#0066cc',
+    accent: '#ff2bd6',
+    'accent-fg': '#ffffff',
+    danger: '#d62828',
+    'sega-cyan': '#0088cc',
+    'sega-magenta': '#cc2299',
+    'sega-yellow': '#cc9900',
+    'sega-orange': '#e86a00',
+  },
+  dark: {
+    bg: '#08040f',
+    fg: '#f3efe6',
+    muted: '#9f8fc8',
+    surface: '#140a24',
+    'surface-hover': '#22123a',
+    border: '#00b8d4',
+    accent: '#ff4fd8',
+    'accent-fg': '#120018',
+    danger: '#ff7070',
+    'sega-cyan': '#00e5ff',
+    'sega-magenta': '#ff2bd6',
+    'sega-yellow': '#ffe600',
+    'sega-orange': '#ff7a00',
+  },
+} as const satisfies TUiPalette;
+
+/** Доп. UI-цвета, не зависящие от light/dark */
+export const uiChrome = {
+  onYellow: '#120018',
+  finishWipeDark: '#111',
+  finishWipeLight: '#f5f5f5',
+} as const satisfies TUiChrome;
+
+/** Палитры трасс (shape совместим с TTrackPalette) */
+export const trackPalettes = {
+  coastal: {
+    sky: '#6ec8ff',
+    fog: '#9ed8ff',
+    ground: '#d4b483',
+    road: '#8a8a90',
+    wall: '#f0e6c8',
+    accent: '#ff7a00',
+    minimapRoad: '#9a9aa2',
+    minimapWall: '#ff7a00',
+    minimapBg: '#87c8e8',
+  },
+  night: {
+    sky: '#120828',
+    fog: '#241038',
+    ground: '#6a5848',
+    road: '#5a5a66',
+    wall: '#00e5ff',
+    accent: '#ff2bd6',
+    minimapRoad: '#3a3a48',
+    minimapWall: '#ff2bd6',
+    minimapBg: '#140a24',
+  },
+} as const satisfies TTrackPalettes;
+
+/** Окраска машины по трассе (shape совместим с TCarSkin) */
+export const carSkins = {
+  coastal: { body: '#ff7a00', cabin: '#1a1208', wheel: '#222222' },
+  night: { body: '#00e5ff', cabin: '#120018', wheel: '#ff2bd6' },
+} as const satisfies TCarSkins;
+
+export const treePalette = {
+  day: {
+    trunk: '#5c4030',
+    pine: '#2f6b3a',
+    broadleaf: '#3d8c4a',
+  },
+  night: {
+    trunk: '#2a1e18',
+    pine: '#1a2e22',
+    broadleaf: '#243828',
+  },
+} as const satisfies TTreePalette;
+
+export const crowdPalette = {
+  shirtDay: [
+    '#e63946',
+    '#1d3557',
+    '#2a9d8f',
+    '#f4a261',
+    '#264653',
+    '#8338ec',
+    '#f1faee',
+    '#ffd60a',
+    '#06d6a0',
+    '#118ab2',
+  ],
+  shirtNight: [
+    '#e63946',
+    '#1d3557',
+    '#2a9d8f',
+    '#f4a261',
+    '#264653',
+    '#8338ec',
+    '#f1faee',
+    '#ffd60a',
+    '#06d6a0',
+    '#118ab2',
+    '#ff2bd6',
+    '#00e5ff',
+    '#ff6b35',
+    '#c77dff',
+  ],
+  skin: ['#f0d4b8', '#e0b090', '#c6865a', '#8d5524', '#f5c9a0'],
+  pantsDay: ['#4a5a72', '#3d4a5c', '#2f3b4c', '#5a6578'],
+  pantsNight: ['#4a5a72', '#3d4a5c', '#2f3b4c', '#5a6578', '#1b2838', '#3b2f4a'],
+  meshBase: '#ffffff',
+  emissiveOff: '#000000',
+  skinEmissiveNight: '#c4a080',
+} as const satisfies TCrowdPalette;
+
+export const tribunePalette = {
+  day: {
+    structure: '#9a9288',
+    step: '#b8b0a4',
+    platform: '#a89e90',
+  },
+  night: {
+    structure: '#5a4878',
+    step: '#6e5c8e',
+    platform: '#3a2858',
+    rail: '#7a6898',
+  },
+  emissiveOff: '#000000',
+} as const satisfies TTribunePalette;
+
+export const vehiclePalette = {
+  headlight: '#fff8e0',
+  glass: '#88ccff',
+  brake: '#ff3333',
+  brakeEmissive: '#ff2222',
+  headlamp: '#ffffcc',
+  headlampEmissive: '#ffffaa',
+  rim: '#aaaaaa',
+} as const satisfies TVehiclePalette;
+
+export const startLightPalette = {
+  idle: '#334155',
+  red: '#ff2244',
+  amber: '#ffcc00',
+  green: '#33ff66',
+} as const satisfies TStartLightPalette;
+
+export const horizonSunStops = {
+  core: [
+    { stop: 0, color: 'rgba(255, 252, 245, 1)' },
+    { stop: 0.2, color: 'rgba(255, 238, 170, 0.98)' },
+    { stop: 0.45, color: 'rgba(255, 200, 80, 0.75)' },
+    { stop: 0.72, color: 'rgba(255, 150, 40, 0.35)' },
+    { stop: 1, color: 'rgba(255, 110, 20, 0)' },
+  ],
+  corona: [
+    { stop: 0, color: 'rgba(255, 210, 90, 0.55)' },
+    { stop: 0.35, color: 'rgba(255, 160, 50, 0.28)' },
+    { stop: 0.7, color: 'rgba(255, 110, 30, 0.1)' },
+    { stop: 1, color: 'rgba(255, 80, 10, 0)' },
+  ],
+  glow: [
+    { stop: 0, color: 'rgba(255, 190, 100, 0.18)' },
+    { stop: 0.45, color: 'rgba(255, 140, 60, 0.08)' },
+    { stop: 1, color: 'rgba(255, 100, 40, 0)' },
+  ],
+} as const satisfies THorizonSunStops;
+
+export const horizonMoonStops = {
+  disk: [
+    { stop: 0, color: 'rgba(248, 246, 238, 1)' },
+    { stop: 0.55, color: 'rgba(220, 218, 208, 0.98)' },
+    { stop: 0.82, color: 'rgba(185, 188, 198, 0.85)' },
+    { stop: 1, color: 'rgba(140, 148, 168, 0)' },
+  ],
+  limb: [
+    { stop: 0, color: 'rgba(0, 0, 0, 0)' },
+    { stop: 1, color: 'rgba(40, 50, 80, 0.22)' },
+  ],
+  glow: [
+    { stop: 0, color: 'rgba(210, 220, 245, 0.22)' },
+    { stop: 0.4, color: 'rgba(170, 185, 220, 0.1)' },
+    { stop: 1, color: 'rgba(120, 140, 190, 0)' },
+  ],
+  halo: [
+    { stop: 0, color: 'rgba(230, 235, 250, 0.12)' },
+    { stop: 0.55, color: 'rgba(180, 195, 230, 0.05)' },
+    { stop: 1, color: 'rgba(140, 160, 210, 0)' },
+  ],
+} as const satisfies THorizonMoonStops;
+
+/** Нейтрали и one-off сцены */
+export const scenePalette = {
+  white: '#ffffff',
+  black: '#000000',
+  checkerDark: '#111111',
+  sunDay: '#fff4e6',
+  sunNight: '#ffffff',
+  obstacle: '#1c1c1e',
+} as const satisfies TScenePalette;
