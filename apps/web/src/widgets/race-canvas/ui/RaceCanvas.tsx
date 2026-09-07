@@ -75,11 +75,12 @@ const RaceSceneInner = ({
   return (
     <>
       <color attach="background" args={[config.palette.sky]} />
-      <fog attach="fog" args={[config.palette.fog, 80, 220]} />
-      <hemisphereLight args={[config.palette.sky, config.palette.ground, isNight ? 0.58 : 0.75]} />
+      <fog attach="fog" args={[config.palette.fog, isNight ? 80 : 110, isNight ? 220 : 280]} />
+      <hemisphereLight args={[config.palette.sky, config.palette.ground, isNight ? 0.58 : 1.05]} />
       <directionalLight
         position={isNight ? MOON_LIGHT_POSITION : SUN_LIGHT_POSITION}
-        intensity={isNight ? 0.85 : 1.2}
+        intensity={isNight ? 0.85 : 1.55}
+        color={isNight ? '#ffffff' : '#fff4e6'}
         castShadow={!isNight}
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}

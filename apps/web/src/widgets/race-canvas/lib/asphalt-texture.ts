@@ -67,7 +67,7 @@ const finishTexture = (canvas: HTMLCanvasElement, colorSpace = true): CanvasText
 
 /**
  * Реалистичный асфальт: многооктавный шум + мелкий гравий, без крупных кругов.
- * albedo mid-gray — тинт через material.color (palette.road).
+ * albedo mid-light gray — тинт через material.color (palette.road).
  */
 export const createAsphaltTexture = (size = 512): CanvasTexture => {
   const canvas = document.createElement('canvas');
@@ -96,7 +96,7 @@ export const createAsphaltTexture = (size = 512): CanvasTexture => {
       // Пиксельный гравий
       const grit = (next() - 0.5) * 22;
 
-      let tone = 118 + (macro - 0.5) * 18 + (mid - 0.5) * 36 + (fine - 0.5) * 28 + grit;
+      let tone = 155 + (macro - 0.5) * 18 + (mid - 0.5) * 36 + (fine - 0.5) * 28 + grit;
 
       // Редкие мелкие камешки (1–2 px), не пятна
       if (next() < 0.012) {
@@ -105,12 +105,12 @@ export const createAsphaltTexture = (size = 512): CanvasTexture => {
         tone -= 20 + next() * 25;
       }
 
-      const gray = Math.max(55, Math.min(200, tone));
-      // Лёгкий холодный оттенок асфальта (щебень)
+      const gray = Math.max(90, Math.min(220, tone));
+      // Нейтрально-тёплый оттенок дневного асфальта (щебень)
       const idx = (y * size + x) * 4;
-      data[idx] = gray * 0.97;
-      data[idx + 1] = gray * 0.98;
-      data[idx + 2] = Math.min(255, gray * 1.03);
+      data[idx] = Math.min(255, gray * 1.0);
+      data[idx + 1] = gray * 0.99;
+      data[idx + 2] = gray * 0.97;
       data[idx + 3] = 255;
     }
   }

@@ -73,7 +73,7 @@ const RoadSegmentMesh = ({
 export const TrackWorld = ({ config, resetNonce }: TrackWorldProps) => {
   const { palette } = config;
   const isNight = config.timeOfDay === 'night';
-  const roadRoughness = isNight ? 0.78 : 0.88;
+  const roadRoughness = isNight ? 0.78 : 0.82;
   const groundRoughness = isNight ? 0.88 : 0.95;
   const wallEmissiveIntensity = isNight ? 0.02 : 0.15;
   const wallRoughness = isNight ? 0.82 : 0.65;

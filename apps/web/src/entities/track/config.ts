@@ -349,10 +349,10 @@ const coastalPalette: TrackPalette = {
   sky: '#6ec8ff',
   fog: '#9ed8ff',
   ground: '#d4b483',
-  road: '#3a3a40',
+  road: '#8a8a90',
   wall: '#f0e6c8',
   accent: '#ff7a00',
-  minimapRoad: '#4a4a52',
+  minimapRoad: '#9a9aa2',
   minimapWall: '#ff7a00',
   minimapBg: '#87c8e8',
 };
