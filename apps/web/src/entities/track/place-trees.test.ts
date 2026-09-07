@@ -7,7 +7,7 @@ import {
   placeTrackTrees,
   TREE_PLACEMENT_LIMITS,
 } from './index';
-import type { TLoopPoint, TTrackConfig } from './config';
+import type { TLoopPoint, TTrackConfig } from './config.types';
 
 const distanceToCenterline = (x: number, z: number, centerline: TLoopPoint[]): number => {
   let best = Infinity;

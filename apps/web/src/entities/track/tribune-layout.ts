@@ -1,4 +1,5 @@
-import type { TOrientedBox, TStartTribuneSide, TVec3 } from './config';
+import type { TOrientedBox, TStartTribuneSide, TVec3 } from './config.types';
+
 
 /** Общие размеры трибун — визуал и зона запрета деревьев из одних чисел */
 export const TRIBUNE_ROWS = 5;

@@ -1,8 +1,4 @@
-export type TDriveInput = {
-  throttle: number;
-  steer: number;
-  brake: number;
-};
+import type { TDriveInput } from './input.types';
 
 const state: TDriveInput = {
   throttle: 0,

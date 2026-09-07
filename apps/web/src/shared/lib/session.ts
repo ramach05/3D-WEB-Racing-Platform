@@ -1,9 +1,5 @@
 import { AUTH_STORAGE_KEY } from '@/shared/config';
-
-export type TAuthSession = {
-  accessToken: string;
-  refreshToken: string;
-};
+import type { TAuthSession } from './session.types';
 
 type TStoredSession = {
   accessToken?: string;

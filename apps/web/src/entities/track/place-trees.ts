@@ -1,15 +1,6 @@
-import type { TLoopPoint, TOrientedBox, TTrackConfig } from './config';
+import type { TLoopPoint, TOrientedBox } from './config.types';
 import { isInsideCheckpoint } from './oriented-box';
-
-export type TTreeKind = 'pine' | 'broadleaf';
-
-export type TPlacedTree = {
-  x: number;
-  z: number;
-  scale: number;
-  rotationY: number;
-  kind: TTreeKind;
-};
+import type { TPlaceTrackTreesOptions, TPlacedTree, TTreeKind } from './place-trees.types';
 
 const WALL_THICKNESS = 0.5;
 const RUNOFF_CLEARANCE = 6;
@@ -112,11 +103,6 @@ const outwardNormalAt = (
     nz = -nz;
   }
   return { nx, nz, px: midX, pz: midZ };
-};
-
-type TPlaceTrackTreesOptions = {
-  config: TTrackConfig;
-  maxTrees?: number;
 };
 
 /**

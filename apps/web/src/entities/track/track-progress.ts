@@ -1,11 +1,6 @@
-import type { TLoopPoint } from './config';
+import type { TLoopPoint } from './config.types';
+import type { TTrackProgress } from './track-progress.types';
 
-export type TTrackProgress = {
-  segmentIndex: number;
-  segmentT: number;
-  /** Позиция на круге: 0..1 */
-  ratio: number;
-};
 
 /** Ближайшая точка на центральной линии и доля пройденного круга */
 export const getTrackProgress = (x: number, z: number, centerline: TLoopPoint[]): TTrackProgress => {

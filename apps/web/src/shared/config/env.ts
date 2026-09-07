@@ -6,6 +6,3 @@ export const getApiBaseUrl = (): string => {
 export const THEME_STORAGE_KEY = 'racing-theme';
 export const LOCALE_STORAGE_KEY = 'racing-locale';
 export const AUTH_STORAGE_KEY = 'racing-auth';
-
-export type TThemeName = 'light' | 'dark';
-export type TAppLocale = 'ru' | 'en';

@@ -2,8 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatRaceTime } from '@/shared/lib';
 import { Button } from '@/shared/ui';
-
-export type TFinishSubmitState = 'idle' | 'loading' | 'done' | 'error';
+import type { TFinishSubmitState } from './RaceFinishOverlay.types';
 
 type TRaceFinishOverlayProps = {
   open: boolean;

@@ -11,38 +11,13 @@ import {
 import type { TTrackPalette } from '@/entities/track';
 import { getRaceHudSnapshot } from '@/features/race-session';
 import { crowdPalette } from '@/shared/config';
-
-export type TSpectatorSeat = {
-  x: number;
-  y: number;
-  z: number;
-  yaw: number;
-  phase: number;
-  leanPhase: number;
-  bobSpeed: number;
-  waveSpeed: number;
-  scaleX: number;
-  scaleY: number;
-  waves: boolean;
-  shirtColor: string;
-  skinColor: string;
-  pantsColor: string;
-};
+import type { TBuildSpectatorSeatsOptions, TSpectatorSeat } from './spectator-crowd.types';
 
 type TSpectatorCrowdProps = {
   seats: TSpectatorSeat[];
   palette: TTrackPalette;
   isNight: boolean;
   paused: boolean;
-};
-
-type TBuildSpectatorSeatsOptions = {
-  tribuneInnerX: number;
-  sideSign: number;
-  count: number;
-  sectionWidth: number;
-  /** Шаг центров соседних секций — ограничивает рассадку, чтобы стыки не пустели и не пересекались */
-  sectionPitch: number;
 };
 
 const pick = <T,>(items: readonly T[], index: number): T => items[index % items.length] as T;

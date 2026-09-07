@@ -1,10 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { TUserPublic } from '@racing/shared';
 import { clearAuthSession, writeAuthSession } from '@/shared/lib';
-
-export type TAuthState = {
-  user: TUserPublic | null;
-};
+import type { TAuthState } from './model.types';
 
 const initialState: TAuthState = {
   user: null,

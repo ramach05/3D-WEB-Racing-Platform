@@ -1,4 +1,4 @@
-export type { TAppLocale, TThemeName } from './env';
+export type { TAppLocale, TThemeMode } from './env.types';
 export { AUTH_STORAGE_KEY, getApiBaseUrl, LOCALE_STORAGE_KEY, THEME_STORAGE_KEY } from './env';
 export { enMessages, ruMessages } from './messages';
 export type {

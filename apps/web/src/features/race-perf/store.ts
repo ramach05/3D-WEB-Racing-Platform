@@ -1,8 +1,4 @@
-export type TRacePerfSnapshot = {
-  fps: number;
-  cpuPercent: number;
-  memMb: number | null;
-};
+import type { TRacePerfSnapshot } from './store.types';
 
 type TListener = () => void;
 

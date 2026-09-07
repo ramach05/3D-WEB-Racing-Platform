@@ -5,7 +5,7 @@ import { formatRaceTime } from './format';
 import { getRtkErrorMessage } from './rtk-error';
 import { clearAuthSession, readAuthSession, writeAuthSession } from './session';
 
-export type { TAuthSession } from './session';
+export type { TAuthSession } from './session.types';
 
 /** Достаёт текст ошибки для UI */
 export const getErrorMessage = (error: TCaughtError): string => {

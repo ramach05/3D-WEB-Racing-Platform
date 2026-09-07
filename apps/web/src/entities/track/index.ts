@@ -12,12 +12,12 @@ export type {
   TTrackObstacle,
   TTrackPalette,
   TVec3,
-} from './config';
+} from './config.types';
 export { coastalOvalTrack, getAllTrackConfigs, getTrackConfig, nightCityTrack } from './config';
 export { getCheckpointLocalCoords, isInsideCheckpoint } from './oriented-box';
-export type { TCheckpointLocalCoords } from './oriented-box';
+export type { TCheckpointLocalCoords } from './oriented-box.types';
 export { placeTrackTrees, TREE_PLACEMENT_LIMITS } from './place-trees';
-export type { TPlacedTree, TTreeKind } from './place-trees';
+export type { TPlacedTree, TTreeKind } from './place-trees.types';
 export {
   ROW_DEPTH,
   ROW_HEIGHT,
@@ -30,4 +30,4 @@ export {
   buildTribuneTreeExclusionZone,
 } from './tribune-layout';
 export { advanceLapProgress, getTrackProgress } from './track-progress';
-export type { TTrackProgress } from './track-progress';
+export type { TTrackProgress } from './track-progress.types';

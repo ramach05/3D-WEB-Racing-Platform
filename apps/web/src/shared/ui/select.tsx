@@ -1,19 +1,6 @@
 import { type KeyboardEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { cx } from '@/shared/lib';
-
-export type TSelectOption<T extends string> = {
-  value: T;
-  label: string;
-};
-
-type TSelectProps<T extends string> = {
-  label: string;
-  value: T;
-  options: TSelectOption<T>[];
-  onChange: (value: T) => void;
-  className?: string;
-  size?: 'md' | 'sm';
-};
+import type { TSelectProps } from './select.types';
 
 /** Доступный пиксельный дропдаун в стиле SEGA */
 export const Select = <T extends string>({
