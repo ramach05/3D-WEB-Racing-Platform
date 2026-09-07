@@ -498,6 +498,99 @@ button:disabled,
   }
 }
 
+.sega-finish-moment {
+  background:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.25) 55%, transparent 75%),
+    rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.sega-finish-moment__wipe {
+  position: absolute;
+  inset: 38% -20% 38% -20%;
+  background: repeating-linear-gradient(90deg, #111 0 12px, #f5f5f5 12px 24px);
+  opacity: 0;
+  transform: translateX(-30%) skewX(-12deg);
+  animation: sega-finish-moment-wipe 520ms steps(6) both;
+  pointer-events: none;
+}
+
+.sega-finish-moment__title {
+  margin: 0;
+  font-size: clamp(4.5rem, 16vw, 8.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sega-yellow);
+  text-shadow:
+    4px 4px 0 var(--sega-magenta),
+    -2px -2px 0 var(--sega-cyan);
+  animation:
+    sega-finish-moment-pop 320ms steps(5) both,
+    sega-blink 0.5s steps(2, end) 320ms 2;
+}
+
+.sega-finish-moment__time-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  animation: sega-finish-moment-pop 280ms steps(4) both;
+}
+
+.sega-finish-moment__time {
+  margin: 0;
+  font-size: clamp(3rem, 12vw, 6.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  color: var(--sega-cyan);
+  text-shadow:
+    4px 4px 0 var(--sega-yellow),
+    -2px -2px 0 var(--sega-magenta);
+}
+
+.sega-finish-moment__new-best {
+  margin: 0;
+  font-size: clamp(1rem, 3.5vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sega-magenta);
+  text-shadow: 2px 2px 0 var(--sega-cyan);
+  animation: sega-blink 0.55s steps(2, end) infinite;
+}
+
+@keyframes sega-finish-moment-pop {
+  from {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sega-finish-moment-wipe {
+  0% {
+    opacity: 0;
+    transform: translateX(-40%) skewX(-12deg);
+  }
+  20% {
+    opacity: 0.85;
+  }
+  70% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(40%) skewX(-12deg);
+  }
+}
+
 .sega-countdown {
   background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.35) 0%, transparent 65%);
 }
@@ -543,6 +636,10 @@ button:disabled,
   .sega-finish-title,
   .sega-finish-overlay,
   .sega-finish-confetti__piece,
+  .sega-finish-moment__wipe,
+  .sega-finish-moment__title,
+  .sega-finish-moment__time-block,
+  .sega-finish-moment__new-best,
   .sega-countdown__digit {
     animation: none;
   }

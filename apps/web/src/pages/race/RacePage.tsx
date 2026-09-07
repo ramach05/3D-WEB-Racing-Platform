@@ -20,6 +20,7 @@ import { RaceHud, RacePerfHud } from '@/widgets/hud';
 import { RaceCanvas } from '@/widgets/race-canvas';
 import { RaceControls } from '@/widgets/race-controls';
 import { RaceCountdownOverlay } from '@/widgets/race-countdown';
+import { RaceFinishMomentOverlay } from '@/widgets/race-finish-moment';
 import { RaceFinishOverlay, type FinishSubmitState } from '@/widgets/race-finish-overlay';
 import { LeaderboardTable } from '@/widgets/leaderboard-table';
 import { RacePauseMenu } from '@/widgets/race-pause-menu';
@@ -34,7 +35,8 @@ type FinishMeta = {
   submitState: FinishSubmitState;
 };
 
-const FINISH_OVERLAY_DELAY_MS = 900;
+/** FINISH! + время до модалки результатов */
+const FINISH_OVERLAY_DELAY_MS = 4000;
 
 /** Страница заезда: 3D-сцена, HUD, пауза, отправка результата */
 export const RacePage = () => {
@@ -151,13 +153,11 @@ export const RacePage = () => {
 
   useEffect(() => {
     if (hud.status !== 'finished') {
+      setShowFinishOverlay(false);
       return;
     }
-    const reduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const delay = reduced ? 0 : FINISH_OVERLAY_DELAY_MS;
-    const id = window.setTimeout(() => setShowFinishOverlay(true), delay);
+    // Всегда даём сыграть finish-moment (FINISH! → время); CSS сам глушит motion
+    const id = window.setTimeout(() => setShowFinishOverlay(true), FINISH_OVERLAY_DELAY_MS);
     return () => window.clearTimeout(id);
   }, [hud.status]);
 
@@ -247,6 +247,11 @@ export const RacePage = () => {
       <RacePerfHud />
       <RaceControls />
       <RaceCountdownOverlay />
+      <RaceFinishMomentOverlay
+        active={hud.status === 'finished' && !showFinishOverlay}
+        timeMs={finishMeta?.timeMs ?? hud.timeMs}
+        isNewBest={finishMeta?.isNewBest ?? false}
+      />
       <RacePauseMenu
         open={hud.status === 'paused'}
         onResume={togglePause}
