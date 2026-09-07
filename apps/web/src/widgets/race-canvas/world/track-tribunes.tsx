@@ -13,14 +13,16 @@ type TrackTribunesProps = {
   paused: boolean;
 };
 
-const SECTION_Z_OFFSETS = [-6, 0, 6] as const;
 const TRIBUNE_ROWS = 5;
 const ROW_HEIGHT = 0.65;
 const ROW_DEPTH = 0.75;
+/** Геометрия чуть шире шага — непрерывные ступени; зрители укладываются в sectionPitch */
 const SECTION_WIDTH = 8;
+const SECTION_PITCH = 6;
+const SECTION_Z_OFFSETS = [-SECTION_PITCH, 0, SECTION_PITCH] as const;
 const WALL_OFFSET = 0.5;
 const TRIBUNE_MARGIN = 2.5;
-const SPECTATORS_PER_SECTION = 40;
+const SPECTATORS_PER_SECTION = 30;
 const ROAD_TOP_Y = 0.1;
 
 type TribuneSectionProps = {
@@ -147,6 +149,7 @@ const TribuneSection = ({
         sideSign,
         count: SPECTATORS_PER_SECTION,
         sectionWidth: SECTION_WIDTH,
+        sectionPitch: SECTION_PITCH,
       }),
     [tribuneInnerX, sideSign],
   );
@@ -177,26 +180,33 @@ const TribuneSection = ({
         />
       </mesh>
 
-      {Array.from({ length: TRIBUNE_ROWS }, (_, row) => (
-        <mesh
-          key={`step-${row}`}
-          position={[
-            rowCenterX(tribuneInnerX, sideSign, row),
-            row * ROW_HEIGHT + ROW_HEIGHT / 2,
-            0,
-          ]}
-          castShadow={!isNight}
-          receiveShadow
-        >
-          <boxGeometry args={[ROW_DEPTH, ROW_HEIGHT, SECTION_WIDTH]} />
-          <meshStandardMaterial
-            color={row % 2 === 0 ? stepColor : structureColor}
-            emissive={isNight ? (row % 2 === 0 ? palette.accent : palette.wall) : '#000000'}
-            emissiveIntensity={isNight ? 0.1 : 0}
-            roughness={0.92}
-          />
-        </mesh>
-      ))}
+      {Array.from({ length: TRIBUNE_ROWS }, (_, row) => {
+        let emissive = '#000000';
+        if (isNight) {
+          emissive = row % 2 === 0 ? palette.accent : palette.wall;
+        }
+
+        return (
+          <mesh
+            key={`step-${row}`}
+            position={[
+              rowCenterX(tribuneInnerX, sideSign, row),
+              row * ROW_HEIGHT + ROW_HEIGHT / 2,
+              0,
+            ]}
+            castShadow={!isNight}
+            receiveShadow
+          >
+            <boxGeometry args={[ROW_DEPTH, ROW_HEIGHT, SECTION_WIDTH]} />
+            <meshStandardMaterial
+              color={row % 2 === 0 ? stepColor : structureColor}
+              emissive={emissive}
+              emissiveIntensity={isNight ? 0.1 : 0}
+              roughness={0.92}
+            />
+          </mesh>
+        );
+      })}
 
       <mesh
         position={[backOuterX + sideSign * 0.06, rowTopY(TRIBUNE_ROWS - 1) + 0.42, 0]}
