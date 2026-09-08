@@ -129,17 +129,25 @@ pnpm dev
 ## Тесты
 
 ```bash
-pnpm lint
-pnpm test          # API Vitest e2e + web Vitest/RTL
-pnpm e2e           # Playwright: регистрация → stub финиша → профиль/лидерборд
+pnpm test            # API Vitest (unit + e2e) + web Vitest/RTL/MSW
+pnpm test:watch      # watch для api и web
+pnpm test:api        # только @racing/api
+pnpm test:web        # только @racing/web
+pnpm test:e2e        # Playwright (алиас: pnpm e2e)
+pnpm test:all        # unit/api e2e + Playwright
+
+# точечно в пакетах
+pnpm --filter @racing/api test:unit
+pnpm --filter @racing/api test:e2e
+pnpm --filter @racing/web e2e:ui
 ```
 
 Playwright не водит машину 3 минуты: на странице заезда есть `window.__finishRaceForTest()`.
 
-Нужны браузеры Playwright один раз:
+Браузеры Playwright один раз:
 
 ```bash
-pnpm --filter @racing/web exec playwright install chromium
+pnpm --filter @racing/web e2e:install
 ```
 
 ## Правила кода

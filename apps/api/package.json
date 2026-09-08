@@ -8,6 +8,8 @@
     "start": "node dist/main.js",
     "lint": "eslint src --max-warnings=0",
     "test": "vitest run --config ./vitest.config.ts",
+    "test:unit": "vitest run --config ./vitest.config.ts src",
+    "test:e2e": "vitest run --config ./vitest.config.ts test",
     "test:watch": "vitest --config ./vitest.config.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

@@ -21,3 +21,4 @@ apps/api/src/generated
 !.vscode/settings.json
 *.tsbuildinfo
 .eslintcache
+.pnpm-store/
