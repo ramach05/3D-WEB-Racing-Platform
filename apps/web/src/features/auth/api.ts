@@ -8,18 +8,26 @@ export const authApi = racingApi.injectEndpoints({
     register: build.mutation<TAuthResponse, TRegisterRequest>({
       query: (body) => ({ url: '/auth/register', method: 'POST', body }),
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        const { data } = await queryFulfilled;
-        persistTokens(data.tokens.accessToken, data.tokens.refreshToken);
-        dispatch(setUser(data.user));
+        try {
+          const { data } = await queryFulfilled;
+          persistTokens(data.tokens.accessToken, data.tokens.refreshToken);
+          dispatch(setUser(data.user));
+        } catch {
+          return;
+        }
       },
       invalidatesTags: ['Me'],
     }),
     login: build.mutation<TAuthResponse, TLoginRequest>({
       query: (body) => ({ url: '/auth/login', method: 'POST', body }),
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        const { data } = await queryFulfilled;
-        persistTokens(data.tokens.accessToken, data.tokens.refreshToken);
-        dispatch(setUser(data.user));
+        try {
+          const { data } = await queryFulfilled;
+          persistTokens(data.tokens.accessToken, data.tokens.refreshToken);
+          dispatch(setUser(data.user));
+        } catch {
+          return;
+        }
       },
       invalidatesTags: ['Me'],
     }),

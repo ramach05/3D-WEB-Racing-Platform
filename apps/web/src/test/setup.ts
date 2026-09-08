@@ -1,7 +1,16 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import { server } from './msw/server';
 import './i18n';
+
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: 'error' });
+});
+
+afterAll(() => {
+  server.close();
+});
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -37,6 +46,7 @@ Object.defineProperty(window, 'ResizeObserver', {
 });
 
 afterEach(() => {
+  server.resetHandlers();
   cleanup();
   localStorage.clear();
   vi.clearAllMocks();
