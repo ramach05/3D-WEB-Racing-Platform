@@ -5,7 +5,7 @@ import {
   getRaceHudSnapshot,
   resetRaceSession,
 } from '@/features/race-session';
-import { RaceCountdownOverlay } from './RaceCountdownOverlay';
+import { RaceCountdownOverlay } from './race-countdown-overlay';
 
 describe('RaceCountdownOverlay', () => {
   beforeEach(() => {

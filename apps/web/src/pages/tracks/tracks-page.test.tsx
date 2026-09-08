@@ -12,7 +12,7 @@ vi.mock('@/entities/track', async (importOriginal) => {
 });
 
 import { useGetTracksQuery } from '@/entities/track';
-import { TracksPage } from './TracksPage';
+import { TracksPage } from './tracks-page';
 
 const mockedUseGetTracksQuery = vi.mocked(useGetTracksQuery);
 

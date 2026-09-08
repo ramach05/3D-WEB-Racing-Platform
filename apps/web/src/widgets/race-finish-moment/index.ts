@@ -1,1 +1,1 @@
-export { RaceFinishMomentOverlay } from './RaceFinishMomentOverlay';
+export { RaceFinishMomentOverlay } from './race-finish-moment-overlay';

@@ -2,7 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatRaceTime } from '@/shared/lib';
 import { Button } from '@/shared/ui';
-import type { TFinishSubmitState } from './RaceFinishOverlay.types';
+import type { TFinishSubmitState } from './race-finish-overlay.types';
 
 type TRaceFinishOverlayProps = {
   /** Показать оверлей */

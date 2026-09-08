@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { formatRaceTime } from '@/shared/lib';
 import { resetRaceSession, startRacing } from '@/features/race-session';
-import { RaceHud } from './RaceHud';
+import { RaceHud } from './race-hud';
 
 describe('RaceHud', () => {
   afterEach(() => {

@@ -6,7 +6,7 @@ vi.mock('@/features/auth', () => ({
   RegisterForm: () => <form aria-label="register-form" />,
 }));
 
-import { RegisterPage } from './RegisterPage';
+import { RegisterPage } from './register-page';
 
 describe('RegisterPage', () => {
   it('renders register form', () => {

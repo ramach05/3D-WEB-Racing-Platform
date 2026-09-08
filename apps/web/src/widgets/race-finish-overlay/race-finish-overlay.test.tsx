@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { formatRaceTime } from '@/shared/lib';
-import { RaceFinishOverlay } from './RaceFinishOverlay';
+import { RaceFinishOverlay } from './race-finish-overlay';
 
 describe('RaceFinishOverlay', () => {
   it('renders nothing when closed', () => {

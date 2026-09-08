@@ -1,1 +1,1 @@
-export { RacePauseMenu } from './RacePauseMenu';
+export { RacePauseMenu } from './race-pause-menu';

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { ThemeSwitcher } from './ThemeSwitcher';
+import { ThemeSwitcher } from './theme-switcher';
 
 describe('ThemeSwitcher', () => {
   it('opens dropdown and switches theme', async () => {

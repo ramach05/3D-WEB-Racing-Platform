@@ -9,7 +9,7 @@ vi.mock('@/features/auth', () => ({
 }));
 
 import { useAuthUser, useGetMeQuery } from '@/features/auth';
-import { ProfilePage } from './ProfilePage';
+import { ProfilePage } from './profile-page';
 
 const mockedUseAuthUser = vi.mocked(useAuthUser);
 const mockedUseGetMeQuery = vi.mocked(useGetMeQuery);

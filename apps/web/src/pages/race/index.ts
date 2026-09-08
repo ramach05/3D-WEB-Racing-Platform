@@ -1,1 +1,1 @@
-export { RacePage } from './RacePage';
+export { RacePage } from './race-page';

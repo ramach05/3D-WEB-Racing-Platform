@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { TLeaderboardEntry } from '@racing/shared';
-import { LeaderboardTable } from './LeaderboardTable';
+import { LeaderboardTable } from './leaderboard-table';
 
 describe('LeaderboardTable', () => {
   it('renders ranks and racer names from mocked entries', () => {

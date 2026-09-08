@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { AUTH_STORAGE_KEY } from '@/shared/config';
 import { formatRaceTime } from '@/shared/lib';
 import { renderWithProviders } from '@/test/render';
-import { ProfilePage } from './ProfilePage';
+import { ProfilePage } from './profile-page';
 
 describe('ProfilePage integration', () => {
   it('loads nickname and best times from me endpoint', async () => {

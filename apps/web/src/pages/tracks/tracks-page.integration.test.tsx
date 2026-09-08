@@ -5,7 +5,7 @@ import { TRACK_SLUG_COASTAL_OVAL } from '@racing/shared';
 import { getApiBaseUrl } from '@/shared/config';
 import { renderWithProviders } from '@/test/render';
 import { server } from '@/test/msw/server';
-import { TracksPage } from './TracksPage';
+import { TracksPage } from './tracks-page';
 
 const api = getApiBaseUrl();
 

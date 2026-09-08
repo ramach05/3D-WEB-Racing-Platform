@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithRouter } from '@/test/render';
-import { HomePage } from './HomePage';
+import { HomePage } from './home-page';
 
 vi.mock('@/features/auth', () => ({
   useAuthUser: vi.fn(),

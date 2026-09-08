@@ -21,7 +21,7 @@ vi.mock('@/entities/leaderboard', () => ({
 
 import { useGetLeaderboardQuery } from '@/entities/leaderboard';
 import { useGetTracksQuery } from '@/entities/track';
-import { LeaderboardPage } from './LeaderboardPage';
+import { LeaderboardPage } from './leaderboard-page';
 
 const mockedUseGetTracksQuery = vi.mocked(useGetTracksQuery);
 const mockedUseGetLeaderboardQuery = vi.mocked(useGetLeaderboardQuery);

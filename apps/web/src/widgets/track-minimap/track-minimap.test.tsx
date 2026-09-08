@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { coastalOvalTrack } from '@/entities/track';
-import { TrackMinimap } from './TrackMinimap';
+import { TrackMinimap } from './track-minimap';
 
 describe('TrackMinimap', () => {
   it('returns null for short centerline', () => {

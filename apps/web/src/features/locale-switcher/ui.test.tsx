@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { i18n } from '@/test/i18n';
-import { LocaleSwitcher } from './LocaleSwitcher';
+import { LocaleSwitcher } from './locale-switcher';
 
 describe('LocaleSwitcher', () => {
   it('opens dropdown and switches locale', async () => {

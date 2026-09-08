@@ -1,1 +1,1 @@
-export { RaceControls } from './RaceControls';
+export { RaceControls } from './race-controls';

@@ -1,1 +1,1 @@
-export { TrackMinimap } from './TrackMinimap';
+export { TrackMinimap } from './track-minimap';

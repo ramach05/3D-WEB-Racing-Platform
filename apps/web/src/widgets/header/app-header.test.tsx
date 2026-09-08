@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithRouter } from '@/test/render';
-import { AppHeader } from './AppHeader';
+import { AppHeader } from './app-header';
 
 vi.mock('@/features/auth', () => ({
   useAuthUser: vi.fn(),

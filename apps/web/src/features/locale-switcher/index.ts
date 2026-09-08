@@ -1,2 +1,2 @@
 export { persistLocale, readStoredLocale, toggleLocale } from './model';
-export { LocaleSwitcher } from './LocaleSwitcher';
+export { LocaleSwitcher } from './locale-switcher';

@@ -2,7 +2,7 @@ import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { finishRaceForTest, resetRaceSession } from '@/features/race-session';
 import { formatRaceTime } from '@/shared/lib';
-import { RaceFinishMomentOverlay } from './RaceFinishMomentOverlay';
+import { RaceFinishMomentOverlay } from './race-finish-moment-overlay';
 
 describe('RaceFinishMomentOverlay', () => {
   beforeEach(() => {

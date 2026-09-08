@@ -1,1 +1,1 @@
-export { RaceCountdownOverlay } from './RaceCountdownOverlay';
+export { RaceCountdownOverlay } from './race-countdown-overlay';

@@ -4,7 +4,7 @@ import { useAuthUser } from '@/features/auth';
 import { getAllTrackConfigs } from '@/entities/track';
 import { PageShell } from '@/shared/ui';
 import { TrackMinimap } from '@/widgets/track-minimap';
-import { RaceMarquee } from './RaceMarquee';
+import { RaceMarquee } from './race-marquee';
 
 /** Лендинг в стиле SEGA title screen */
 export const HomePage = () => {

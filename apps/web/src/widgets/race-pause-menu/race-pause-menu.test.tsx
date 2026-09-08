@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { RacePauseMenu } from './RacePauseMenu';
+import { RacePauseMenu } from './race-pause-menu';
 
 describe('RacePauseMenu', () => {
   it('renders nothing when closed', () => {

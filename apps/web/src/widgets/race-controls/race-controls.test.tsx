@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { RaceControls } from './RaceControls';
+import { RaceControls } from './race-controls';
 
 describe('RaceControls', () => {
   it('lists hotkeys under controls label', () => {

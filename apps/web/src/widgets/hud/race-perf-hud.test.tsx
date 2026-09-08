@@ -9,7 +9,7 @@ vi.mock('@/features/race-perf', () => ({
   })),
 }));
 
-import { RacePerfHud } from './RacePerfHud';
+import { RacePerfHud } from './race-perf-hud';
 
 describe('RacePerfHud', () => {
   it('shows fps cpu and memory', () => {
