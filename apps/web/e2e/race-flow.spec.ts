@@ -29,11 +29,11 @@ test('register, stub a finish, see time on profile and leaderboard', async ({ pa
   const finishDialog = page.getByRole('dialog');
   await expect(finishDialog).toBeVisible();
   await expect(finishDialog.getByRole('heading', { name: /финиш|finish/i })).toBeVisible();
-  await expect(finishDialog.getByText(/00:33/)).toBeVisible();
+  await expect(finishDialog.getByText(/00:33/).first()).toBeVisible();
 
   await page.goto('/profile');
   await expect(page.getByText(/00:33/)).toBeVisible();
 
   await page.goto('/leaderboard');
-  await expect(page.getByText(nickname)).toBeVisible();
+  await expect(page.locator('#main').getByText(nickname)).toBeVisible();
 });
