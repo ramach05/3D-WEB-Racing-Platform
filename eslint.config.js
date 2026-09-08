@@ -1,5 +1,7 @@
 import js from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import checkFile from 'eslint-plugin-check-file';
+import jsdoc from 'eslint-plugin-jsdoc';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -17,6 +19,11 @@ const noUnknown = {
 const noFunctionDeclaration = {
   selector: 'FunctionDeclaration',
   message: 'Используй стрелочные функции (const fn = () => {}).',
+};
+
+const noDefaultExport = {
+  selector: 'ExportDefaultDeclaration',
+  message: 'Используй named export (export const …), не default export.',
 };
 
 const fsdDeepImportBan = {
@@ -72,8 +79,48 @@ const raceCanvasInternalPatterns = [
   fsdRelativeParentBan,
 ];
 
+/** JSDoc обязателен для публичных функций, хуков и компонентов */
+const jsdocPublicRules = {
+  ...jsdoc.configs['flat/recommended-typescript'].rules,
+  'jsdoc/require-param-type': 'off',
+  'jsdoc/require-returns-type': 'off',
+  'jsdoc/require-param': 'off',
+  'jsdoc/require-returns': 'off',
+  'jsdoc/require-yields': 'off',
+  'jsdoc/check-tag-names': ['error', { typed: true }],
+  'jsdoc/require-description': [
+    'error',
+    {
+      contexts: ['any'],
+      descriptionStyle: 'body',
+    },
+  ],
+  'jsdoc/require-jsdoc': [
+    'error',
+    {
+      publicOnly: true,
+      enableFixer: false,
+      require: {
+        ArrowFunctionExpression: true,
+        ClassDeclaration: false,
+        ClassExpression: false,
+        FunctionDeclaration: true,
+        FunctionExpression: true,
+        MethodDefinition: false,
+      },
+      contexts: [
+        // export const useX / PageShell / formatRaceTime = () => …
+        'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ArrowFunctionExpression',
+        'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > FunctionExpression',
+      ],
+    },
+  ],
+};
+
 /** Общие правила стиля кода для всего monorepo */
 const sharedRules = {
+  eqeqeq: ['error', 'always', { null: 'ignore' }],
+  'no-console': ['error', { allow: ['warn', 'error'] }],
   '@typescript-eslint/no-explicit-any': 'error',
   '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
   '@typescript-eslint/consistent-type-imports': [
@@ -92,8 +139,24 @@ const sharedRules = {
       format: ['PascalCase'],
       prefix: ['I'],
     },
+    // Хуки: useAuthUser, useRaceHud (без type-aware lint — только по имени)
+    {
+      selector: 'variable',
+      filter: {
+        regex: '^use[A-Z]',
+        match: true,
+      },
+      format: ['camelCase'],
+    },
   ],
-  'no-restricted-syntax': ['error', noAnyUnknown, noUnknown, noFunctionDeclaration],
+  'no-restricted-syntax': [
+    'error',
+    noAnyUnknown,
+    noUnknown,
+    noFunctionDeclaration,
+    noDefaultExport,
+  ],
+  ...jsdocPublicRules,
 };
 
 export default tseslint.config(
@@ -108,6 +171,7 @@ export default tseslint.config(
       'apps/api/prisma/seed.js',
       'apps/api/prisma/seed.js.map',
       'apps/api/prisma/seed.d.ts',
+      'apps/api/src/generated/**',
       'packages/shared/src/**/*.js',
       'eslint.config.js',
     ],
@@ -115,6 +179,30 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   eslintConfigPrettier,
+  {
+    files: ['**/*.{ts,tsx}'],
+    plugins: { 'check-file': checkFile, jsdoc },
+    settings: {
+      jsdoc: {
+        mode: 'typescript',
+      },
+    },
+    rules: {
+      'check-file/filename-naming-convention': [
+        'error',
+        { '**/*.{ts,tsx}': 'KEBAB_CASE' },
+        { ignoreMiddleExtensions: true },
+      ],
+      'check-file/folder-naming-convention': [
+        'error',
+        {
+          'apps/web/src/**/': 'KEBAB_CASE',
+          'apps/api/src/**/': 'KEBAB_CASE',
+          'packages/*/src/**/': 'KEBAB_CASE',
+        },
+      ],
+    },
+  },
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
@@ -125,8 +213,23 @@ export default tseslint.config(
         ecmaFeatures: { jsx: true },
       },
     },
+    plugins: { jsdoc },
     rules: {
       ...sharedRules,
+    },
+  },
+  // Тесты и моки: JSDoc / console не требуем
+  {
+    files: [
+      '**/*.{test,spec}.{ts,tsx}',
+      '**/*.integration.test.{ts,tsx}',
+      '**/test/**/*.{ts,tsx}',
+      'apps/api/test/**/*.ts',
+    ],
+    rules: {
+      'jsdoc/require-jsdoc': 'off',
+      'jsdoc/require-description': 'off',
+      'no-console': 'off',
     },
   },
   {
@@ -156,6 +259,9 @@ export default tseslint.config(
     files: ['apps/web/src/vite-env.d.ts'],
     rules: {
       '@typescript-eslint/naming-convention': 'off',
+      'jsdoc/require-jsdoc': 'off',
+      'jsdoc/require-description': 'off',
+      'no-restricted-syntax': 'off',
     },
   },
   {
@@ -167,6 +273,9 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/no-extraneous-class': 'off',
       '@typescript-eslint/consistent-type-imports': 'off',
+      // Nest: классы/методы вместо стрелок — исключение из общего стиля
+      'no-restricted-syntax': ['error', noAnyUnknown, noUnknown, noDefaultExport],
+      'jsdoc/require-jsdoc': 'off',
     },
   },
   {
