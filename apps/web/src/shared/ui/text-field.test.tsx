@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { TextField } from './text-field';
+import { StatusText, TextField } from './text-field';
 
 describe('TextField', () => {
   it('renders full error message without clipping', () => {
@@ -11,5 +11,15 @@ describe('TextField', () => {
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent(message);
     expect(alert.className).toContain('sega-field-error');
+  });
+});
+
+describe('StatusText', () => {
+  it('renders children with muted class', () => {
+    render(<StatusText>Loading…</StatusText>);
+
+    const node = screen.getByText('Loading…');
+    expect(node.tagName).toBe('P');
+    expect(node.className).toContain('text-[var(--muted)]');
   });
 });

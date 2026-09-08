@@ -30,39 +30,31 @@ const distanceToCenterline = (x: number, z: number, centerline: TLoopPoint[]): n
 
 describe('placeTrackTrees', () => {
   it('places trees on both tracks with exclusion zones', () => {
-    // Arrange
     const configs = getAllTrackConfigs();
 
     for (const config of configs) {
-      // Act
       const trees = placeTrackTrees({ config });
 
-      // Assert
       expect(config.treeExclusionZones.length).toBeGreaterThan(0);
       expect(trees.length).toBeGreaterThan(40);
     }
   });
 
   it('keeps tree count within GPU budget', () => {
-    // Arrange / Act
     const coastal = placeTrackTrees({ config: coastalOvalTrack });
     const night = placeTrackTrees({ config: nightCityTrack });
 
-    // Assert
     expect(coastal.length).toBeLessThanOrEqual(TREE_PLACEMENT_LIMITS.coastalMax);
     expect(night.length).toBeLessThanOrEqual(TREE_PLACEMENT_LIMITS.nightMax);
   });
 
   it('keeps trees outside the track corridor', () => {
     for (const config of getAllTrackConfigs()) {
-      // Arrange
       const corridor =
         config.roadWidth / 2 + 0.5 + TREE_PLACEMENT_LIMITS.corridorRunoff;
 
-      // Act
       const trees = placeTrackTrees({ config });
 
-      // Assert
       for (const tree of trees) {
         expect(distanceToCenterline(tree.x, tree.z, config.centerline)).toBeGreaterThanOrEqual(
           corridor - 0.01,
@@ -73,7 +65,6 @@ describe('placeTrackTrees', () => {
 
   it('never places trees inside tribune exclusion zones', () => {
     for (const config of getAllTrackConfigs()) {
-      // Arrange
       const trees = placeTrackTrees({ config });
       const zone = config.treeExclusionZones[0];
       expect(zone).toBeDefined();
@@ -81,7 +72,6 @@ describe('placeTrackTrees', () => {
         continue;
       }
 
-      // Act / Assert — центр зоны точно запрещён
       expect(isInsideCheckpoint(zone.position[0], zone.position[2], zone)).toBe(true);
 
       for (const tree of trees) {
@@ -93,14 +83,11 @@ describe('placeTrackTrees', () => {
   });
 
   it('is deterministic for the same track config', () => {
-    // Arrange
     const config: TTrackConfig = coastalOvalTrack;
 
-    // Act
     const first = placeTrackTrees({ config });
     const second = placeTrackTrees({ config });
 
-    // Assert
     expect(first).toEqual(second);
   });
 });
