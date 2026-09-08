@@ -134,4 +134,68 @@ describe('API e2e', () => {
     expect(entries.length).toBeGreaterThan(0);
     expect(entries.some((row) => row.nickname === 'test_user')).toBe(true);
   });
+
+  it('refreshes tokens and rejects invalid refresh', async () => {
+    const login = await request(server)
+      .post('/auth/login')
+      .send({ nickname: 'test_user', password: '1234' })
+      .expect(201);
+    const refreshToken = (login.body as TAuthBody).tokens.refreshToken;
+
+    const refreshed = await request(server)
+      .post('/auth/refresh')
+      .send({ refreshToken })
+      .expect(201);
+    const accessToken = (refreshed.body as { tokens: { accessToken: string } }).tokens.accessToken;
+
+    await request(server).get('/auth/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+
+    await request(server)
+      .post('/auth/refresh')
+      .send({
+        refreshToken:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ4Iiwibmlja25hbWUiOiJ4In0.invalid',
+      })
+      .expect(401);
+  });
+
+  it('rejects duplicate register', async () => {
+    const nickname = `dup_${Date.now()}`;
+    await request(server).post('/auth/register').send({ nickname, password: '1234' }).expect(201);
+    await request(server).post('/auth/register').send({ nickname, password: '1234' }).expect(409);
+  });
+
+  it('requires trackId for leaderboard and returns best results on me', async () => {
+    await request(server).get('/leaderboard').expect(400);
+
+    const login = await request(server)
+      .post('/auth/login')
+      .send({ nickname: 'test_user', password: '1234' })
+      .expect(201);
+    const accessToken = (login.body as TAuthBody).tokens.accessToken;
+
+    const tracks = await request(server).get('/tracks').expect(200);
+    const coastal = (tracks.body as TTrackBody[]).find((track) => track.slug === 'coastal-oval');
+    expect(coastal).toBeDefined();
+
+    await request(server)
+      .post('/race-results')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ trackId: coastal?.id, timeMs: 34_000 })
+      .expect(201);
+
+    const me = await request(server)
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    const bestResults = (me.body as { bestResults: Array<{ trackId: string; timeMs: number }> })
+      .bestResults;
+    expect(bestResults.some((row) => row.trackId === coastal?.id)).toBe(true);
+  });
+
+  it('returns health status', async () => {
+    const health = await request(server).get('/health').expect(200);
+    expect(health.body).toEqual({ status: 'ok' });
+  });
 });
