@@ -1,6 +1,7 @@
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { formatRaceTime } from '@/shared/lib';
+import { mockQueryResult } from '@/test/mock-query-result';
 import { renderWithRouter } from '@/test/render';
 
 vi.mock('@/features/auth', () => ({
@@ -14,6 +15,8 @@ import { ProfilePage } from './profile-page';
 const mockedUseAuthUser = vi.mocked(useAuthUser);
 const mockedUseGetMeQuery = vi.mocked(useGetMeQuery);
 
+type TMeQuery = ReturnType<typeof useGetMeQuery>;
+
 describe('ProfilePage', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -23,11 +26,13 @@ describe('ProfilePage', () => {
 
   it('shows guest call to action', () => {
     mockedUseAuthUser.mockReturnValue(null);
-    mockedUseGetMeQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-    } as ReturnType<typeof useGetMeQuery>);
+    mockedUseGetMeQuery.mockReturnValue(
+      mockQueryResult<TMeQuery>({
+        data: undefined,
+        isLoading: false,
+        isError: false,
+      }),
+    );
 
     renderWithRouter(<ProfilePage />);
 
@@ -41,26 +46,28 @@ describe('ProfilePage', () => {
       nickname: 'racer_one',
       createdAt: '2024-01-01T00:00:00.000Z',
     });
-    mockedUseGetMeQuery.mockReturnValue({
-      data: {
-        user: {
-          id: '1',
-          nickname: 'racer_one',
-          createdAt: '2024-01-01T00:00:00.000Z',
-        },
-        bestResults: [
-          {
-            trackId: 't1',
-            trackSlug: 'coastal-oval',
-            trackName: 'Coastal Oval',
-            timeMs: 65_340,
+    mockedUseGetMeQuery.mockReturnValue(
+      mockQueryResult<TMeQuery>({
+        data: {
+          user: {
+            id: '1',
+            nickname: 'racer_one',
             createdAt: '2024-01-01T00:00:00.000Z',
           },
-        ],
-      },
-      isLoading: false,
-      isError: false,
-    } as ReturnType<typeof useGetMeQuery>);
+          bestResults: [
+            {
+              trackId: 't1',
+              trackSlug: 'coastal-oval',
+              trackName: 'Coastal Oval',
+              timeMs: 65_340,
+              createdAt: '2024-01-01T00:00:00.000Z',
+            },
+          ],
+        },
+        isLoading: false,
+        isError: false,
+      }),
+    );
 
     renderWithRouter(<ProfilePage />);
 

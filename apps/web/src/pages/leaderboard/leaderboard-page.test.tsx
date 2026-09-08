@@ -1,6 +1,8 @@
+import type * as trackEntity from '@/entities/track';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TRACK_SLUG_COASTAL_OVAL, TRACK_SLUG_NIGHT_CITY } from '@racing/shared';
+import { mockQueryResult } from '@/test/mock-query-result';
 import { renderWithRouter } from '@/test/render';
 
 vi.mock('@/features/auth', () => ({
@@ -8,7 +10,7 @@ vi.mock('@/features/auth', () => ({
 }));
 
 vi.mock('@/entities/track', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/entities/track')>();
+  const actual = await importOriginal<typeof trackEntity>();
   return {
     ...actual,
     useGetTracksQuery: vi.fn(),
@@ -26,6 +28,9 @@ import { LeaderboardPage } from './leaderboard-page';
 const mockedUseGetTracksQuery = vi.mocked(useGetTracksQuery);
 const mockedUseGetLeaderboardQuery = vi.mocked(useGetLeaderboardQuery);
 
+type TTracksQuery = ReturnType<typeof useGetTracksQuery>;
+type TLeaderboardQuery = ReturnType<typeof useGetLeaderboardQuery>;
+
 describe('LeaderboardPage', () => {
   beforeEach(() => {
     mockedUseGetTracksQuery.mockReset();
@@ -33,38 +38,42 @@ describe('LeaderboardPage', () => {
   });
 
   it('renders track tabs and entries', () => {
-    mockedUseGetTracksQuery.mockReturnValue({
-      data: [
-        {
-          id: 't1',
-          slug: TRACK_SLUG_COASTAL_OVAL,
-          name: 'Coastal Oval',
-          isAvailable: true,
-        },
-        {
-          id: 't2',
-          slug: TRACK_SLUG_NIGHT_CITY,
-          name: 'Night City',
-          isAvailable: true,
-        },
-      ],
-      isLoading: false,
-      isError: false,
-    } as ReturnType<typeof useGetTracksQuery>);
+    mockedUseGetTracksQuery.mockReturnValue(
+      mockQueryResult<TTracksQuery>({
+        data: [
+          {
+            id: 't1',
+            slug: TRACK_SLUG_COASTAL_OVAL,
+            name: 'Coastal Oval',
+            isAvailable: true,
+          },
+          {
+            id: 't2',
+            slug: TRACK_SLUG_NIGHT_CITY,
+            name: 'Night City',
+            isAvailable: true,
+          },
+        ],
+        isLoading: false,
+        isError: false,
+      }),
+    );
 
-    mockedUseGetLeaderboardQuery.mockReturnValue({
-      data: [
-        {
-          rank: 1,
-          userId: 'u1',
-          nickname: 'top_racer',
-          timeMs: 40_120,
-          createdAt: '2026-01-01T12:00:00.000Z',
-        },
-      ],
-      isLoading: false,
-      isError: false,
-    } as ReturnType<typeof useGetLeaderboardQuery>);
+    mockedUseGetLeaderboardQuery.mockReturnValue(
+      mockQueryResult<TLeaderboardQuery>({
+        data: [
+          {
+            rank: 1,
+            userId: 'u1',
+            nickname: 'top_racer',
+            timeMs: 40_120,
+            createdAt: '2026-01-01T12:00:00.000Z',
+          },
+        ],
+        isLoading: false,
+        isError: false,
+      }),
+    );
 
     renderWithRouter(<LeaderboardPage />);
 
@@ -74,16 +83,20 @@ describe('LeaderboardPage', () => {
   });
 
   it('shows loading while tracks load', () => {
-    mockedUseGetTracksQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      isError: false,
-    } as ReturnType<typeof useGetTracksQuery>);
-    mockedUseGetLeaderboardQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-    } as ReturnType<typeof useGetLeaderboardQuery>);
+    mockedUseGetTracksQuery.mockReturnValue(
+      mockQueryResult<TTracksQuery>({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+      }),
+    );
+    mockedUseGetLeaderboardQuery.mockReturnValue(
+      mockQueryResult<TLeaderboardQuery>({
+        data: undefined,
+        isLoading: false,
+        isError: false,
+      }),
+    );
 
     renderWithRouter(<LeaderboardPage />);
 
