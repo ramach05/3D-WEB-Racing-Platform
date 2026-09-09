@@ -4,13 +4,18 @@ import type { MeshStandardMaterial } from 'three';
 import type { TOrientedBox, TTrackPalette } from '@/entities/track';
 import { getRaceHudSnapshot } from '@/features/race-session';
 import { scenePalette, startLightPalette } from '@/shared/config';
+import {
+  isLampLit,
+  litCountForHud,
+  START_LAMP_COUNT,
+} from '@/widgets/race-canvas/lib/start-light-gantry';
 
 type TTrackStartFinishLineProps = {
   /** Ориентированный бокс линии */
   line: TOrientedBox;
   /** Ширина дороги для разметки */
   roadWidth: number;
-  /** Палитра трассы (accent огней) */
+  /** Палитра трассы (accent стрелок / финиша) */
   palette: TTrackPalette;
 };
 
@@ -19,68 +24,90 @@ const ARROW_DISTANCES = [2, 4, 6] as const;
 const ROAD_TOP_Y = 0.1;
 const MARKING_Y = ROAD_TOP_Y + 0.002;
 
-/** Шахматная линия старт/финиш, стрелки и огни 3-2-1 */
+const POST_OUTSET = 0.55;
+const POST_WIDTH = 0.28;
+const POST_DEPTH = 0.28;
+const BEAM_CLEARANCE_Y = 4.6;
+const BEAM_HEIGHT = 0.28;
+const BEAM_DEPTH = 0.36;
+const PANEL_WIDTH = 3.6;
+const PANEL_HEIGHT = 0.85;
+const PANEL_DEPTH = 0.28;
+const LAMP_RADIUS = 0.22;
+const LAMP_SPACING = 0.62;
+
+const LAMP_XS = Array.from({ length: START_LAMP_COUNT }, (_, i) => {
+  const centered = i - (START_LAMP_COUNT - 1) / 2;
+  return centered * LAMP_SPACING;
+});
+
+/** Шахматная линия старт/финиш, стрелки и F1-gantry со стартовыми огнями */
 export const TrackStartFinishLine = ({ line, roadWidth, palette }: TTrackStartFinishLineProps) => {
   const segmentWidth = roadWidth / CHECKER_COUNT;
-  const gateHalfWidth = roadWidth / 2 + 0.75;
-  const leftLightRef = useRef<MeshStandardMaterial>(null);
-  const rightLightRef = useRef<MeshStandardMaterial>(null);
-  const leftPostRef = useRef<MeshStandardMaterial>(null);
-  const rightPostRef = useRef<MeshStandardMaterial>(null);
+  const postX = roadWidth / 2 + POST_OUTSET;
+  const spanWidth = postX * 2 + POST_WIDTH;
+  const postHeight = BEAM_CLEARANCE_Y + BEAM_HEIGHT / 2;
+  const beamY = ROAD_TOP_Y + BEAM_CLEARANCE_Y;
+  const panelY = beamY + BEAM_HEIGHT / 2 + PANEL_HEIGHT / 2 + 0.02;
+
+  const leftPostMatRef = useRef<MeshStandardMaterial>(null);
+  const rightPostMatRef = useRef<MeshStandardMaterial>(null);
+  const beamMatRef = useRef<MeshStandardMaterial>(null);
+  const panelMatRef = useRef<MeshStandardMaterial>(null);
+  const lamp0MatRef = useRef<MeshStandardMaterial>(null);
+  const lamp1MatRef = useRef<MeshStandardMaterial>(null);
+  const lamp2MatRef = useRef<MeshStandardMaterial>(null);
+  const lamp3MatRef = useRef<MeshStandardMaterial>(null);
+  const lamp4MatRef = useRef<MeshStandardMaterial>(null);
   const pulseRef = useRef(0);
 
-  // Обновляет цвет/интенсивность стартовых огней по HUD-статусу.
+  // Обновляет стартовые лампы и лёгкий пульс конструкции по HUD-статусу.
   useFrame((_, dt) => {
     const hud = getRaceHudSnapshot();
     pulseRef.current += dt;
-    const pulse = 0.55 + Math.sin(pulseRef.current * 4) * 0.35;
+    const litCount = litCountForHud(hud.status, hud.countdownStep);
+    const countdownPulse = 0.55 + Math.sin(pulseRef.current * 4) * 0.35;
 
-    let color: string = startLightPalette.idle;
-    let intensity = 0.35;
-
-    if (hud.status === 'countdown') {
-      const step = hud.countdownStep;
-      if (step === 3 || step === 2) {
-        color = startLightPalette.red;
-        intensity = 1.4 * pulse;
-      } else if (step === 1) {
-        color = startLightPalette.amber;
-        intensity = 1.5 * pulse;
-      } else if (step === 0) {
-        color = startLightPalette.green;
-        intensity = 1.8;
-      }
-    } else if (hud.status === 'racing') {
-      color = startLightPalette.green;
-      intensity = 0.55;
-    } else if (hud.status === 'finished') {
-      color = palette.accent;
-      intensity = 0.9 + Math.sin(pulseRef.current * 6) * 0.45;
-    } else {
-      color = palette.accent;
-      intensity = 0.75 + Math.sin(pulseRef.current * 2.2) * 0.2;
-    }
-
-    for (const mat of [leftLightRef.current, rightLightRef.current]) {
+    const lampMats = [
+      lamp0MatRef.current,
+      lamp1MatRef.current,
+      lamp2MatRef.current,
+      lamp3MatRef.current,
+      lamp4MatRef.current,
+    ];
+    for (let i = 0; i < START_LAMP_COUNT; i += 1) {
+      const mat = lampMats[i];
       if (!mat) {
         continue;
       }
+      const on = isLampLit(i, litCount);
+      const color = on ? startLightPalette.red : startLightPalette.idle;
       mat.color.set(color);
       mat.emissive.set(color);
-      mat.emissiveIntensity = intensity;
+      mat.emissiveIntensity = on ? 2.2 * countdownPulse : 0.35;
     }
 
-    const postPulse =
-      hud.status === 'finished' || hud.status === 'countdown'
-        ? 0.9 + Math.sin(pulseRef.current * 5) * 0.5
-        : 0.75 + Math.sin(pulseRef.current * 1.8) * 0.15;
-    for (const mat of [leftPostRef.current, rightPostRef.current]) {
+    const structurePulse =
+      hud.status === 'finished'
+        ? 0.55 + Math.sin(pulseRef.current * 6) * 0.4
+        : hud.status === 'countdown'
+          ? 0.12
+          : 0.05;
+    for (const mat of [
+      leftPostMatRef.current,
+      rightPostMatRef.current,
+      beamMatRef.current,
+      panelMatRef.current,
+    ]) {
       if (!mat) {
         continue;
       }
-      mat.emissiveIntensity = postPulse;
+      mat.emissive.set(hud.status === 'finished' ? palette.accent : startLightPalette.steelDark);
+      mat.emissiveIntensity = structurePulse;
     }
   });
+
+  const lampMatRefs = [lamp0MatRef, lamp1MatRef, lamp2MatRef, lamp3MatRef, lamp4MatRef] as const;
 
   return (
     <group position={[line.position[0], 0, line.position[2]]} rotation={[0, line.rotationY, 0]}>
@@ -101,26 +128,77 @@ export const TrackStartFinishLine = ({ line, roadWidth, palette }: TTrackStartFi
         );
       })}
 
-      {([-1, 1] as const).map((sign) => (
-        <group key={`gate-${sign}`} position={[sign * gateHalfWidth, 0, 0]}>
-          <mesh position={[0, ROAD_TOP_Y + 1.4, 0]} castShadow>
-            <boxGeometry args={[0.25, 2.8, 0.25]} />
+      {/* F1 start-light gantry */}
+      <mesh position={[-postX, ROAD_TOP_Y + postHeight / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[POST_WIDTH, postHeight, POST_DEPTH]} />
+        <meshStandardMaterial
+          ref={leftPostMatRef}
+          color={startLightPalette.steel}
+          emissive={startLightPalette.steelDark}
+          emissiveIntensity={0.05}
+          metalness={0.65}
+          roughness={0.4}
+        />
+      </mesh>
+      <mesh position={[postX, ROAD_TOP_Y + postHeight / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[POST_WIDTH, postHeight, POST_DEPTH]} />
+        <meshStandardMaterial
+          ref={rightPostMatRef}
+          color={startLightPalette.steel}
+          emissive={startLightPalette.steelDark}
+          emissiveIntensity={0.05}
+          metalness={0.65}
+          roughness={0.4}
+        />
+      </mesh>
+
+      <mesh position={[0, beamY, 0]} castShadow receiveShadow>
+        <boxGeometry args={[spanWidth, BEAM_HEIGHT, BEAM_DEPTH]} />
+        <meshStandardMaterial
+          ref={beamMatRef}
+          color={startLightPalette.steel}
+          emissive={startLightPalette.steelDark}
+          emissiveIntensity={0.05}
+          metalness={0.6}
+          roughness={0.38}
+        />
+      </mesh>
+
+      {/* Панель и лампы на +Z: спавн/подъезд со стороны +local Z */}
+      <mesh position={[0, panelY, BEAM_DEPTH * 0.15]} castShadow>
+        <boxGeometry args={[PANEL_WIDTH, PANEL_HEIGHT, PANEL_DEPTH]} />
+        <meshStandardMaterial
+          ref={panelMatRef}
+          color={startLightPalette.housing}
+          emissive={startLightPalette.steelDark}
+          emissiveIntensity={0.05}
+          metalness={0.35}
+          roughness={0.55}
+        />
+      </mesh>
+
+      {LAMP_XS.map((x, index) => (
+        <group
+          key={`start-lamp-${index}`}
+          position={[x, panelY, BEAM_DEPTH * 0.15 + PANEL_DEPTH / 2 + 0.06]}
+        >
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[LAMP_RADIUS + 0.06, LAMP_RADIUS + 0.06, 0.08, 20]} />
             <meshStandardMaterial
-              ref={sign < 0 ? leftPostRef : rightPostRef}
-              color={palette.accent}
-              emissive={palette.accent}
-              emissiveIntensity={0.75}
-              roughness={0.5}
+              color={startLightPalette.bezel}
+              metalness={0.55}
+              roughness={0.35}
             />
           </mesh>
-          <mesh position={[0, ROAD_TOP_Y + 3.05, 0]}>
-            <sphereGeometry args={[0.28, 12, 12]} />
+          <mesh position={[0, 0, 0.05]}>
+            <sphereGeometry args={[LAMP_RADIUS, 16, 16]} />
             <meshStandardMaterial
-              ref={sign < 0 ? leftLightRef : rightLightRef}
+              ref={lampMatRefs[index]}
               color={startLightPalette.idle}
               emissive={startLightPalette.idle}
-              emissiveIntensity={0.4}
-              roughness={0.25}
+              emissiveIntensity={0.35}
+              roughness={0.18}
+              metalness={0.05}
               toneMapped={false}
             />
           </mesh>

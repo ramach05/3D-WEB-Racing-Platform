@@ -190,14 +190,22 @@ export type TVehiclePalette = {
 export type TVehiclePaletteToken = keyof TVehiclePalette;
 
 export type TStartLightPalette = {
-  /** Огонь в idle */
+  /** Лампа выключена */
   idle: TCssColor;
-  /** Красный (3–2) */
+  /** Красный (countdown F1) */
   red: TCssColor;
-  /** Жёлтый (1) */
+  /** Жёлтый (зарезервирован, не на gantry) */
   amber: TCssColor;
-  /** Зелёный (go) */
+  /** Зелёный (зарезервирован; старт F1 = гашение красных) */
   green: TCssColor;
+  /** Металл столбов и балки gantry */
+  steel: TCssColor;
+  /** Тёмный металл / emissive базы конструкции */
+  steelDark: TCssColor;
+  /** Корпус панели ламп */
+  housing: TCssColor;
+  /** Ободок ниши лампы */
+  bezel: TCssColor;
 };
 
 export type TStartLightToken = keyof TStartLightPalette;

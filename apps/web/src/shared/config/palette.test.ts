@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { scenePalette, trackPalettes, uiPalette } from './palette';
+import { scenePalette, startLightPalette, trackPalettes, uiPalette } from './palette';
 
 describe('palette', () => {
   it('has light and dark ui tokens', () => {
@@ -17,5 +17,13 @@ describe('palette', () => {
   it('has scene neutrals', () => {
     expect(scenePalette.white).toBe('#ffffff');
     expect(scenePalette.black).toBe('#000000');
+  });
+
+  it('has start-light gantry structure colors', () => {
+    expect(startLightPalette.steel).toBeTruthy();
+    expect(startLightPalette.steelDark).toBeTruthy();
+    expect(startLightPalette.housing).toBeTruthy();
+    expect(startLightPalette.bezel).toBeTruthy();
+    expect(startLightPalette.red).toBeTruthy();
   });
 });

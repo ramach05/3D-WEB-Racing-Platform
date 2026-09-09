@@ -174,6 +174,10 @@ export const startLightPalette = {
   red: '#ff2244',
   amber: '#ffcc00',
   green: '#33ff66',
+  steel: '#2a2e36',
+  steelDark: '#15181e',
+  housing: '#0c0e12',
+  bezel: '#3a3f4a',
 } as const satisfies TStartLightPalette;
 
 export const horizonSunStops = {
