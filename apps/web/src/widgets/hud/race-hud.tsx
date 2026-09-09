@@ -1,6 +1,12 @@
+import { useEffect, useRef } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import { type TCountdownStep, type TRaceStatus, useRaceHud } from '@/features/race-session';
+import {
+  getRaceHudSnapshot,
+  type TCountdownStep,
+  type TRaceStatus,
+  useRaceHud,
+} from '@/features/race-session';
 import { formatRaceTime } from '@/shared/lib';
 
 /** Ширина слота времени `mm:ss.hs` */
@@ -57,10 +63,12 @@ type TRaceHudProps = {
   trackName: string;
 };
 
-/** Текстовый HUD поверх канваса. Обновляется с троттлингом из vanilla-store. */
+/** Текстовый HUD поверх канваса. Время/скорость — через rAF без React-ререндеров. */
 export const RaceHud = ({ trackName }: TRaceHudProps) => {
   const { t } = useTranslation();
   const hud = useRaceHud();
+  const timeRef = useRef<HTMLSpanElement>(null);
+  const speedRef = useRef<HTMLSpanElement>(null);
   const statusLabel = getStatusLabel(hud.status, hud.countdownStep, t);
   const labelSlotCh = getLabelSlotCh(t);
   const statusSlotCh = getStatusSlotCh(t);
@@ -74,12 +82,35 @@ export const RaceHud = ({ trackName }: TRaceHudProps) => {
         Math.max(trackName.length, statusSlotCh, TIME_SLOT_CH, speedValueCh, lapValueCh),
     ) + CH_PAD;
 
+  // Пишет time/speed в DOM без React — иначе Chrome дёргает всю страницу ~12 Гц.
+  useEffect(() => {
+    let raf = 0;
+    let lastTimeText = '';
+    let lastSpeedText = '';
+
+    const sync = () => {
+      const snapshot = getRaceHudSnapshot();
+      const timeText = formatRaceTime(snapshot.timeMs);
+      const speedText = String(Math.round(snapshot.speedKmh));
+      if (timeRef.current && timeText !== lastTimeText) {
+        timeRef.current.textContent = timeText;
+        lastTimeText = timeText;
+      }
+      if (speedRef.current && speedText !== lastSpeedText) {
+        speedRef.current.textContent = speedText;
+        lastSpeedText = speedText;
+      }
+      raf = requestAnimationFrame(sync);
+    };
+
+    raf = requestAnimationFrame(sync);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   return (
     <div
       className="sega-race-hud sega-panel bg-black/70 px-4 py-3 text-sm text-[var(--sega-yellow)]"
       style={{ minWidth: `${panelMinCh}ch`, maxWidth: '100%' }}
-      aria-live="polite"
-      aria-atomic="true"
     >
       <p className="sega-race-hud__row">
         <span className="sega-race-hud__label" style={{ minWidth: `${labelSlotCh}ch` }}>
@@ -87,7 +118,7 @@ export const RaceHud = ({ trackName }: TRaceHudProps) => {
         </span>
         <span className="sega-race-hud__value">{trackName}</span>
       </p>
-      <p className="sega-race-hud__row">
+      <p className="sega-race-hud__row" aria-live="polite">
         <span className="sega-race-hud__label" style={{ minWidth: `${labelSlotCh}ch` }}>
           {t('race.status')}:
         </span>
@@ -99,7 +130,11 @@ export const RaceHud = ({ trackName }: TRaceHudProps) => {
         <span className="sega-race-hud__label" style={{ minWidth: `${labelSlotCh}ch` }}>
           {t('race.time')}:
         </span>
-        <span className="sega-race-hud__value" style={{ minWidth: `${TIME_SLOT_CH}ch` }}>
+        <span
+          ref={timeRef}
+          className="sega-race-hud__value"
+          style={{ minWidth: `${TIME_SLOT_CH}ch` }}
+        >
           {formatRaceTime(hud.timeMs)}
         </span>
       </p>
@@ -116,6 +151,7 @@ export const RaceHud = ({ trackName }: TRaceHudProps) => {
           {t('race.speed')}:
         </span>
         <span
+          ref={speedRef}
           className="sega-race-hud__value sega-race-hud__value--end"
           style={{ minWidth: `${SPEED_SLOT_CH}ch` }}
         >

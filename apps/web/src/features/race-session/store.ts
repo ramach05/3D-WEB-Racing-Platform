@@ -147,16 +147,14 @@ export const togglePause = (): void => {
   }
 };
 
-/** Тик таймера и скорости из useFrame. Не дергает React каждый кадр. */
+/** Тик таймера и скорости из useFrame. Пишет в snapshot без React emit (HUD читает через rAF). */
 export const tickRace = (speedKmh: number): void => {
   if (snapshot.status !== 'racing' || startedAt === 0) {
-    if (snapshot.speedKmh !== speedKmh) {
-      setSnapshot({ speedKmh });
-    }
+    snapshot.speedKmh = speedKmh;
     return;
   }
-  const timeMs = Math.round(performance.now() - startedAt - pausedAccumulated);
-  setSnapshot({ timeMs, speedKmh });
+  snapshot.timeMs = Math.round(performance.now() - startedAt - pausedAccumulated);
+  snapshot.speedKmh = speedKmh;
 };
 
 /**
