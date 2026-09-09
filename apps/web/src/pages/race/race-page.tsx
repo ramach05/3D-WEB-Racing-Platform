@@ -250,7 +250,7 @@ export const RacePage = () => {
       </div>
       <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
         <div className="pointer-events-none">
-          <RaceHud />
+          <RaceHud trackName={track.name} />
         </div>
         <Button
           variant="ghost"
