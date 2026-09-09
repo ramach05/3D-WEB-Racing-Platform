@@ -1,7 +1,7 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
-import viteConfig from './vite.config';
+import { viteConfig } from './vite.config';
 
-export default mergeConfig(
+export const vitestConfig = mergeConfig(
   viteConfig,
   defineConfig({
     test: {
@@ -12,3 +12,5 @@ export default mergeConfig(
     },
   }),
 );
+
+export { vitestConfig as default };

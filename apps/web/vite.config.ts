@@ -6,7 +6,8 @@ import { defineConfig } from 'vite';
 const srcDir = fileURLToPath(new URL('./src', import.meta.url));
 const sharedSrc = fileURLToPath(new URL('../../packages/shared/src/index.ts', import.meta.url));
 
-export default defineConfig({
+/** Конфиг Vite для apps/web */
+export const viteConfig = defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -19,3 +20,5 @@ export default defineConfig({
     strictPort: true,
   },
 });
+
+export { viteConfig as default };
