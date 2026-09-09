@@ -19,6 +19,29 @@ const tmpScale = new Vector3();
 const tmpQuat = new Quaternion();
 const tmpMatrix = new Matrix4();
 
+/** Нижний радиус визуала ствола (до scale) */
+export const TRUNK_RADIUS_BOTTOM = 0.22;
+/** Верхний радиус визуала / радиус коллайдера ствола (до scale) */
+export const TRUNK_RADIUS = 0.28;
+/** Высота ствола (до scale) */
+export const TRUNK_HEIGHT = 2.2;
+/** Центр ствола по Y (до scale) */
+export const TRUNK_LOCAL_Y = 1.1;
+/** Сегменты цилиндра ствола */
+const TRUNK_SEGMENTS = 6;
+
+/** Радиус основания кроны сосны (до scale) */
+export const PINE_CROWN_RADIUS = 1.35;
+/** Высота кроны сосны (до scale) */
+export const PINE_CROWN_HEIGHT = 3.6;
+/** Центр кроны сосны по Y (до scale) */
+export const PINE_CROWN_LOCAL_Y = 3.4;
+
+/** Радиус кроны лиственного (до scale) */
+export const BROADLEAF_CROWN_RADIUS = 1.55;
+/** Центр кроны лиственного по Y (до scale) */
+export const BROADLEAF_CROWN_LOCAL_Y = 3.2;
+
 type TTreePartProps = {
   /** Размещённые деревья */
   trees: TPlacedTree[];
@@ -86,7 +109,7 @@ const TreePart = ({ trees, kind, color, castShadow, geometry, localY, args }: TT
   );
 };
 
-/** Низкополигональные деревья вокруг трассы (без физики) */
+/** Низкополигональные деревья вокруг трассы (визуал; коллайдеры — TrackTreeColliders) */
 export const TrackTrees = ({ config }: TTrackTreesProps) => {
   const trees = useMemo(() => placeTrackTrees({ config }), [config]);
   const isNight = config.timeOfDay === 'night';
@@ -108,8 +131,8 @@ export const TrackTrees = ({ config }: TTrackTreesProps) => {
         color={trunkColor}
         castShadow={false}
         geometry="cylinder"
-        localY={1.1}
-        args={[0.22, 0.28, 2.2, 6]}
+        localY={TRUNK_LOCAL_Y}
+        args={[TRUNK_RADIUS_BOTTOM, TRUNK_RADIUS, TRUNK_HEIGHT, TRUNK_SEGMENTS]}
       />
       <TreePart
         trees={trees}
@@ -117,8 +140,8 @@ export const TrackTrees = ({ config }: TTrackTreesProps) => {
         color={pineColor}
         castShadow={castShadow}
         geometry="cone"
-        localY={3.4}
-        args={[1.35, 3.6, 7]}
+        localY={PINE_CROWN_LOCAL_Y}
+        args={[PINE_CROWN_RADIUS, PINE_CROWN_HEIGHT, 7]}
       />
       <TreePart
         trees={trees}
@@ -126,8 +149,8 @@ export const TrackTrees = ({ config }: TTrackTreesProps) => {
         color={broadleafColor}
         castShadow={castShadow}
         geometry="sphere"
-        localY={3.2}
-        args={[1.55, 7, 6]}
+        localY={BROADLEAF_CROWN_LOCAL_Y}
+        args={[BROADLEAF_CROWN_RADIUS, 7, 6]}
       />
     </group>
   );

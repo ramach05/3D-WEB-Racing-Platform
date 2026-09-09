@@ -10,6 +10,7 @@ import { Vehicle } from '@/widgets/race-canvas/vehicle/vehicle';
 import { HorizonMoon } from '@/widgets/race-canvas/world/horizon-moon';
 import { HorizonSun } from '@/widgets/race-canvas/world/horizon-sun';
 import { TrackStartFinishLine } from '@/widgets/race-canvas/world/track-start-finish-line';
+import { TrackTreeColliders } from '@/widgets/race-canvas/world/track-tree-colliders';
 import { TrackTrees } from '@/widgets/race-canvas/world/track-trees';
 import { TrackTribunes } from '@/widgets/race-canvas/world/track-tribunes';
 import { TrackWorld } from '@/widgets/race-canvas/world/track-world';
@@ -118,6 +119,7 @@ const RaceSceneInner = ({
       )}
       <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} updatePriority={-1} paused={physicsPaused}>
         <TrackWorld config={config} resetNonce={resetNonce} />
+        <TrackTreeColliders config={config} />
         <Vehicle
           spawnPosition={config.spawnPosition}
           spawnRotationY={config.spawnRotationY}
