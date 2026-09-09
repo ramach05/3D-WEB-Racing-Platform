@@ -1,7 +1,7 @@
 import { type RefObject, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Sky, Stars } from '@react-three/drei';
-import { PCFSoftShadowMap, type Group, type PointLight } from 'three';
+import { PCFShadowMap, type Group, type PointLight } from 'three';
 import { Physics, type RapierRigidBody } from '@react-three/rapier';
 import type { TTrackConfig } from '@/entities/track';
 import { scenePalette } from '@/shared/config';
@@ -17,6 +17,7 @@ import { TrackWorld } from '@/widgets/race-canvas/world/track-world';
 import { ChaseCamera } from './chase-camera';
 import { FramePerfTracker } from './frame-perf-tracker';
 import { RacePostFx } from './race-postfx';
+import { WebGlContextGuard } from './webgl-context-guard';
 
 type TRaceSceneProps = {
   /** Конфиг трассы и палитры */
@@ -190,15 +191,12 @@ export const RaceCanvas = ({
 
   return (
     <Canvas
-      shadows
+      shadows={{ type: PCFShadowMap }}
       dpr={[1, 1.5]}
       camera={{ fov: 60, near: 0.1, far: 500, position: [0, 8, 16] }}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
-      onCreated={({ gl }) => {
-        gl.shadowMap.enabled = true;
-        gl.shadowMap.type = PCFSoftShadowMap;
-      }}
     >
+      <WebGlContextGuard />
       <RaceSceneInner
         config={config}
         physicsPaused={physicsPaused}
