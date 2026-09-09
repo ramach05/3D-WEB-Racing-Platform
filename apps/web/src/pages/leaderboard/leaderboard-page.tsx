@@ -12,23 +12,25 @@ export const LeaderboardPage = () => {
   const { t } = useTranslation();
   const user = useAuthUser();
   const { data: tracks, isLoading: tracksLoading, isError: tracksError } = useGetTracksQuery();
-  const [trackId, setTrackId] = useState<string>('');
+  const [trackSlug, setTrackSlug] = useState<string>('');
 
-  const selectedId = useMemo(() => {
-    if (trackId) {
-      return trackId;
+  const selectedSlug = useMemo(() => {
+    if (trackSlug) {
+      return trackSlug;
     }
-    return tracks?.[0]?.id ?? '';
-  }, [trackId, tracks]);
+    return tracks?.[0]?.slug ?? '';
+  }, [trackSlug, tracks]);
 
-  const { data, isLoading, isError } = useGetLeaderboardQuery(selectedId, { skip: !selectedId });
+  const { data, isLoading, isError } = useGetLeaderboardQuery(selectedSlug, {
+    skip: !selectedSlug,
+  });
 
   /** Переключение трассы стрелками / Home / End */
   const onTrackKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (!tracks || tracks.length === 0) {
       return;
     }
-    const currentIndex = tracks.findIndex((track) => track.id === selectedId);
+    const currentIndex = tracks.findIndex((track) => track.slug === selectedSlug);
     if (currentIndex < 0) {
       return;
     }
@@ -49,8 +51,8 @@ export const LeaderboardPage = () => {
     event.preventDefault();
     const next = tracks[nextIndex];
     if (next) {
-      setTrackId(next.id);
-      const tab = event.currentTarget.querySelector<HTMLElement>(`#leaderboard-track-${next.id}`);
+      setTrackSlug(next.slug);
+      const tab = event.currentTarget.querySelector<HTMLElement>(`#leaderboard-track-${next.slug}`);
       tab?.focus();
     }
   };
@@ -64,7 +66,10 @@ export const LeaderboardPage = () => {
       {tracksError ? <StatusText>{t('tracks.error')}</StatusText> : null}
       {tracks && tracks.length > 0 ? (
         <div className="mt-4">
-          <p id="leaderboard-track-label" className="mb-2 text-sm font-medium uppercase text-[var(--muted)]">
+          <p
+            id="leaderboard-track-label"
+            className="mb-2 text-sm font-medium uppercase text-[var(--muted)]"
+          >
             {t('leaderboard.track')}
           </p>
           <div
@@ -74,17 +79,17 @@ export const LeaderboardPage = () => {
             onKeyDown={onTrackKeyDown}
           >
             {tracks.map((track) => {
-              const selected = track.id === selectedId;
+              const selected = track.slug === selectedSlug;
               return (
                 <button
-                  key={track.id}
-                  id={`leaderboard-track-${track.id}`}
+                  key={track.slug}
+                  id={`leaderboard-track-${track.slug}`}
                   type="button"
                   role="tab"
                   aria-selected={selected}
                   tabIndex={selected ? 0 : -1}
                   className={cx('sega-track-tab', selected && 'sega-track-tab--active')}
-                  onClick={() => setTrackId(track.id)}
+                  onClick={() => setTrackSlug(track.slug)}
                 >
                   {track.name}
                 </button>

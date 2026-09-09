@@ -22,11 +22,11 @@ export class RaceResultsController {
 
   @Get('leaderboard')
   @ApiOperation({ summary: 'Лучшие личные времена по трассе' })
-  @ApiQuery({ name: 'trackId', required: true })
-  leaderboard(@Query('trackId') trackId?: string) {
-    if (!trackId) {
-      throw new BadRequestException('Нужен trackId');
+  @ApiQuery({ name: 'trackSlug', required: true })
+  leaderboard(@Query('trackSlug') trackSlug?: string) {
+    if (!trackSlug) {
+      throw new BadRequestException('Нужен trackSlug');
     }
-    return this.raceResultsService.leaderboard(trackId);
+    return this.raceResultsService.leaderboard(trackSlug);
   }
 }

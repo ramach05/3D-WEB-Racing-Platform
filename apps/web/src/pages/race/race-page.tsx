@@ -78,8 +78,8 @@ export const RacePage = () => {
     setShowFinishOverlay(false);
   }
 
-  const { data: leaderboard } = useGetLeaderboardQuery(trackId ?? '', {
-    skip: !trackId || hud.status !== 'finished' || !user,
+  const { data: leaderboard } = useGetLeaderboardQuery(trackSlug ?? '', {
+    skip: !trackSlug || hud.status !== 'finished' || !user,
   });
 
   useRaceAudio({

@@ -129,7 +129,10 @@ describe('API e2e', () => {
       .send({ trackId, timeMs: 33_000 })
       .expect(201);
 
-    const board = await request(server).get('/leaderboard').query({ trackId }).expect(200);
+    const board = await request(server)
+      .get('/leaderboard')
+      .query({ trackSlug: coastal?.slug })
+      .expect(200);
     const entries = board.body as Array<{ nickname: string; timeMs: number }>;
     expect(entries.length).toBeGreaterThan(0);
     expect(entries.some((row) => row.nickname === 'test_user')).toBe(true);
@@ -165,7 +168,7 @@ describe('API e2e', () => {
     await request(server).post('/auth/register').send({ nickname, password: '1234' }).expect(409);
   });
 
-  it('requires trackId for leaderboard and returns best results on me', async () => {
+  it('requires trackSlug for leaderboard and returns best results on me', async () => {
     await request(server).get('/leaderboard').expect(400);
 
     const login = await request(server)

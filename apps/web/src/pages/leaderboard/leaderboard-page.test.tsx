@@ -77,6 +77,9 @@ describe('LeaderboardPage', () => {
 
     renderWithRouter(<LeaderboardPage />);
 
+    expect(mockedUseGetLeaderboardQuery).toHaveBeenCalledWith(TRACK_SLUG_COASTAL_OVAL, {
+      skip: false,
+    });
     expect(screen.getByRole('tab', { name: 'Coastal Oval' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Night City' })).toBeInTheDocument();
     expect(screen.getByText('top_racer')).toBeInTheDocument();

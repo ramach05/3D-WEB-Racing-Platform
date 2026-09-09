@@ -37,14 +37,14 @@ export class RaceResultsService {
     };
   };
 
-  leaderboard = async (trackId: string): Promise<TLeaderboardEntry[]> => {
-    const track = await this.prisma.track.findUnique({ where: { id: trackId } });
+  leaderboard = async (trackSlug: string): Promise<TLeaderboardEntry[]> => {
+    const track = await this.prisma.track.findUnique({ where: { slug: trackSlug } });
     if (!track) {
       throw new NotFoundException('Трасса не найдена');
     }
 
     const results = await this.prisma.raceResult.findMany({
-      where: { trackId },
+      where: { trackId: track.id },
       orderBy: { timeMs: 'asc' },
       include: { user: true },
     });

@@ -15,7 +15,7 @@ describe('RaceResultsService', () => {
 
   it('keeps best time per user and assigns ranks', async () => {
     const prisma = {
-      track: { findUnique: vi.fn().mockResolvedValue({ id: 't1' }) },
+      track: { findUnique: vi.fn().mockResolvedValue({ id: 't1', slug: 'coastal-oval' }) },
       raceResult: {
         findMany: vi.fn().mockResolvedValue([
           {
@@ -41,8 +41,12 @@ describe('RaceResultsService', () => {
     };
     const service = new RaceResultsService(prisma as never);
 
-    const board = await service.leaderboard('t1');
+    const board = await service.leaderboard('coastal-oval');
 
+    expect(prisma.track.findUnique).toHaveBeenCalledWith({ where: { slug: 'coastal-oval' } });
+    expect(prisma.raceResult.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { trackId: 't1' } }),
+    );
     expect(board).toEqual([
       {
         rank: 1,
