@@ -33,6 +33,12 @@ describe('track config geometry', () => {
     }
   });
 
+  it('keeps finish zone wider than the road for edge crossings', () => {
+    for (const config of getAllTrackConfigs()) {
+      expect(config.startFinishLine.size[0]).toBeGreaterThanOrEqual(config.roadWidth + 4);
+    }
+  });
+
   it('keeps spawn outside the finish checkpoint zone', () => {
     for (const config of getAllTrackConfigs()) {
       const finishCheckpoint = config.checkpoints[config.checkpoints.length - 1];

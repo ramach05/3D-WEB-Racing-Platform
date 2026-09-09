@@ -31,7 +31,9 @@ export {
   START_FINISH_COOLDOWN_RATIO,
   canRegisterLapCrossing,
   crossedFinishLine,
+  crossedFinishPlane,
   getTrackLineLocalCoords,
+  isInsideFinishZone,
   passedCheckpointZone,
   passedFinishLine,
 } from './checkpoint-rules';

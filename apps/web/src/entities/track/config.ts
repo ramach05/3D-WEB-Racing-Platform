@@ -95,6 +95,9 @@ const buildLoopTrack = ({
     }
   }
 
+  /** Ширина зоны чекпоинта/финиша: запас за край дороги (кривые трассы). */
+  const checkpointWidth = roadWidth + 4;
+
   /** Чекпоинт на доле петли centerline (0..1) */
   const buildCheckpointAtRatio = (ratio: number): TOrientedBox => {
     const index = Math.floor(ratio * pointCount) % pointCount;
@@ -103,7 +106,7 @@ const buildLoopTrack = ({
     if (!current || !next) {
       return {
         position: [0, 1.4, 0] as TVec3,
-        size: [roadWidth + 1.5, 2.8, 3.2] as TVec3,
+        size: [checkpointWidth, 2.8, 3.2] as TVec3,
         rotationY: 0,
       };
     }
@@ -111,7 +114,7 @@ const buildLoopTrack = ({
     const dz = next.z - current.z;
     return {
       position: [current.x, 1.4, current.z],
-      size: [roadWidth + 1.5, 2.8, 3.2],
+      size: [checkpointWidth, 2.8, 3.2],
       rotationY: Math.atan2(dx, dz),
     };
   };

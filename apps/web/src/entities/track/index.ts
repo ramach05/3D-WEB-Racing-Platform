@@ -30,5 +30,5 @@ export {
   WALL_OFFSET,
   buildTribuneTreeExclusionZone,
 } from './tribune-layout';
-export { advanceLapProgress, getTrackProgress } from './track-progress';
+export { accumulateLapTravel, advanceLapProgress, getTrackProgress } from './track-progress';
 export type { TTrackProgress } from './track-progress.types';

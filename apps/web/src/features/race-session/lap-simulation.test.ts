@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  accumulateLapTravel,
   advanceLapProgress,
   coastalOvalTrack,
   getTrackProgress,
@@ -16,32 +17,50 @@ import {
   startRacing,
 } from '@/features/race-session';
 
-const driveCenterline = (
+type TPoint = { x: number; z: number };
+
+const driveOffsetPath = (
   config: typeof coastalOvalTrack,
-  onStep: (prev: { x: number; z: number } | null, curr: { x: number; z: number }) => void,
-  stepsPerSegment = 20,
+  lateralOffset: number,
+  onStep: (prev: TPoint | null, curr: TPoint) => void,
+  lapsToDrive: number,
+  stepsPerSegment = 8,
 ) => {
   const points = config.centerline;
-  let prev: { x: number; z: number } | null = { x: points[0]!.x, z: points[0]!.z };
+  let prev: TPoint | null = null;
+  let i = 2;
+  let s = 1;
+  const totalSteps = lapsToDrive * points.length * stepsPerSegment;
 
-  for (let i = 0; i < points.length; i += 1) {
-    const next = points[(i + 1) % points.length]!;
-    for (let s = 1; s <= stepsPerSegment; s += 1) {
-      const t = s / stepsPerSegment;
-      const curr = {
-        x: points[i]!.x + (next.x - points[i]!.x) * t,
-        z: points[i]!.z + (next.z - points[i]!.z) * t,
-      };
-      onStep(prev, curr);
-      prev = curr;
+  for (let step = 0; step < totalSteps; step += 1) {
+    const a = points[i]!;
+    const b = points[(i + 1) % points.length]!;
+    const dx = b.x - a.x;
+    const dz = b.z - a.z;
+    const len = Math.hypot(dx, dz) || 1;
+    const nx = -dz / len;
+    const nz = dx / len;
+    const t = s / stepsPerSegment;
+    const curr = {
+      x: a.x + dx * t + nx * lateralOffset,
+      z: a.z + dz * t + nz * lateralOffset,
+    };
+    onStep(prev, curr);
+    prev = curr;
+    s += 1;
+    if (s > stepsPerSegment) {
+      s = 1;
+      i = (i + 1) % points.length;
     }
   }
 };
 
+/** Симуляция как в CheckpointDetector. */
 const simulateRaceLaps = (
   config: typeof coastalOvalTrack,
   lapTotal: number,
-  stepsPerSegment = 20,
+  lateralOffset = 0,
+  stepsPerSegment = 8,
 ): { lapsCompleted: number; raceFinished: boolean } => {
   resetRaceSession('sim-track', config.checkpoints.length, lapTotal);
   startRacing();
@@ -49,35 +68,43 @@ const simulateRaceLaps = (
   const line = config.startFinishLine;
   let raceFinished = false;
   let maxProgress = 0;
+  let lapTravel = 0;
+  let lastRatio: number | null = null;
   let lapCooldown = true;
 
-  for (let lap = 0; lap < lapTotal && !raceFinished; lap += 1) {
-    driveCenterline(
-      config,
-      (prev, curr) => {
-        if (raceFinished) {
-          return;
-        }
+  driveOffsetPath(
+    config,
+    lateralOffset,
+    (prev, curr) => {
+      if (raceFinished) {
+        return;
+      }
 
-        const { ratio } = getTrackProgress(curr.x, curr.z, config.centerline);
-        maxProgress = advanceLapProgress(maxProgress, ratio);
+      const { ratio } = getTrackProgress(curr.x, curr.z, config.centerline);
+      maxProgress = advanceLapProgress(maxProgress, ratio);
+      const travel = accumulateLapTravel(lapTravel, lastRatio, ratio);
+      lapTravel = travel.lapTravel;
+      lastRatio = travel.lastRatio;
+      const progress = Math.max(maxProgress, lapTravel);
 
-        if (ratio > START_FINISH_COOLDOWN_RATIO) {
-          lapCooldown = false;
-        }
+      if (ratio > START_FINISH_COOLDOWN_RATIO) {
+        lapCooldown = false;
+      }
 
-        const crossed = passedFinishLine(prev?.x ?? null, prev?.z ?? null, curr.x, curr.z, line);
-        if (!canRegisterLapCrossing(crossed, lapCooldown, maxProgress)) {
-          return;
-        }
+      const crossed = passedFinishLine(prev?.x ?? null, prev?.z ?? null, curr.x, curr.z, line);
+      if (!canRegisterLapCrossing(crossed, lapCooldown, progress)) {
+        return;
+      }
 
-        lapCooldown = true;
-        maxProgress = ratio;
-        raceFinished = registerLapComplete();
-      },
-      stepsPerSegment,
-    );
-  }
+      lapCooldown = true;
+      maxProgress = 0;
+      lapTravel = 0;
+      lastRatio = ratio;
+      raceFinished = registerLapComplete();
+    },
+    lapTotal,
+    stepsPerSegment,
+  );
 
   return {
     lapsCompleted: getRaceHudSnapshot().lapIndex,
@@ -111,34 +138,53 @@ describe('multi-lap race simulation', () => {
     expect(result.raceFinished).toBe(true);
   });
 
+  it('completes 3 laps on coastal oval with inward offset', () => {
+    const result = simulateRaceLaps(coastalOvalTrack, 3, -4);
+    expect(result.lapsCompleted).toBe(3);
+    expect(result.raceFinished).toBe(true);
+  });
+
+  it('completes 3 laps on night city with outer-edge offset', () => {
+    const result = simulateRaceLaps(nightCityTrack, 3, 4);
+    expect(result.lapsCompleted).toBe(3);
+    expect(result.raceFinished).toBe(true);
+  });
+
   it('does not count lap without enough progress', () => {
     resetRaceSession('sim-track', coastalOvalTrack.checkpoints.length, 3);
     startRacing();
 
     const line = coastalOvalTrack.startFinishLine;
     let maxProgress = 0;
+    let lapTravel = 0;
+    let lastRatio: number | null = null;
     let lapCooldown = true;
 
-    driveCenterline(
+    driveOffsetPath(
       coastalOvalTrack,
+      0,
       (prev, curr) => {
         const { ratio } = getTrackProgress(curr.x, curr.z, coastalOvalTrack.centerline);
-        if (ratio > 0.08) {
+        if (ratio > 0.08 && ratio < 0.95) {
           return;
         }
         maxProgress = advanceLapProgress(maxProgress, ratio);
+        const travel = accumulateLapTravel(lapTravel, lastRatio, ratio);
+        lapTravel = travel.lapTravel;
+        lastRatio = travel.lastRatio;
         if (ratio > START_FINISH_COOLDOWN_RATIO) {
           lapCooldown = false;
         }
         const crossed = passedFinishLine(prev?.x ?? null, prev?.z ?? null, curr.x, curr.z, line);
-        if (canRegisterLapCrossing(crossed, lapCooldown, maxProgress)) {
+        if (canRegisterLapCrossing(crossed, lapCooldown, Math.max(maxProgress, lapTravel))) {
           registerLapComplete();
         }
       },
-      20,
+      1,
+      8,
     );
 
-    expect(maxProgress).toBeLessThan(MIN_LAP_PROGRESS);
+    expect(Math.max(maxProgress, lapTravel)).toBeLessThan(MIN_LAP_PROGRESS);
     expect(getRaceHudSnapshot().lapIndex).toBe(0);
   });
 });

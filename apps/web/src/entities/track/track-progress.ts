@@ -48,3 +48,23 @@ export const advanceLapProgress = (currentMax: number, ratio: number): number =>
   }
   return currentMax;
 };
+
+/**
+ * Накапливает пройденную долю круга по forward-delta между кадрами.
+ * Скачки ≥ 0.5 (nearest-point / срезание) не добавляют travel, но lastRatio обновляется,
+ * чтобы дальнейшее движение снова копилось.
+ */
+export const accumulateLapTravel = (
+  lapTravel: number,
+  lastRatio: number | null,
+  ratio: number,
+): { lapTravel: number; lastRatio: number } => {
+  if (lastRatio === null) {
+    return { lapTravel, lastRatio: ratio };
+  }
+  const forward = (ratio - lastRatio + 1) % 1;
+  if (forward > 0 && forward < 0.5) {
+    return { lapTravel: lapTravel + forward, lastRatio: ratio };
+  }
+  return { lapTravel, lastRatio: ratio };
+};

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { coastalOvalTrack } from '@/entities/track';
-import { crossedFinishLine, getTrackLineLocalCoords } from './checkpoint-rules';
+import { coastalOvalTrack, nightCityTrack } from '@/entities/track';
+import {
+  crossedFinishLine,
+  crossedFinishPlane,
+  getTrackLineLocalCoords,
+  isInsideFinishZone,
+  passedFinishLine,
+} from './checkpoint-rules';
 
 describe('crossedFinishLine', () => {
   it('detects forward crossing within track width', () => {
@@ -56,5 +62,47 @@ describe('crossedFinishLine', () => {
     const line = coastalOvalTrack.startFinishLine;
     const spawn = coastalOvalTrack.spawnPosition;
     expect(getTrackLineLocalCoords(spawn[0], spawn[2], line).lz).toBeGreaterThan(0);
+  });
+});
+
+describe('crossedFinishPlane', () => {
+  it('detects lz sign change within finish width', () => {
+    const line = nightCityTrack.startFinishLine;
+    const sin = Math.sin(line.rotationY);
+    const cos = Math.cos(line.rotationY);
+    const acrossX = Math.cos(line.rotationY);
+    const acrossZ = -Math.sin(line.rotationY);
+    const edge = line.size[0] / 2 - 0.5;
+
+    expect(
+      crossedFinishPlane(
+        line.position[0] - sin * 2 + acrossX * edge,
+        line.position[2] - cos * 2 + acrossZ * edge,
+        line.position[0] + sin * 2 + acrossX * edge,
+        line.position[2] + cos * 2 + acrossZ * edge,
+        line,
+      ),
+    ).toBe(true);
+  });
+});
+
+describe('isInsideFinishZone', () => {
+  it('contains the finish center and keeps spawn outside', () => {
+    for (const config of [coastalOvalTrack, nightCityTrack]) {
+      const line = config.startFinishLine;
+      expect(isInsideFinishZone(line.position[0], line.position[2], line)).toBe(true);
+      expect(isInsideFinishZone(config.spawnPosition[0], config.spawnPosition[2], line)).toBe(false);
+    }
+  });
+});
+
+describe('passedFinishLine', () => {
+  it('detects a centerline wrap across the finish', () => {
+    const config = coastalOvalTrack;
+    const line = config.startFinishLine;
+    const points = config.centerline;
+    const before = points[points.length - 1]!;
+    const after = points[1]!;
+    expect(passedFinishLine(before.x, before.z, after.x, after.z, line)).toBe(true);
   });
 });

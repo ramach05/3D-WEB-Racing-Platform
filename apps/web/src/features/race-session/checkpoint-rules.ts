@@ -30,6 +30,12 @@ export const getTrackLineLocalCoords = (
   };
 };
 
+/** Точка внутри объёма финиша в координатах трассы. */
+export const isInsideFinishZone = (x: number, z: number, line: TOrientedBox): boolean => {
+  const { lx, lz } = getTrackLineLocalCoords(x, z, line);
+  return Math.abs(lx) <= line.size[0] / 2 && Math.abs(lz) <= line.size[2] / 2;
+};
+
 /** Проезд через зону чекпоинта с учётом перемещения между кадрами. */
 export const passedCheckpointZone = (
   prevX: number | null,
@@ -96,6 +102,43 @@ export const crossedFinishLine = (
   return segmentsIntersect({ x: prevX, z: prevZ }, { x, z }, lineStart, lineEnd);
 };
 
+/**
+ * Смена знака lz внутри ширины линии — ловит проезд, который сегментный тест
+ * иногда пропускает у края дороги.
+ */
+export const crossedFinishPlane = (
+  prevX: number,
+  prevZ: number,
+  x: number,
+  z: number,
+  line: TOrientedBox,
+): boolean => {
+  const halfWidth = line.size[0] / 2;
+  const prev = getTrackLineLocalCoords(prevX, prevZ, line);
+  const curr = getTrackLineLocalCoords(x, z, line);
+
+  if (Math.abs(prev.lz) <= 1e-9 && Math.abs(prev.lx) <= halfWidth) {
+    return true;
+  }
+  if (Math.abs(curr.lz) <= 1e-9 && Math.abs(curr.lx) <= halfWidth) {
+    return true;
+  }
+  if (prev.lz * curr.lz > 0) {
+    return false;
+  }
+
+  const denom = curr.lz - prev.lz;
+  if (Math.abs(denom) < 1e-9) {
+    return false;
+  }
+  const t = -prev.lz / denom;
+  if (t < 0 || t > 1) {
+    return false;
+  }
+  const lx = prev.lx + (curr.lx - prev.lx) * t;
+  return Math.abs(lx) <= halfWidth;
+};
+
 /** Пересечение линии финиша с учётом перемещения между кадрами. */
 export const passedFinishLine = (
   prevX: number | null,
@@ -110,6 +153,9 @@ export const passedFinishLine = (
   if (crossedFinishLine(prevX, prevZ, x, z, line)) {
     return true;
   }
+  if (crossedFinishPlane(prevX, prevZ, x, z, line)) {
+    return true;
+  }
   const steps = 12;
   let segmentStartX = prevX;
   let segmentStartZ = prevZ;
@@ -117,7 +163,10 @@ export const passedFinishLine = (
     const t = step / steps;
     const sampleX = prevX + (x - prevX) * t;
     const sampleZ = prevZ + (z - prevZ) * t;
-    if (crossedFinishLine(segmentStartX, segmentStartZ, sampleX, sampleZ, line)) {
+    if (
+      crossedFinishLine(segmentStartX, segmentStartZ, sampleX, sampleZ, line) ||
+      crossedFinishPlane(segmentStartX, segmentStartZ, sampleX, sampleZ, line)
+    ) {
       return true;
     }
     segmentStartX = sampleX;
@@ -130,7 +179,7 @@ export const passedFinishLine = (
 export const canRegisterLapCrossing = (
   crossed: boolean,
   inCooldown: boolean,
-  maxProgress: number,
+  progress: number,
 ): boolean => {
-  return crossed && !inCooldown && maxProgress >= MIN_LAP_PROGRESS;
+  return crossed && !inCooldown && progress >= MIN_LAP_PROGRESS;
 };
