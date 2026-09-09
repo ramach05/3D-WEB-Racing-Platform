@@ -12,7 +12,6 @@ import type {
 } from './config.types';
 import { buildTribuneTreeExclusionZone } from './tribune-layout';
 
-
 /** Строит замкнутую трассу по точкам центральной линии */
 const buildLoopTrack = ({
   slug,
@@ -194,31 +193,90 @@ const placeAlongCenterline = (
   };
 };
 
-/** Стопки шин у стенок Coastal Oval: несколько рядов от бордюра. */
-const buildCoastalOvalObstacles = (points: TLoopPoint[], roadWidth: number): TTrackObstacle[] => {
-  const tireSize: TVec3 = [1.05, 1.2, 1.05];
+const TIRE_STACK_SIZE: TVec3 = [1.05, 1.2, 1.05];
+const FUEL_BARREL_SIZE: TVec3 = [0.85, 1.35, 0.85];
+
+const obstacleSizeFor = (kind: TObstacleKind): TVec3 =>
+  kind === 'fuelBarrel' ? FUEL_BARREL_SIZE : TIRE_STACK_SIZE;
+
+type TObstacleBank = {
+  /** Доля петли centerline 0..1 */
+  ratio: number;
+  /** Сторона стенки относительно направления движения */
+  side: 1 | -1;
+  /** Тип препятствия на каждый ряд от бордюра */
+  kinds: TObstacleKind[];
   /** Отступы от стены к центру полосы — каждый inset = отдельный ряд */
-  const rowInsets = [0.7, 1.85, 3.0] as const;
+  rowInsets: readonly number[];
+};
+
+/** Собирает препятствия из банков вдоль centerline. */
+const buildObstaclesFromBanks = (
+  points: TLoopPoint[],
+  roadWidth: number,
+  banks: TObstacleBank[],
+): TTrackObstacle[] => {
   const obstacles: TTrackObstacle[] = [];
-
-  /** По 2 стопки вдоль трассы на банк (было 4) — вдвое меньше */
-  const banks: { ratios: number[]; side: 1 | -1 }[] = [
-    { ratios: [0.27, 0.315], side: -1 },
-    { ratios: [0.44, 0.485], side: 1 },
-    { ratios: [0.61, 0.655], side: -1 },
-    { ratios: [0.78, 0.825], side: 1 },
-  ];
-
   for (const bank of banks) {
-    for (const ratio of bank.ratios) {
-      for (const inset of rowInsets) {
-        const lateral = bank.side * (roadWidth / 2 - inset);
-        obstacles.push(placeAlongCenterline(points, ratio, lateral, tireSize, 'tireStack'));
-      }
+    for (let i = 0; i < bank.rowInsets.length; i += 1) {
+      const kind = bank.kinds[i] ?? bank.kinds[0] ?? 'tireStack';
+      const inset = bank.rowInsets[i] ?? 0.7;
+      const lateral = bank.side * (roadWidth / 2 - inset);
+      obstacles.push(
+        placeAlongCenterline(points, bank.ratio, lateral, obstacleSizeFor(kind), kind),
+      );
     }
   }
-
   return obstacles;
+};
+
+/** Стопки шин и бочки у стенок Coastal Oval: несколько рядов от бордюра. */
+const buildCoastalOvalObstacles = (points: TLoopPoint[], roadWidth: number): TTrackObstacle[] => {
+  const triple = [0.7, 1.85, 3.0] as const;
+  const tires: TObstacleKind[] = ['tireStack', 'tireStack', 'tireStack'];
+  const barrels: TObstacleKind[] = ['fuelBarrel', 'fuelBarrel', 'fuelBarrel'];
+
+  return buildObstaclesFromBanks(points, roadWidth, [
+    { ratio: 0.27, side: -1, kinds: tires, rowInsets: triple },
+    { ratio: 0.315, side: -1, kinds: ['fuelBarrel', 'tireStack', 'tireStack'], rowInsets: triple },
+    { ratio: 0.44, side: 1, kinds: tires, rowInsets: triple },
+    { ratio: 0.485, side: 1, kinds: barrels, rowInsets: triple },
+    { ratio: 0.61, side: -1, kinds: tires, rowInsets: triple },
+    { ratio: 0.655, side: -1, kinds: tires, rowInsets: triple },
+    { ratio: 0.78, side: 1, kinds: ['fuelBarrel', 'fuelBarrel', 'tireStack'], rowInsets: triple },
+    { ratio: 0.825, side: 1, kinds: tires, rowInsets: triple },
+  ]);
+};
+
+/** Редкие препятствия у стенок Night City: стопки шин и топливные бочки. */
+const buildNightCityObstacles = (points: TLoopPoint[], roadWidth: number): TTrackObstacle[] => {
+  /** 2–3 ряда от бордюра; точек вдоль трассы меньше, чем у coastal. */
+  return buildObstaclesFromBanks(points, roadWidth, [
+    {
+      ratio: 0.45,
+      side: 1,
+      kinds: ['fuelBarrel', 'fuelBarrel', 'fuelBarrel'],
+      rowInsets: [0.7, 1.85, 3.0],
+    },
+    {
+      ratio: 0.62,
+      side: -1,
+      kinds: ['tireStack', 'tireStack'],
+      rowInsets: [0.7, 1.85],
+    },
+    {
+      ratio: 0.79,
+      side: 1,
+      kinds: ['fuelBarrel', 'tireStack', 'tireStack'],
+      rowInsets: [0.7, 1.85, 3.0],
+    },
+    {
+      ratio: 0.82,
+      side: 1,
+      kinds: ['fuelBarrel', 'fuelBarrel'],
+      rowInsets: [0.7, 1.85],
+    },
+  ]);
 };
 
 /** Эллиптическая трасса */
@@ -307,16 +365,22 @@ export const coastalOvalTrack: TTrackConfig = {
   obstacles: buildCoastalOvalObstacles(coastalOvalPoints, coastalOvalRoadWidth),
 };
 
-export const nightCityTrack = buildLoopTrack({
-  slug: TRACK_SLUG_NIGHT_CITY,
-  points: buildStadiumPoints(72, 48, 14, 48),
-  roadWidth: 9,
-  palette: trackPalettes.night,
-  carSkin: carSkins.night,
-  audioTheme: 'night',
-  spawnRatio: 0.04,
-  startTribuneSide: 'left',
-});
+const nightCityPoints = buildStadiumPoints(72, 48, 14, 48);
+const nightCityRoadWidth = 9;
+
+export const nightCityTrack: TTrackConfig = {
+  ...buildLoopTrack({
+    slug: TRACK_SLUG_NIGHT_CITY,
+    points: nightCityPoints,
+    roadWidth: nightCityRoadWidth,
+    palette: trackPalettes.night,
+    carSkin: carSkins.night,
+    audioTheme: 'night',
+    spawnRatio: 0.04,
+    startTribuneSide: 'left',
+  }),
+  obstacles: buildNightCityObstacles(nightCityPoints, nightCityRoadWidth),
+};
 
 const TRACKS_BY_SLUG: Record<TTrackSlug, TTrackConfig> = {
   [TRACK_SLUG_COASTAL_OVAL]: coastalOvalTrack,

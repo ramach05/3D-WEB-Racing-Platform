@@ -38,7 +38,7 @@ describe('tireHitDamping', () => {
     const after = tickTireHitDamping(0);
 
     expect(during).toBe(0.5);
-    expect(after).toBeCloseTo(0.8, 5);
+    expect(after).toBeCloseTo(0.94, 5);
   });
 
   it('does not exceed one after full recovery', () => {

@@ -12,7 +12,7 @@ export type TOrientedBox = {
   rotationY: number;
 };
 
-export type TObstacleKind = 'tireStack';
+export type TObstacleKind = 'tireStack' | 'fuelBarrel';
 
 export type TTrackObstacle = TOrientedBox & {
   /** Тип препятствия */

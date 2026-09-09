@@ -60,26 +60,31 @@ describe('track config geometry', () => {
     }
   });
 
-  it('places obstacles only on the daytime coastal track', () => {
+  it('places sparse obstacles on night city and denser ones on coastal', () => {
     expect(coastalOvalTrack.obstacles.length).toBeGreaterThan(0);
-    expect(nightCityTrack.obstacles).toEqual([]);
+    expect(nightCityTrack.obstacles.length).toBeGreaterThan(0);
+    expect(nightCityTrack.obstacles.length).toBeLessThan(coastalOvalTrack.obstacles.length);
   });
 
-  it('uses only tire stacks as coastal obstacles', () => {
-    expect(coastalOvalTrack.obstacles.every((obstacle) => obstacle.kind === 'tireStack')).toBe(
-      true,
-    );
+  it('mixes tire stacks and fuel barrels on both tracks', () => {
+    for (const config of [coastalOvalTrack, nightCityTrack]) {
+      const kinds = new Set(config.obstacles.map((obstacle) => obstacle.kind));
+      expect(kinds.has('tireStack')).toBe(true);
+      expect(kinds.has('fuelBarrel')).toBe(true);
+    }
   });
 
-  it('keeps coastal obstacles clear of the spawn point', () => {
-    const spawn = coastalOvalTrack.spawnPosition;
+  it('keeps obstacles clear of the spawn point', () => {
     const minClearance = 6;
-    for (const obstacle of coastalOvalTrack.obstacles) {
-      const dx = obstacle.position[0] - spawn[0];
-      const dz = obstacle.position[2] - spawn[2];
-      const distance = Math.hypot(dx, dz);
-      const obstacleRadius = Math.hypot(obstacle.size[0], obstacle.size[2]) / 2;
-      expect(distance - obstacleRadius).toBeGreaterThan(minClearance);
+    for (const config of [coastalOvalTrack, nightCityTrack]) {
+      const spawn = config.spawnPosition;
+      for (const obstacle of config.obstacles) {
+        const dx = obstacle.position[0] - spawn[0];
+        const dz = obstacle.position[2] - spawn[2];
+        const distance = Math.hypot(dx, dz);
+        const obstacleRadius = Math.hypot(obstacle.size[0], obstacle.size[2]) / 2;
+        expect(distance - obstacleRadius).toBeGreaterThan(minClearance);
+      }
     }
   });
 });

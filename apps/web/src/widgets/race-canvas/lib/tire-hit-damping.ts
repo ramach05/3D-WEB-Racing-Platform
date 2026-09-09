@@ -1,7 +1,7 @@
 /** Множитель целевой скорости после удара о шину (1 = без штрафа) */
 let tireHitDamping = 1;
 
-const HIT_RECOVERY_PER_SEC = 1.5;
+const HIT_RECOVERY_PER_SEC = 3;
 
 /** Зафиксировать штраф скорости (берётся минимум с текущим) */
 export const registerTireHit = (factor: number) => {
