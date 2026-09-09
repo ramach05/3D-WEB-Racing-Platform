@@ -101,7 +101,6 @@ export const crossedFinishLine = (
 
   return segmentsIntersect({ x: prevX, z: prevZ }, { x, z }, lineStart, lineEnd);
 };
-
 /**
  * Смена знака lz внутри ширины линии — ловит проезд, который сегментный тест
  * иногда пропускает у края дороги.

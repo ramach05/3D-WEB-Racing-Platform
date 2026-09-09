@@ -91,11 +91,12 @@ describe('isInsideFinishZone', () => {
     for (const config of [coastalOvalTrack, nightCityTrack]) {
       const line = config.startFinishLine;
       expect(isInsideFinishZone(line.position[0], line.position[2], line)).toBe(true);
-      expect(isInsideFinishZone(config.spawnPosition[0], config.spawnPosition[2], line)).toBe(false);
+      expect(isInsideFinishZone(config.spawnPosition[0], config.spawnPosition[2], line)).toBe(
+        false,
+      );
     }
   });
 });
-
 describe('passedFinishLine', () => {
   it('detects a centerline wrap across the finish', () => {
     const config = coastalOvalTrack;
