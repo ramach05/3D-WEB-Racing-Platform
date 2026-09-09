@@ -84,8 +84,8 @@ export const RacePage = () => {
 
   useRaceAudio({
     theme: config?.audioTheme ?? null,
-    paused: hud.status !== 'racing',
-    enabled: Boolean(config),
+    paused: false,
+    enabled: Boolean(config) && hud.status === 'racing',
     muted: musicMuted,
   });
 
@@ -108,6 +108,14 @@ export const RacePage = () => {
       toastTimerRef.current = null;
     }, 2000);
   }, [config, trackId]);
+
+  /** Выход в меню трасс: сброс сессии, чтобы музыка/статус не протекали */
+  const exitToTracks = useCallback(() => {
+    if (trackId && config) {
+      resetRaceSession(trackId, config.checkpoints.length);
+    }
+    void navigate('/tracks');
+  }, [config, navigate, trackId]);
 
   /** Финиш: фиксирует время и отправляет результат (если авторизован) */
   const onFinished = useCallback(() => {
@@ -139,13 +147,16 @@ export const RacePage = () => {
       });
   }, [createResult, trackId, user]);
 
-  // Сбрасывает сессию при смене трассы/конфига.
+  // Сбрасывает сессию при смене трассы/конфига и при уходе со страницы.
   useEffect(() => {
     if (!trackId || !config) {
       return;
     }
     submittedRef.current = false;
     resetRaceSession(trackId, config.checkpoints.length);
+    return () => {
+      resetRaceSession(trackId, config.checkpoints.length);
+    };
   }, [config, trackId]);
 
   // Биндит клавиатуру: рестарт и пауза.
@@ -279,7 +290,7 @@ export const RacePage = () => {
         open={hud.status === 'paused'}
         onResume={togglePause}
         onRestart={restart}
-        onExit={() => navigate('/tracks')}
+        onExit={exitToTracks}
       />
       <RaceFinishOverlay
         open={hud.status === 'finished' && showFinishOverlay}
@@ -300,7 +311,7 @@ export const RacePage = () => {
           ) : null
         }
         onRestart={restart}
-        onExit={() => navigate('/tracks')}
+        onExit={exitToTracks}
         onOpenLeaderboard={() => navigate('/leaderboard')}
       />
       {restartToast ? (

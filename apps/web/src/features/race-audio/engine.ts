@@ -222,7 +222,7 @@ export class ChiptuneEngine {
   private noiseBuffer: AudioBuffer | null = null;
   private theme: TTrackAudioTheme | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
-  private paused = false;
+  private paused = true;
   private muted = false;
   private running = false;
   private generation = 0;
