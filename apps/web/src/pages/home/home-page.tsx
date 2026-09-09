@@ -47,21 +47,21 @@ export const HomePage = () => {
         <h2 className="mt-10 text-xl uppercase text-[var(--sega-cyan)]">
           {t('home.featuredTracks')}
         </h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="mt-4 grid max-w-md gap-3 sm:grid-cols-2">
           {trackConfigs.map((config) => (
             <Link
               key={config.slug}
               to="/tracks"
-              className="sega-panel sega-card-link block p-4 no-underline"
+              className="sega-panel sega-card-link flex items-center gap-3 p-2 no-underline"
               aria-label={config.slug === 'coastal-oval' ? t('home.coastal') : t('home.nightCity')}
             >
-              <h3 className="text-lg text-[var(--sega-yellow)]">
-                {config.slug === 'coastal-oval' ? t('home.coastal') : t('home.nightCity')}
-              </h3>
               <TrackMinimap
                 config={config}
-                className="mt-3 w-full border-2 border-[var(--border)]"
+                className="h-14 w-[5.5rem] shrink-0 border-2 border-[var(--border)]"
               />
+              <h3 className="text-sm text-[var(--sega-yellow)]">
+                {config.slug === 'coastal-oval' ? t('home.coastal') : t('home.nightCity')}
+              </h3>
             </Link>
           ))}
         </div>
