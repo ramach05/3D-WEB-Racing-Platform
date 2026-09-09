@@ -26,4 +26,19 @@ describe('AppHeader', () => {
     expect(label).toHaveAttribute('title', nickname);
     expect(label.className).toContain('truncate');
   });
+
+  it('exposes navigation landmark and settings group with switchers', () => {
+    mockedUseAuthUser.mockReturnValue(null);
+    renderWithRouter(<AppHeader />);
+
+    const nav = screen.getByRole('navigation', { name: /навигация|navigation/i });
+    expect(nav).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /главная|home/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /трассы|tracks/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /вход|log in/i })).toBeInTheDocument();
+
+    expect(screen.getByRole('group', { name: /настройки|settings/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /тема|theme/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /язык|language/i })).toBeInTheDocument();
+  });
 });

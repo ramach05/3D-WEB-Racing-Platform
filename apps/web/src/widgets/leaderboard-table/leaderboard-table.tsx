@@ -18,7 +18,7 @@ export const LeaderboardTable = ({ entries, highlightUserId, maxRows }: TLeaderb
 
   return (
     <div className="sega-panel mt-4 overflow-x-auto p-2">
-      <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
+      <table className="w-full min-w-[28rem] border-collapse text-left text-sm md:min-w-[32rem]">
         <caption className="sr-only">{t('leaderboard.title')}</caption>
         <thead>
           <tr className="border-b-2 border-[var(--border)]">

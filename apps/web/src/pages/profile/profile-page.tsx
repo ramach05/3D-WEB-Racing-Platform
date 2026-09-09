@@ -43,9 +43,12 @@ export const ProfilePage = () => {
           ) : (
             <ul className="mt-3 space-y-2">
               {data.bestResults.map((row) => (
-                <li key={row.trackId} className="sega-panel px-3 py-2">
+                <li
+                  key={row.trackId}
+                  className="sega-panel flex flex-wrap items-baseline justify-between gap-2 px-3 py-2"
+                >
                   <span className="font-medium">{row.trackName}</span>
-                  <span className="ml-3">{formatRaceTime(row.timeMs)}</span>
+                  <span>{formatRaceTime(row.timeMs)}</span>
                 </li>
               ))}
             </ul>
