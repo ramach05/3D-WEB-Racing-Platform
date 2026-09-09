@@ -155,7 +155,7 @@ export const tickRace = (speedKmh: number): void => {
     }
     return;
   }
-  const timeMs = performance.now() - startedAt - pausedAccumulated;
+  const timeMs = Math.round(performance.now() - startedAt - pausedAccumulated);
   setSnapshot({ timeMs, speedKmh });
 };
 
@@ -214,10 +214,11 @@ export const registerCheckpoint = (index: number): boolean => {
 
 /** Финиш: фиксирует время и best для гостя */
 export const finishRace = (trackId: string): number => {
-  const timeMs =
+  const timeMs = Math.round(
     snapshot.status === 'racing' && startedAt !== 0
       ? performance.now() - startedAt - pausedAccumulated
-      : snapshot.timeMs;
+      : snapshot.timeMs,
+  );
   writeGuestBest(trackId, timeMs);
   setSnapshot(
     {

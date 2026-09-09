@@ -1,22 +1,12 @@
-import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { readAuthSession } from '@/shared/lib';
-import { useLazyGetMeQuery } from './api';
+import { useGetMeQuery } from './api';
 import { logout, selectUser } from './model';
 
 /** Гидрация сессии: если в localStorage есть токен, тянем /auth/me */
 export const AuthHydrator = () => {
-  const [fetchMe] = useLazyGetMeQuery();
-
-  // После перезагрузки страницы восстанавливаем пользователя по сохранённому JWT
-  useEffect(() => {
-    const session = readAuthSession();
-    if (!session) {
-      return;
-    }
-    void fetchMe();
-  }, [fetchMe]);
-
+  const hasSession = Boolean(readAuthSession());
+  useGetMeQuery(undefined, { skip: !hasSession });
   return null;
 };
 

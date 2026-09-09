@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { RACE_TIME_MAX_MS, RACE_TIME_MIN_MS } from '@racing/shared';
 import { useGetLeaderboardQuery } from '@/entities/leaderboard';
 import { useCreateRaceResultMutation } from '@/entities/race-result';
 import { getTrackConfig, useGetTracksQuery } from '@/entities/track';
@@ -24,6 +25,12 @@ import { RaceFinishMomentOverlay } from '@/widgets/race-finish-moment';
 import { RaceFinishOverlay, type TFinishSubmitState } from '@/widgets/race-finish-overlay';
 import { LeaderboardTable } from '@/widgets/leaderboard-table';
 import { RacePauseMenu } from '@/widgets/race-pause-menu';
+
+/** Время в допустимом диапазоне для POST /race-results (целое мс) */
+const isSubmittableRaceTime = (timeMs: number): boolean => {
+  const ms = Math.round(timeMs);
+  return Number.isInteger(ms) && ms >= RACE_TIME_MIN_MS && ms <= RACE_TIME_MAX_MS;
+};
 
 type TRaceTestApi = {
   /** Тестовый хук для мгновенного финиша (e2e) */
@@ -78,8 +85,12 @@ export const RacePage = () => {
     setShowFinishOverlay(false);
   }
 
+  const leaderboardReady =
+    Boolean(user) &&
+    hud.status === 'finished' &&
+    (finishMeta?.submitState === 'done' || finishMeta?.submitState === 'error');
   const { data: leaderboard } = useGetLeaderboardQuery(trackSlug ?? '', {
-    skip: !trackSlug || hud.status !== 'finished' || !user,
+    skip: !trackSlug || !leaderboardReady,
   });
 
   useRaceAudio({
@@ -119,7 +130,7 @@ export const RacePage = () => {
 
   /** Финиш: фиксирует время и отправляет результат (если авторизован) */
   const onFinished = useCallback(() => {
-    if (!trackId || submittedRef.current) {
+    if (!trackId || !trackSlug || submittedRef.current) {
       return;
     }
     submittedRef.current = true;
@@ -132,8 +143,13 @@ export const RacePage = () => {
       return;
     }
 
+    if (!isSubmittableRaceTime(timeMs)) {
+      setFinishMeta({ timeMs, isNewBest, submitState: 'error' });
+      return;
+    }
+
     setFinishMeta({ timeMs, isNewBest, submitState: 'loading' });
-    void createResult({ trackId, timeMs })
+    void createResult({ trackId, trackSlug, timeMs })
       .unwrap()
       .then(() => {
         setFinishMeta((prev) =>
@@ -145,7 +161,7 @@ export const RacePage = () => {
           prev ? { ...prev, submitState: 'error' } : { timeMs, isNewBest, submitState: 'error' },
         );
       });
-  }, [createResult, trackId, user]);
+  }, [createResult, trackId, trackSlug, user]);
 
   // Сбрасывает сессию при смене трассы/конфига и при уходе со страницы.
   useEffect(() => {
@@ -189,7 +205,7 @@ export const RacePage = () => {
 
   // E2E: вешает __finishRaceForTest на window.
   useEffect(() => {
-    if (!trackId) {
+    if (!trackId || !trackSlug) {
       return;
     }
     const raceWindow = window as Window & TRaceTestApi;
@@ -207,8 +223,13 @@ export const RacePage = () => {
         return;
       }
 
+      if (!isSubmittableRaceTime(timeMs)) {
+        setFinishMeta({ timeMs, isNewBest, submitState: 'error' });
+        return;
+      }
+
       setFinishMeta({ timeMs, isNewBest, submitState: 'loading' });
-      void createResult({ trackId, timeMs })
+      void createResult({ trackId, trackSlug, timeMs })
         .unwrap()
         .then(() => {
           setFinishMeta((prev) =>
@@ -224,7 +245,7 @@ export const RacePage = () => {
     return () => {
       delete raceWindow.__finishRaceForTest;
     };
-  }, [createResult, trackId, user]);
+  }, [createResult, trackId, trackSlug, user]);
 
   if (isLoading) {
     return (
