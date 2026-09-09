@@ -57,15 +57,15 @@ export const uiChrome = {
 /** Палитры трасс (shape совместим с TTrackPalette) */
 export const trackPalettes = {
   coastal: {
-    sky: '#6ec8ff',
-    fog: '#9ed8ff',
+    sky: '#5ebfff',
+    fog: '#b8e4ff',
     ground: '#d4b483',
     road: '#8a8a90',
     wall: '#f0e6c8',
     accent: '#ff7a00',
     minimapRoad: '#9a9aa2',
     minimapWall: '#ff7a00',
-    minimapBg: '#87c8e8',
+    minimapBg: '#7ec8f0',
   },
   night: {
     sky: '#120828',
@@ -178,22 +178,22 @@ export const startLightPalette = {
 
 export const horizonSunStops = {
   core: [
-    { stop: 0, color: 'rgba(255, 252, 245, 1)' },
-    { stop: 0.2, color: 'rgba(255, 238, 170, 0.98)' },
-    { stop: 0.45, color: 'rgba(255, 200, 80, 0.75)' },
-    { stop: 0.72, color: 'rgba(255, 150, 40, 0.35)' },
-    { stop: 1, color: 'rgba(255, 110, 20, 0)' },
+    { stop: 0, color: 'rgba(255, 255, 245, 1)' },
+    { stop: 0.22, color: 'rgba(255, 245, 200, 1)' },
+    { stop: 0.48, color: 'rgba(255, 228, 150, 1)' },
+    { stop: 0.75, color: 'rgba(255, 205, 110, 0.9)' },
+    { stop: 1, color: 'rgba(255, 180, 80, 0)' },
   ],
   corona: [
-    { stop: 0, color: 'rgba(255, 210, 90, 0.55)' },
-    { stop: 0.35, color: 'rgba(255, 160, 50, 0.28)' },
-    { stop: 0.7, color: 'rgba(255, 110, 30, 0.1)' },
-    { stop: 1, color: 'rgba(255, 80, 10, 0)' },
+    { stop: 0, color: 'rgba(255, 200, 90, 0.45)' },
+    { stop: 0.28, color: 'rgba(255, 160, 50, 0.28)' },
+    { stop: 0.62, color: 'rgba(255, 115, 30, 0.12)' },
+    { stop: 1, color: 'rgba(255, 90, 20, 0)' },
   ],
   glow: [
-    { stop: 0, color: 'rgba(255, 190, 100, 0.18)' },
-    { stop: 0.45, color: 'rgba(255, 140, 60, 0.08)' },
-    { stop: 1, color: 'rgba(255, 100, 40, 0)' },
+    { stop: 0, color: 'rgba(255, 175, 85, 0.28)' },
+    { stop: 0.4, color: 'rgba(255, 135, 45, 0.1)' },
+    { stop: 1, color: 'rgba(255, 100, 30, 0)' },
   ],
 } as const satisfies THorizonSunStops;
 

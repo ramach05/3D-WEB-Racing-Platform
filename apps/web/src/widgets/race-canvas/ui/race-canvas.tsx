@@ -36,11 +36,11 @@ type TCelestialBodyProps = {
   config: TTrackConfig;
 };
 
-const SUN_HORIZON_POSITION: [number, number, number] = [90, 24, -260];
+const SUN_HORIZON_POSITION: [number, number, number] = [0, 30, -255];
 const MOON_HORIZON_POSITION: [number, number, number] = [-240, 21, 50];
-const SUN_LIGHT_POSITION: [number, number, number] = [40, 60, 20];
+const SUN_LIGHT_POSITION: [number, number, number] = [5, 62, 32];
 const MOON_LIGHT_POSITION: [number, number, number] = [-30, 50, -25];
-const SKY_SUN_POSITION: [number, number, number] = [55, 42, 25];
+const SKY_SUN_POSITION: [number, number, number] = [5, 82, 32];
 
 /** Солнце днём или луна ночью на уровне горизонта */
 const CelestialBody = ({ config }: TCelestialBodyProps) => {
@@ -98,11 +98,11 @@ const RaceSceneInner = ({
   return (
     <>
       <color attach="background" args={[config.palette.sky]} />
-      <fog attach="fog" args={[config.palette.fog, isNight ? 80 : 110, isNight ? 220 : 280]} />
-      <hemisphereLight args={[config.palette.sky, config.palette.ground, isNight ? 0.58 : 1.05]} />
+      <fog attach="fog" args={[config.palette.fog, isNight ? 80 : 170, isNight ? 220 : 400]} />
+      <hemisphereLight args={[config.palette.sky, config.palette.ground, isNight ? 0.58 : 1.55]} />
       <directionalLight
         position={isNight ? MOON_LIGHT_POSITION : SUN_LIGHT_POSITION}
-        intensity={isNight ? 0.85 : 1.55}
+        intensity={isNight ? 0.85 : 2.65}
         color={isNight ? scenePalette.sunNight : scenePalette.sunDay}
         castShadow={!isNight}
         shadow-mapSize-width={1024}
@@ -115,7 +115,13 @@ const RaceSceneInner = ({
           <NeonAccentLight color={config.palette.accent} />
         </>
       ) : (
-        <Sky sunPosition={SKY_SUN_POSITION} />
+        <Sky
+          sunPosition={SKY_SUN_POSITION}
+          turbidity={1}
+          rayleigh={0.85}
+          mieCoefficient={0.005}
+          mieDirectionalG={0.92}
+        />
       )}
       <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} updatePriority={-1} paused={physicsPaused}>
         <TrackWorld config={config} resetNonce={resetNonce} />
