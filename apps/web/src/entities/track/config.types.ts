@@ -48,8 +48,6 @@ export type TTrackConfig = {
   spawnRotationY: number;
   /** Линия старт/финиш */
   startFinishLine: TOrientedBox;
-  /** Сегменты дороги (визуал) */
-  segments: TOrientedBox[];
   /** Стены трассы */
   walls: TOrientedBox[];
   /** Чекпоинты (legacy / запас) */

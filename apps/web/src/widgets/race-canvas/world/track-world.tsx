@@ -1,74 +1,76 @@
 import { useEffect, useMemo } from 'react';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
-import { DoubleSide, type Texture } from 'three';
-import type { TTrackConfig, TVec3 } from '@/entities/track';
+import { DoubleSide } from 'three';
+import type { TTrackConfig } from '@/entities/track';
 import {
   ASPHALT_TILE_SIZE,
   GROUND_TILE_SIZE,
-  cloneAsphaltMapForSegment,
   cloneMapForSize,
   createAsphaltRoughnessMap,
   createAsphaltTexture,
   createGroundTexture,
 } from '@/widgets/race-canvas/lib/asphalt-texture';
 import { WORLD_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
+import { buildRoadRibbonGeometry } from '@/widgets/race-canvas/lib/road-ribbon-geometry';
 import { TrackObstacles } from './track-obstacles';
 
 type TTrackWorldProps = {
-  /** Конфиг трассы: сегменты, стены, препятствия */
+  /** Конфиг трассы: стены, препятствия, centerline */
   config: TTrackConfig;
   /** Счётчик рестарта — пересоздаёт dynamic-шины */
   resetNonce: number;
 };
 
-type TRoadSegmentMeshProps = {
-  /** Исходная albedo-текстура асфальта */
-  asphaltSource: Texture;
-  /** Исходная roughness-карта асфальта */
-  roughnessSource: Texture;
-  /** Центр сегмента дороги */
-  position: TVec3;
-  /** Габариты сегмента [width, height, length] */
-  size: TVec3;
-  /** Поворот сегмента вокруг Y (рад) */
-  rotationY: number;
+type TRoadSurfaceProps = {
+  /** Точки центральной линии */
+  centerline: TTrackConfig['centerline'];
+  /** Ширина дороги */
+  roadWidth: number;
   /** Цвет дороги из палитры */
   roadColor: string;
   /** Базовая roughness материала */
   roadRoughness: number;
 };
 
-/** Визуальный меш сегмента дороги с тайловыми картами */
-const RoadSegmentMesh = ({
-  asphaltSource,
-  roughnessSource,
-  position,
-  size,
-  rotationY,
-  roadColor,
-  roadRoughness,
-}: TRoadSegmentMeshProps) => {
-  const roadWidth = size[0];
-  const roadLength = size[2];
+/** Непрерывный асфальт по centerline — без z-fighting на стыках сегментов */
+const RoadSurface = ({ centerline, roadWidth, roadColor, roadRoughness }: TRoadSurfaceProps) => {
+  const asphaltSource = useMemo(() => createAsphaltTexture(512), []);
+  const roughnessSource = useMemo(() => createAsphaltRoughnessMap(512), []);
 
-  const maps = useMemo(() => {
-    const map = cloneAsphaltMapForSegment(asphaltSource, roadWidth, roadLength);
-    const roughnessMap = cloneMapForSize(roughnessSource, roadWidth, roadLength, ASPHALT_TILE_SIZE);
-    return { map, roughnessMap };
-  }, [asphaltSource, roughnessSource, roadWidth, roadLength]);
-
-  // Освобождает клоны текстур сегмента при размонтировании.
-  useEffect(
-    () => () => {
-      maps.map.dispose();
-      maps.roughnessMap.dispose();
-    },
-    [maps],
+  const ribbon = useMemo(
+    () => buildRoadRibbonGeometry(centerline, roadWidth),
+    [centerline, roadWidth],
   );
 
+  const maps = useMemo(() => {
+    const map = cloneMapForSize(asphaltSource, roadWidth, ribbon.pathLength, ASPHALT_TILE_SIZE);
+    const roughnessMap = cloneMapForSize(
+      roughnessSource,
+      roadWidth,
+      ribbon.pathLength,
+      ASPHALT_TILE_SIZE,
+    );
+    return { map, roughnessMap };
+  }, [asphaltSource, roughnessSource, roadWidth, ribbon.pathLength]);
+
+  // Освобождает геометрию и клоны текстур при размонтировании.
+  useEffect(
+    () => () => {
+      ribbon.geometry.dispose();
+      maps.map.dispose();
+      maps.roughnessMap.dispose();
+      asphaltSource.dispose();
+      roughnessSource.dispose();
+    },
+    [ribbon, maps, asphaltSource, roughnessSource],
+  );
+
+  if (ribbon.pathLength <= 0) {
+    return null;
+  }
+
   return (
-    <mesh position={position} rotation={[0, rotationY, 0]} receiveShadow>
-      <boxGeometry args={[...size]} />
+    <mesh geometry={ribbon.geometry} receiveShadow>
       <meshStandardMaterial
         color={roadColor}
         map={maps.map}
@@ -90,8 +92,6 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
   const wallRoughness = isNight ? 0.82 : 0.65;
   const wallMetalness = isNight ? 0.04 : 0;
 
-  const asphaltSource = useMemo(() => createAsphaltTexture(512), []);
-  const roughnessSource = useMemo(() => createAsphaltRoughnessMap(512), []);
   const groundSource = useMemo(() => createGroundTexture(512), []);
 
   const groundMap = useMemo(
@@ -99,15 +99,13 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
     [groundSource],
   );
 
-  // Освобождает исходные текстуры пола и асфальта при размонтировании.
+  // Освобождает исходные текстуры пола при размонтировании.
   useEffect(
     () => () => {
-      asphaltSource.dispose();
-      roughnessSource.dispose();
       groundSource.dispose();
       groundMap.dispose();
     },
-    [asphaltSource, roughnessSource, groundSource, groundMap],
+    [groundSource, groundMap],
   );
 
   return (
@@ -129,18 +127,12 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
         </mesh>
       </RigidBody>
 
-      {config.segments.map((segment, index) => (
-        <RoadSegmentMesh
-          key={`seg-${index}`}
-          asphaltSource={asphaltSource}
-          roughnessSource={roughnessSource}
-          position={segment.position}
-          size={segment.size}
-          rotationY={segment.rotationY}
-          roadColor={palette.road}
-          roadRoughness={roadRoughness}
-        />
-      ))}
+      <RoadSurface
+        centerline={config.centerline}
+        roadWidth={config.roadWidth}
+        roadColor={palette.road}
+        roadRoughness={roadRoughness}
+      />
 
       {config.walls.map((wall, index) => (
         <RigidBody

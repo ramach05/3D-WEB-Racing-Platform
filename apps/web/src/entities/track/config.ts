@@ -25,7 +25,6 @@ const buildLoopTrack = ({
   startTribuneSide,
 }: TBuildLoopOptions): TTrackConfig => {
   const pointCount = points.length;
-  const segments: TOrientedBox[] = [];
   const walls: TOrientedBox[] = [];
   const wallHeight = 1.35;
   const wallThickness = 0.5;
@@ -47,11 +46,6 @@ const buildLoopTrack = ({
     const mz = (a.z + b.z) / 2;
     const offset = roadWidth / 2 + wallThickness / 2 - 0.08;
     const segmentOverlap = len + wallThickness * 1.6;
-    segments.push({
-      position: [mx, 0, mz],
-      size: [roadWidth, 0.2, segmentOverlap],
-      rotationY,
-    });
 
     const nx = -dz / len;
     const nz = dx / len;
@@ -147,7 +141,6 @@ const buildLoopTrack = ({
     ],
     spawnRotationY: Math.atan2(spawnDx, spawnDz) + Math.PI,
     startFinishLine,
-    segments,
     walls,
     checkpoints,
     obstacles: [],

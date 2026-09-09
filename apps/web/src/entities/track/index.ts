@@ -5,6 +5,7 @@ export type {
   TCarSkin,
   TObstacleKind,
   TOrientedBox,
+  TLoopPoint,
   TStartTribuneSide,
   TTrackAudioTheme,
   TTimeOfDay,
