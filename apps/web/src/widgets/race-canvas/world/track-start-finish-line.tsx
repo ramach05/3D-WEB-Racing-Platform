@@ -134,6 +134,8 @@ export const TrackStartFinishLine = ({ line, roadWidth, palette }: TTrackStartFi
               key={`chevron-${distance}-${xOffset}`}
               position={[xOffset, 0, 0]}
               rotation={[0, xOffset > 0 ? -Math.PI / 4 : Math.PI / 4, 0]}
+              castShadow
+              receiveShadow
             >
               <boxGeometry args={[0.9, 0.004, 0.18]} />
               <meshStandardMaterial

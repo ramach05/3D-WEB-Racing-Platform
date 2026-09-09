@@ -588,12 +588,12 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
 
   return (
     <group>
-      <instancedMesh ref={legsRef} args={[undefined, undefined, count]} castShadow={!isNight}>
+      <instancedMesh ref={legsRef} args={[undefined, undefined, count]} castShadow>
         <boxGeometry args={[0.28, 0.14, 0.34]} />
         <meshStandardMaterial color={crowdPalette.meshBase} roughness={0.92} />
       </instancedMesh>
 
-      <instancedMesh ref={bodyRef} args={[torsoGeometry, undefined, count]} castShadow={!isNight}>
+      <instancedMesh ref={bodyRef} args={[torsoGeometry, undefined, count]} castShadow>
         <meshStandardMaterial
           ref={bodyMatRef}
           color={crowdPalette.meshBase}
@@ -603,7 +603,7 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
         />
       </instancedMesh>
 
-      <instancedMesh ref={headRef} args={[undefined, undefined, count]} castShadow={!isNight}>
+      <instancedMesh ref={headRef} args={[undefined, undefined, count]} castShadow>
         <sphereGeometry args={[0.135, 8, 8]} />
         <meshStandardMaterial
           color={crowdPalette.meshBase}
@@ -613,7 +613,7 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
         />
       </instancedMesh>
 
-      <instancedMesh ref={rightArmRef} args={[armGeometry, undefined, count]} castShadow={!isNight}>
+      <instancedMesh ref={rightArmRef} args={[armGeometry, undefined, count]} castShadow>
         <meshStandardMaterial
           ref={rightArmMatRef}
           color={crowdPalette.meshBase}
@@ -623,7 +623,7 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
         />
       </instancedMesh>
 
-      <instancedMesh ref={leftArmRef} args={[armGeometry, undefined, count]} castShadow={!isNight}>
+      <instancedMesh ref={leftArmRef} args={[armGeometry, undefined, count]} castShadow>
         <meshStandardMaterial
           ref={leftArmMatRef}
           color={crowdPalette.meshBase}
@@ -633,21 +633,21 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
         />
       </instancedMesh>
 
-      <instancedMesh ref={capRef} args={[capGeometry, undefined, count]} castShadow={!isNight}>
+      <instancedMesh ref={capRef} args={[capGeometry, undefined, count]} castShadow>
         <meshStandardMaterial color={crowdPalette.meshBase} roughness={0.8} />
       </instancedMesh>
 
-      <instancedMesh ref={hairRef} args={[undefined, undefined, count]} castShadow={!isNight}>
+      <instancedMesh ref={hairRef} args={[undefined, undefined, count]} castShadow>
         <sphereGeometry args={[0.12, 6, 6]} />
         <meshStandardMaterial color={crowdPalette.meshBase} roughness={0.9} />
       </instancedMesh>
 
-      <instancedMesh ref={flagPoleRef} args={[undefined, undefined, count]} castShadow={!isNight}>
+      <instancedMesh ref={flagPoleRef} args={[undefined, undefined, count]} castShadow>
         <cylinderGeometry args={[0.012, 0.012, 0.55, 5]} />
         <meshStandardMaterial color={crowdPalette.meshBase} roughness={0.55} metalness={0.25} />
       </instancedMesh>
 
-      <instancedMesh ref={flagClothRef} args={[undefined, undefined, count]} castShadow={!isNight}>
+      <instancedMesh ref={flagClothRef} args={[undefined, undefined, count]} castShadow>
         <boxGeometry args={[0.18, 0.12, 0.02]} />
         <meshStandardMaterial color={crowdPalette.meshBase} roughness={0.85} />
       </instancedMesh>

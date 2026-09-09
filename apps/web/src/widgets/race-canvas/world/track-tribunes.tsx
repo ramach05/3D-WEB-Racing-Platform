@@ -216,7 +216,7 @@ const TribuneSection = ({
               row * ROW_HEIGHT + ROW_HEIGHT / 2,
               0,
             ]}
-            castShadow={!isNight}
+            castShadow
             receiveShadow
           >
             <boxGeometry args={[ROW_DEPTH, ROW_HEIGHT, SECTION_WIDTH]} />
@@ -232,7 +232,7 @@ const TribuneSection = ({
 
       <mesh
         position={[backOuterX + sideSign * 0.06, rowTopY(TRIBUNE_ROWS - 1) + 0.42, 0]}
-        castShadow={!isNight}
+        castShadow
       >
         <boxGeometry args={[0.1, 0.85, SECTION_WIDTH + 0.3]} />
         <meshStandardMaterial
@@ -250,7 +250,7 @@ const TribuneSection = ({
           rowTopY(TRIBUNE_ROWS - 1) + 1.1,
           0,
         ]}
-        castShadow={!isNight}
+        castShadow
         receiveShadow
       >
         <boxGeometry args={[TRIBUNE_ROWS * ROW_DEPTH + 0.8, 0.12, SECTION_WIDTH + 1]} />
@@ -263,7 +263,7 @@ const TribuneSection = ({
         />
       </mesh>
 
-      <mesh position={[backRowX, rowTopY(TRIBUNE_ROWS - 1) + 0.43, 0]} castShadow={!isNight}>
+      <mesh position={[backRowX, rowTopY(TRIBUNE_ROWS - 1) + 0.43, 0]} castShadow>
         <boxGeometry args={[ROW_DEPTH, 0.08, SECTION_WIDTH + 0.2]} />
         <meshStandardMaterial color={stepColor} roughness={0.9} />
       </mesh>

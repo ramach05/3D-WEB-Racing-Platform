@@ -113,7 +113,6 @@ const TreePart = ({ trees, kind, color, castShadow, geometry, localY, args }: TT
 export const TrackTrees = ({ config }: TTrackTreesProps) => {
   const trees = useMemo(() => placeTrackTrees({ config }), [config]);
   const isNight = config.timeOfDay === 'night';
-  const castShadow = !isNight;
 
   const trunkColor = isNight ? treePalette.night.trunk : treePalette.day.trunk;
   const pineColor = isNight ? treePalette.night.pine : treePalette.day.pine;
@@ -129,7 +128,7 @@ export const TrackTrees = ({ config }: TTrackTreesProps) => {
         trees={trees}
         kind="trunk"
         color={trunkColor}
-        castShadow={false}
+        castShadow
         geometry="cylinder"
         localY={TRUNK_LOCAL_Y}
         args={[TRUNK_RADIUS_BOTTOM, TRUNK_RADIUS, TRUNK_HEIGHT, TRUNK_SEGMENTS]}
@@ -138,7 +137,7 @@ export const TrackTrees = ({ config }: TTrackTreesProps) => {
         trees={trees}
         kind="pine"
         color={pineColor}
-        castShadow={castShadow}
+        castShadow
         geometry="cone"
         localY={PINE_CROWN_LOCAL_Y}
         args={[PINE_CROWN_RADIUS, PINE_CROWN_HEIGHT, 7]}
@@ -147,7 +146,7 @@ export const TrackTrees = ({ config }: TTrackTreesProps) => {
         trees={trees}
         kind="broadleaf"
         color={broadleafColor}
-        castShadow={castShadow}
+        castShadow
         geometry="sphere"
         localY={BROADLEAF_CROWN_LOCAL_Y}
         args={[BROADLEAF_CROWN_RADIUS, 7, 6]}

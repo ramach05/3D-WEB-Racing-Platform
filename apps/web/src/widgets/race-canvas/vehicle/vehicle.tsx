@@ -413,15 +413,15 @@ export const Vehicle = ({
         />
         <group ref={visualRef}>
           {/* Ночью кузов не кастит тени: иначе self-shadow режет пучки фар */}
-          <mesh position={[0, 0.32, 0.15]} castShadow={!headlightsOn}>
+          <mesh position={[0, 0.32, 0.15]} castShadow={!headlightsOn} receiveShadow>
             <boxGeometry args={[1.6, 0.28, 2.9]} />
             <meshStandardMaterial color={carSkin.body} metalness={0.2} roughness={0.5} />
           </mesh>
-          <mesh position={[0, 0.48, -0.35]} castShadow={!headlightsOn}>
+          <mesh position={[0, 0.48, -0.35]} castShadow={!headlightsOn} receiveShadow>
             <boxGeometry args={[1.35, 0.22, 1.1]} />
             <meshStandardMaterial color={carSkin.cabin} metalness={0.1} roughness={0.35} />
           </mesh>
-          <mesh position={[0, 0.58, -0.35]} castShadow={!headlightsOn}>
+          <mesh position={[0, 0.58, -0.35]} castShadow={!headlightsOn} receiveShadow>
             <boxGeometry args={[1.1, 0.12, 0.9]} />
             <meshStandardMaterial
               color={vehiclePalette.glass}
@@ -430,15 +430,15 @@ export const Vehicle = ({
               metalness={0.4}
             />
           </mesh>
-          <mesh position={[0, 0.28, 1.55]}>
+          <mesh position={[0, 0.28, 1.55]} castShadow={!headlightsOn} receiveShadow>
             <boxGeometry args={[1.5, 0.18, 0.25]} />
             <meshStandardMaterial color={carSkin.body} metalness={0.15} roughness={0.55} />
           </mesh>
-          <mesh position={[0, 0.28, -1.55]} castShadow={!headlightsOn}>
+          <mesh position={[0, 0.28, -1.55]} castShadow={!headlightsOn} receiveShadow>
             <boxGeometry args={[1.5, 0.18, 0.25]} />
             <meshStandardMaterial color={carSkin.body} metalness={0.15} roughness={0.55} />
           </mesh>
-          <mesh position={[-0.62, 0.42, -1.35]} castShadow={!headlightsOn}>
+          <mesh position={[-0.62, 0.42, -1.35]} castShadow={!headlightsOn} receiveShadow>
             <boxGeometry args={[0.12, 0.1, 0.08]} />
             <meshStandardMaterial
               color={vehiclePalette.brake}
@@ -446,7 +446,7 @@ export const Vehicle = ({
               emissiveIntensity={0.8}
             />
           </mesh>
-          <mesh position={[0.62, 0.42, -1.35]} castShadow={!headlightsOn}>
+          <mesh position={[0.62, 0.42, -1.35]} castShadow={!headlightsOn} receiveShadow>
             <boxGeometry args={[0.12, 0.1, 0.08]} />
             <meshStandardMaterial
               color={vehiclePalette.brake}
@@ -476,11 +476,11 @@ export const Vehicle = ({
           ) : null}
           {WHEEL_LOCAL.map((offset) => (
             <group key={`${offset[0]}-${offset[2]}`} position={[offset[0], 0.2, offset[2]]}>
-              <mesh rotation={[0, 0, Math.PI / 2]} castShadow={!headlightsOn}>
+              <mesh rotation={[0, 0, Math.PI / 2]} castShadow={!headlightsOn} receiveShadow>
                 <cylinderGeometry args={[0.28, 0.28, 0.22, 12]} />
                 <meshStandardMaterial color={carSkin.wheel} roughness={0.95} />
               </mesh>
-              <mesh rotation={[0, 0, Math.PI / 2]}>
+              <mesh rotation={[0, 0, Math.PI / 2]} receiveShadow>
                 <cylinderGeometry args={[0.14, 0.14, 0.24, 8]} />
                 <meshStandardMaterial color={vehiclePalette.rim} metalness={0.6} roughness={0.3} />
               </mesh>
