@@ -6,7 +6,7 @@ export const RaceControls = () => {
 
   return (
     <div
-      className="pointer-events-none absolute bottom-4 left-4 z-10 max-w-xs"
+      className="pointer-events-none absolute bottom-2 left-2 z-10 hidden max-w-[min(100%,20rem)] md:bottom-4 md:left-4 md:block"
       aria-label={t('race.controlsTitle')}
     >
       <div className="sega-panel !bg-black/75 px-3 py-2 text-xs text-[var(--sega-cyan)]">

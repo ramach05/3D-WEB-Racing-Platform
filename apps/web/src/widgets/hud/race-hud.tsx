@@ -77,7 +77,7 @@ export const RaceHud = ({ trackName }: TRaceHudProps) => {
   return (
     <div
       className="sega-race-hud sega-panel bg-black/70 px-4 py-3 text-sm text-[var(--sega-yellow)]"
-      style={{ minWidth: `${panelMinCh}ch` }}
+      style={{ minWidth: `${panelMinCh}ch`, maxWidth: '100%' }}
       aria-live="polite"
       aria-atomic="true"
     >

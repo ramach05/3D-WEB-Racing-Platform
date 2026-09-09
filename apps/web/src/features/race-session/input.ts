@@ -8,6 +8,16 @@ const state: TDriveInput = {
 
 const pressed = new Set<string>();
 
+/** Оси от touch-кнопок (OR с клавиатурой в syncAxes) */
+const touch = {
+  throttle: false,
+  brake: false,
+  steerLeft: false,
+  steerRight: false,
+};
+
+export type TTouchAxis = keyof typeof touch;
+
 /** true, если фокус в поле ввода — клавиши гонки не трогаем */
 const isTypingTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) {
@@ -29,12 +39,12 @@ const RACE_KEYS = new Set([
   'KeyR',
 ]);
 
-/** Пересчитывает оси ввода по нажатым клавишам */
+/** Пересчитывает оси ввода по клавиатуре и touch */
 const syncAxes = (): void => {
-  const up = pressed.has('KeyW') || pressed.has('ArrowUp');
-  const down = pressed.has('KeyS') || pressed.has('ArrowDown');
-  const left = pressed.has('KeyA') || pressed.has('ArrowLeft');
-  const right = pressed.has('KeyD') || pressed.has('ArrowRight');
+  const up = pressed.has('KeyW') || pressed.has('ArrowUp') || touch.throttle;
+  const down = pressed.has('KeyS') || pressed.has('ArrowDown') || touch.brake;
+  const left = pressed.has('KeyA') || pressed.has('ArrowLeft') || touch.steerLeft;
+  const right = pressed.has('KeyD') || pressed.has('ArrowRight') || touch.steerRight;
   state.throttle = up ? 1 : 0;
   state.brake = down ? 1 : 0;
   state.steer = (left ? 1 : 0) + (right ? -1 : 0);
@@ -42,6 +52,21 @@ const syncAxes = (): void => {
 
 /** Текущий ввод машины */
 export const getDriveInput = (): TDriveInput => state;
+
+/** Включает/выключает ось touch-пада */
+export const setTouchAxis = (axis: TTouchAxis, active: boolean): void => {
+  touch[axis] = active;
+  syncAxes();
+};
+
+/** Сбрасывает все touch-оси (unmount / pointercancel) */
+export const clearTouchAxes = (): void => {
+  touch.throttle = false;
+  touch.brake = false;
+  touch.steerLeft = false;
+  touch.steerRight = false;
+  syncAxes();
+};
 
 type TInputHandlers = {
   /** Рестарт заезда (R) */

@@ -16,8 +16,9 @@ export {
   tickRace,
   togglePause,
 } from './store';
-export { bindRaceInput, getDriveInput } from './input';
+export { bindRaceInput, clearTouchAxes, getDriveInput, setTouchAxis } from './input';
 export type { TDriveInput } from './input.types';
+export type { TTouchAxis } from './input';
 export {
   VEHICLE_MAX_SPEED,
   VEHICLE_REVERSE_MAX,

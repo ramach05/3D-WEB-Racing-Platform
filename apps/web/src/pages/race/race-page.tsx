@@ -18,7 +18,7 @@ import {
 import { Button, PageShell, StatusText } from '@/shared/ui';
 import { RaceHud, RacePerfHud } from '@/widgets/hud';
 import { RaceCanvas } from '@/widgets/race-canvas';
-import { RaceControls } from '@/widgets/race-controls';
+import { RaceControls, RaceTouchControls } from '@/widgets/race-controls';
 import { RaceCountdownOverlay } from '@/widgets/race-countdown';
 import { RaceFinishMomentOverlay } from '@/widgets/race-finish-moment';
 import { RaceFinishOverlay, type TFinishSubmitState } from '@/widgets/race-finish-overlay';
@@ -248,8 +248,8 @@ export const RacePage = () => {
           onFinished={onFinished}
         />
       </div>
-      <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
-        <div className="pointer-events-none">
+      <div className="absolute top-2 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-col items-end gap-2 md:top-4 md:right-4">
+        <div className="pointer-events-none max-w-full">
           <RaceHud trackName={track.name} />
         </div>
         <Button
@@ -264,6 +264,11 @@ export const RacePage = () => {
       </div>
       <RacePerfHud />
       <RaceControls />
+      <RaceTouchControls
+        onRestart={restart}
+        onTogglePause={togglePause}
+        footer={!user && hud.status !== 'finished' ? t('race.guestHint') : undefined}
+      />
       <RaceCountdownOverlay />
       <RaceFinishMomentOverlay
         active={hud.status === 'finished' && !showFinishOverlay}
@@ -308,7 +313,7 @@ export const RacePage = () => {
         </p>
       ) : null}
       {!user && hud.status !== 'finished' ? (
-        <p className="pointer-events-none absolute bottom-4 right-4 max-w-xs text-right text-xs text-white/70">
+        <p className="pointer-events-none absolute bottom-4 right-4 z-10 hidden max-w-[min(100%,20rem)] text-right text-xs text-white/70 md:block">
           {t('race.guestHint')}
         </p>
       ) : null}

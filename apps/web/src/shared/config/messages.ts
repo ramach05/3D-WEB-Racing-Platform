@@ -88,6 +88,14 @@ export const ruMessages = {
     speed: 'Скорость',
     musicOn: 'Музыка',
     musicOff: 'Музыка выкл.',
+    touch: {
+      throttle: 'Газ',
+      brake: 'Тормоз',
+      steerLeft: 'Влево',
+      steerRight: 'Вправо',
+      pause: 'Пауза',
+      restart: 'Рестарт',
+    },
   },
   leaderboard: {
     title: 'Таблица лидеров',
@@ -134,6 +142,8 @@ export const ruMessages = {
   },
   a11y: {
     skip: 'К содержимому',
+    nav: 'Навигация',
+    settings: 'Настройки',
   },
 } as const;
 
@@ -227,6 +237,14 @@ export const enMessages = {
     speed: 'Speed',
     musicOn: 'Music',
     musicOff: 'Music off',
+    touch: {
+      throttle: 'Throttle',
+      brake: 'Brake',
+      steerLeft: 'Steer left',
+      steerRight: 'Steer right',
+      pause: 'Pause',
+      restart: 'Restart',
+    },
   },
   leaderboard: {
     title: 'Leaderboard',
@@ -273,5 +291,7 @@ export const enMessages = {
   },
   a11y: {
     skip: 'Skip to content',
+    nav: 'Navigation',
+    settings: 'Settings',
   },
 } as const;

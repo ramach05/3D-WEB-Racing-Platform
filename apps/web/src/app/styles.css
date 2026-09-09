@@ -86,6 +86,7 @@ button:disabled,
 /** Race HUD: фиксированная ширина слотов, чтобы панель не прыгала */
 .sega-race-hud {
   box-sizing: border-box;
+  max-width: 100%;
   font-variant-numeric: tabular-nums;
 }
 
@@ -93,6 +94,7 @@ button:disabled,
   display: flex;
   gap: 0.35rem;
   margin: 0;
+  min-width: 0;
   white-space: nowrap;
 }
 
@@ -102,13 +104,139 @@ button:disabled,
 
 .sega-race-hud__value {
   display: inline-block;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
 }
 
 .sega-race-hud__value--end {
   text-align: end;
+}
+
+/** Мобильный touch-пад управления гонкой (только < md) */
+.sega-touch-pad {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 15;
+  display: none;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (max-width: 767px) {
+  .sega-touch-pad {
+    display: flex;
+  }
+}
+
+.sega-touch-pad__actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  pointer-events: auto;
+}
+
+.sega-touch-pad__row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  pointer-events: auto;
+}
+
+.sega-touch-pad__cluster {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.sega-touch-pad__cluster--stack {
+  flex-direction: column;
+}
+
+.sega-touch-pad__footer {
+  margin: 0;
+  pointer-events: none;
+  text-align: center;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: rgb(255 255 255 / 0.7);
+}
+
+.sega-touch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.25rem;
+  min-height: 3.25rem;
+  border: var(--pixel-border) solid var(--border);
+  background: color-mix(in srgb, var(--surface) 30%, black 70%);
+  color: var(--sega-cyan);
+  padding: 0.35rem;
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 3px 3px 0 0 var(--sega-cyan);
+  touch-action: none;
+  -webkit-touch-callout: none;
+  transition:
+    transform 80ms steps(2),
+    box-shadow 80ms steps(2),
+    background-color 80ms ease,
+    color 80ms ease;
+}
+
+.sega-touch-btn--sm {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  font-size: 0.85rem;
+  color: var(--sega-yellow);
+  box-shadow: 2px 2px 0 0 var(--sega-magenta);
+}
+
+.sega-touch-btn--steer {
+  color: var(--sega-cyan);
+}
+
+.sega-touch-btn--throttle {
+  color: var(--sega-yellow);
+  box-shadow: 3px 3px 0 0 var(--sega-yellow);
+}
+
+.sega-touch-btn--brake {
+  color: var(--sega-magenta);
+  box-shadow: 3px 3px 0 0 var(--sega-magenta);
+}
+
+.sega-touch-btn:active,
+.sega-touch-btn[aria-pressed='true'] {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 var(--sega-cyan);
+  background: color-mix(in srgb, var(--surface-hover) 40%, black 60%);
+}
+
+.sega-touch-btn--sm:active,
+.sega-touch-btn--sm[aria-pressed='true'] {
+  box-shadow: 1px 1px 0 0 var(--sega-magenta);
+}
+
+.sega-touch-btn--throttle:active,
+.sega-touch-btn--throttle[aria-pressed='true'] {
+  box-shadow: 1px 1px 0 0 var(--sega-yellow);
+}
+
+.sega-touch-btn--brake:active,
+.sega-touch-btn--brake[aria-pressed='true'] {
+  box-shadow: 1px 1px 0 0 var(--sega-magenta);
 }
 
 .sega-btn {
@@ -180,6 +308,42 @@ button:disabled,
 
 .sega-nav-link:hover {
   transform: translateY(-1px);
+}
+
+/** Мобильная навигация: равные ячейки в пиксельной рамке */
+.sega-header-nav {
+  display: grid;
+  grid-template-columns: repeat(var(--sega-nav-cols, 5), minmax(0, 1fr));
+  gap: 0;
+  max-width: 100%;
+  border: var(--pixel-border) solid var(--border);
+  background: var(--surface);
+  box-shadow: 2px 2px 0 0 var(--sega-cyan);
+}
+
+.sega-header-nav__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  border-right: var(--pixel-border) solid var(--border);
+}
+
+.sega-header-nav__link:last-child {
+  border-right: 0;
+}
+
+@media (min-width: 768px) {
+  .sega-header-nav {
+    display: flex;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .sega-header-nav__link {
+    border-right: 0;
+  }
 }
 
 .sega-select-trigger {
@@ -633,6 +797,25 @@ button:disabled,
   }
 }
 
+/** Узкие экраны: селекты, табы трасс и HUD не раздувают layout */
+@media (max-width: 767px) {
+  .sega-select-trigger,
+  .sega-select-trigger--sm {
+    min-width: 0;
+    width: auto;
+  }
+
+  .sega-track-tab {
+    min-width: 5.5rem;
+    padding: 0.45rem 0.75rem;
+  }
+
+  .sega-race-hud {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.75rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sega-race-strip-track,
   .sega-blink,
@@ -652,7 +835,8 @@ button:disabled,
   .sega-nav-link,
   .sega-select-trigger,
   .sega-select-menu,
-  .sega-track-tab {
+  .sega-track-tab,
+  .sega-touch-btn {
     transition: none;
   }
 }
