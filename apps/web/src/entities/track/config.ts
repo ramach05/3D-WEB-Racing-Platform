@@ -11,6 +11,7 @@ import type {
   TVec3,
 } from './config.types';
 import { buildTribuneTreeExclusionZone } from './tribune-layout';
+import { yawFacingRaceDirection } from './race-direction';
 
 /** Строит замкнутую трассу по точкам центральной линии */
 const buildLoopTrack = ({
@@ -141,7 +142,8 @@ const buildLoopTrack = ({
       0.85,
       (spawn?.z ?? 0) + (spawnDz / spawnLen) * spawnAdvance,
     ],
-    spawnRotationY: Math.atan2(spawnDx, spawnDz) + Math.PI,
+    // Направление заезда ≠ рост индекса centerline — см. race-direction.ts
+    spawnRotationY: yawFacingRaceDirection(spawnDx, spawnDz),
     startFinishLine,
     walls,
     checkpoints,

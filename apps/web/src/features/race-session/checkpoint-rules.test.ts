@@ -6,10 +6,11 @@ import {
   getTrackLineLocalCoords,
   isInsideFinishZone,
   passedFinishLine,
+  passedFinishLineForward,
 } from './checkpoint-rules';
 
 describe('crossedFinishLine', () => {
-  it('detects forward crossing within track width', () => {
+  it('detects crossing toward +lz within track width', () => {
     const line = coastalOvalTrack.startFinishLine;
     const sin = Math.sin(line.rotationY);
     const cos = Math.cos(line.rotationY);
@@ -25,7 +26,7 @@ describe('crossedFinishLine', () => {
     ).toBe(true);
   });
 
-  it('detects backward crossing within track width', () => {
+  it('detects crossing toward -lz within track width', () => {
     const line = coastalOvalTrack.startFinishLine;
     const sin = Math.sin(line.rotationY);
     const cos = Math.cos(line.rotationY);
@@ -58,7 +59,7 @@ describe('crossedFinishLine', () => {
     ).toBe(false);
   });
 
-  it('places spawn past the finish line', () => {
+  it('places spawn past the finish line on +lz side', () => {
     const line = coastalOvalTrack.startFinishLine;
     const spawn = coastalOvalTrack.spawnPosition;
     expect(getTrackLineLocalCoords(spawn[0], spawn[2], line).lz).toBeGreaterThan(0);
@@ -97,6 +98,7 @@ describe('isInsideFinishZone', () => {
     }
   });
 });
+
 describe('passedFinishLine', () => {
   it('detects a centerline wrap across the finish', () => {
     const config = coastalOvalTrack;
@@ -105,5 +107,49 @@ describe('passedFinishLine', () => {
     const before = points[points.length - 1]!;
     const after = points[1]!;
     expect(passedFinishLine(before.x, before.z, after.x, after.z, line)).toBe(true);
+  });
+});
+
+describe('passedFinishLineForward', () => {
+  // Заезд: lz + → − (от спавна); обратное — не круг. См. race-direction.ts.
+  it('accepts race-direction crossing (+lz → -lz)', () => {
+    const line = coastalOvalTrack.startFinishLine;
+    const sin = Math.sin(line.rotationY);
+    const cos = Math.cos(line.rotationY);
+
+    expect(
+      passedFinishLineForward(
+        line.position[0] + sin * 2,
+        line.position[2] + cos * 2,
+        line.position[0] - sin * 2,
+        line.position[2] - cos * 2,
+        line,
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects reverse crossing (-lz → +lz)', () => {
+    const line = coastalOvalTrack.startFinishLine;
+    const sin = Math.sin(line.rotationY);
+    const cos = Math.cos(line.rotationY);
+
+    expect(
+      passedFinishLineForward(
+        line.position[0] - sin * 2,
+        line.position[2] - cos * 2,
+        line.position[0] + sin * 2,
+        line.position[2] + cos * 2,
+        line,
+      ),
+    ).toBe(false);
+  });
+
+  it('detects race-direction wrap across the finish (after → before)', () => {
+    const config = coastalOvalTrack;
+    const line = config.startFinishLine;
+    const points = config.centerline;
+    const before = points[points.length - 1]!;
+    const after = points[1]!;
+    expect(passedFinishLineForward(after.x, after.z, before.x, before.z, line)).toBe(true);
   });
 });

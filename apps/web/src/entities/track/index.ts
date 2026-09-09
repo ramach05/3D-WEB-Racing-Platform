@@ -32,3 +32,9 @@ export {
 } from './tribune-layout';
 export { accumulateLapTravel, advanceLapProgress, getTrackProgress } from './track-progress';
 export type { TTrackProgress } from './track-progress.types';
+export {
+  CENTERLINE_TO_RACE_YAW_OFFSET,
+  isRaceLapCooldownCleared,
+  yawAlongCenterline,
+  yawFacingRaceDirection,
+} from './race-direction';

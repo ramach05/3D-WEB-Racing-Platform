@@ -4,13 +4,15 @@ import {
   advanceLapProgress,
   coastalOvalTrack,
   getTrackProgress,
+  isRaceLapCooldownCleared,
   nightCityTrack,
 } from '@/entities/track';
 import {
   canRegisterLapCrossing,
   getRaceHudSnapshot,
+  getTrackLineLocalCoords,
   MIN_LAP_PROGRESS,
-  passedFinishLine,
+  passedFinishLineForward,
   registerLapComplete,
   resetRaceSession,
   START_FINISH_COOLDOWN_RATIO,
@@ -19,6 +21,10 @@ import {
 
 type TPoint = { x: number; z: number };
 
+/**
+ * Симуляция пути в направлении заезда (против роста индекса centerline),
+ * как `spawnRotationY` / стрелки — см. `race-direction.ts`.
+ */
 const driveOffsetPath = (
   config: typeof coastalOvalTrack,
   lateralOffset: number,
@@ -28,13 +34,14 @@ const driveOffsetPath = (
 ) => {
   const points = config.centerline;
   let prev: TPoint | null = null;
-  let i = 2;
-  let s = 1;
+  let i = points.length - 2;
+  let s = stepsPerSegment;
   const totalSteps = lapsToDrive * points.length * stepsPerSegment;
 
   for (let step = 0; step < totalSteps; step += 1) {
     const a = points[i]!;
-    const b = points[(i + 1) % points.length]!;
+    const prevIndex = (i - 1 + points.length) % points.length;
+    const b = points[prevIndex]!;
     const dx = b.x - a.x;
     const dz = b.z - a.z;
     const len = Math.hypot(dx, dz) || 1;
@@ -47,10 +54,10 @@ const driveOffsetPath = (
     };
     onStep(prev, curr);
     prev = curr;
-    s += 1;
-    if (s > stepsPerSegment) {
-      s = 1;
-      i = (i + 1) % points.length;
+    s -= 1;
+    if (s < 1) {
+      s = stepsPerSegment;
+      i = prevIndex;
     }
   }
 };
@@ -67,7 +74,6 @@ const simulateRaceLaps = (
 
   const line = config.startFinishLine;
   let raceFinished = false;
-  let maxProgress = 0;
   let lapTravel = 0;
   let lastRatio: number | null = null;
   let lapCooldown = true;
@@ -81,23 +87,26 @@ const simulateRaceLaps = (
       }
 
       const { ratio } = getTrackProgress(curr.x, curr.z, config.centerline);
-      maxProgress = advanceLapProgress(maxProgress, ratio);
       const travel = accumulateLapTravel(lapTravel, lastRatio, ratio);
       lapTravel = travel.lapTravel;
       lastRatio = travel.lastRatio;
-      const progress = Math.max(maxProgress, lapTravel);
 
-      if (ratio > START_FINISH_COOLDOWN_RATIO) {
+      if (isRaceLapCooldownCleared(ratio, START_FINISH_COOLDOWN_RATIO)) {
         lapCooldown = false;
       }
 
-      const crossed = passedFinishLine(prev?.x ?? null, prev?.z ?? null, curr.x, curr.z, line);
-      if (!canRegisterLapCrossing(crossed, lapCooldown, progress)) {
+      const crossed = passedFinishLineForward(
+        prev?.x ?? null,
+        prev?.z ?? null,
+        curr.x,
+        curr.z,
+        line,
+      );
+      if (!canRegisterLapCrossing(crossed, lapCooldown, lapTravel)) {
         return;
       }
 
       lapCooldown = true;
-      maxProgress = 0;
       lapTravel = 0;
       lastRatio = ratio;
       raceFinished = registerLapComplete();
@@ -155,7 +164,6 @@ describe('multi-lap race simulation', () => {
     startRacing();
 
     const line = coastalOvalTrack.startFinishLine;
-    let maxProgress = 0;
     let lapTravel = 0;
     let lastRatio: number | null = null;
     let lapCooldown = true;
@@ -168,15 +176,20 @@ describe('multi-lap race simulation', () => {
         if (ratio > 0.08 && ratio < 0.95) {
           return;
         }
-        maxProgress = advanceLapProgress(maxProgress, ratio);
         const travel = accumulateLapTravel(lapTravel, lastRatio, ratio);
         lapTravel = travel.lapTravel;
         lastRatio = travel.lastRatio;
-        if (ratio > START_FINISH_COOLDOWN_RATIO) {
+        if (isRaceLapCooldownCleared(ratio, START_FINISH_COOLDOWN_RATIO)) {
           lapCooldown = false;
         }
-        const crossed = passedFinishLine(prev?.x ?? null, prev?.z ?? null, curr.x, curr.z, line);
-        if (canRegisterLapCrossing(crossed, lapCooldown, Math.max(maxProgress, lapTravel))) {
+        const crossed = passedFinishLineForward(
+          prev?.x ?? null,
+          prev?.z ?? null,
+          curr.x,
+          curr.z,
+          line,
+        );
+        if (canRegisterLapCrossing(crossed, lapCooldown, lapTravel)) {
           registerLapComplete();
         }
       },
@@ -184,7 +197,63 @@ describe('multi-lap race simulation', () => {
       8,
     );
 
-    expect(Math.max(maxProgress, lapTravel)).toBeLessThan(MIN_LAP_PROGRESS);
+    expect(lapTravel).toBeLessThan(MIN_LAP_PROGRESS);
+    expect(getRaceHudSnapshot().lapIndex).toBe(0);
+  });
+
+  it('does not count lap when crossing finish backward after enough progress', () => {
+    resetRaceSession('sim-track', coastalOvalTrack.checkpoints.length, 3);
+    startRacing();
+
+    const line = coastalOvalTrack.startFinishLine;
+    let lapTravel = 0;
+    let lastRatio: number | null = null;
+    let lapCooldown = true;
+    let reachedProgress = false;
+
+    driveOffsetPath(
+      coastalOvalTrack,
+      0,
+      (_prev, curr) => {
+        if (reachedProgress) {
+          return;
+        }
+        const { ratio } = getTrackProgress(curr.x, curr.z, coastalOvalTrack.centerline);
+        const travel = accumulateLapTravel(lapTravel, lastRatio, ratio);
+        lapTravel = travel.lapTravel;
+        lastRatio = travel.lastRatio;
+        if (isRaceLapCooldownCleared(ratio, START_FINISH_COOLDOWN_RATIO)) {
+          lapCooldown = false;
+        }
+        if (lapTravel >= MIN_LAP_PROGRESS) {
+          reachedProgress = true;
+        }
+      },
+      1,
+      8,
+    );
+
+    expect(reachedProgress).toBe(true);
+    expect(lapCooldown).toBe(false);
+
+    const sin = Math.sin(line.rotationY);
+    const cos = Math.cos(line.rotationY);
+    const after = {
+      x: line.position[0] + sin * 2,
+      z: line.position[2] + cos * 2,
+    };
+    const before = {
+      x: line.position[0] - sin * 2,
+      z: line.position[2] - cos * 2,
+    };
+
+    expect(getTrackLineLocalCoords(after.x, after.z, line).lz).toBeGreaterThan(0);
+    expect(getTrackLineLocalCoords(before.x, before.z, line).lz).toBeLessThan(0);
+
+    // Обратный проезд: -lz → +lz
+    const crossed = passedFinishLineForward(before.x, before.z, after.x, after.z, line);
+    expect(crossed).toBe(false);
+    expect(canRegisterLapCrossing(crossed, lapCooldown, lapTravel)).toBe(false);
     expect(getRaceHudSnapshot().lapIndex).toBe(0);
   });
 });

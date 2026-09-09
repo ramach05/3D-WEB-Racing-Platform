@@ -2,11 +2,11 @@ import { type RefObject, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { RapierRigidBody } from '@react-three/rapier';
 import type { TTrackConfig } from '@/entities/track';
-import { accumulateLapTravel, advanceLapProgress, getTrackProgress } from '@/entities/track';
+import { accumulateLapTravel, getTrackProgress, isRaceLapCooldownCleared } from '@/entities/track';
 import {
   canRegisterLapCrossing,
   getRaceHudSnapshot,
-  passedFinishLine,
+  passedFinishLineForward,
   registerLapComplete,
   START_FINISH_COOLDOWN_RATIO,
 } from '@/features/race-session';
@@ -22,7 +22,10 @@ type TCheckpointDetectorProps = {
   onFinished: () => void;
 };
 
-/** Детектор кругов: финишная линия + прогресс по centerline. */
+/**
+ * Детектор кругов в направлении заезда (см. `race-direction.ts`):
+ * travel по убывающему ratio + финиш только `lz + → −`.
+ */
 export const CheckpointDetector = ({
   config,
   bodyRef,
@@ -30,18 +33,15 @@ export const CheckpointDetector = ({
   onFinished,
 }: TCheckpointDetectorProps) => {
   const prevPosRef = useRef<{ x: number; z: number } | null>(null);
-  const maxProgressRef = useRef(0);
   const lapTravelRef = useRef(0);
   const lastRatioRef = useRef<number | null>(null);
   const lapCooldownRef = useRef(true);
   const resetNonceRef = useRef(resetNonce);
 
-  // Отслеживает пересечение финиша и прогресс по centerline.
   useFrame(() => {
     if (resetNonceRef.current !== resetNonce) {
       resetNonceRef.current = resetNonce;
       prevPosRef.current = null;
-      maxProgressRef.current = 0;
       lapTravelRef.current = 0;
       lastRatioRef.current = null;
       lapCooldownRef.current = true;
@@ -60,18 +60,16 @@ export const CheckpointDetector = ({
     const prevPos = prevPosRef.current;
     const { ratio } = getTrackProgress(x, z, config.centerline);
 
-    maxProgressRef.current = advanceLapProgress(maxProgressRef.current, ratio);
     const travel = accumulateLapTravel(lapTravelRef.current, lastRatioRef.current, ratio);
     lapTravelRef.current = travel.lapTravel;
     lastRatioRef.current = travel.lastRatio;
-    // Любой из двух счётчиков: maxProgress может залипнуть, travel — нет (и наоборот).
-    const progress = Math.max(maxProgressRef.current, lapTravelRef.current);
+    const progress = lapTravelRef.current;
 
-    if (ratio > START_FINISH_COOLDOWN_RATIO) {
+    if (isRaceLapCooldownCleared(ratio, START_FINISH_COOLDOWN_RATIO)) {
       lapCooldownRef.current = false;
     }
 
-    const crossed = passedFinishLine(
+    const crossed = passedFinishLineForward(
       prevPos?.x ?? null,
       prevPos?.z ?? null,
       x,
@@ -86,7 +84,6 @@ export const CheckpointDetector = ({
     }
 
     lapCooldownRef.current = true;
-    maxProgressRef.current = 0;
     lapTravelRef.current = 0;
     lastRatioRef.current = ratio;
 

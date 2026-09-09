@@ -42,9 +42,12 @@ export type TStartTribuneSide = 'left' | 'right';
 export type TTrackConfig = {
   /** Идентификатор трассы */
   slug: TTrackSlug;
-  /** Точка спавна машины */
+  /** Точка спавна машины (на стороне финиша lz > 0) */
   spawnPosition: TVec3;
-  /** Угол спавна (рад) */
+  /**
+   * Угол носа на старте / респавне (рад).
+   * Направление заезда — против роста индекса centerline; см. `race-direction.ts`.
+   */
   spawnRotationY: number;
   /** Линия старт/финиш */
   startFinishLine: TOrientedBox;
@@ -54,7 +57,7 @@ export type TTrackConfig = {
   checkpoints: TOrientedBox[];
   /** Динамические препятствия */
   obstacles: TTrackObstacle[];
-  /** Центровая линия для прогресса круга */
+  /** Центровая линия: ratio растёт с индексом; заезд идёт против роста — см. `race-direction.ts` */
   centerline: TLoopPoint[];
   /** Ширина дороги */
   roadWidth: number;

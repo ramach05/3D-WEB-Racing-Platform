@@ -9,12 +9,12 @@ type TVec2 = {
 };
 
 /** Минимальная доля круга до засчёта финишной линии (анти-ложный старт). */
-export const MIN_LAP_PROGRESS = 0.55;
+export const MIN_LAP_PROGRESS = 0.85;
 
-/** Зона у старт/финиш — игнорируем повторные срабатывания сразу после зачёта круга. */
+/** Зона у старт/финиш — cooldown снимается после ухода на долю круга от линии. */
 export const START_FINISH_COOLDOWN_RATIO = 0.14;
 
-/** Локальные координаты линии: lx — поперёк, lz — вдоль трассы. */
+/** Локальные координаты линии: lx — поперёк, lz — вдоль трассы (спавн на lz > 0). */
 export const getTrackLineLocalCoords = (
   x: number,
   z: number,
@@ -166,6 +166,76 @@ export const passedFinishLine = (
       crossedFinishLine(segmentStartX, segmentStartZ, sampleX, sampleZ, line) ||
       crossedFinishPlane(segmentStartX, segmentStartZ, sampleX, sampleZ, line)
     ) {
+      return true;
+    }
+    segmentStartX = sampleX;
+    segmentStartZ = sampleZ;
+  }
+  return false;
+};
+
+/**
+ * Проезд финиша только в направлении заезда: `lz + → −` (см. `race-direction.ts`).
+ * Учитывает посадку ровно на плоскость (lz ≈ 0) между кадрами.
+ */
+export const isForwardFinishCrossing = (
+  prevX: number,
+  prevZ: number,
+  x: number,
+  z: number,
+  line: TOrientedBox,
+): boolean => {
+  const halfWidth = line.size[0] / 2;
+  const prev = getTrackLineLocalCoords(prevX, prevZ, line);
+  const curr = getTrackLineLocalCoords(x, z, line);
+  const prevOnPlane = Math.abs(prev.lz) <= 1e-9 && Math.abs(prev.lx) <= halfWidth;
+  const currOnPlane = Math.abs(curr.lz) <= 1e-9 && Math.abs(curr.lx) <= halfWidth;
+
+  // Со стороны спавна (lz > 0) на плоскость или уход с плоскости в −lz.
+  if (prev.lz > 0 && currOnPlane) {
+    return true;
+  }
+  if (prevOnPlane && curr.lz < 0) {
+    return true;
+  }
+  if (prev.lz <= 0 || curr.lz >= 0) {
+    return false;
+  }
+
+  const denom = curr.lz - prev.lz;
+  if (Math.abs(denom) < 1e-9) {
+    return false;
+  }
+  const t = -prev.lz / denom;
+  if (t < 0 || t > 1) {
+    return false;
+  }
+  const lx = prev.lx + (curr.lx - prev.lx) * t;
+  return Math.abs(lx) <= halfWidth;
+};
+
+/** Пересечение финиша только в направлении заезда, с subsample между кадрами. */
+export const passedFinishLineForward = (
+  prevX: number | null,
+  prevZ: number | null,
+  x: number,
+  z: number,
+  line: TOrientedBox,
+): boolean => {
+  if (prevX === null || prevZ === null) {
+    return false;
+  }
+  if (isForwardFinishCrossing(prevX, prevZ, x, z, line)) {
+    return true;
+  }
+  const steps = 12;
+  let segmentStartX = prevX;
+  let segmentStartZ = prevZ;
+  for (let step = 1; step <= steps; step += 1) {
+    const t = step / steps;
+    const sampleX = prevX + (x - prevX) * t;
+    const sampleZ = prevZ + (z - prevZ) * t;
+    if (isForwardFinishCrossing(segmentStartX, segmentStartZ, sampleX, sampleZ, line)) {
       return true;
     }
     segmentStartX = sampleX;

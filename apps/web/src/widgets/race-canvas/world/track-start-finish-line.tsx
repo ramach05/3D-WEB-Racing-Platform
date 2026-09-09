@@ -20,6 +20,7 @@ type TTrackStartFinishLineProps = {
 };
 
 const CHECKER_COUNT = 10;
+/** Дистанции стрелок на стороне спавна (+local Z / +lz); заезд идёт к линии и в −lz. */
 const ARROW_DISTANCES = [2, 4, 6] as const;
 const ROAD_TOP_Y = 0.1;
 const MARKING_Y = ROAD_TOP_Y + 0.002;

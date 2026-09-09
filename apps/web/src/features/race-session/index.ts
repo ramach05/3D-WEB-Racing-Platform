@@ -33,8 +33,10 @@ export {
   crossedFinishLine,
   crossedFinishPlane,
   getTrackLineLocalCoords,
+  isForwardFinishCrossing,
   isInsideFinishZone,
   passedCheckpointZone,
   passedFinishLine,
+  passedFinishLineForward,
 } from './checkpoint-rules';
 export { useRaceHud } from './hooks';

@@ -23,10 +23,10 @@ describe('advanceLapProgress', () => {
 });
 
 describe('accumulateLapTravel', () => {
-  it('accumulates forward deltas', () => {
+  it('accumulates race-direction deltas (decreasing ratio)', () => {
     let travel = 0;
     let last: number | null = null;
-    for (const ratio of [0.1, 0.2, 0.35]) {
+    for (const ratio of [0.35, 0.2, 0.1]) {
       const next = accumulateLapTravel(travel, last, ratio);
       travel = next.lapTravel;
       last = next.lastRatio;
@@ -36,26 +36,33 @@ describe('accumulateLapTravel', () => {
 
   it('ignores large nearest-point jumps but keeps accumulating afterward', () => {
     let travel = 0;
-    let last: number | null = 0.3;
+    let last: number | null = 0.85;
 
-    let next = accumulateLapTravel(travel, last, 0.85);
+    let next = accumulateLapTravel(travel, last, 0.3);
     travel = next.lapTravel;
     last = next.lastRatio;
     expect(travel).toBe(0);
 
-    for (const ratio of [0.86, 0.9, 0.95, 0.99]) {
+    for (const ratio of [0.25, 0.2, 0.15, 0.1]) {
       next = accumulateLapTravel(travel, last, ratio);
       travel = next.lapTravel;
       last = next.lastRatio;
     }
     expect(travel).toBeGreaterThan(0.1);
-    expect(travel).toBeCloseTo(0.14, 2);
+    expect(travel).toBeCloseTo(0.2, 2);
   });
 
   it('handles wrap near start without resetting travel', () => {
-    let travel = 0.9;
-    let last: number | null = 0.95;
-    const next = accumulateLapTravel(travel, last, 0.02);
+    const travel = 0.9;
+    const last: number | null = 0.02;
+    const next = accumulateLapTravel(travel, last, 0.95);
     expect(next.lapTravel).toBeCloseTo(0.97, 5);
+  });
+
+  it('ignores reverse (increasing ratio) travel', () => {
+    const travel = 0;
+    const last: number | null = 0.1;
+    const next = accumulateLapTravel(travel, last, 0.3);
+    expect(next.lapTravel).toBe(0);
   });
 });

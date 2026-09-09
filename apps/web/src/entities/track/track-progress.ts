@@ -1,7 +1,7 @@
 import type { TLoopPoint } from './config.types';
 import type { TTrackProgress } from './track-progress.types';
 
-/** Ближайшая точка на центральной линии и доля пройденного круга */
+/** Ближайшая точка на центральной линии и доля вдоль индекса точек (0…1, рост с индексом). */
 export const getTrackProgress = (
   x: number,
   z: number,
@@ -53,9 +53,9 @@ export const advanceLapProgress = (currentMax: number, ratio: number): number =>
 };
 
 /**
- * Накапливает пройденную долю круга по forward-delta между кадрами.
- * Скачки ≥ 0.5 (nearest-point / срезание) не добавляют travel, но lastRatio обновляется,
- * чтобы дальнейшее движение снова копилось.
+ * Накапливает пройденную долю круга в направлении заезда.
+ * Заезд = убывающий centerline `ratio` (см. `race-direction.ts`).
+ * Скачки ≥ 0.5 не добавляют travel, но lastRatio обновляется.
  */
 export const accumulateLapTravel = (
   lapTravel: number,
@@ -65,9 +65,9 @@ export const accumulateLapTravel = (
   if (lastRatio === null) {
     return { lapTravel, lastRatio: ratio };
   }
-  const forward = (ratio - lastRatio + 1) % 1;
-  if (forward > 0 && forward < 0.5) {
-    return { lapTravel: lapTravel + forward, lastRatio: ratio };
+  const raceStep = (lastRatio - ratio + 1) % 1;
+  if (raceStep > 0 && raceStep < 0.5) {
+    return { lapTravel: lapTravel + raceStep, lastRatio: ratio };
   }
   return { lapTravel, lastRatio: ratio };
 };
