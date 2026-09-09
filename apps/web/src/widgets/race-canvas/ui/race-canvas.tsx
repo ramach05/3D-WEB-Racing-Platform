@@ -38,9 +38,9 @@ type TCelestialBodyProps = {
 
 const SUN_HORIZON_POSITION: [number, number, number] = [0, 30, -255];
 const MOON_HORIZON_POSITION: [number, number, number] = [-240, 21, 50];
-const SUN_LIGHT_POSITION: [number, number, number] = [5, 62, 32];
-const MOON_LIGHT_POSITION: [number, number, number] = [-30, 50, -25];
-const SKY_SUN_POSITION: [number, number, number] = [5, 82, 32];
+const SUN_LIGHT_POSITION: [number, number, number] = [0, 28, -210];
+const MOON_LIGHT_POSITION: [number, number, number] = [-180, 24, 38];
+const SKY_SUN_POSITION: [number, number, number] = SUN_LIGHT_POSITION;
 
 /** Солнце днём или луна ночью на уровне горизонта */
 const CelestialBody = ({ config }: TCelestialBodyProps) => {
@@ -104,9 +104,18 @@ const RaceSceneInner = ({
         position={isNight ? MOON_LIGHT_POSITION : SUN_LIGHT_POSITION}
         intensity={isNight ? 0.85 : 2.65}
         color={isNight ? scenePalette.sunNight : scenePalette.sunDay}
-        castShadow={!isNight}
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        castShadow
+        shadow-mapSize-width={isNight ? 1024 : 2048}
+        shadow-mapSize-height={isNight ? 1024 : 2048}
+        shadow-bias={-0.0002}
+        shadow-normalBias={0.04}
+        shadow-camera-near={1}
+        shadow-camera-far={320}
+        shadow-camera-left={-140}
+        shadow-camera-right={140}
+        shadow-camera-top={140}
+        shadow-camera-bottom={-140}
+        shadow-intensity={isNight ? 0.25 : 1}
       />
       <CelestialBody config={config} />
       {isNight ? (
