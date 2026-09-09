@@ -7,7 +7,7 @@ const locale = readStoredLocale();
 
 void i18n.use(initReactI18next).init({
   lng: locale,
-  fallbackLng: 'ru',
+  fallbackLng: 'en',
   interpolation: { escapeValue: false },
   resources: {
     ru: { translation: ruMessages },

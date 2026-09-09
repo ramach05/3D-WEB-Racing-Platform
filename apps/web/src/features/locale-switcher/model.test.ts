@@ -7,8 +7,8 @@ describe('locale model', () => {
     localStorage.clear();
   });
 
-  it('defaults to ru when unset', () => {
-    expect(readStoredLocale()).toBe('ru');
+  it('defaults to en when unset', () => {
+    expect(readStoredLocale()).toBe('en');
   });
 
   it('reads a stored locale', () => {
@@ -20,7 +20,7 @@ describe('locale model', () => {
   it('ignores invalid stored values', () => {
     localStorage.setItem(LOCALE_STORAGE_KEY, 'de');
 
-    expect(readStoredLocale()).toBe('ru');
+    expect(readStoredLocale()).toBe('en');
   });
 
   it('persists locale to storage', () => {

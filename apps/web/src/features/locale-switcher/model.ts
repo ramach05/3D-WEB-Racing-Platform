@@ -7,7 +7,7 @@ export const readStoredLocale = (): TAppLocale => {
   if (stored === 'ru' || stored === 'en') {
     return stored;
   }
-  return 'ru';
+  return 'en';
 };
 
 /** Пишет язык в localStorage */

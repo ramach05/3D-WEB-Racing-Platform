@@ -9,7 +9,7 @@ describe('theme model', () => {
     document.documentElement.removeAttribute('style');
   });
 
-  it('defaults via matchMedia when unset', () => {
+  it('defaults to light when unset', () => {
     expect(readStoredTheme()).toBe('light');
   });
 

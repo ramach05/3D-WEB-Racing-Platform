@@ -1,13 +1,13 @@
 import type { TCssColor, TThemeMode, TUiColorToken } from '@/shared/config';
 import { THEME_STORAGE_KEY, uiChrome, uiPalette } from '@/shared/config';
 
-/** Читает сохранённую тему или системную */
+/** Читает сохранённую тему или light по умолчанию */
 export const readStoredTheme = (): TThemeMode => {
   const stored = localStorage.getItem(THEME_STORAGE_KEY);
   if (stored === 'light' || stored === 'dark') {
     return stored;
   }
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'light';
 };
 
 /** Вешает class dark на html, пишет CSS-переменные из палитры и localStorage */
