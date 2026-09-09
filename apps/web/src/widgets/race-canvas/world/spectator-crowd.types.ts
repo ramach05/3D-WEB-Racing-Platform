@@ -1,3 +1,7 @@
+export type TSpectatorBehavior = 'watch' | 'lean' | 'waveOne' | 'clap' | 'cheer' | 'phone';
+
+export type TSpectatorWaveSide = 'left' | 'right';
+
 export type TSpectatorSeat = {
   /** Мировая X */
   x: number;
@@ -19,14 +23,24 @@ export type TSpectatorSeat = {
   scaleX: number;
   /** Масштаб по Y */
   scaleY: number;
-  /** Машет руками */
-  waves: boolean;
+  /** Поведение зрителя */
+  behavior: TSpectatorBehavior;
+  /** Сторона машущей руки (для waveOne / phone) */
+  waveSide: TSpectatorWaveSide;
+  /** Есть кепка */
+  hasCap: boolean;
+  /** Есть флажок */
+  hasFlag: boolean;
+  /** Есть волосы (только без кепки) */
+  hasHair: boolean;
   /** Цвет футболки */
   shirtColor: string;
   /** Цвет кожи */
   skinColor: string;
   /** Цвет штанов */
   pantsColor: string;
+  /** Цвет кепки / волос / флага */
+  accentColor: string;
 };
 
 export type TBuildSpectatorSeatsOptions = {

@@ -135,6 +135,10 @@ export type TCrowdPalette = {
   pantsDay: readonly TCssColor[];
   /** Штаны ночью */
   pantsNight: readonly TCssColor[];
+  /** Волосы / тёмные кепки */
+  hair: readonly TCssColor[];
+  /** Кепки (гоночные цвета) */
+  cap: readonly TCssColor[];
   /** Базовый цвет меша до instanceColor */
   meshBase: TCssColor;
   /** Выключенный emissive */
