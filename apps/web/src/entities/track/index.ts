@@ -19,6 +19,8 @@ export { getCheckpointLocalCoords, isInsideCheckpoint } from './oriented-box';
 export type { TCheckpointLocalCoords } from './oriented-box.types';
 export { placeTrackTrees, TREE_PLACEMENT_LIMITS } from './place-trees';
 export type { TPlacedTree, TTreeKind } from './place-trees.types';
+export { placeStreetLamps, STREET_LAMP_PLACEMENT } from './place-street-lamps';
+export type { TPlacedStreetLamp } from './place-street-lamps.types';
 export {
   ROW_DEPTH,
   ROW_HEIGHT,
