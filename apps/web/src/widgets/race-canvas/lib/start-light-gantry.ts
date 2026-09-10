@@ -2,6 +2,18 @@ import type { TCountdownStep, TRaceStatus } from '@/features/race-session';
 
 export const START_LAMP_COUNT = 5;
 
+/** Геометрия F1-gantry — визуал и коллайдеры из одних чисел */
+export const GANTRY_ROAD_TOP_Y = 0.1;
+export const GANTRY_POST_OUTSET = 0.55;
+export const GANTRY_POST_WIDTH = 0.28;
+export const GANTRY_POST_DEPTH = 0.28;
+export const GANTRY_BEAM_CLEARANCE_Y = 4.6;
+export const GANTRY_BEAM_HEIGHT = 0.28;
+export const GANTRY_BEAM_DEPTH = 0.36;
+export const GANTRY_PANEL_WIDTH = 3.6;
+export const GANTRY_PANEL_HEIGHT = 0.85;
+export const GANTRY_PANEL_DEPTH = 0.28;
+
 /** Сколько крайних ламп горят на шаге countdown (3→2→1); 0 = все гаснут (GO) */
 const LIT_BY_COUNTDOWN_STEP: Record<TCountdownStep, number> = {
   3: 2,

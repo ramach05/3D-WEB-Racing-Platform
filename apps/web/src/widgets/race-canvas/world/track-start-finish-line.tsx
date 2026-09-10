@@ -5,6 +5,16 @@ import type { TOrientedBox, TTrackPalette } from '@/entities/track';
 import { getRaceHudSnapshot } from '@/features/race-session';
 import { scenePalette, startLightPalette } from '@/shared/config';
 import {
+  GANTRY_BEAM_CLEARANCE_Y,
+  GANTRY_BEAM_DEPTH,
+  GANTRY_BEAM_HEIGHT,
+  GANTRY_PANEL_DEPTH,
+  GANTRY_PANEL_HEIGHT,
+  GANTRY_PANEL_WIDTH,
+  GANTRY_POST_DEPTH,
+  GANTRY_POST_OUTSET,
+  GANTRY_POST_WIDTH,
+  GANTRY_ROAD_TOP_Y,
   isLampLit,
   litCountForHud,
   START_LAMP_COUNT,
@@ -22,18 +32,7 @@ type TTrackStartFinishLineProps = {
 const CHECKER_COUNT = 10;
 /** Дистанции стрелок на стороне спавна (+local Z / +lz); заезд идёт к линии и в −lz. */
 const ARROW_DISTANCES = [2, 4, 6] as const;
-const ROAD_TOP_Y = 0.1;
-const MARKING_Y = ROAD_TOP_Y + 0.002;
-
-const POST_OUTSET = 0.55;
-const POST_WIDTH = 0.28;
-const POST_DEPTH = 0.28;
-const BEAM_CLEARANCE_Y = 4.6;
-const BEAM_HEIGHT = 0.28;
-const BEAM_DEPTH = 0.36;
-const PANEL_WIDTH = 3.6;
-const PANEL_HEIGHT = 0.85;
-const PANEL_DEPTH = 0.28;
+const MARKING_Y = GANTRY_ROAD_TOP_Y + 0.002;
 const LAMP_RADIUS = 0.22;
 const LAMP_SPACING = 0.62;
 
@@ -45,11 +44,11 @@ const LAMP_XS = Array.from({ length: START_LAMP_COUNT }, (_, i) => {
 /** Шахматная линия старт/финиш, стрелки и F1-gantry со стартовыми огнями */
 export const TrackStartFinishLine = ({ line, roadWidth, palette }: TTrackStartFinishLineProps) => {
   const segmentWidth = roadWidth / CHECKER_COUNT;
-  const postX = roadWidth / 2 + POST_OUTSET;
-  const spanWidth = postX * 2 + POST_WIDTH;
-  const postHeight = BEAM_CLEARANCE_Y + BEAM_HEIGHT / 2;
-  const beamY = ROAD_TOP_Y + BEAM_CLEARANCE_Y;
-  const panelY = beamY + BEAM_HEIGHT / 2 + PANEL_HEIGHT / 2 + 0.02;
+  const postX = roadWidth / 2 + GANTRY_POST_OUTSET;
+  const spanWidth = postX * 2 + GANTRY_POST_WIDTH;
+  const postHeight = GANTRY_BEAM_CLEARANCE_Y + GANTRY_BEAM_HEIGHT / 2;
+  const beamY = GANTRY_ROAD_TOP_Y + GANTRY_BEAM_CLEARANCE_Y;
+  const panelY = beamY + GANTRY_BEAM_HEIGHT / 2 + GANTRY_PANEL_HEIGHT / 2 + 0.02;
 
   const leftPostMatRef = useRef<MeshStandardMaterial>(null);
   const rightPostMatRef = useRef<MeshStandardMaterial>(null);
@@ -129,9 +128,9 @@ export const TrackStartFinishLine = ({ line, roadWidth, palette }: TTrackStartFi
         );
       })}
 
-      {/* F1 start-light gantry */}
-      <mesh position={[-postX, ROAD_TOP_Y + postHeight / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[POST_WIDTH, postHeight, POST_DEPTH]} />
+      {/* F1 start-light gantry (визуал; коллайдеры — TrackStartFinishColliders) */}
+      <mesh position={[-postX, GANTRY_ROAD_TOP_Y + postHeight / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[GANTRY_POST_WIDTH, postHeight, GANTRY_POST_DEPTH]} />
         <meshStandardMaterial
           ref={leftPostMatRef}
           color={startLightPalette.steel}
@@ -141,8 +140,8 @@ export const TrackStartFinishLine = ({ line, roadWidth, palette }: TTrackStartFi
           roughness={0.4}
         />
       </mesh>
-      <mesh position={[postX, ROAD_TOP_Y + postHeight / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[POST_WIDTH, postHeight, POST_DEPTH]} />
+      <mesh position={[postX, GANTRY_ROAD_TOP_Y + postHeight / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[GANTRY_POST_WIDTH, postHeight, GANTRY_POST_DEPTH]} />
         <meshStandardMaterial
           ref={rightPostMatRef}
           color={startLightPalette.steel}
@@ -154,7 +153,7 @@ export const TrackStartFinishLine = ({ line, roadWidth, palette }: TTrackStartFi
       </mesh>
 
       <mesh position={[0, beamY, 0]} castShadow receiveShadow>
-        <boxGeometry args={[spanWidth, BEAM_HEIGHT, BEAM_DEPTH]} />
+        <boxGeometry args={[spanWidth, GANTRY_BEAM_HEIGHT, GANTRY_BEAM_DEPTH]} />
         <meshStandardMaterial
           ref={beamMatRef}
           color={startLightPalette.steel}
@@ -166,8 +165,8 @@ export const TrackStartFinishLine = ({ line, roadWidth, palette }: TTrackStartFi
       </mesh>
 
       {/* Панель и лампы на +Z: спавн/подъезд со стороны +local Z */}
-      <mesh position={[0, panelY, BEAM_DEPTH * 0.15]} castShadow>
-        <boxGeometry args={[PANEL_WIDTH, PANEL_HEIGHT, PANEL_DEPTH]} />
+      <mesh position={[0, panelY, GANTRY_BEAM_DEPTH * 0.15]} castShadow>
+        <boxGeometry args={[GANTRY_PANEL_WIDTH, GANTRY_PANEL_HEIGHT, GANTRY_PANEL_DEPTH]} />
         <meshStandardMaterial
           ref={panelMatRef}
           color={startLightPalette.housing}
@@ -181,7 +180,7 @@ export const TrackStartFinishLine = ({ line, roadWidth, palette }: TTrackStartFi
       {LAMP_XS.map((x, index) => (
         <group
           key={`start-lamp-${index}`}
-          position={[x, panelY, BEAM_DEPTH * 0.15 + PANEL_DEPTH / 2 + 0.06]}
+          position={[x, panelY, GANTRY_BEAM_DEPTH * 0.15 + GANTRY_PANEL_DEPTH / 2 + 0.06]}
         >
           <mesh rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[LAMP_RADIUS + 0.06, LAMP_RADIUS + 0.06, 0.08, 20]} />

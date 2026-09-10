@@ -273,7 +273,7 @@ const TribuneSection = ({
   );
 };
 
-/** Трибуны с зрителями у линии старт/финиш */
+/** Трибуны с зрителями у линии старт/финиш (визуал; коллайдеры — TrackTribuneColliders) */
 export const TrackTribunes = ({
   line,
   roadWidth,
