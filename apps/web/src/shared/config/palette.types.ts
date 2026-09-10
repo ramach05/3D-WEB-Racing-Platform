@@ -210,6 +210,21 @@ export type TStartLightPalette = {
 
 export type TStartLightToken = keyof TStartLightPalette;
 
+export type TStreetLampPalette = {
+  /** Ствол столба */
+  pole: TCssColor;
+  /** Кронштейн */
+  arm: TCssColor;
+  /** Корпус плафона */
+  housing: TCssColor;
+  /** Стекло / линза */
+  lens: TCssColor;
+  /** Цвет SpotLight / PointLight */
+  light: TCssColor;
+};
+
+export type TStreetLampToken = keyof TStreetLampPalette;
+
 export type THorizonSunStops = {
   /** Ядро солнца */
   core: readonly TRadialColorStop[];
@@ -243,6 +258,8 @@ export type TScenePalette = {
   sunNight: TCssColor;
   /** Цвет препятствий (шины) */
   obstacle: TCssColor;
+  /** Следы резины на асфальте */
+  skidMark: TCssColor;
 };
 
 export type TScenePaletteToken = keyof TScenePalette;

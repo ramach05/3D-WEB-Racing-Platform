@@ -17,10 +17,19 @@ import {
 } from '@/features/race-session';
 import { vehiclePalette } from '@/shared/config';
 import { VEHICLE_GROUPS, WALL_PROBE_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
+import { ROAD_TOP_Y } from '@/widgets/race-canvas/lib/road-ribbon-geometry';
+import { computeSkidIntensity } from '@/widgets/race-canvas/lib/skid-intensity';
+import {
+  pushSkidSample,
+  pushSkidSmoke,
+  resetSkidMarks,
+} from '@/widgets/race-canvas/lib/skid-marks-store';
 import {
   resetTireHitDamping,
   tickTireHitDamping,
 } from '@/widgets/race-canvas/lib/tire-hit-damping';
+
+type TSkidWheelPos = { x: number; z: number };
 
 /** Физические канделы — левая и правая фары (с запасом под decay=2) */
 const HEADLIGHT_INTENSITY = 75;
@@ -273,6 +282,13 @@ export const Vehicle = ({
   const { world, rapier } = useRapier();
   const lastNonce = useRef(resetNonce);
   const awaitingLand = useRef(true);
+  const lastSkidPos = useRef<(TSkidWheelPos | null)[]>([null, null, null, null]);
+  const smokeTimer = useRef(0);
+
+  const clearSkidTrail = () => {
+    lastSkidPos.current = [null, null, null, null];
+    smokeTimer.current = 0;
+  };
 
   // Arcade-физика: рестарт, ввод, grip и скольжение вдоль стен.
   useFrame((_, dt) => {
@@ -285,6 +301,8 @@ export const Vehicle = ({
       lastNonce.current = resetNonce;
       awaitingLand.current = true;
       resetTireHitDamping();
+      resetSkidMarks();
+      clearSkidTrail();
       body.setTranslation(elevatedSpawn(spawnPosition), true);
       body.setRotation(
         { x: 0, y: Math.sin(spawnRotationY / 2), z: 0, w: Math.cos(spawnRotationY / 2) },
@@ -333,11 +351,13 @@ export const Vehicle = ({
     }
 
     if (hud.status !== 'racing') {
+      clearSkidTrail();
       return;
     }
 
     const clampedDt = Math.min(dt, 1 / 30);
     if (!grounded) {
+      clearSkidTrail();
       return;
     }
 
@@ -357,6 +377,49 @@ export const Vehicle = ({
 
     const lateral = tmpVel.dot(tmpRight);
     const dampedLateral = lateral * Math.exp(-LATERAL_GRIP * clampedDt);
+
+    const { intensity, smoking, wheels } = computeSkidIntensity({
+      brake: input.brake,
+      throttle: input.throttle,
+      forwardSpeed,
+      lateral,
+      grounded: wheelGrounded,
+    });
+
+    if (intensity <= 0 || !wheelGrounded) {
+      clearSkidTrail();
+    } else {
+      for (let i = 0; i < WHEEL_LOCAL.length; i += 1) {
+        if (wheels === 'rear' && i < 2) {
+          lastSkidPos.current[i] = null;
+          continue;
+        }
+        const offset = WHEEL_LOCAL[i]!;
+        tmpOrigin.set(offset[0], offset[1], offset[2]).applyQuaternion(tmpQuat);
+        const wx = tmpOrigin.x + translation.x;
+        const wz = tmpOrigin.z + translation.z;
+        const prev = lastSkidPos.current[i];
+        if (prev) {
+          pushSkidSample(prev.x, prev.z, wx, wz, intensity);
+        }
+        lastSkidPos.current[i] = { x: wx, z: wz };
+      }
+
+      if (smoking) {
+        smokeTimer.current += clampedDt;
+        if (smokeTimer.current >= 0.06) {
+          smokeTimer.current = 0;
+          for (const wheelIndex of [2, 3] as const) {
+            const pos = lastSkidPos.current[wheelIndex];
+            if (pos) {
+              pushSkidSmoke(pos.x, ROAD_TOP_Y + 0.06, pos.z, intensity);
+            }
+          }
+        }
+      } else {
+        smokeTimer.current = 0;
+      }
+    }
 
     tmpDesired
       .copy(tmpForward)

@@ -5,6 +5,7 @@ import type {
   THorizonSunStops,
   TScenePalette,
   TStartLightPalette,
+  TStreetLampPalette,
   TTrackPalettes,
   TTreePalette,
   TTribunePalette,
@@ -57,15 +58,15 @@ export const uiChrome = {
 /** Палитры трасс (shape совместим с TTrackPalette) */
 export const trackPalettes = {
   coastal: {
-    sky: '#5ebfff',
-    fog: '#b8e4ff',
-    ground: '#d4b483',
+    sky: '#4db4ff',
+    fog: '#c8ecff',
+    ground: '#dcb889',
     road: '#8a8a90',
     wall: '#f0e6c8',
     accent: '#ff7a00',
     minimapRoad: '#9a9aa2',
     minimapWall: '#ff7a00',
-    minimapBg: '#7ec8f0',
+    minimapBg: '#5ebfff',
   },
   night: {
     sky: '#120828',
@@ -180,6 +181,15 @@ export const startLightPalette = {
   bezel: '#3a3f4a',
 } as const satisfies TStartLightPalette;
 
+/** Муниципальный LED-фонарь (~3000K тёплый белый) */
+export const streetLampPalette = {
+  pole: '#2a2e36',
+  arm: '#15181e',
+  housing: '#0c0e12',
+  lens: '#fff6d8',
+  light: '#ffe9b8',
+} as const satisfies TStreetLampPalette;
+
 export const horizonSunStops = {
   core: [
     { stop: 0, color: 'rgba(255, 255, 245, 1)' },
@@ -229,7 +239,8 @@ export const scenePalette = {
   white: '#ffffff',
   black: '#000000',
   checkerDark: '#111111',
-  sunDay: '#fff4e6',
+  sunDay: '#fff8f0',
   sunNight: '#ffffff',
   obstacle: '#1c1c1e',
+  skidMark: '#1c1c1e',
 } as const satisfies TScenePalette;
