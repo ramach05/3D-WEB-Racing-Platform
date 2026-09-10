@@ -9,9 +9,14 @@ import { CheckpointDetector } from '@/widgets/race-canvas/model/checkpoint-detec
 import { Vehicle } from '@/widgets/race-canvas/vehicle/vehicle';
 import { HorizonMoon } from '@/widgets/race-canvas/world/horizon-moon';
 import { HorizonSun } from '@/widgets/race-canvas/world/horizon-sun';
+import { SkidMarks } from '@/widgets/race-canvas/world/skid-marks';
+import { TrackStartFinishColliders } from '@/widgets/race-canvas/world/track-start-finish-colliders';
 import { TrackStartFinishLine } from '@/widgets/race-canvas/world/track-start-finish-line';
+import { TrackStreetLightColliders } from '@/widgets/race-canvas/world/track-street-light-colliders';
+import { TrackStreetLights } from '@/widgets/race-canvas/world/track-street-lights';
 import { TrackTreeColliders } from '@/widgets/race-canvas/world/track-tree-colliders';
 import { TrackTrees } from '@/widgets/race-canvas/world/track-trees';
+import { TrackTribuneColliders } from '@/widgets/race-canvas/world/track-tribune-colliders';
 import { TrackTribunes } from '@/widgets/race-canvas/world/track-tribunes';
 import { TrackWorld } from '@/widgets/race-canvas/world/track-world';
 import { ChaseCamera } from './chase-camera';
@@ -37,13 +42,15 @@ type TCelestialBodyProps = {
   config: TTrackConfig;
 };
 
+/** Диск солнца на горизонте — виден из chase-камеры во время заезда */
 const SUN_HORIZON_POSITION: [number, number, number] = [0, 30, -255];
+const SUN_LIGHT_POSITION: [number, number, number] = [0, 140, -255];
+/** Высокое солнце только для Sky (~45°) — ясное голубое небо */
+const SKY_SUN_POSITION: [number, number, number] = [80, 140, -120];
 const MOON_HORIZON_POSITION: [number, number, number] = [-240, 21, 50];
-const SUN_LIGHT_POSITION: [number, number, number] = [0, 28, -210];
 const MOON_LIGHT_POSITION: [number, number, number] = [-180, 24, 38];
-const SKY_SUN_POSITION: [number, number, number] = SUN_LIGHT_POSITION;
 
-/** Солнце днём или луна ночью на уровне горизонта */
+/** Солнце (горизонт) днём или луна ночью */
 const CelestialBody = ({ config }: TCelestialBodyProps) => {
   const isNight = config.timeOfDay === 'night';
 
@@ -99,11 +106,11 @@ const RaceSceneInner = ({
   return (
     <>
       <color attach="background" args={[config.palette.sky]} />
-      <fog attach="fog" args={[config.palette.fog, isNight ? 80 : 170, isNight ? 220 : 400]} />
-      <hemisphereLight args={[config.palette.sky, config.palette.ground, isNight ? 0.58 : 1.55]} />
+      <fog attach="fog" args={[config.palette.fog, isNight ? 80 : 300, isNight ? 220 : 560]} />
+      <hemisphereLight args={[config.palette.sky, config.palette.ground, isNight ? 0.58 : 1.28]} />
       <directionalLight
         position={isNight ? MOON_LIGHT_POSITION : SUN_LIGHT_POSITION}
-        intensity={isNight ? 0.85 : 2.65}
+        intensity={isNight ? 0.85 : 3.6}
         color={isNight ? scenePalette.sunNight : scenePalette.sunDay}
         castShadow
         shadow-mapSize-width={isNight ? 1024 : 2048}
@@ -127,15 +134,22 @@ const RaceSceneInner = ({
       ) : (
         <Sky
           sunPosition={SKY_SUN_POSITION}
-          turbidity={1}
-          rayleigh={0.85}
-          mieCoefficient={0.005}
-          mieDirectionalG={0.92}
+          turbidity={0.3}
+          rayleigh={1.1}
+          mieCoefficient={0.0035}
+          mieDirectionalG={0.82}
         />
       )}
       <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} updatePriority={-1} paused={physicsPaused}>
         <TrackWorld config={config} resetNonce={resetNonce} />
         <TrackTreeColliders config={config} />
+        <TrackStreetLightColliders config={config} />
+        <TrackTribuneColliders
+          line={config.startFinishLine}
+          roadWidth={config.roadWidth}
+          side={config.startTribuneSide}
+        />
+        <TrackStartFinishColliders line={config.startFinishLine} roadWidth={config.roadWidth} />
         <Vehicle
           spawnPosition={config.spawnPosition}
           spawnRotationY={config.spawnRotationY}
@@ -146,6 +160,7 @@ const RaceSceneInner = ({
           headlightsOn={isNight}
         />
       </Physics>
+      <SkidMarks resetNonce={resetNonce} />
       <TrackStartFinishLine
         line={config.startFinishLine}
         roadWidth={config.roadWidth}
@@ -160,6 +175,7 @@ const RaceSceneInner = ({
         paused={crowdPaused}
       />
       <TrackTrees config={config} />
+      <TrackStreetLights config={config} />
       <CheckpointDetector
         config={config}
         bodyRef={bodyRef}

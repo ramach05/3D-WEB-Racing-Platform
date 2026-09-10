@@ -86,7 +86,7 @@ const RoadSurface = ({ centerline, roadWidth, roadColor, roadRoughness }: TRoadS
 export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
   const { palette } = config;
   const isNight = config.timeOfDay === 'night';
-  const roadRoughness = isNight ? 0.78 : 0.82;
+  const roadRoughness = isNight ? 0.78 : 0.74;
   const groundRoughness = isNight ? 0.88 : 0.95;
   const wallEmissiveIntensity = isNight ? 0.02 : 0.15;
   const wallRoughness = isNight ? 0.82 : 0.65;
