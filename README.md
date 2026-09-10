@@ -10,7 +10,7 @@
 
 ## Скриншоты и геймплей
 
-Положите файлы в [`docs/screenshots/`](docs/screenshots/):
+Положите файлы в `[docs/screenshots/](docs/screenshots/)`:
 
 - `home.png` — лендинг
 - `race.png` — 3D-заезд + HUD
@@ -26,15 +26,15 @@ ffmpeg -i recording.mov -vf "fps=15,scale=960:-1" docs/screenshots/gameplay.gif
 
 ## Стек и почему так
 
-| Выбор                              | Зачем                                                                                        |
-| ---------------------------------- | -------------------------------------------------------------------------------------------- |
-| **Vite + React 19**, не Next.js    | Это SPA-игра. SSR/hydration с canvas и Rapier WASM только мешают.                            |
-| **pnpm workspaces**, не Turborepo  | Два приложения. Оркестратор не нужен.                                                        |
-| **SQLite + Prisma 7**              | Один файл БД, без Docker. Prisma 7 + SQLite driver adapter (`better-sqlite3`).               |
-| **Rapier (`@react-three/rapier`)** | WASM-физика в том же дереве, что R3F. Arcade, не симулятор F1.                               |
-| **FSD**                            | Границы модулей читаются на собеседовании.                                                   |
-| **Redux Toolkit + RTK Query**      | Auth/API. Симуляция гонки **не** в Redux: vanilla-store + `useSyncExternalStore`.            |
-| **JWT access + refresh**           | Refresh в `localStorage`. Для продакшена лучше httpOnly cookie — здесь локальный пет-проект. |
+| Выбор                                  | Зачем                                                                                        |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- |
+| **Vite + React 19**, не Next.js        | Это SPA-игра. SSR/hydration с canvas и Rapier WASM только мешают.                            |
+| **pnpm workspaces**, не Turborepo      | Два приложения. Оркестратор не нужен.                                                        |
+| **SQLite + Prisma 7**                  | Один файл БД, без Docker. Prisma 7 + SQLite driver adapter (`better-sqlite3`).               |
+| **Rapier (**`@react-three/rapier`**)** | WASM-физика в том же дереве, что R3F. Arcade, не симулятор F1.                               |
+| **FSD**                                | Границы модулей читаются на собеседовании.                                                   |
+| **Redux Toolkit + RTK Query**          | Auth/API. Симуляция гонки **не** в Redux: vanilla-store + `useSyncExternalStore`.            |
+| **JWT access + refresh**               | Refresh в `localStorage`. Для продакшена лучше httpOnly cookie — здесь локальный пет-проект. |
 
 Пакеты: `@racing/web`, `@racing/api`, `@racing/shared`. Node **22.12+**, pnpm **10**.
 
@@ -82,10 +82,10 @@ pnpm --filter @racing/api exec prisma db seed
 pnpm dev
 ```
 
-- Web: http://localhost:5180
-- API: http://localhost:3000
-- Swagger: http://localhost:3000/docs
-- Health: http://localhost:3000/health
+- Web: [http://localhost:5180](http://localhost:5180)
+- API: [http://localhost:3000](http://localhost:3000)
+- Swagger: [http://localhost:3000/docs](http://localhost:3000/docs)
+- Health: [http://localhost:3000/health](http://localhost:3000/health)
 
 ### Если `pnpm` не запускается
 
