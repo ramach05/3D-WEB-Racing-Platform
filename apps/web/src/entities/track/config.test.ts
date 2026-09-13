@@ -1,11 +1,76 @@
 import { describe, expect, it } from 'vitest';
 import { coastalOvalTrack, getAllTrackConfigs, nightCityTrack } from './config';
+import type { TLoopPoint } from './config.types';
 import { isInsideCheckpoint } from './oriented-box';
+
+/** Максимальный разрыв между соседними точками centerline (включая замыкание). */
+const maxCenterlineGap = (centerline: TLoopPoint[]): number => {
+  let maxGap = 0;
+  for (let i = 0; i < centerline.length; i += 1) {
+    const a = centerline[i]!;
+    const b = centerline[(i + 1) % centerline.length]!;
+    maxGap = Math.max(maxGap, Math.hypot(b.x - a.x, b.z - a.z));
+  }
+  return maxGap;
+};
+
+/** Средний шаг вдоль centerline. */
+const meanCenterlineGap = (centerline: TLoopPoint[]): number => {
+  if (centerline.length === 0) {
+    return 0;
+  }
+  let sum = 0;
+  for (let i = 0; i < centerline.length; i += 1) {
+    const a = centerline[i]!;
+    const b = centerline[(i + 1) % centerline.length]!;
+    sum += Math.hypot(b.x - a.x, b.z - a.z);
+  }
+  return sum / centerline.length;
+};
+
+/** Максимальный |Δheading| между соседними сегментами (рад). */
+const maxCenterlineTurn = (centerline: TLoopPoint[]): number => {
+  let maxTurn = 0;
+  const n = centerline.length;
+  for (let i = 0; i < n; i += 1) {
+    const prev = centerline[(i - 1 + n) % n]!;
+    const curr = centerline[i]!;
+    const next = centerline[(i + 1) % n]!;
+    const a1 = Math.atan2(curr.z - prev.z, curr.x - prev.x);
+    const a2 = Math.atan2(next.z - curr.z, next.x - curr.x);
+    let delta = a2 - a1;
+    while (delta > Math.PI) {
+      delta -= Math.PI * 2;
+    }
+    while (delta < -Math.PI) {
+      delta += Math.PI * 2;
+    }
+    maxTurn = Math.max(maxTurn, Math.abs(delta));
+  }
+  return maxTurn;
+};
 
 describe('track config geometry', () => {
   it('assigns time of day per track theme', () => {
     expect(coastalOvalTrack.timeOfDay).toBe('day');
     expect(nightCityTrack.timeOfDay).toBe('night');
+  });
+
+  it('keeps centerline gaps continuous (no stadium jumps)', () => {
+    for (const config of getAllTrackConfigs()) {
+      const mean = meanCenterlineGap(config.centerline);
+      const maxGap = maxCenterlineGap(config.centerline);
+      expect(mean).toBeGreaterThan(0);
+      // Разрыв не больше ~2.5 средних шагов (раньше Night City имел ~27м при среднем ~4м)
+      expect(maxGap).toBeLessThan(mean * 2.5);
+    }
+  });
+
+  it('keeps centerline heading changes smooth', () => {
+    for (const config of getAllTrackConfigs()) {
+      // Раньше Night City давал ~49° изломы; плавная трасса укладывается в ~25°
+      expect(maxCenterlineTurn(config.centerline)).toBeLessThan((25 * Math.PI) / 180);
+    }
   });
 
   it('uses overlapping wall segments to avoid gaps', () => {

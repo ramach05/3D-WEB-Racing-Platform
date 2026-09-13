@@ -37,9 +37,9 @@ describe('placeStreetLamps', () => {
     const lamps = placeStreetLamps({ config: nightCityTrack });
     const { min, max } = expectedNightCityLampCount(nightCityTrack);
 
-    expect(lamps.length).toBe(5);
     expect(lamps.length).toBeGreaterThanOrEqual(min);
     expect(lamps.length).toBeLessThanOrEqual(max);
+    expect(lamps.length).toBe(5);
 
     const wallBand =
       nightCityTrack.roadWidth / 2 +

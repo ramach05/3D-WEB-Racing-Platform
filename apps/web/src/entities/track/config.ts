@@ -294,60 +294,73 @@ const buildEllipsePoints = (radiusX: number, radiusZ: number, count: number): TL
   return points;
 };
 
-/** Стадион: скруглённый прямоугольник */
+/** Стадион: непрерывный скруглённый прямоугольник (4 прямых + 4 четверти). */
 const buildStadiumPoints = (
   width: number,
   depth: number,
   cornerRadius: number,
   count: number,
 ): TLoopPoint[] => {
-  const hw = width / 2 - cornerRadius;
-  const hd = depth / 2 - cornerRadius;
-  type TStadiumSegment = {
-    /** Начало прямого участка */
-    from: readonly [number, number];
-    /** Конец прямого участка */
-    to: readonly [number, number];
-    /** Центр дуги поворота, если сегмент угловой */
-    arc?: readonly [number, number];
-  };
+  const r = Math.min(cornerRadius, width / 2, depth / 2);
+  const hw = width / 2 - r;
+  const hd = depth / 2 - r;
+  const quarter = (Math.PI / 2) * r;
+  const straightX = 2 * hw;
+  const straightZ = 2 * hd;
+
+  type TStadiumSegment =
+    | {
+        kind: 'line';
+        from: readonly [number, number];
+        to: readonly [number, number];
+        length: number;
+      }
+    | {
+        kind: 'arc';
+        center: readonly [number, number];
+        angleStart: number;
+        length: number;
+      };
+
+  // CCW: низ → BR → право → TR → верх → TL → лево → BL
   const segments: TStadiumSegment[] = [
-    { from: [-hw, -hd - cornerRadius], to: [hw, -hd - cornerRadius] },
-    {
-      from: [hw + cornerRadius, -hd],
-      to: [hw + cornerRadius, hd],
-      arc: [hw + cornerRadius, -hd],
-    },
-    { from: [hw, hd + cornerRadius], to: [-hw, hd + cornerRadius] },
-    {
-      from: [-hw - cornerRadius, hd],
-      to: [-hw - cornerRadius, -hd],
-      arc: [-hw - cornerRadius, hd],
-    },
+    { kind: 'line', from: [-hw, -hd - r], to: [hw, -hd - r], length: straightX },
+    { kind: 'arc', center: [hw, -hd], angleStart: -Math.PI / 2, length: quarter },
+    { kind: 'line', from: [hw + r, -hd], to: [hw + r, hd], length: straightZ },
+    { kind: 'arc', center: [hw, hd], angleStart: 0, length: quarter },
+    { kind: 'line', from: [hw, hd + r], to: [-hw, hd + r], length: straightX },
+    { kind: 'arc', center: [-hw, hd], angleStart: Math.PI / 2, length: quarter },
+    { kind: 'line', from: [-hw - r, hd], to: [-hw - r, -hd], length: straightZ },
+    { kind: 'arc', center: [-hw, -hd], angleStart: Math.PI, length: quarter },
   ];
 
+  const perimeter = segments.reduce((sum, seg) => sum + seg.length, 0);
   const points: TLoopPoint[] = [];
-  const perSegment = Math.floor(count / 4);
-  for (let s = 0; s < 4; s += 1) {
-    const seg = segments[s];
-    if (!seg) {
-      continue;
-    }
-    for (let i = 0; i < perSegment; i += 1) {
-      const t = i / perSegment;
-      if (seg.arc && (s === 1 || s === 3)) {
-        const angleStart = s === 1 ? -Math.PI / 2 : Math.PI / 2;
-        const angle = angleStart + t * Math.PI;
-        points.push({
-          x: seg.arc[0] + Math.cos(angle) * cornerRadius,
-          z: seg.arc[1] + Math.sin(angle) * cornerRadius,
-        });
-      } else {
-        points.push({
+  for (let i = 0; i < count; i += 1) {
+    let remaining = (i / count) * perimeter;
+    let point: TLoopPoint | null = null;
+    for (const seg of segments) {
+      if (remaining > seg.length) {
+        remaining -= seg.length;
+        continue;
+      }
+      const t = seg.length > 0 ? remaining / seg.length : 0;
+      if (seg.kind === 'line') {
+        point = {
           x: seg.from[0] + (seg.to[0] - seg.from[0]) * t,
           z: seg.from[1] + (seg.to[1] - seg.from[1]) * t,
-        });
+        };
+      } else {
+        const angle = seg.angleStart + t * (Math.PI / 2);
+        point = {
+          x: seg.center[0] + Math.cos(angle) * r,
+          z: seg.center[1] + Math.sin(angle) * r,
+        };
       }
+      break;
+    }
+    if (point) {
+      points.push(point);
     }
   }
   return points;
@@ -370,8 +383,9 @@ export const coastalOvalTrack: TTrackConfig = {
   obstacles: buildCoastalOvalObstacles(coastalOvalPoints, coastalOvalRoadWidth),
 };
 
-const nightCityPoints = buildStadiumPoints(72, 48, 14, 48);
-const nightCityRoadWidth = 9;
+/** R≈22 как min radius Coastal (b²/a); раньше 14 давал более резкие углы */
+const nightCityPoints = buildStadiumPoints(72, 48, 22, 48);
+const nightCityRoadWidth = 10;
 
 export const nightCityTrack: TTrackConfig = {
   ...buildLoopTrack({
