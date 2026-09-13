@@ -14,6 +14,56 @@ export const GANTRY_PANEL_WIDTH = 3.6;
 export const GANTRY_PANEL_HEIGHT = 0.85;
 export const GANTRY_PANEL_DEPTH = 0.28;
 
+/**
+ * Stadium-прожекторы на столбах gantry (Night City).
+ * 4 корпуса: ±пост × ±сторона линии; aim на асфальт у спавна / финишного проезда.
+ */
+export const GANTRY_FLOOD = {
+  /** Опускание корпуса от центра балки */
+  housingDropY: 0.32,
+  /** Сдвиг корпуса от оси столба к полотну */
+  housingInsetX: 0.12,
+  /** Вынос корпуса от балки по |Z| */
+  housingOutsetZ: 0.48,
+  housing: {
+    width: 0.2,
+    height: 0.12,
+    depth: 0.26,
+  },
+  bulbRadius: 0.045,
+  /** Aim |Z| на асфальте от линии */
+  aimZ: 4.2,
+  /** Aim |X| как доля half-roadWidth */
+  aimXFraction: 0.28,
+  /** Emissive линзы под Bloom */
+  lensEmissiveIntensity: 1.5,
+} as const;
+
+/** SpotLight: мягкая заливка полотна у линии (без shadow map) */
+export const GANTRY_FLOOD_SPOT = {
+  intensity: 55,
+  distance: 20,
+  /** ~49° — пятно ~половины полосы с высоты балки */
+  angle: 0.85,
+  penumbra: 0.92,
+  decay: 2,
+} as const;
+
+/** PointLight spill у столбов (2 шт. — левый/правый) */
+export const GANTRY_FLOOD_POINT = {
+  intensity: 3.2,
+  distance: 12,
+  decay: 2,
+} as const;
+
+/** sideX/sideZ: знаки поста и стороны линии (+Z = спавн) */
+export const GANTRY_FLOOD_PLACEMENTS = [
+  { sideX: -1, sideZ: 1 },
+  { sideX: 1, sideZ: 1 },
+  { sideX: -1, sideZ: -1 },
+  { sideX: 1, sideZ: -1 },
+] as const;
+
 /** Сколько крайних ламп горят на шаге countdown (3→2→1); 0 = все гаснут (GO) */
 const LIT_BY_COUNTDOWN_STEP: Record<TCountdownStep, number> = {
   3: 2,

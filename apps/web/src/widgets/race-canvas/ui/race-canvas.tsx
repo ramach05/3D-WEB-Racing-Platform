@@ -170,6 +170,7 @@ const RaceSceneInner = ({
         line={config.startFinishLine}
         roadWidth={config.roadWidth}
         palette={config.palette}
+        isNight={isNight}
       />
       <TrackTribunes
         line={config.startFinishLine}

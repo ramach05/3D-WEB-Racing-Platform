@@ -1,6 +1,6 @@
-import { useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import type { MeshStandardMaterial } from 'three';
+import type { MeshStandardMaterial, Object3D, SpotLight } from 'three';
 import type { TOrientedBox, TTrackPalette } from '@/entities/track';
 import { getRaceHudSnapshot } from '@/features/race-session';
 import { scenePalette, startLightPalette } from '@/shared/config';
@@ -8,6 +8,10 @@ import {
   GANTRY_BEAM_CLEARANCE_Y,
   GANTRY_BEAM_DEPTH,
   GANTRY_BEAM_HEIGHT,
+  GANTRY_FLOOD,
+  GANTRY_FLOOD_PLACEMENTS,
+  GANTRY_FLOOD_POINT,
+  GANTRY_FLOOD_SPOT,
   GANTRY_PANEL_DEPTH,
   GANTRY_PANEL_HEIGHT,
   GANTRY_PANEL_WIDTH,
@@ -27,6 +31,21 @@ type TTrackStartFinishLineProps = {
   roadWidth: number;
   /** Палитра трассы (accent стрелок / финиша) */
   palette: TTrackPalette;
+  /** Ночные stadium-прожекторы на gantry */
+  isNight: boolean;
+};
+
+type TGantryFloodLightProps = {
+  /** Абсолютный X поста (со знаком) */
+  postX: number;
+  /** Сторона линии: +1 спавн, −1 финишный проезд */
+  sideZ: 1 | -1;
+  /** Y центра балки */
+  beamY: number;
+  /** Ширина дороги для aim */
+  roadWidth: number;
+  /** Горит ли прожектор */
+  isOn: boolean;
 };
 
 const CHECKER_COUNT = 10;
@@ -41,8 +60,86 @@ const LAMP_XS = Array.from({ length: START_LAMP_COUNT }, (_, i) => {
   return centered * LAMP_SPACING;
 });
 
+/** Один stadium-прожектор на столбе gantry: корпус, линза, SpotLight на асфальт */
+const GantryFloodLight = ({ postX, sideZ, beamY, roadWidth, isOn }: TGantryFloodLightProps) => {
+  const spotRef = useRef<SpotLight>(null);
+  const targetRef = useRef<Object3D>(null);
+
+  const sideX = postX >= 0 ? 1 : -1;
+  const housingX = postX - sideX * GANTRY_FLOOD.housingInsetX;
+  const housingY = beamY - GANTRY_FLOOD.housingDropY;
+  const housingZ = sideZ * GANTRY_FLOOD.housingOutsetZ;
+  const aimX = sideX * (roadWidth / 2) * GANTRY_FLOOD.aimXFraction;
+  const aimZ = sideZ * GANTRY_FLOOD.aimZ;
+
+  // Привязывает SpotLight к точке на асфальте у линии.
+  useLayoutEffect(() => {
+    if (!isOn) {
+      return;
+    }
+    const spot = spotRef.current;
+    const target = targetRef.current;
+    if (!spot || !target) {
+      return;
+    }
+    spot.target = target;
+    spot.target.updateMatrixWorld();
+  }, [isOn]);
+
+  return (
+    <group position={[housingX, housingY, housingZ]}>
+      <mesh castShadow rotation={[sideZ > 0 ? 0.55 : -0.55, 0, sideX * 0.2]}>
+        <boxGeometry
+          args={[GANTRY_FLOOD.housing.width, GANTRY_FLOOD.housing.height, GANTRY_FLOOD.housing.depth]}
+        />
+        <meshStandardMaterial
+          color={startLightPalette.housing}
+          metalness={0.55}
+          roughness={0.45}
+        />
+      </mesh>
+      <mesh position={[0, -GANTRY_FLOOD.housing.height * 0.35, sideZ * 0.04]}>
+        <sphereGeometry args={[GANTRY_FLOOD.bulbRadius, 12, 10]} />
+        <meshStandardMaterial
+          color={isOn ? startLightPalette.floodLight : startLightPalette.idle}
+          emissive={isOn ? startLightPalette.floodLight : '#000000'}
+          emissiveIntensity={isOn ? GANTRY_FLOOD.lensEmissiveIntensity : 0}
+          metalness={0.1}
+          roughness={0.3}
+          toneMapped={false}
+        />
+      </mesh>
+
+      {isOn ? (
+        <>
+          <spotLight
+            ref={spotRef}
+            position={[0, -0.06, sideZ * 0.02]}
+            color={startLightPalette.floodLight}
+            intensity={GANTRY_FLOOD_SPOT.intensity}
+            distance={GANTRY_FLOOD_SPOT.distance}
+            angle={GANTRY_FLOOD_SPOT.angle}
+            penumbra={GANTRY_FLOOD_SPOT.penumbra}
+            decay={GANTRY_FLOOD_SPOT.decay}
+            castShadow={false}
+          />
+          <object3D
+            ref={targetRef}
+            position={[aimX - housingX, GANTRY_ROAD_TOP_Y - housingY, aimZ - housingZ]}
+          />
+        </>
+      ) : null}
+    </group>
+  );
+};
+
 /** Шахматная линия старт/финиш, стрелки и F1-gantry со стартовыми огнями */
-export const TrackStartFinishLine = ({ line, roadWidth, palette }: TTrackStartFinishLineProps) => {
+export const TrackStartFinishLine = ({
+  line,
+  roadWidth,
+  palette,
+  isNight,
+}: TTrackStartFinishLineProps) => {
   const segmentWidth = roadWidth / CHECKER_COUNT;
   const postX = roadWidth / 2 + GANTRY_POST_OUTSET;
   const spanWidth = postX * 2 + GANTRY_POST_WIDTH;
@@ -204,6 +301,38 @@ export const TrackStartFinishLine = ({ line, roadWidth, palette }: TTrackStartFi
           </mesh>
         </group>
       ))}
+
+      {isNight
+        ? GANTRY_FLOOD_PLACEMENTS.map(({ sideX, sideZ }) => (
+            <GantryFloodLight
+              key={`gantry-flood-${sideX}-${sideZ}`}
+              postX={sideX * postX}
+              sideZ={sideZ}
+              beamY={beamY}
+              roadWidth={roadWidth}
+              isOn
+            />
+          ))
+        : null}
+
+      {isNight ? (
+        <>
+          <pointLight
+            position={[-postX, beamY - 0.8, 0]}
+            color={startLightPalette.floodLight}
+            intensity={GANTRY_FLOOD_POINT.intensity}
+            distance={GANTRY_FLOOD_POINT.distance}
+            decay={GANTRY_FLOOD_POINT.decay}
+          />
+          <pointLight
+            position={[postX, beamY - 0.8, 0]}
+            color={startLightPalette.floodLight}
+            intensity={GANTRY_FLOOD_POINT.intensity}
+            distance={GANTRY_FLOOD_POINT.distance}
+            decay={GANTRY_FLOOD_POINT.decay}
+          />
+        </>
+      ) : null}
 
       {ARROW_DISTANCES.map((distance) => (
         <group key={`arrow-${distance}`} position={[0, MARKING_Y, distance]}>

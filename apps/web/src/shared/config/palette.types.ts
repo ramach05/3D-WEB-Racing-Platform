@@ -206,6 +206,8 @@ export type TStartLightPalette = {
   housing: TCssColor;
   /** Ободок ниши лампы */
   bezel: TCssColor;
+  /** Цвет stadium-прожекторов на gantry (Spot / Point / линза) */
+  floodLight: TCssColor;
 };
 
 export type TStartLightToken = keyof TStartLightPalette;

@@ -34,6 +34,7 @@ describe('palette', () => {
     expect(startLightPalette.housing).toBeTruthy();
     expect(startLightPalette.bezel).toBeTruthy();
     expect(startLightPalette.red).toBeTruthy();
+    expect(startLightPalette.floodLight).toBeTruthy();
   });
 
   it('has warm street-lamp colors', () => {

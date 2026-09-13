@@ -181,6 +181,7 @@ export const startLightPalette = {
   steelDark: '#15181e',
   housing: '#0c0e12',
   bezel: '#3a3f4a',
+  floodLight: '#fff2d6',
 } as const satisfies TStartLightPalette;
 
 /** Муниципальный LED-фонарь (~3000K тёплый белый) */

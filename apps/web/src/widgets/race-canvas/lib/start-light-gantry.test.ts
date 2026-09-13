@@ -1,5 +1,33 @@
 import { describe, expect, it } from 'vitest';
-import { isLampLit, litCountForHud, START_LAMP_COUNT } from './start-light-gantry';
+import {
+  GANTRY_FLOOD,
+  GANTRY_FLOOD_PLACEMENTS,
+  GANTRY_FLOOD_POINT,
+  GANTRY_FLOOD_SPOT,
+  isLampLit,
+  litCountForHud,
+  START_LAMP_COUNT,
+} from './start-light-gantry';
+
+describe('gantry floodlights', () => {
+  it('defines four stadium flood placements around the line', () => {
+    expect(GANTRY_FLOOD_PLACEMENTS).toHaveLength(4);
+    const keys = GANTRY_FLOOD_PLACEMENTS.map(({ sideX, sideZ }) => `${sideX}:${sideZ}`);
+    expect(new Set(keys).size).toBe(4);
+    expect(GANTRY_FLOOD.aimZ).toBeGreaterThan(2);
+    expect(GANTRY_FLOOD.aimXFraction).toBeGreaterThan(0.1);
+    expect(GANTRY_FLOOD.aimXFraction).toBeLessThan(0.5);
+  });
+
+  it('keeps road flood spot and post spill parameters usable at night', () => {
+    expect(GANTRY_FLOOD_SPOT.intensity).toBeGreaterThan(30);
+    expect(GANTRY_FLOOD_SPOT.distance).toBeGreaterThan(12);
+    expect(GANTRY_FLOOD_SPOT.angle).toBeGreaterThan(0.5);
+    expect(GANTRY_FLOOD_SPOT.penumbra).toBeGreaterThan(0.7);
+    expect(GANTRY_FLOOD_POINT.intensity).toBeGreaterThan(1);
+    expect(GANTRY_FLOOD_POINT.distance).toBeGreaterThan(6);
+  });
+});
 
 describe('litCountForHud', () => {
   it('maps countdown steps to progressive edge lamps', () => {
