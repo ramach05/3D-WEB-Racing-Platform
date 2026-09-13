@@ -10,6 +10,7 @@ import { Vehicle } from '@/widgets/race-canvas/vehicle/vehicle';
 import { HorizonMoon } from '@/widgets/race-canvas/world/horizon-moon';
 import { HorizonSun } from '@/widgets/race-canvas/world/horizon-sun';
 import { SkidMarks } from '@/widgets/race-canvas/world/skid-marks';
+import { TrackKerbs } from '@/widgets/race-canvas/world/track-kerbs';
 import { TrackStartFinishColliders } from '@/widgets/race-canvas/world/track-start-finish-colliders';
 import { TrackStartFinishLine } from '@/widgets/race-canvas/world/track-start-finish-line';
 import { TrackStreetLightColliders } from '@/widgets/race-canvas/world/track-street-light-colliders';
@@ -161,6 +162,7 @@ const RaceSceneInner = ({
         />
       </Physics>
       <SkidMarks resetNonce={resetNonce} />
+      <TrackKerbs config={config} />
       <TrackStartFinishLine
         line={config.startFinishLine}
         roadWidth={config.roadWidth}
