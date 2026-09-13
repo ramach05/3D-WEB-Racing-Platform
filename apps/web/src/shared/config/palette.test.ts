@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  billboardPalette,
   kerbPalette,
   scenePalette,
   startLightPalette,
@@ -46,5 +47,17 @@ describe('palette', () => {
   it('has red/white kerb colors', () => {
     expect(kerbPalette.red).toBeTruthy();
     expect(kerbPalette.white).toBeTruthy();
+  });
+
+  it('has billboard structure and ad colors', () => {
+    expect(billboardPalette.pole).toBeTruthy();
+    expect(billboardPalette.frame).toBeTruthy();
+    expect(billboardPalette.panelBack).toBeTruthy();
+    expect(billboardPalette.floodArm).toBeTruthy();
+    expect(billboardPalette.floodHousing).toBeTruthy();
+    expect(billboardPalette.floodBulbOn).toBeTruthy();
+    expect(billboardPalette.floodLight).toBeTruthy();
+    expect(billboardPalette.ads['torque-cola'].background).toBeTruthy();
+    expect(billboardPalette.ads['for-rent'].foreground).toBeTruthy();
   });
 });

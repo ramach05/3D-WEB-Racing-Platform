@@ -21,6 +21,13 @@ export { placeTrackTrees, TREE_PLACEMENT_LIMITS } from './place-trees';
 export type { TPlacedTree, TTreeKind } from './place-trees.types';
 export { placeStreetLamps, STREET_LAMP_PLACEMENT } from './place-street-lamps';
 export type { TPlacedStreetLamp } from './place-street-lamps.types';
+export { placeBillboards, BILLBOARD_PLACEMENT } from './place-billboards';
+export { BILLBOARD_AD_IDS } from './place-billboards.types';
+export type {
+  TBillboardAdId,
+  TPlacedBillboard,
+  TPlaceBillboardsOptions,
+} from './place-billboards.types';
 export {
   ROW_DEPTH,
   ROW_HEIGHT,

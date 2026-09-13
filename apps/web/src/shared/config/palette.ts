@@ -1,4 +1,5 @@
 import type {
+  TBillboardPalette,
   TCarSkins,
   TCrowdPalette,
   THorizonMoonStops,
@@ -251,3 +252,48 @@ export const kerbPalette = {
   red: '#d62828',
   white: '#f5f5f5',
 } as const satisfies TKerbPalette;
+
+/** Придорожные рекламные щиты (бумажный короб + gooseneck-подсветка) */
+export const billboardPalette = {
+  pole: '#3a404a',
+  frame: '#c9c4b8',
+  panelBack: '#8a867c',
+  bolt: '#6b7280',
+  floodArm: '#4a505a',
+  floodHousing: '#2a2e36',
+  floodBulbOff: '#3a3f48',
+  floodBulbOn: '#fff6e0',
+  floodLight: '#fff2d6',
+  ads: {
+    'torque-cola': {
+      background: '#c41e3a',
+      foreground: '#fff8f0',
+      accent: '#ffcc33',
+      muted: '#ffe8d6',
+    },
+    'apex-tires': {
+      background: '#111318',
+      foreground: '#f5f5f5',
+      accent: '#ff4d1a',
+      muted: '#a8adb8',
+    },
+    'nitro-donuts': {
+      background: '#5b2cff',
+      foreground: '#ffffff',
+      accent: '#ff66cc',
+      muted: '#d9cfff',
+    },
+    'pitstop-insurance': {
+      background: '#0b3d5c',
+      foreground: '#e8f4ff',
+      accent: '#33ddaa',
+      muted: '#9ec4de',
+    },
+    'for-rent': {
+      background: '#ffffff',
+      foreground: '#1c1c1e',
+      accent: '#ffffff',
+      muted: '#1c1c1e',
+    },
+  },
+} as const satisfies TBillboardPalette;

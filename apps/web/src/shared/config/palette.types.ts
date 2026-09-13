@@ -270,3 +270,43 @@ export type TKerbPalette = {
   /** Белая полоса поребрика */
   white: TCssColor;
 };
+
+export type TBillboardAdColors = {
+  /** Фон панели */
+  background: TCssColor;
+  /** Основной текст / бренд */
+  foreground: TCssColor;
+  /** Акцент (полоса, логотип-пятно) */
+  accent: TCssColor;
+  /** Вторичный текст / слоган */
+  muted: TCssColor;
+};
+
+export type TBillboardPalette = {
+  /** Стальные столбы */
+  pole: TCssColor;
+  /** Рамка панели (светлый короб бумажного щита) */
+  frame: TCssColor;
+  /** Тыльная сторона панели */
+  panelBack: TCssColor;
+  /** Крепёж / болты */
+  bolt: TCssColor;
+  /** Труба кронштейна подсветки */
+  floodArm: TCssColor;
+  /** Корпус прожектора */
+  floodHousing: TCssColor;
+  /** Колба выключена */
+  floodBulbOff: TCssColor;
+  /** Колба включена */
+  floodBulbOn: TCssColor;
+  /** Цвет SpotLight */
+  floodLight: TCssColor;
+  /** Цвета макетов по adId */
+  ads: {
+    'torque-cola': TBillboardAdColors;
+    'apex-tires': TBillboardAdColors;
+    'nitro-donuts': TBillboardAdColors;
+    'pitstop-insurance': TBillboardAdColors;
+    'for-rent': TBillboardAdColors;
+  };
+};
