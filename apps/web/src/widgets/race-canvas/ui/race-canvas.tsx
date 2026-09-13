@@ -196,7 +196,7 @@ const RaceSceneInner = ({
         resetNonce={resetNonce}
       />
       <RacePostFx enabled={isNight} />
-      {import.meta.env.DEV ? <FramePerfTracker /> : null}
+      <FramePerfTracker />
     </>
   );
 };

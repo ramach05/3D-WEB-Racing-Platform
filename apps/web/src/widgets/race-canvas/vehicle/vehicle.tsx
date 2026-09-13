@@ -42,7 +42,8 @@ const HEADLIGHT_DECAY = 2;
 const HEADLIGHT_TARGET: TVec3 = [0, -1.0, 11];
 const HEADLIGHT_LOCAL_LEFT: TVec3 = [-0.55, 0.5, 1.7];
 const HEADLIGHT_LOCAL_RIGHT: TVec3 = [0.55, 0.5, 1.7];
-const HEADLIGHT_SHADOW_MAP = 1024;
+/** Одна shadowed-фара × 512² вместо двух × 1024² — главный shadow hotspot ночи */
+const HEADLIGHT_SHADOW_MAP = 512;
 const HEADLIGHT_SHADOW_NEAR = 0.5;
 const HEADLIGHT_SHADOW_BIAS = -0.00002;
 const HEADLIGHT_SHADOW_NORMAL_BIAS = 0.02;
@@ -69,7 +70,7 @@ type TVehicleHeadlightsProps = {
   bodyRef: RefObject<RapierRigidBody | null>;
 };
 
-/** Настраивает shadow map SpotLight фары */
+/** Настраивает shadow map только у левой фары */
 const configureHeadlightShadow = (light: SpotLight) => {
   light.castShadow = true;
   light.shadow.mapSize.set(HEADLIGHT_SHADOW_MAP, HEADLIGHT_SHADOW_MAP);
@@ -87,7 +88,7 @@ const VehicleHeadlights = ({ bodyRef }: TVehicleHeadlightsProps) => {
   const leftHeadlightRef = useRef<SpotLight>(null);
   const rightHeadlightRef = useRef<SpotLight>(null);
 
-  /** Привязывает target и shadow к обеим фарам */
+  /** Привязывает aim-target; тень только у левой фары */
   const bindTargets = () => {
     const aim = headlightTargetRef.current;
     const left = leftHeadlightRef.current;
@@ -102,11 +103,8 @@ const VehicleHeadlights = ({ bodyRef }: TVehicleHeadlightsProps) => {
       }
       configureHeadlightShadow(left);
     }
-    if (right) {
-      if (right.target !== aim) {
-        right.target = aim;
-      }
-      configureHeadlightShadow(right);
+    if (right && right.target !== aim) {
+      right.target = aim;
     }
   };
 
@@ -170,13 +168,7 @@ const VehicleHeadlights = ({ bodyRef }: TVehicleHeadlightsProps) => {
         distance={HEADLIGHT_DISTANCE}
         decay={HEADLIGHT_DECAY}
         color={vehiclePalette.headlight}
-        castShadow
-        shadow-mapSize-width={HEADLIGHT_SHADOW_MAP}
-        shadow-mapSize-height={HEADLIGHT_SHADOW_MAP}
-        shadow-bias={HEADLIGHT_SHADOW_BIAS}
-        shadow-normalBias={HEADLIGHT_SHADOW_NORMAL_BIAS}
-        shadow-camera-near={HEADLIGHT_SHADOW_NEAR}
-        shadow-camera-far={HEADLIGHT_DISTANCE}
+        castShadow={false}
       />
     </group>
   );

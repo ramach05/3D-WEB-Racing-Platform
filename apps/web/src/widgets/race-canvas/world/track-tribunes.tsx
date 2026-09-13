@@ -68,7 +68,7 @@ type TTribuneNightLightsProps = {
   wall: string;
 };
 
-/** Прожекторы и подсветка рядов для ночной трассы */
+/** Два flood + emissive-ленты (без per-row pointLight — бюджет FPS Night City) */
 const TribuneNightLights = ({
   tribuneInnerX,
   sideSign,
@@ -86,10 +86,10 @@ const TribuneNightLights = ({
     const t = state.clock.elapsedTime;
     const breathe = 1 + Math.sin(t * 2.4 + sectionZ * 0.2) * 0.22;
     if (pulseA.current) {
-      pulseA.current.intensity = 2.2 * breathe;
+      pulseA.current.intensity = 2.6 * breathe;
     }
     if (pulseB.current) {
-      pulseB.current.intensity = 1.4 * (1 + Math.sin(t * 3.1 + 1.2) * 0.28);
+      pulseB.current.intensity = 1.8 * (1 + Math.sin(t * 3.1 + 1.2) * 0.28);
     }
   });
 
@@ -98,58 +98,35 @@ const TribuneNightLights = ({
       <pointLight
         ref={pulseA}
         position={[frontLightX, 5.5, 0]}
-        intensity={2.2}
+        intensity={2.6}
         color={wall}
-        distance={16}
+        distance={18}
       />
       <pointLight
         ref={pulseB}
         position={[tribuneCenterX, 4.8, 0]}
-        intensity={1.4}
+        intensity={1.8}
         color={accent}
-        distance={13}
-      />
-      <pointLight
-        position={[tribuneCenterX, 2.5, SECTION_WIDTH * 0.35]}
-        intensity={0.9}
-        color={wall}
-        distance={10}
-      />
-      <pointLight
-        position={[tribuneCenterX, 2.5, -SECTION_WIDTH * 0.35]}
-        intensity={0.9}
-        color={wall}
-        distance={10}
+        distance={15}
       />
 
       {Array.from({ length: TRIBUNE_ROWS }, (_, row) => (
-        <group key={`row-light-${row}`}>
-          <mesh
-            position={[
-              rowCenterX(tribuneInnerX, sideSign, row) - sideSign * (ROW_DEPTH / 2 + 0.04),
-              rowTopY(row) - 0.04,
-              0,
-            ]}
-          >
-            <boxGeometry args={[0.06, 0.08, SECTION_WIDTH - 0.2]} />
-            <meshStandardMaterial
-              color={accent}
-              emissive={accent}
-              emissiveIntensity={1.4}
-              toneMapped={false}
-            />
-          </mesh>
-          <pointLight
-            position={[
-              rowCenterX(tribuneInnerX, sideSign, row) - sideSign * 0.35,
-              rowTopY(row) + 0.15,
-              0,
-            ]}
-            intensity={0.55}
-            color={row % 2 === 0 ? accent : wall}
-            distance={5.5}
+        <mesh
+          key={`row-emissive-${row}`}
+          position={[
+            rowCenterX(tribuneInnerX, sideSign, row) - sideSign * (ROW_DEPTH / 2 + 0.04),
+            rowTopY(row) - 0.04,
+            0,
+          ]}
+        >
+          <boxGeometry args={[0.06, 0.08, SECTION_WIDTH - 0.2]} />
+          <meshStandardMaterial
+            color={accent}
+            emissive={accent}
+            emissiveIntensity={1.4}
+            toneMapped={false}
           />
-        </group>
+        </mesh>
       ))}
     </group>
   );

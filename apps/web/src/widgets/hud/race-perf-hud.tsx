@@ -1,12 +1,8 @@
 import { useRacePerf } from '@/features/race-perf';
 
-/** Текстовый FPS-оверлей в левом верхнем углу (только dev) */
+/** Текстовый FPS-оверлей в левом верхнем углу */
 export const RacePerfHud = () => {
   const perf = useRacePerf();
-
-  if (!import.meta.env.DEV) {
-    return null;
-  }
 
   const memLabel = perf.memMb == null ? '—' : `${perf.memMb} MB`;
 
