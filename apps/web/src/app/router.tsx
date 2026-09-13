@@ -8,6 +8,7 @@ import { ProfilePage } from '@/pages/profile';
 import { RacePage } from '@/pages/race';
 import { RegisterPage } from '@/pages/register';
 import { TracksPage } from '@/pages/tracks';
+import { SegaRouteProgress } from '@/shared/ui';
 import { AppHeader } from '@/widgets/header';
 
 type TAppLayoutProps = {
@@ -27,6 +28,7 @@ const AppLayout = ({ children }: TAppLayoutProps) => {
       >
         {t('a11y.skip')}
       </a>
+      <SegaRouteProgress />
       <AppHeader />
       <main id="main" className="flex min-h-0 flex-1 flex-col">
         {children}

@@ -140,6 +140,9 @@ export const ruMessages = {
     ru: 'Русский',
     en: 'English',
   },
+  common: {
+    loading: 'LOADING',
+  },
   a11y: {
     skip: 'К содержимому',
     nav: 'Навигация',
@@ -288,6 +291,9 @@ export const enMessages = {
     label: 'Language',
     ru: 'Русский',
     en: 'English',
+  },
+  common: {
+    loading: 'LOADING',
   },
   a11y: {
     skip: 'Skip to content',

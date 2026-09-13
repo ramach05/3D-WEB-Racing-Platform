@@ -40,6 +40,25 @@ describe('ProfilePage', () => {
     expect(screen.getByRole('link', { name: /вход|log in/i })).toHaveAttribute('href', '/login');
   });
 
+  it('shows skeleton while profile loads', () => {
+    mockedUseAuthUser.mockReturnValue({
+      id: '1',
+      nickname: 'racer_one',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    });
+    mockedUseGetMeQuery.mockReturnValue(
+      mockQueryResult<TMeQuery>({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+      }),
+    );
+
+    renderWithRouter(<ProfilePage />);
+
+    expect(screen.getByRole('status', { name: /загружаем профиль|loading profile/i })).toBeInTheDocument();
+  });
+
   it('shows nickname and best times', () => {
     mockedUseAuthUser.mockReturnValue({
       id: '1',

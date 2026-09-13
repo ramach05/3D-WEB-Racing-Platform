@@ -16,7 +16,7 @@ import {
   togglePause,
   useRaceHud,
 } from '@/features/race-session';
-import { Button, PageShell, StatusText } from '@/shared/ui';
+import { Button, PageShell, SegaLoader, StatusText } from '@/shared/ui';
 import { RaceHud, RacePerfHud } from '@/widgets/hud';
 import { RaceCanvas } from '@/widgets/race-canvas';
 import { RaceControls, RaceTouchControls } from '@/widgets/race-controls';
@@ -249,9 +249,9 @@ export const RacePage = () => {
 
   if (isLoading) {
     return (
-      <PageShell>
-        <StatusText>{t('tracks.loading')}</StatusText>
-      </PageShell>
+      <div className="sega-scanlines relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-black">
+        <SegaLoader className="min-h-0 py-16" />
+      </div>
     );
   }
 

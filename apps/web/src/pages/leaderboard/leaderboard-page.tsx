@@ -4,7 +4,12 @@ import { useGetLeaderboardQuery } from '@/entities/leaderboard';
 import { useGetTracksQuery } from '@/entities/track';
 import { useAuthUser } from '@/features/auth';
 import { cx } from '@/shared/lib';
-import { PageShell, StatusText } from '@/shared/ui';
+import {
+  LeaderboardTableSkeleton,
+  LeaderboardTabsSkeleton,
+  PageShell,
+  StatusText,
+} from '@/shared/ui';
 import { LeaderboardTable } from '@/widgets/leaderboard-table';
 
 /** Глобальная таблица лидеров с фильтром по трассе */
@@ -62,7 +67,7 @@ export const LeaderboardPage = () => {
       <h1 className="text-3xl font-semibold uppercase text-[var(--sega-yellow)]">
         {t('leaderboard.title')}
       </h1>
-      {tracksLoading ? <StatusText>{t('tracks.loading')}</StatusText> : null}
+      {tracksLoading ? <LeaderboardTabsSkeleton /> : null}
       {tracksError ? <StatusText>{t('tracks.error')}</StatusText> : null}
       {tracks && tracks.length > 0 ? (
         <div className="mt-4">
@@ -98,7 +103,7 @@ export const LeaderboardPage = () => {
           </div>
         </div>
       ) : null}
-      {isLoading ? <StatusText>{t('leaderboard.loading')}</StatusText> : null}
+      {isLoading ? <LeaderboardTableSkeleton /> : null}
       {isError ? <StatusText>{t('leaderboard.error')}</StatusText> : null}
       {data && data.length === 0 ? <StatusText>{t('leaderboard.empty')}</StatusText> : null}
       {data && data.length > 0 ? (

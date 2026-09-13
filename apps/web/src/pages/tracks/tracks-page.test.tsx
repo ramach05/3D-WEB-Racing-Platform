@@ -36,7 +36,7 @@ describe('TracksPage', () => {
 
     renderWithRouter(<TracksPage />);
 
-    expect(screen.getByText(/загружаем|loading/i)).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /загружаем трассы|loading tracks/i })).toBeInTheDocument();
   });
 
   it('lists available track with race link', () => {

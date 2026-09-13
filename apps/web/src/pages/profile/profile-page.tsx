@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthUser, useGetMeQuery } from '@/features/auth';
 import { formatRaceTime, readAuthSession } from '@/shared/lib';
-import { PageShell, StatusText } from '@/shared/ui';
+import { PageShell, ProfilePageSkeleton, StatusText } from '@/shared/ui';
 
 /** Личный кабинет: профиль и лучшие времена */
 export const ProfilePage = () => {
@@ -30,7 +30,7 @@ export const ProfilePage = () => {
       <h1 className="text-3xl font-semibold uppercase text-[var(--sega-yellow)]">
         {t('profile.title')}
       </h1>
-      {isLoading ? <StatusText>{t('profile.loading')}</StatusText> : null}
+      {isLoading ? <ProfilePageSkeleton /> : null}
       {isError ? <StatusText>{t('profile.error')}</StatusText> : null}
       {data ? (
         <>

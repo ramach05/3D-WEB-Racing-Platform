@@ -13,13 +13,24 @@ describe('PageShell', () => {
     expect(screen.getByText('Page body')).toBeInTheDocument();
   });
 
-  it('appends className', () => {
+  it('wraps content in full-bleed scanlines', () => {
+    const { container } = render(
+      <PageShell>
+        <span>x</span>
+      </PageShell>,
+    );
+
+    expect(container.firstChild).toHaveClass('sega-scanlines');
+  });
+
+  it('appends className to inner shell', () => {
     const { container } = render(
       <PageShell className="extra-class">
         <span>x</span>
       </PageShell>,
     );
 
-    expect(container.firstChild).toHaveClass('extra-class');
+    const outer = container.firstChild as HTMLElement;
+    expect(outer.firstChild).toHaveClass('extra-class');
   });
 });

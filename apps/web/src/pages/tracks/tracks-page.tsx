@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getTrackConfig, useGetTracksQuery } from '@/entities/track';
-import { PageShell, StatusText } from '@/shared/ui';
+import { PageShell, StatusText, TracksPageSkeleton } from '@/shared/ui';
 import { TrackMinimap } from '@/widgets/track-minimap';
 
 /** Список трасс с API и планом сверху */
@@ -14,7 +14,7 @@ export const TracksPage = () => {
       <h1 className="text-3xl font-semibold uppercase text-[var(--sega-yellow)]">
         {t('tracks.title')}
       </h1>
-      {isLoading ? <StatusText>{t('tracks.loading')}</StatusText> : null}
+      {isLoading ? <TracksPageSkeleton /> : null}
       {isError ? <StatusText>{t('tracks.error')}</StatusText> : null}
       {data && data.length === 0 ? <StatusText>{t('tracks.empty')}</StatusText> : null}
       {data && data.length > 0 ? (

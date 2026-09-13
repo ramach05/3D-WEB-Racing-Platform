@@ -15,8 +15,7 @@ export const HomePage = () => {
   const marquee = Array.isArray(marqueeItems) ? `${marqueeItems.join(' ')} ` : '';
 
   return (
-    <PageShell className="relative overflow-hidden">
-      <div className="sega-scanlines pointer-events-none absolute inset-0" aria-hidden />
+    <PageShell>
       <section className="sega-panel relative p-6 md:p-10">
         <p className="text-sm uppercase tracking-[0.3em] text-[var(--sega-cyan)]">
           {t('home.tagline')}
