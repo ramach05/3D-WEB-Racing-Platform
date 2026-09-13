@@ -24,7 +24,9 @@ export {
   VEHICLE_REVERSE_MAX,
   VEHICLE_HIGH_SPEED_STEER,
   VEHICLE_LOW_SPEED_STEER,
+  VEHICLE_STEER_YAW_RATE,
   computeSteerStrength,
+  integrateSteerYaw,
 } from './vehicle-physics';
 export {
   MIN_LAP_PROGRESS,

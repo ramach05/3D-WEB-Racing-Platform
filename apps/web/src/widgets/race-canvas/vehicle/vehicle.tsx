@@ -11,6 +11,7 @@ import {
   computeSteerStrength,
   getDriveInput,
   getRaceHudSnapshot,
+  integrateSteerYaw,
   tickRace,
   VEHICLE_MAX_SPEED,
   VEHICLE_REVERSE_MAX,
@@ -192,8 +193,6 @@ const MAX_SPEED = VEHICLE_MAX_SPEED;
 const REVERSE_MAX = VEHICLE_REVERSE_MAX;
 const ACCEL = 52;
 const BRAKE = 78;
-const STEER_RATE = 5.4;
-const STEER_YAW_GAIN = 12;
 const LATERAL_GRIP = 13;
 /** Горизонтальная капсула ≈ габариты кузова: гладкое скольжение вдоль стен */
 const COLLIDER_HALF_X = 0.82;
@@ -432,14 +431,15 @@ export const Vehicle = ({
 
     const steerStrength = computeSteerStrength(forwardSpeed);
     const angvel = body.angvel();
-
-    if (steerStrength <= 0) {
-      body.setAngvel({ x: 0, y: angvel.y * 0.12, z: 0 }, true);
-    } else {
-      const steerSign = Math.sign(forwardSpeed || input.throttle - input.brake || 1);
-      const yawDelta = input.steer * STEER_RATE * steerStrength * clampedDt * steerSign;
-      body.setAngvel({ x: 0, y: angvel.y * 0.75 + yawDelta * STEER_YAW_GAIN, z: 0 }, true);
-    }
+    const steerSign = Math.sign(forwardSpeed || input.throttle - input.brake || 1);
+    const nextYaw = integrateSteerYaw(
+      angvel.y,
+      input.steer,
+      steerStrength,
+      steerSign,
+      clampedDt,
+    );
+    body.setAngvel({ x: 0, y: nextYaw, z: 0 }, true);
   });
 
   const dropSpawn: TVec3 = [
