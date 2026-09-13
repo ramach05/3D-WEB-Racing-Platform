@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { CuboidCollider, RigidBody } from '@react-three/rapier';
+import { CuboidCollider, HeightfieldCollider, RigidBody } from '@react-three/rapier';
 import { DoubleSide } from 'three';
 import type { TTrackConfig } from '@/entities/track';
 import {
@@ -12,6 +12,11 @@ import {
 } from '@/widgets/race-canvas/lib/asphalt-texture';
 import { WORLD_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
 import { buildRoadRibbonGeometry } from '@/widgets/race-canvas/lib/road-ribbon-geometry';
+import {
+  buildTerrainGeometry,
+  buildTerrainHeightfieldArgs,
+} from '@/widgets/race-canvas/lib/terrain-geometry';
+import { TRACK_TERRAIN, terrainSeedForSlug } from '@/widgets/race-canvas/lib/terrain-height';
 import { TrackObstacles } from './track-obstacles';
 
 type TTrackWorldProps = {
@@ -91,21 +96,45 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
   const wallEmissiveIntensity = isNight ? 0.02 : 0.15;
   const wallRoughness = isNight ? 0.82 : 0.65;
   const wallMetalness = isNight ? 0.04 : 0;
+  const terrainSeed = terrainSeedForSlug(config.slug);
+  const groundWorldSize = TRACK_TERRAIN.worldSize;
+  const terrainY = TRACK_TERRAIN.yOffset;
 
   const groundSource = useMemo(() => createGroundTexture(512), []);
 
   const groundMap = useMemo(
-    () => cloneMapForSize(groundSource, 1000, 1000, GROUND_TILE_SIZE),
-    [groundSource],
+    () => cloneMapForSize(groundSource, groundWorldSize, groundWorldSize, GROUND_TILE_SIZE),
+    [groundSource, groundWorldSize],
   );
 
-  // Освобождает исходные текстуры пола при размонтировании.
+  const terrainGeometry = useMemo(
+    () =>
+      buildTerrainGeometry({
+        centerline: config.centerline,
+        roadWidth: config.roadWidth,
+        seed: terrainSeed,
+      }),
+    [config.centerline, config.roadWidth, terrainSeed],
+  );
+
+  const terrainHeightfield = useMemo(
+    () =>
+      buildTerrainHeightfieldArgs({
+        centerline: config.centerline,
+        roadWidth: config.roadWidth,
+        seed: terrainSeed,
+      }),
+    [config.centerline, config.roadWidth, terrainSeed],
+  );
+
+  // Освобождает исходные текстуры пола и heightfield при размонтировании.
   useEffect(
     () => () => {
       groundSource.dispose();
       groundMap.dispose();
+      terrainGeometry.dispose();
     },
-    [groundSource, groundMap],
+    [groundSource, groundMap, terrainGeometry],
   );
 
   return (
@@ -116,8 +145,14 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
           position={[0, -0.05, 0]}
           collisionGroups={WORLD_GROUPS}
         />
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]} receiveShadow>
-          <planeGeometry args={[1000, 1000]} />
+        <HeightfieldCollider
+          args={terrainHeightfield}
+          position={[0, terrainY, 0]}
+          friction={0.9}
+          restitution={0}
+          collisionGroups={WORLD_GROUPS}
+        />
+        <mesh geometry={terrainGeometry} position={[0, terrainY, 0]} receiveShadow>
           <meshStandardMaterial
             color={palette.ground}
             map={groundMap}

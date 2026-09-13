@@ -114,6 +114,7 @@ const outwardNormalAt = (
 export const placeTrackTrees = ({
   config,
   maxTrees,
+  sampleGroundY,
 }: TPlaceTrackTreesOptions): TPlacedTree[] => {
   const budget =
     maxTrees ?? (config.timeOfDay === 'night' ? MAX_TREES_NIGHT : MAX_TREES_COASTAL);
@@ -194,6 +195,7 @@ export const placeTrackTrees = ({
     placed.push({
       x,
       z,
+      groundY: sampleGroundY?.(x, z) ?? 0,
       scale: candidate.scale,
       rotationY: candidate.rotationY,
       kind: candidate.kind,

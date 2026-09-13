@@ -90,4 +90,18 @@ describe('placeTrackTrees', () => {
 
     expect(first).toEqual(second);
   });
+
+  it('defaults groundY to 0 without sampler and applies sampleGroundY when provided', () => {
+    const coastal = placeTrackTrees({ config: coastalOvalTrack });
+    expect(coastal.every((tree) => tree.groundY === 0)).toBe(true);
+
+    const night = placeTrackTrees({
+      config: nightCityTrack,
+      sampleGroundY: (x, z) => x + z,
+    });
+    expect(night.length).toBeGreaterThan(0);
+    for (const tree of night) {
+      expect(tree.groundY).toBeCloseTo(tree.x + tree.z, 5);
+    }
+  });
 });

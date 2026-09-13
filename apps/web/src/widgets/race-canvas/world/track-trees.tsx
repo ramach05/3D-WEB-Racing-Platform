@@ -1,12 +1,8 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { Matrix4, Quaternion, Vector3, type InstancedMesh } from 'three';
-import {
-  placeTrackTrees,
-  type TPlacedTree,
-  type TTrackConfig,
-  type TTreeKind,
-} from '@/entities/track';
+import { type TPlacedTree, type TTrackConfig, type TTreeKind } from '@/entities/track';
 import { treePalette } from '@/shared/config';
+import { placeTrackTreesWithGround } from '@/widgets/race-canvas/lib/place-track-trees-with-ground';
 
 type TTrackTreesProps = {
   /** Конфиг трассы для расстановки деревьев */
@@ -79,7 +75,7 @@ const TreePart = ({ trees, kind, color, castShadow, geometry, localY, args }: TT
     }
     for (let i = 0; i < filtered.length; i += 1) {
       const tree = filtered[i]!;
-      tmpPos.set(tree.x, localY * tree.scale, tree.z);
+      tmpPos.set(tree.x, tree.groundY + localY * tree.scale, tree.z);
       tmpQuat.setFromAxisAngle(Y_AXIS, tree.rotationY);
       tmpScale.set(tree.scale, tree.scale, tree.scale);
       tmpMatrix.compose(tmpPos, tmpQuat, tmpScale);
@@ -111,7 +107,7 @@ const TreePart = ({ trees, kind, color, castShadow, geometry, localY, args }: TT
 
 /** Низкополигональные деревья вокруг трассы (визуал; коллайдеры — TrackTreeColliders) */
 export const TrackTrees = ({ config }: TTrackTreesProps) => {
-  const trees = useMemo(() => placeTrackTrees({ config }), [config]);
+  const trees = useMemo(() => placeTrackTreesWithGround(config), [config]);
   const isNight = config.timeOfDay === 'night';
 
   const trunkColor = isNight ? treePalette.night.trunk : treePalette.day.trunk;

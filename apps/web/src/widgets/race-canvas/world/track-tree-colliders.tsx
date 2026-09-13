@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { BallCollider, ConeCollider, CylinderCollider, RigidBody } from '@react-three/rapier';
-import { placeTrackTrees, type TPlacedTree, type TTrackConfig } from '@/entities/track';
+import { type TPlacedTree, type TTrackConfig } from '@/entities/track';
 import { WORLD_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
+import { placeTrackTreesWithGround } from '@/widgets/race-canvas/lib/place-track-trees-with-ground';
 import {
   BROADLEAF_CROWN_LOCAL_Y,
   BROADLEAF_CROWN_RADIUS,
@@ -27,7 +28,7 @@ type TTreeColliderProps = {
 
 /** Fixed-тело одного дерева: ствол + крона */
 const TreeCollider = ({ tree, index }: TTreeColliderProps) => {
-  const { x, z, scale, kind } = tree;
+  const { x, z, groundY, scale, kind } = tree;
   const trunkHalfHeight = (TRUNK_HEIGHT / 2) * scale;
   const trunkRadius = TRUNK_RADIUS * scale;
 
@@ -36,7 +37,7 @@ const TreeCollider = ({ tree, index }: TTreeColliderProps) => {
       name={`tree-${index}`}
       type="fixed"
       colliders={false}
-      position={[x, 0, z]}
+      position={[x, groundY, z]}
       restitution={0}
       friction={0.4}
       collisionGroups={WORLD_GROUPS}
@@ -74,7 +75,7 @@ const TreeCollider = ({ tree, index }: TTreeColliderProps) => {
  * Визуал остаётся в TrackTrees вне Physics.
  */
 export const TrackTreeColliders = ({ config }: TTrackTreeCollidersProps) => {
-  const trees = useMemo(() => placeTrackTrees({ config }), [config]);
+  const trees = useMemo(() => placeTrackTreesWithGround(config), [config]);
 
   if (trees.length === 0) {
     return null;
