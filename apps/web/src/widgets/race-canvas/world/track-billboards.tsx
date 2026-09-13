@@ -1,6 +1,7 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DoubleSide, type CanvasTexture, type Object3D, type SpotLight } from 'three';
+import { DoubleSide, type CanvasTexture } from 'three';
+import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 import {
   placeBillboards,
   type TPlacedBillboard,
@@ -8,9 +9,8 @@ import {
 } from '@/entities/track';
 import { billboardPalette, type TAppLocale } from '@/shared/config';
 import {
+  BILLBOARD_FACE_WASH,
   BILLBOARD_FLOOD,
-  BILLBOARD_FLOOD_FILL,
-  BILLBOARD_FLOOD_SPOT,
   BILLBOARD_FRAME_DEPTH,
   BILLBOARD_FRAME_THICKNESS,
   BILLBOARD_FRAME_TOP_Y,
@@ -24,6 +24,17 @@ import {
   BILLBOARD_POST_HEIGHT,
 } from '@/widgets/race-canvas/lib/billboard';
 import { createBillboardTexture } from '@/widgets/race-canvas/lib/billboard-ads';
+
+let rectAreaLightsReady = false;
+
+/** Один раз инициализирует шейдеры RectAreaLight */
+const ensureRectAreaLights = () => {
+  if (rectAreaLightsReady) {
+    return;
+  }
+  RectAreaLightUniformsLib.init();
+  rectAreaLightsReady = true;
+};
 
 type TTrackBillboardsProps = {
   /** Конфиг трассы */
@@ -46,31 +57,15 @@ type TFloodLightProps = {
   isOn: boolean;
 };
 
-/** Одна gooseneck-лампа: крепление → стойка → вылет → шея → корпус (иерархия без разрывов) */
+/** Визуал gooseneck-корпуса (свет лица — RectAreaLight на щите) */
 const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
-  const spotRef = useRef<SpotLight>(null);
-  const targetRef = useRef<Object3D>(null);
-
   const { mount, riserHeight, armLength, armPitch, neckLength, neckPitch, armRadius, housing, bulbRadius } =
     BILLBOARD_FLOOD;
-  const faceX = BILLBOARD_PANEL_FORWARD_X + BILLBOARD_PANEL_DEPTH / 2 + 0.02;
   /** Верх стойки = низ вылета */
   const elbowY = mount.height + riserHeight;
 
-  // Оба спота целятся в центр панели (target в пространстве щита, не лампы).
-  useLayoutEffect(() => {
-    const spot = spotRef.current;
-    const target = targetRef.current;
-    if (!spot || !target) {
-      return;
-    }
-    spot.target = target;
-    spot.target.updateMatrixWorld();
-  }, []);
-
   return (
     <group position={[BILLBOARD_PANEL_FORWARD_X, BILLBOARD_FRAME_TOP_Y, localZ]}>
-      {/* Плита крепления, сидит на верхней раме */}
       <mesh position={[0, mount.height / 2, 0]} castShadow>
         <boxGeometry args={[mount.depth, mount.height, mount.width]} />
         <meshStandardMaterial
@@ -80,7 +75,6 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
         />
       </mesh>
 
-      {/* Вертикальная стойка от плиты к локтю */}
       <mesh position={[0, mount.height + riserHeight / 2, 0]} castShadow>
         <cylinderGeometry args={[armRadius, armRadius * 1.05, riserHeight, 8]} />
         <meshStandardMaterial
@@ -90,7 +84,6 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
         />
       </mesh>
 
-      {/* Шарнир / локоть на верху стойки */}
       <mesh position={[0, elbowY, 0]} castShadow>
         <sphereGeometry args={[armRadius * 1.55, 10, 8]} />
         <meshStandardMaterial
@@ -100,7 +93,6 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
         />
       </mesh>
 
-      {/* Вылет вперёд и вниз — начинается в локте */}
       <group position={[0, elbowY, 0]} rotation={[0, 0, -armPitch]}>
         <mesh position={[armLength / 2, 0, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
           <cylinderGeometry args={[armRadius, armRadius * 0.95, armLength, 8]} />
@@ -111,7 +103,6 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
           />
         </mesh>
 
-        {/* Шейка к корпусу */}
         <group position={[armLength, 0, 0]} rotation={[0, 0, -neckPitch]}>
           <mesh position={[0, 0, 0]} castShadow>
             <sphereGeometry args={[armRadius * 1.35, 10, 8]} />
@@ -130,7 +121,6 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
             />
           </mesh>
 
-          {/* Корпус + колба на конце шеи */}
           <group position={[neckLength, 0, 0]}>
             <mesh castShadow>
               <boxGeometry args={[housing.depth, housing.height, housing.width]} />
@@ -140,56 +130,42 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
                 roughness={0.45}
               />
             </mesh>
-            {/* Лицевая линза смотрит на щит (−локальный X шеи ≈ вниз/назад к панели) */}
             <mesh position={[housing.depth * 0.15, -housing.height * 0.35, 0]}>
               <sphereGeometry args={[bulbRadius, 10, 8]} />
               <meshStandardMaterial
                 color={isOn ? billboardPalette.floodBulbOn : billboardPalette.floodBulbOff}
                 emissive={isOn ? billboardPalette.floodBulbOn : '#000000'}
-                emissiveIntensity={isOn ? 0.85 : 0}
+                emissiveIntensity={isOn ? 0.45 : 0}
                 metalness={0.1}
                 roughness={0.35}
               />
             </mesh>
-
-            {isOn ? (
-              <>
-                <spotLight
-                  ref={spotRef}
-                  position={[0.02, -0.04, 0]}
-                  color={billboardPalette.floodLight}
-                  intensity={BILLBOARD_FLOOD_SPOT.intensity}
-                  distance={BILLBOARD_FLOOD_SPOT.distance}
-                  angle={BILLBOARD_FLOOD_SPOT.angle}
-                  penumbra={BILLBOARD_FLOOD_SPOT.penumbra}
-                  decay={BILLBOARD_FLOOD_SPOT.decay}
-                  castShadow={false}
-                />
-                <pointLight
-                  position={[0.04, -0.08, 0]}
-                  color={billboardPalette.floodLight}
-                  intensity={BILLBOARD_FLOOD_FILL.intensity}
-                  distance={BILLBOARD_FLOOD_FILL.distance}
-                  decay={BILLBOARD_FLOOD_FILL.decay}
-                />
-              </>
-            ) : null}
           </group>
         </group>
       </group>
-
-      {/* Цель спота — центр лица щита (в координатах корня лампы) */}
-      {isOn ? (
-        <object3D
-          ref={targetRef}
-          position={[
-            faceX - BILLBOARD_PANEL_FORWARD_X,
-            BILLBOARD_PANEL_CENTER_Y - BILLBOARD_FRAME_TOP_Y - BILLBOARD_PANEL_HEIGHT * 0.05,
-            -localZ,
-          ]}
-        />
-      ) : null}
     </group>
+  );
+};
+
+/** Ровная заливка лица щита — без конусных кругов SpotLight */
+const BillboardFaceWash = () => {
+  // Подключает uniforms RectAreaLight один раз на приложение.
+  useLayoutEffect(() => {
+    ensureRectAreaLights();
+  }, []);
+
+  const faceX = BILLBOARD_PANEL_FORWARD_X + BILLBOARD_PANEL_DEPTH / 2;
+
+  return (
+    <rectAreaLight
+      position={[faceX + BILLBOARD_FACE_WASH.standoff, BILLBOARD_PANEL_CENTER_Y, 0]}
+      /** −Z источника → −X мира: свет смотрит на лицо щита */
+      rotation={[0, Math.PI / 2, 0]}
+      width={BILLBOARD_FACE_WASH.width}
+      height={BILLBOARD_FACE_WASH.height}
+      intensity={BILLBOARD_FACE_WASH.intensity}
+      color={billboardPalette.floodLight}
+    />
   );
 };
 
@@ -294,16 +270,17 @@ const Billboard = ({ billboard, isNight, texture }: TBillboardProps) => {
         <planeGeometry args={[BILLBOARD_PANEL_WIDTH, BILLBOARD_PANEL_HEIGHT]} />
         <meshStandardMaterial
           map={texture}
-          color="#ffffff"
+          color="#e8e4dc"
           metalness={0}
-          roughness={0.92}
+          roughness={0.9}
           side={DoubleSide}
         />
       </mesh>
 
-      {/* Две лампы сверху */}
+      {/* Две gooseneck-лампы (визуал) + ровная area-заливка лица */}
       <FloodLight localZ={-BILLBOARD_FLOOD.zSpan} isOn={isNight} />
       <FloodLight localZ={BILLBOARD_FLOOD.zSpan} isOn={isNight} />
+      {isNight ? <BillboardFaceWash /> : null}
     </group>
   );
 };

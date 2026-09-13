@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   BILLBOARD_COLLIDER,
+  BILLBOARD_FACE_WASH,
   BILLBOARD_FLOOD,
-  BILLBOARD_FLOOD_SPOT,
   BILLBOARD_FRAME_TOP_Y,
   BILLBOARD_PANEL_CENTER_Y,
   BILLBOARD_PANEL_HEIGHT,
@@ -27,16 +27,18 @@ describe('billboard constants', () => {
     expect(BILLBOARD_COLLIDER.panel.halfDepth).toBeGreaterThan(BILLBOARD_PANEL_WIDTH / 2);
   });
 
-  it('defines two gooseneck floodlights over the face', () => {
+  it('defines gooseneck fixtures and a soft face wash', () => {
     expect(BILLBOARD_FLOOD.zSpan).toBeGreaterThan(0.8);
     expect(BILLBOARD_FLOOD.armLength).toBeGreaterThan(0.5);
     expect(BILLBOARD_FLOOD.neckLength).toBeGreaterThan(0.15);
     expect(BILLBOARD_FLOOD.riserHeight).toBeGreaterThan(0.08);
     expect(BILLBOARD_FLOOD.armPitch).toBeGreaterThan(0.1);
     expect(BILLBOARD_FLOOD.neckPitch).toBeGreaterThan(0.5);
-    expect(BILLBOARD_FLOOD_SPOT.intensity).toBeGreaterThan(8);
-    expect(BILLBOARD_FLOOD_SPOT.angle).toBeGreaterThan(0.7);
-    expect(BILLBOARD_FLOOD_SPOT.penumbra).toBeGreaterThan(0.8);
+    expect(BILLBOARD_FACE_WASH.standoff).toBeGreaterThan(0.4);
+    expect(BILLBOARD_FACE_WASH.width).toBeGreaterThan(BILLBOARD_PANEL_WIDTH * 0.7);
+    expect(BILLBOARD_FACE_WASH.height).toBeGreaterThan(BILLBOARD_PANEL_HEIGHT * 0.6);
+    expect(BILLBOARD_FACE_WASH.intensity).toBeGreaterThan(1);
+    expect(BILLBOARD_FACE_WASH.intensity).toBeLessThanOrEqual(8);
   });
 });
 

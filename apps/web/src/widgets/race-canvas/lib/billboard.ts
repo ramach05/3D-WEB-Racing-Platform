@@ -45,10 +45,11 @@ export const BILLBOARD_FRAME_TOP_Y =
 /**
  * Две gooseneck-лампы сверху: цельная сборка крепление → стойка → вылет → шея → корпус.
  * Локально: +X — нормаль лица, Z — вдоль ширины щита.
+ * Вылет длиннее, чтобы корпус стоял ~0.7–0.9 м перед лицом (как трековые flood).
  */
 export const BILLBOARD_FLOOD = {
-  /** Смещение ламп от центра по Z */
-  zSpan: BILLBOARD_PANEL_WIDTH * 0.26,
+  /** Смещение ламп от центра по Z (~четверти панели) */
+  zSpan: BILLBOARD_PANEL_WIDTH * 0.28,
   /** Плита крепления на верхней раме [depthX, heightY, widthZ] */
   mount: {
     depth: 0.14,
@@ -56,15 +57,15 @@ export const BILLBOARD_FLOOD = {
     width: 0.14,
   },
   /** Высота вертикальной стойки над рамой */
-  riserHeight: 0.16,
+  riserHeight: 0.18,
   /** Длина основного вылета вперёд */
-  armLength: 0.92,
+  armLength: 1.05,
   /** Наклон вылета вниз (рад), от горизонтали */
-  armPitch: 0.32,
+  armPitch: 0.28,
   /** Короткая шея к корпусу */
-  neckLength: 0.3,
+  neckLength: 0.28,
   /** Доп. наклон шеи вниз относительно вылета */
-  neckPitch: 0.95,
+  neckPitch: 0.72,
   /** Толщина трубы кронштейна */
   armRadius: 0.034,
   /** Корпус прожектора [w, h, d] */
@@ -78,22 +79,40 @@ export const BILLBOARD_FLOOD = {
 } as const;
 
 /**
- * Мягкая заливающая подсветка лица (как flood у трек-сайд щитов).
- * Широкий угол + высокий penumbra, оба спота целятся в центр панели.
+ * Позиция корпуса gooseneck в корне FloodLight (для визуала).
+ * X — вынос перед лицом, Y — чуть выше рамы.
  */
-export const BILLBOARD_FLOOD_SPOT = {
-  intensity: 16,
-  distance: 9,
-  /** ~55° — конусы сильно перекрываются */
-  angle: 0.96,
-  penumbra: 0.95,
-  decay: 1.35,
+export const BILLBOARD_FLOOD_LIGHT_LOCAL = {
+  x: 0.82,
+  y: 0.06,
+  z: 0,
 } as const;
 
-/** Слабый fill PointLight у колбы — убирает «дыры» между пятнами */
+/**
+ * Мягкая заливка лица через RectAreaLight (без конусных «кругов» SpotLight).
+ * Один area-wash на щит — как рассеянный свет от пары flood на треке.
+ */
+export const BILLBOARD_FACE_WASH = {
+  /** Вынос источника перед лицом панели */
+  standoff: 0.9,
+  width: BILLBOARD_PANEL_WIDTH * 0.9,
+  height: BILLBOARD_PANEL_HEIGHT * 0.82,
+  intensity: 2.8,
+} as const;
+
+/** @deprecated Оставлен для совместимости тестов; лицо заливает BILLBOARD_FACE_WASH */
+export const BILLBOARD_FLOOD_SPOT = {
+  intensity: 6.5,
+  distance: 6.5,
+  angle: 1.08,
+  penumbra: 1,
+  decay: 1.85,
+} as const;
+
+/** Локальный spill у колбы — не используется на лице щита */
 export const BILLBOARD_FLOOD_FILL = {
-  intensity: 3.2,
-  distance: 5.5,
+  intensity: 0.35,
+  distance: 1.8,
   decay: 2,
 } as const;
 

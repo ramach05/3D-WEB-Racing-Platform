@@ -291,10 +291,10 @@ export const billboardPalette = {
       muted: '#9ec4de',
     },
     'for-rent': {
-      background: '#ffffff',
-      foreground: '#1c1c1e',
-      accent: '#ffffff',
-      muted: '#1c1c1e',
+      background: '#d6d2c8',
+      foreground: '#2a2a2e',
+      accent: '#d6d2c8',
+      muted: '#2a2a2e',
     },
   },
 } as const satisfies TBillboardPalette;
