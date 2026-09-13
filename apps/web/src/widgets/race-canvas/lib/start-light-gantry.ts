@@ -72,6 +72,9 @@ const LIT_BY_COUNTDOWN_STEP: Record<TCountdownStep, number> = {
   0: 0,
 };
 
+/** Полный цикл мигания финишных огней (с): 0.5 on + 0.5 off */
+export const FINISH_LAMP_BLINK_PERIOD_S = 1;
+
 /** Число горящих крайних ламп по HUD-статусу (симметрично от краёв к центру). */
 export const litCountForHud = (
   status: TRaceStatus,
@@ -97,4 +100,19 @@ export const isLampLit = (
   }
   const half = Math.floor(litCount / 2);
   return index < half || index >= lampCount - half;
+};
+
+/**
+ * Square-wave мигание финишных огней (~1 Гц, 50% duty).
+ * Без sin — как у реальных реле/светофоров.
+ */
+export const isFinishLampBlinkOn = (
+  elapsedSeconds: number,
+  periodS = FINISH_LAMP_BLINK_PERIOD_S,
+): boolean => {
+  if (periodS <= 0) {
+    return false;
+  }
+  const phase = ((elapsedSeconds % periodS) + periodS) % periodS;
+  return phase < periodS / 2;
 };

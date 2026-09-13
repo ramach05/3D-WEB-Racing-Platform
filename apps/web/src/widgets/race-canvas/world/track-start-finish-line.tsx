@@ -19,6 +19,7 @@ import {
   GANTRY_POST_OUTSET,
   GANTRY_POST_WIDTH,
   GANTRY_ROAD_TOP_Y,
+  isFinishLampBlinkOn,
   isLampLit,
   litCountForHud,
   START_LAMP_COUNT,
@@ -164,6 +165,8 @@ export const TrackStartFinishLine = ({
     pulseRef.current += dt;
     const litCount = litCountForHud(hud.status, hud.countdownStep);
     const countdownPulse = 0.55 + Math.sin(pulseRef.current * 4) * 0.35;
+    const finishBlinkOn =
+      hud.status === 'finished' && isFinishLampBlinkOn(pulseRef.current);
 
     const lampMats = [
       lamp0MatRef.current,
@@ -177,6 +180,13 @@ export const TrackStartFinishLine = ({
       if (!mat) {
         continue;
       }
+      if (hud.status === 'finished') {
+        const color = finishBlinkOn ? startLightPalette.amber : startLightPalette.idle;
+        mat.color.set(color);
+        mat.emissive.set(color);
+        mat.emissiveIntensity = finishBlinkOn ? 2.2 : 0.35;
+        continue;
+      }
       const on = isLampLit(i, litCount);
       const color = on ? startLightPalette.red : startLightPalette.idle;
       mat.color.set(color);
@@ -184,12 +194,7 @@ export const TrackStartFinishLine = ({
       mat.emissiveIntensity = on ? 2.2 * countdownPulse : 0.35;
     }
 
-    const structurePulse =
-      hud.status === 'finished'
-        ? 0.55 + Math.sin(pulseRef.current * 6) * 0.4
-        : hud.status === 'countdown'
-          ? 0.12
-          : 0.05;
+    const structurePulse = hud.status === 'countdown' ? 0.12 : 0.05;
     for (const mat of [
       leftPostMatRef.current,
       rightPostMatRef.current,
@@ -199,7 +204,7 @@ export const TrackStartFinishLine = ({
       if (!mat) {
         continue;
       }
-      mat.emissive.set(hud.status === 'finished' ? palette.accent : startLightPalette.steelDark);
+      mat.emissive.set(startLightPalette.steelDark);
       mat.emissiveIntensity = structurePulse;
     }
   });
@@ -302,18 +307,16 @@ export const TrackStartFinishLine = ({
         </group>
       ))}
 
-      {isNight
-        ? GANTRY_FLOOD_PLACEMENTS.map(({ sideX, sideZ }) => (
-            <GantryFloodLight
-              key={`gantry-flood-${sideX}-${sideZ}`}
-              postX={sideX * postX}
-              sideZ={sideZ}
-              beamY={beamY}
-              roadWidth={roadWidth}
-              isOn
-            />
-          ))
-        : null}
+      {GANTRY_FLOOD_PLACEMENTS.map(({ sideX, sideZ }) => (
+        <GantryFloodLight
+          key={`gantry-flood-${sideX}-${sideZ}`}
+          postX={sideX * postX}
+          sideZ={sideZ}
+          beamY={beamY}
+          roadWidth={roadWidth}
+          isOn={isNight}
+        />
+      ))}
 
       {isNight ? (
         <>

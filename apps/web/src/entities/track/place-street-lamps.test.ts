@@ -29,8 +29,29 @@ const distanceToCenterline = (x: number, z: number, centerline: TLoopPoint[]): n
 };
 
 describe('placeStreetLamps', () => {
-  it('returns no lamps for day tracks', () => {
-    expect(placeStreetLamps({ config: coastalOvalTrack })).toEqual([]);
+  it('places lamps on Coastal Oval (day track, lit separately at render)', () => {
+    const lamps = placeStreetLamps({ config: coastalOvalTrack });
+    expect(lamps.length).toBeGreaterThan(0);
+
+    const wallBand =
+      coastalOvalTrack.roadWidth / 2 +
+      STREET_LAMP_PLACEMENT.wallThickness +
+      STREET_LAMP_PLACEMENT.wallOutset;
+
+    for (const lamp of lamps) {
+      const dist = distanceToCenterline(lamp.x, lamp.z, coastalOvalTrack.centerline);
+      expect(dist).toBeGreaterThan(wallBand - 0.5);
+      expect(dist).toBeLessThan(wallBand + 0.5);
+    }
+
+    const line = coastalOvalTrack.startFinishLine;
+    const minSq =
+      STREET_LAMP_PLACEMENT.startFinishClearance * STREET_LAMP_PLACEMENT.startFinishClearance;
+    for (const lamp of lamps) {
+      const dx = lamp.x - line.position[0];
+      const dz = lamp.z - line.position[2];
+      expect(dx * dx + dz * dz).toBeGreaterThanOrEqual(minSq - 0.01);
+    }
   });
 
   it('places staggered lamps on Night City (one per station, ~half of prior density)', () => {

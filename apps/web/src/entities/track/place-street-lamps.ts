@@ -107,16 +107,12 @@ const canPlaceAt = (
 
 /**
  * Расставляет уличные фонари вдоль трассы: по одному на станцию, стороны чередуются.
- * Возвращает пустой список для дневных трасс.
+ * Свет включается отдельно при рендере (`timeOfDay === 'night'`).
  */
 export const placeStreetLamps = ({
   config,
   spacing = DEFAULT_SPACING,
 }: TPlaceStreetLampsOptions): TPlacedStreetLamp[] => {
-  if (config.timeOfDay !== 'night') {
-    return [];
-  }
-
   const points = config.centerline;
   if (points.length < 2) {
     return [];

@@ -14,8 +14,29 @@ export const STREET_LAMP_POLE_SEGMENTS = 8;
 export const STREET_LAMP_ARM_REACH = 1.85;
 /** Толщина трубы кронштейна */
 export const STREET_LAMP_ARM_RADIUS = 0.055;
-/** Высота изгиба кронштейна над верхом столба */
+/** Высота локтя кронштейна над верхом столба */
 export const STREET_LAMP_ARM_RISE = 0.35;
+/**
+ * Перекрытие сегментов кронштейна в суставах (убирает визуальные щели
+ * между цилиндрами при повороте).
+ */
+export const STREET_LAMP_ARM_JOINT_OVERLAP = STREET_LAMP_ARM_RADIUS * 2.2;
+
+/** Y верха столба (над асфальтом) */
+export const STREET_LAMP_POLE_TOP_Y = STREET_LAMP_ROAD_TOP_Y + STREET_LAMP_POLE_HEIGHT;
+
+/**
+ * Суставы cobra-arm в локальных XY (столб в X=0).
+ * 0 — верх столба, 1 — локоть, 2 — плафон.
+ */
+export const STREET_LAMP_ARM_JOINTS = [
+  { x: 0, y: STREET_LAMP_POLE_TOP_Y },
+  { x: STREET_LAMP_ARM_REACH * 0.4, y: STREET_LAMP_POLE_TOP_Y + STREET_LAMP_ARM_RISE },
+  {
+    x: STREET_LAMP_ARM_REACH,
+    y: STREET_LAMP_POLE_TOP_Y + STREET_LAMP_ARM_RISE * 0.2,
+  },
+] as const;
 
 /** Корпус плафона [width, height, depth] */
 export const STREET_LAMP_HOUSING = {
@@ -31,12 +52,11 @@ export const STREET_LAMP_LENS = {
   depth: 0.24,
 } as const;
 
-/** Y центра плафона (над асфальтом) */
-export const STREET_LAMP_LUMINAIRE_Y =
-  STREET_LAMP_ROAD_TOP_Y + STREET_LAMP_POLE_HEIGHT + STREET_LAMP_ARM_RISE * 0.35;
+/** Y центра плафона (над асфальтом) — на конце кронштейна */
+export const STREET_LAMP_LUMINAIRE_Y = STREET_LAMP_ARM_JOINTS[2].y;
 
 /** Локальный X плафона (к дороге) */
-export const STREET_LAMP_LUMINAIRE_LOCAL_X = STREET_LAMP_ARM_REACH;
+export const STREET_LAMP_LUMINAIRE_LOCAL_X = STREET_LAMP_ARM_JOINTS[2].x;
 
 /**
  * Aim SpotLight на асфальт (локальный X от плафона дальше к полосе).

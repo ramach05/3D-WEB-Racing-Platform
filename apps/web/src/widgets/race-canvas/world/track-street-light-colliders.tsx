@@ -58,7 +58,7 @@ const StreetLampCollider = ({ lamp, index }: TStreetLampColliderProps) => {
 export const TrackStreetLightColliders = ({ config }: TTrackStreetLightCollidersProps) => {
   const lamps = useMemo(() => placeStreetLamps({ config }), [config]);
 
-  if (config.timeOfDay !== 'night' || lamps.length === 0) {
+  if (lamps.length === 0) {
     return null;
   }
 

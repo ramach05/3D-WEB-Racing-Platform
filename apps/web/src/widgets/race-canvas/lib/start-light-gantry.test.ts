@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  FINISH_LAMP_BLINK_PERIOD_S,
   GANTRY_FLOOD,
   GANTRY_FLOOD_PLACEMENTS,
   GANTRY_FLOOD_POINT,
   GANTRY_FLOOD_SPOT,
+  isFinishLampBlinkOn,
   isLampLit,
   litCountForHud,
   START_LAMP_COUNT,
@@ -61,5 +63,20 @@ describe('isLampLit', () => {
 
   it('lights none when litCount is zero', () => {
     expect([0, 1, 2, 3, 4].some((i) => isLampLit(i, 0))).toBe(false);
+  });
+});
+
+describe('isFinishLampBlinkOn', () => {
+  it('uses a 50% duty square wave over the finish blink period', () => {
+    expect(isFinishLampBlinkOn(0)).toBe(true);
+    expect(isFinishLampBlinkOn(FINISH_LAMP_BLINK_PERIOD_S / 2 - 0.001)).toBe(true);
+    expect(isFinishLampBlinkOn(FINISH_LAMP_BLINK_PERIOD_S / 2)).toBe(false);
+    expect(isFinishLampBlinkOn(FINISH_LAMP_BLINK_PERIOD_S - 0.001)).toBe(false);
+  });
+
+  it('repeats the period', () => {
+    expect(isFinishLampBlinkOn(FINISH_LAMP_BLINK_PERIOD_S)).toBe(true);
+    expect(isFinishLampBlinkOn(FINISH_LAMP_BLINK_PERIOD_S * 1.5)).toBe(false);
+    expect(isFinishLampBlinkOn(FINISH_LAMP_BLINK_PERIOD_S * 2)).toBe(true);
   });
 });
