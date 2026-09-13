@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  kerbPalette,
   scenePalette,
   startLightPalette,
   streetLampPalette,
@@ -40,5 +41,10 @@ describe('palette', () => {
     expect(streetLampPalette.housing).toBeTruthy();
     expect(streetLampPalette.lens).toBeTruthy();
     expect(streetLampPalette.light).toBeTruthy();
+  });
+
+  it('has red/white kerb colors', () => {
+    expect(kerbPalette.red).toBeTruthy();
+    expect(kerbPalette.white).toBeTruthy();
   });
 });

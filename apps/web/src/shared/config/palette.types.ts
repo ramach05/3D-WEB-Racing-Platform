@@ -263,3 +263,10 @@ export type TScenePalette = {
 };
 
 export type TScenePaletteToken = keyof TScenePalette;
+
+export type TKerbPalette = {
+  /** Красная полоса поребрика */
+  red: TCssColor;
+  /** Белая полоса поребрика */
+  white: TCssColor;
+};

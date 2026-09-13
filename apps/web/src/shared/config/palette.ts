@@ -3,6 +3,7 @@ import type {
   TCrowdPalette,
   THorizonMoonStops,
   THorizonSunStops,
+  TKerbPalette,
   TScenePalette,
   TStartLightPalette,
   TStreetLampPalette,
@@ -244,3 +245,9 @@ export const scenePalette = {
   obstacle: '#1c1c1e',
   skidMark: '#1c1c1e',
 } as const satisfies TScenePalette;
+
+/** Красно-белые поребрики */
+export const kerbPalette = {
+  red: '#d62828',
+  white: '#f5f5f5',
+} as const satisfies TKerbPalette;
