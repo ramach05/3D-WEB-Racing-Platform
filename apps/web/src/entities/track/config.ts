@@ -258,6 +258,12 @@ const buildNightCityObstacles = (points: TLoopPoint[], roadWidth: number): TTrac
   /** 2–3 ряда от бордюра; точек вдоль трассы меньше, чем у coastal. */
   return buildObstaclesFromBanks(points, roadWidth, [
     {
+      ratio: 0.09,
+      side: 1,
+      kinds: ['tireStack', 'tireStack', 'tireStack'],
+      rowInsets: [0.7, 1.85, 3.0],
+    },
+    {
       ratio: 0.45,
       side: 1,
       kinds: ['fuelBarrel', 'fuelBarrel', 'fuelBarrel'],
