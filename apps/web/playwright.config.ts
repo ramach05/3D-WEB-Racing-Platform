@@ -3,7 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 
-export default defineConfig({
+export const playwrightConfig = defineConfig({
   testDir: './e2e',
   fullyParallel: false,
   retries: 0,
@@ -30,3 +30,5 @@ export default defineConfig({
     },
   ],
 });
+
+export { playwrightConfig as default };
