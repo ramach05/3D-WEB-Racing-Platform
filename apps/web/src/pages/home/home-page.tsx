@@ -72,6 +72,7 @@ export const HomePage = () => {
           <ul className="mt-3 grid gap-1 text-[var(--muted)] sm:grid-cols-2">
             <li>{t('home.throttle')}</li>
             <li>{t('home.brake')}</li>
+            <li>{t('home.handbrake')}</li>
             <li>{t('home.steer')}</li>
             <li>{t('home.restart')}</li>
             <li>{t('home.pause')}</li>

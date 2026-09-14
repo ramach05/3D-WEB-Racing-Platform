@@ -8,7 +8,8 @@ describe('RaceControls', () => {
 
     expect(screen.getByLabelText(/управление|controls/i)).toBeInTheDocument();
     expect(screen.getByText(/газ|throttle/i)).toBeInTheDocument();
-    expect(screen.getByText(/тормоз|brake/i)).toBeInTheDocument();
+    expect(screen.getByText(/тормоз и назад|brake \/ reverse/i)).toBeInTheDocument();
+    expect(screen.getByText(/ручник|handbrake/i)).toBeInTheDocument();
     expect(screen.getByText(/руль|steer/i)).toBeInTheDocument();
   });
 });

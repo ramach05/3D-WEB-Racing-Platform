@@ -14,6 +14,7 @@ export const RaceControls = () => {
         <ul className="grid gap-0.5">
           <li>{t('home.throttle')}</li>
           <li>{t('home.brake')}</li>
+          <li>{t('home.handbrake')}</li>
           <li>{t('home.steer')}</li>
           <li>{t('home.restart')}</li>
           <li>{t('home.pause')}</li>

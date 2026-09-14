@@ -21,6 +21,7 @@ export const ruMessages = {
     controlsTitle: 'Управление',
     throttle: 'W / ↑ — газ',
     brake: 'S / ↓ — тормоз и назад',
+    handbrake: 'Space — ручник',
     steer: 'A / D или ← / → — руль',
     restart: 'R — рестарт',
     pause: 'Esc — пауза',
@@ -91,6 +92,7 @@ export const ruMessages = {
     touch: {
       throttle: 'Газ',
       brake: 'Тормоз',
+      handbrake: 'Ручник',
       steerLeft: 'Влево',
       steerRight: 'Вправо',
       pause: 'Пауза',
@@ -173,6 +175,7 @@ export const enMessages = {
     controlsTitle: 'Controls',
     throttle: 'W / ↑ — throttle',
     brake: 'S / ↓ — brake / reverse',
+    handbrake: 'Space — handbrake',
     steer: 'A / D or ← / → — steer',
     restart: 'R — restart',
     pause: 'Esc — pause',
@@ -243,6 +246,7 @@ export const enMessages = {
     touch: {
       throttle: 'Throttle',
       brake: 'Brake',
+      handbrake: 'Handbrake',
       steerLeft: 'Steer left',
       steerRight: 'Steer right',
       pause: 'Pause',

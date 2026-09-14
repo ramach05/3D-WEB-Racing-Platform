@@ -38,6 +38,23 @@ describe('bindRaceInput', () => {
     expect(onRestart).toHaveBeenCalledTimes(1);
     cleanup();
   });
+
+  it('sets handbrake from Space while racing', () => {
+    const cleanup = bindRaceInput({
+      onRestart: vi.fn(),
+      onTogglePause: vi.fn(),
+      isRaceActive: () => true,
+    });
+
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { code: 'Space', repeat: false, bubbles: true }),
+    );
+    expect(getDriveInput().handbrake).toBe(1);
+
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', bubbles: true }));
+    expect(getDriveInput().handbrake).toBe(0);
+    cleanup();
+  });
 });
 
 describe('touch axes', () => {
@@ -56,14 +73,22 @@ describe('touch axes', () => {
     setTouchAxis('steerLeft', false);
     setTouchAxis('brake', true);
     setTouchAxis('steerRight', true);
-    expect(getDriveInput()).toEqual({ throttle: 0, brake: 1, steer: -1 });
+    expect(getDriveInput()).toEqual({ throttle: 0, brake: 1, handbrake: 0, steer: -1 });
+  });
+
+  it('sets handbrake from touch flag', () => {
+    setTouchAxis('handbrake', true);
+    expect(getDriveInput().handbrake).toBe(1);
+    setTouchAxis('handbrake', false);
+    expect(getDriveInput().handbrake).toBe(0);
   });
 
   it('clears all touch axes', () => {
     setTouchAxis('throttle', true);
     setTouchAxis('steerLeft', true);
+    setTouchAxis('handbrake', true);
     clearTouchAxes();
-    expect(getDriveInput()).toEqual({ throttle: 0, brake: 0, steer: 0 });
+    expect(getDriveInput()).toEqual({ throttle: 0, brake: 0, handbrake: 0, steer: 0 });
   });
 
   it('keeps touch axes after keyboard bind cleanup', () => {

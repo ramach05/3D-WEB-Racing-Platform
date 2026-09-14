@@ -164,7 +164,7 @@ const RaceSceneInner = ({
           headlightsOn={isNight}
         />
       </Physics>
-      <SkidMarks resetNonce={resetNonce} />
+      <SkidMarks />
       <TrackKerbs config={config} />
       <TrackStartFinishLine
         line={config.startFinishLine}

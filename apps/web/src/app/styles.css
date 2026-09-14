@@ -255,6 +255,12 @@ button:disabled,
   flex-direction: column;
 }
 
+.sega-touch-pad__pedals {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.45rem;
+}
+
 .sega-touch-pad__footer {
   margin: 0;
   pointer-events: none;
@@ -312,6 +318,15 @@ button:disabled,
   box-shadow: 3px 3px 0 0 var(--sega-magenta);
 }
 
+.sega-touch-btn--handbrake {
+  align-self: stretch;
+  min-height: 6.9rem;
+  color: var(--sega-cyan);
+  box-shadow: 3px 3px 0 0 var(--sega-cyan);
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+}
+
 .sega-touch-btn:active,
 .sega-touch-btn[aria-pressed="true"] {
   transform: translate(2px, 2px);
@@ -332,6 +347,11 @@ button:disabled,
 .sega-touch-btn--brake:active,
 .sega-touch-btn--brake[aria-pressed="true"] {
   box-shadow: 1px 1px 0 0 var(--sega-magenta);
+}
+
+.sega-touch-btn--handbrake:active,
+.sega-touch-btn--handbrake[aria-pressed="true"] {
+  box-shadow: 1px 1px 0 0 var(--sega-cyan);
 }
 
 .sega-btn {

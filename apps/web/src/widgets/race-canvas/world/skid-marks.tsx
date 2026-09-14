@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Color, DynamicDrawUsage, type InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three';
 import { scenePalette } from '@/shared/config';
@@ -13,11 +13,6 @@ import {
   tickSkidMarks,
 } from '@/widgets/race-canvas/lib/skid-marks-store';
 
-type TSkidMarksProps = {
-  /** Счётчик рестарта — очищает следы */
-  resetNonce: number;
-};
-
 const MARKING_Y = ROAD_TOP_Y + 0.002;
 const SMOKE_COLOR = '#9a9a9c';
 const tmpMatrix = new Matrix4();
@@ -30,10 +25,9 @@ const tmpColor = new Color();
 const Y_AXIS = new Vector3(0, 1, 0);
 
 /** Следы резины на асфальте + короткий дым при жёстком торможении */
-export const SkidMarks = ({ resetNonce }: TSkidMarksProps) => {
+export const SkidMarks = () => {
   const marksRef = useRef<InstancedMesh>(null);
   const smokeRef = useRef<InstancedMesh>(null);
-  const lastNonce = useRef(resetNonce);
   const skidColor = useMemo(() => new Color(scenePalette.skidMark), []);
 
   useLayoutEffect(() => {
@@ -49,12 +43,13 @@ export const SkidMarks = ({ resetNonce }: TSkidMarksProps) => {
     }
   }, []);
 
-  useFrame((_, dt) => {
-    if (lastNonce.current !== resetNonce) {
-      lastNonce.current = resetNonce;
+  useEffect(() => {
+    return () => {
       resetSkidMarks();
-    }
+    };
+  }, []);
 
+  useFrame((_, dt) => {
     tickSkidMarks(Math.min(dt, 1 / 20));
     const { segments, smoke } = getSkidMarksSnapshot();
 

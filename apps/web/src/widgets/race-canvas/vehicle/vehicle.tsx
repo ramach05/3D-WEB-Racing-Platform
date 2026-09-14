@@ -9,8 +9,10 @@ import type { TVec3 } from '@/entities/track';
 import {
   beginCountdown,
   computeSteerStrength,
+  dampLateralVelocity,
   getDriveInput,
   getRaceHudSnapshot,
+  integrateDriveForward,
   integrateSteerYaw,
   tickRace,
   VEHICLE_MAX_SPEED,
@@ -20,11 +22,7 @@ import { vehiclePalette } from '@/shared/config';
 import { VEHICLE_GROUPS, WALL_PROBE_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
 import { ROAD_TOP_Y } from '@/widgets/race-canvas/lib/road-ribbon-geometry';
 import { computeSkidIntensity } from '@/widgets/race-canvas/lib/skid-intensity';
-import {
-  pushSkidSample,
-  pushSkidSmoke,
-  resetSkidMarks,
-} from '@/widgets/race-canvas/lib/skid-marks-store';
+import { pushSkidSample, pushSkidSmoke } from '@/widgets/race-canvas/lib/skid-marks-store';
 import {
   resetTireHitDamping,
   tickTireHitDamping,
@@ -183,9 +181,6 @@ const WHEEL_LOCAL: TVec3[] = [
 
 const MAX_SPEED = VEHICLE_MAX_SPEED;
 const REVERSE_MAX = VEHICLE_REVERSE_MAX;
-const ACCEL = 52;
-const BRAKE = 78;
-const LATERAL_GRIP = 13;
 /** Горизонтальная капсула ≈ габариты кузова: гладкое скольжение вдоль стен */
 const COLLIDER_HALF_X = 0.82;
 const COLLIDER_HALF_Z = 1.65;
@@ -292,7 +287,6 @@ export const Vehicle = ({
       lastNonce.current = resetNonce;
       awaitingLand.current = true;
       resetTireHitDamping();
-      resetSkidMarks();
       clearSkidTrail();
       body.setTranslation(elevatedSpawn(spawnPosition), true);
       body.setRotation(
@@ -354,24 +348,28 @@ export const Vehicle = ({
 
     const input = getDriveInput();
     const forwardSpeed = tmpVel.dot(tmpForward);
-    let targetForward = forwardSpeed;
-
-    if (input.throttle > 0) {
-      targetForward += input.throttle * ACCEL * clampedDt;
-    }
-    if (input.brake > 0) {
-      targetForward -= input.brake * BRAKE * clampedDt;
-    }
+    let targetForward = integrateDriveForward(forwardSpeed, {
+      throttle: input.throttle,
+      brake: input.brake,
+      handbrake: input.handbrake,
+      dt: clampedDt,
+    });
 
     targetForward = Math.max(-REVERSE_MAX, Math.min(MAX_SPEED, targetForward));
     targetForward *= tickTireHitDamping(clampedDt);
 
     const lateral = tmpVel.dot(tmpRight);
-    const dampedLateral = lateral * Math.exp(-LATERAL_GRIP * clampedDt);
+    const dampedLateral = dampLateralVelocity(
+      lateral,
+      input.handbrake,
+      input.throttle,
+      clampedDt,
+    );
 
     const { intensity, smoking, wheels } = computeSkidIntensity({
       brake: input.brake,
       throttle: input.throttle,
+      handbrake: input.handbrake,
       forwardSpeed,
       lateral,
       grounded: wheelGrounded,
@@ -421,7 +419,7 @@ export const Vehicle = ({
     // На земле не даём коллизиям (шины) подбрасывать машину вверх
     body.setLinvel({ x: slid.x, y: Math.min(linvel.y, 0), z: slid.z }, true);
 
-    const steerStrength = computeSteerStrength(forwardSpeed);
+    const steerStrength = computeSteerStrength(forwardSpeed, input.handbrake);
     const angvel = body.angvel();
     const steerSign = Math.sign(forwardSpeed || input.throttle - input.brake || 1);
     const nextYaw = integrateSteerYaw(

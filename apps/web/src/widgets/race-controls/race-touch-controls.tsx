@@ -123,19 +123,27 @@ export const RaceTouchControls = ({
             className="sega-touch-btn--steer"
           />
         </div>
-        <div className="sega-touch-pad__cluster sega-touch-pad__cluster--stack">
+        <div className="sega-touch-pad__pedals">
           <AxisButton
-            axis="throttle"
-            symbol="▲"
-            label={t('race.touch.throttle')}
-            className="sega-touch-btn--throttle"
+            axis="handbrake"
+            symbol="HB"
+            label={t('race.touch.handbrake')}
+            className="sega-touch-btn--handbrake"
           />
-          <AxisButton
-            axis="brake"
-            symbol="▼"
-            label={t('race.touch.brake')}
-            className="sega-touch-btn--brake"
-          />
+          <div className="sega-touch-pad__cluster sega-touch-pad__cluster--stack">
+            <AxisButton
+              axis="throttle"
+              symbol="▲"
+              label={t('race.touch.throttle')}
+              className="sega-touch-btn--throttle"
+            />
+            <AxisButton
+              axis="brake"
+              symbol="▼"
+              label={t('race.touch.brake')}
+              className="sega-touch-btn--brake"
+            />
+          </div>
         </div>
       </div>
       {footer ? <p className="sega-touch-pad__footer">{footer}</p> : null}

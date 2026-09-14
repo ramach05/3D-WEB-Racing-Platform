@@ -5,4 +5,6 @@ export type TDriveInput = {
   steer: number;
   /** Тормоз/назад: 0 или 1 */
   brake: number;
+  /** Ручной тормоз: 0 или 1 */
+  handbrake: number;
 };

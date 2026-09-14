@@ -22,10 +22,18 @@ export type { TTouchAxis } from './input';
 export {
   VEHICLE_MAX_SPEED,
   VEHICLE_REVERSE_MAX,
+  VEHICLE_ACCEL,
+  VEHICLE_BRAKE,
+  VEHICLE_LATERAL_GRIP,
   VEHICLE_HIGH_SPEED_STEER,
   VEHICLE_LOW_SPEED_STEER,
   VEHICLE_STEER_YAW_RATE,
+  HANDBRAKE_DECEL,
+  HANDBRAKE_THROTTLE_FACTOR,
+  HANDBRAKE_STEER_BOOST,
   computeSteerStrength,
+  dampLateralVelocity,
+  integrateDriveForward,
   integrateSteerYaw,
 } from './vehicle-physics';
 export {

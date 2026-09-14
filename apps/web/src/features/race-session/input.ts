@@ -4,6 +4,7 @@ const state: TDriveInput = {
   throttle: 0,
   steer: 0,
   brake: 0,
+  handbrake: 0,
 };
 
 const pressed = new Set<string>();
@@ -12,6 +13,7 @@ const pressed = new Set<string>();
 const touch = {
   throttle: false,
   brake: false,
+  handbrake: false,
   steerLeft: false,
   steerRight: false,
 };
@@ -36,6 +38,7 @@ const RACE_KEYS = new Set([
   'ArrowDown',
   'ArrowLeft',
   'ArrowRight',
+  'Space',
   'KeyR',
 ]);
 
@@ -45,8 +48,10 @@ const syncAxes = (): void => {
   const down = pressed.has('KeyS') || pressed.has('ArrowDown') || touch.brake;
   const left = pressed.has('KeyA') || pressed.has('ArrowLeft') || touch.steerLeft;
   const right = pressed.has('KeyD') || pressed.has('ArrowRight') || touch.steerRight;
+  const handbrake = pressed.has('Space') || touch.handbrake;
   state.throttle = up ? 1 : 0;
   state.brake = down ? 1 : 0;
+  state.handbrake = handbrake ? 1 : 0;
   state.steer = (left ? 1 : 0) + (right ? -1 : 0);
 };
 
@@ -63,6 +68,7 @@ export const setTouchAxis = (axis: TTouchAxis, active: boolean): void => {
 export const clearTouchAxes = (): void => {
   touch.throttle = false;
   touch.brake = false;
+  touch.handbrake = false;
   touch.steerLeft = false;
   touch.steerRight = false;
   syncAxes();

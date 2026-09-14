@@ -19,6 +19,7 @@ import {
 import { Button, PageShell, SegaLoader, StatusText } from '@/shared/ui';
 import { RaceHud, RacePerfHud } from '@/widgets/hud';
 import { RaceCanvas } from '@/widgets/race-canvas';
+import { resetSkidMarks } from '@/widgets/race-canvas/lib/skid-marks-store';
 import { RaceControls, RaceTouchControls } from '@/widgets/race-controls';
 import { RaceCountdownOverlay } from '@/widgets/race-countdown';
 import { RaceFinishMomentOverlay } from '@/widgets/race-finish-moment';
@@ -163,15 +164,17 @@ export const RacePage = () => {
       });
   }, [createResult, trackId, trackSlug, user]);
 
-  // Сбрасывает сессию при смене трассы/конфига и при уходе со страницы.
+  // Сбрасывает сессию и следы при смене трассы/конфига и при уходе со страницы.
   useEffect(() => {
     if (!trackId || !config) {
       return;
     }
     submittedRef.current = false;
     resetRaceSession(trackId, config.checkpoints.length);
+    resetSkidMarks();
     return () => {
       resetRaceSession(trackId, config.checkpoints.length);
+      resetSkidMarks();
     };
   }, [config, trackId]);
 

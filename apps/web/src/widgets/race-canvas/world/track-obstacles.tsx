@@ -1,7 +1,6 @@
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import type { CollisionEnterPayload } from '@react-three/rapier';
 import type { TTrackObstacle, TVec3 } from '@/entities/track';
-import { scenePalette } from '@/shared/config';
 import { TIRE_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
 import { registerTireHit } from '@/widgets/race-canvas/lib/tire-hit-damping';
 
@@ -14,6 +13,9 @@ type TTrackObstaclesProps = {
 
 const TIRE_RADIUS = 0.38;
 const TIRE_TUBE = 0.14;
+/** Узкая светлая полоса на внешнем борту (чуть крупнее основного тора) */
+const TIRE_SIDEWALL_RADIUS = TIRE_RADIUS + 0.02;
+const TIRE_SIDEWALL_TUBE = 0.05;
 const TIRE_STACK_MASS = 12;
 const TIRE_MASS = TIRE_STACK_MASS / 3;
 const TIRE_TIER_COUNT = 3;
@@ -28,6 +30,8 @@ const TIRE_TORQUE_SCALE = 0.08;
 const TIRE_UP_IMPULSE_SCALE = 0.12;
 const TIRE_LATERAL_SCATTER_SCALE = 0.18;
 
+const TIRE_RUBBER = '#3e3e44';
+const TIRE_SIDEWALL = '#6a6a72';
 const BARREL_BODY = '#c45c12';
 const BARREL_BAND = '#3a3a3c';
 const BARREL_LID = '#2a2a2c';
@@ -39,10 +43,16 @@ const TIRE_TIER_OFFSETS = Array.from(
 
 /** Одна шина — mesh без физики */
 const TireVisual = () => (
-  <mesh castShadow receiveShadow rotation={[Math.PI / 2, 0, 0]}>
-    <torusGeometry args={[TIRE_RADIUS, TIRE_TUBE, 10, 18]} />
-    <meshStandardMaterial color={scenePalette.obstacle} roughness={0.92} metalness={0} />
-  </mesh>
+  <group rotation={[Math.PI / 2, 0, 0]}>
+    <mesh castShadow receiveShadow>
+      <torusGeometry args={[TIRE_RADIUS, TIRE_TUBE, 10, 18]} />
+      <meshStandardMaterial color={TIRE_RUBBER} roughness={0.86} metalness={0} />
+    </mesh>
+    <mesh castShadow>
+      <torusGeometry args={[TIRE_SIDEWALL_RADIUS, TIRE_SIDEWALL_TUBE, 8, 18]} />
+      <meshStandardMaterial color={TIRE_SIDEWALL} roughness={0.88} metalness={0} />
+    </mesh>
+  </group>
 );
 
 /** Визуал топливной бочки */

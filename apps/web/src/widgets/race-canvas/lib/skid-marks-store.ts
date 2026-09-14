@@ -156,7 +156,7 @@ export const tickSkidMarks = (dt: number): void => {
   }
 };
 
-/** Сброс всех следов и дыма (рестарт заезда) */
+/** Сброс всех следов и дыма (выход из сессии / смена трека) */
 export const resetSkidMarks = (): void => {
   for (let i = 0; i < SKID_MARK_CAPACITY; i += 1) {
     segments[i]!.alive = false;

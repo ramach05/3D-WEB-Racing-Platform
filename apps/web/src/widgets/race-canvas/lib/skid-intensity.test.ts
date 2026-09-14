@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   computeSkidIntensity,
+  HANDBRAKE_SKID_SPEED_MIN,
   LAUNCH_SPEED_END,
   LAUNCH_SPEED_PEAK,
   SKID_SMOKE_THRESHOLD,
@@ -9,10 +10,11 @@ import {
 } from './skid-intensity';
 
 describe('computeSkidIntensity', () => {
-  it('returns zero without brake or throttle', () => {
+  it('returns zero without brake, handbrake or throttle', () => {
     const result = computeSkidIntensity({
       brake: 0,
       throttle: 0,
+      handbrake: 0,
       forwardSpeed: 30,
       lateral: 0,
       grounded: true,
@@ -25,6 +27,7 @@ describe('computeSkidIntensity', () => {
     const result = computeSkidIntensity({
       brake: 1,
       throttle: 0,
+      handbrake: 0,
       forwardSpeed: 30,
       lateral: 5,
       grounded: false,
@@ -37,6 +40,7 @@ describe('computeSkidIntensity', () => {
     const result = computeSkidIntensity({
       brake: 1,
       throttle: 0,
+      handbrake: 0,
       forwardSpeed: SKID_SPEED_MIN - 0.01,
       lateral: 0,
       grounded: true,
@@ -49,6 +53,7 @@ describe('computeSkidIntensity', () => {
     const low = computeSkidIntensity({
       brake: 1,
       throttle: 0,
+      handbrake: 0,
       forwardSpeed: SKID_SPEED_MIN,
       lateral: 0,
       grounded: true,
@@ -56,6 +61,7 @@ describe('computeSkidIntensity', () => {
     const mid = computeSkidIntensity({
       brake: 1,
       throttle: 0,
+      handbrake: 0,
       forwardSpeed: (SKID_SPEED_MIN + SKID_SPEED_FULL) / 2,
       lateral: 0,
       grounded: true,
@@ -63,6 +69,7 @@ describe('computeSkidIntensity', () => {
     const full = computeSkidIntensity({
       brake: 1,
       throttle: 0,
+      handbrake: 0,
       forwardSpeed: SKID_SPEED_FULL,
       lateral: 0,
       grounded: true,
@@ -79,6 +86,7 @@ describe('computeSkidIntensity', () => {
     const forward = computeSkidIntensity({
       brake: 1,
       throttle: 0,
+      handbrake: 0,
       forwardSpeed: 25,
       lateral: 0,
       grounded: true,
@@ -86,6 +94,7 @@ describe('computeSkidIntensity', () => {
     const reverse = computeSkidIntensity({
       brake: 1,
       throttle: 0,
+      handbrake: 0,
       forwardSpeed: -25,
       lateral: 0,
       grounded: true,
@@ -98,6 +107,7 @@ describe('computeSkidIntensity', () => {
     const straight = computeSkidIntensity({
       brake: 1,
       throttle: 0,
+      handbrake: 0,
       forwardSpeed: 20,
       lateral: 0,
       grounded: true,
@@ -105,6 +115,7 @@ describe('computeSkidIntensity', () => {
     const sliding = computeSkidIntensity({
       brake: 1,
       throttle: 0,
+      handbrake: 0,
       forwardSpeed: 20,
       lateral: 8,
       grounded: true,
@@ -118,6 +129,7 @@ describe('computeSkidIntensity', () => {
     const mild = computeSkidIntensity({
       brake: 1,
       throttle: 0,
+      handbrake: 0,
       forwardSpeed: 16,
       lateral: 0,
       grounded: true,
@@ -125,6 +137,7 @@ describe('computeSkidIntensity', () => {
     const hard = computeSkidIntensity({
       brake: 1,
       throttle: 0,
+      handbrake: 0,
       forwardSpeed: SKID_SPEED_FULL,
       lateral: 8,
       grounded: true,
@@ -135,10 +148,76 @@ describe('computeSkidIntensity', () => {
     expect(hard.intensity).toBe(1);
   });
 
+  it('leaves rear marks while handbraking at speed', () => {
+    const result = computeSkidIntensity({
+      brake: 0,
+      throttle: 0,
+      handbrake: 1,
+      forwardSpeed: 18,
+      lateral: 0,
+      grounded: true,
+    });
+
+    expect(result.wheels).toBe('rear');
+    expect(result.intensity).toBeGreaterThan(0);
+  });
+
+  it('boosts handbrake marks with lateral slip and throttle', () => {
+    const straight = computeSkidIntensity({
+      brake: 0,
+      throttle: 0,
+      handbrake: 1,
+      forwardSpeed: 16,
+      lateral: 0,
+      grounded: true,
+    });
+    const drifting = computeSkidIntensity({
+      brake: 0,
+      throttle: 1,
+      handbrake: 1,
+      forwardSpeed: 16,
+      lateral: 8,
+      grounded: true,
+    });
+
+    expect(drifting.intensity).toBeGreaterThan(straight.intensity);
+    expect(drifting.wheels).toBe('rear');
+    expect(drifting.smoking).toBe(drifting.intensity > SKID_SMOKE_THRESHOLD);
+  });
+
+  it('can leave handbrake marks from strong lateral near the speed floor', () => {
+    const result = computeSkidIntensity({
+      brake: 0,
+      throttle: 1,
+      handbrake: 1,
+      forwardSpeed: HANDBRAKE_SKID_SPEED_MIN,
+      lateral: 8,
+      grounded: true,
+    });
+
+    expect(result.wheels).toBe('rear');
+    expect(result.intensity).toBeGreaterThan(0.4);
+  });
+
+  it('prefers foot-brake marks over handbrake when both are held', () => {
+    const result = computeSkidIntensity({
+      brake: 1,
+      throttle: 0,
+      handbrake: 1,
+      forwardSpeed: 25,
+      lateral: 0,
+      grounded: true,
+    });
+
+    expect(result.wheels).toBe('all');
+    expect(result.intensity).toBeGreaterThan(0);
+  });
+
   it('leaves strong rear-wheel marks on hard launch from standstill', () => {
     const result = computeSkidIntensity({
       brake: 0,
       throttle: 1,
+      handbrake: 0,
       forwardSpeed: 0.5,
       lateral: 0,
       grounded: true,
@@ -153,6 +232,7 @@ describe('computeSkidIntensity', () => {
     const peak = computeSkidIntensity({
       brake: 0,
       throttle: 1,
+      handbrake: 0,
       forwardSpeed: LAUNCH_SPEED_PEAK,
       lateral: 0,
       grounded: true,
@@ -160,6 +240,7 @@ describe('computeSkidIntensity', () => {
     const mid = computeSkidIntensity({
       brake: 0,
       throttle: 1,
+      handbrake: 0,
       forwardSpeed: (LAUNCH_SPEED_PEAK + LAUNCH_SPEED_END) / 2,
       lateral: 0,
       grounded: true,
@@ -167,6 +248,7 @@ describe('computeSkidIntensity', () => {
     const done = computeSkidIntensity({
       brake: 0,
       throttle: 1,
+      handbrake: 0,
       forwardSpeed: LAUNCH_SPEED_END,
       lateral: 0,
       grounded: true,
@@ -182,6 +264,7 @@ describe('computeSkidIntensity', () => {
     const result = computeSkidIntensity({
       brake: 0,
       throttle: 1,
+      handbrake: 0,
       forwardSpeed: 25,
       lateral: 0,
       grounded: true,
@@ -194,6 +277,7 @@ describe('computeSkidIntensity', () => {
     const result = computeSkidIntensity({
       brake: 1,
       throttle: 1,
+      handbrake: 0,
       forwardSpeed: 25,
       lateral: 0,
       grounded: true,

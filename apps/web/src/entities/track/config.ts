@@ -260,7 +260,7 @@ const buildNightCityObstacles = (points: TLoopPoint[], roadWidth: number): TTrac
     {
       ratio: 0.09,
       side: 1,
-      kinds: ['tireStack', 'tireStack', 'tireStack'],
+      kinds: ['tireStack', 'tireStack', 'fuelBarrel'],
       rowInsets: [0.7, 1.85, 3.0],
     },
     {

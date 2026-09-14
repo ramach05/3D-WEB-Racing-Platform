@@ -8,11 +8,12 @@ describe('RaceTouchControls', () => {
     clearTouchAxes();
   });
 
-  it('renders steer, throttle, brake, pause and restart buttons', () => {
+  it('renders steer, throttle, brake, handbrake, pause and restart buttons', () => {
     render(<RaceTouchControls onRestart={vi.fn()} onTogglePause={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: /газ|throttle/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /тормоз|brake/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^(тормоз|brake)$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /ручник|handbrake/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /влево|steer left/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /вправо|steer right/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /пауза|pause/i })).toBeInTheDocument();
@@ -28,6 +29,17 @@ describe('RaceTouchControls', () => {
 
     fireEvent.pointerUp(throttle);
     expect(getDriveInput().throttle).toBe(0);
+  });
+
+  it('sets handbrake on pointerdown and clears on pointerup', () => {
+    render(<RaceTouchControls onRestart={vi.fn()} onTogglePause={vi.fn()} />);
+    const handbrake = screen.getByRole('button', { name: /ручник|handbrake/i });
+
+    fireEvent.pointerDown(handbrake);
+    expect(getDriveInput().handbrake).toBe(1);
+
+    fireEvent.pointerUp(handbrake);
+    expect(getDriveInput().handbrake).toBe(0);
   });
 
   it('calls pause and restart handlers', () => {
