@@ -1,16 +1,16 @@
 import { screen, waitFor } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
-import { AUTH_STORAGE_KEY } from '@/shared/config';
-import { formatRaceTime } from '@/shared/lib';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { clearAuthSession, formatRaceTime, writeAuthSession } from '@/shared/lib';
 import { renderWithProviders } from '@/test/render';
 import { ProfilePage } from './profile-page';
 
 describe('ProfilePage integration', () => {
+  beforeEach(() => {
+    clearAuthSession();
+  });
+
   it('loads nickname and best times from me endpoint', async () => {
-    localStorage.setItem(
-      AUTH_STORAGE_KEY,
-      JSON.stringify({ accessToken: 'access-token', refreshToken: 'refresh-token' }),
-    );
+    writeAuthSession({ accessToken: 'access-token' });
 
     renderWithProviders(<ProfilePage />);
 

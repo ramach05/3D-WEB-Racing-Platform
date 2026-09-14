@@ -5,25 +5,35 @@ import { fileURLToPath } from 'node:url';
 import type { INestApplication } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AppModule } from '../src/app.module';
+import { REFRESH_COOKIE_NAME } from '../src/auth/auth-cookies';
 
 process.env.JWT_SECRET = 'test-access-secret';
-process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
 process.env.DATABASE_URL = 'file:./test.db';
 
 const apiRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 
 type TAuthBody = {
   user: { id: string; nickname: string };
-  tokens: { accessToken: string; refreshToken: string };
+  tokens: { accessToken: string };
 };
 
 type TTrackBody = {
   id: string;
   slug: string;
   isAvailable: boolean;
+};
+
+/** Достаёт Set-Cookie пару name=value для refresh */
+const pickRefreshCookie = (res: request.Response): string => {
+  const header = res.headers['set-cookie'];
+  const cookies = Array.isArray(header) ? header : header ? [header] : [];
+  const match = cookies.find((row) => row.startsWith(`${REFRESH_COOKIE_NAME}=`));
+  expect(match).toBeDefined();
+  return (match ?? '').split(';')[0] ?? '';
 };
 
 /** Поднимает приложение с отдельной SQLite и прогоняет критичный путь API */
@@ -52,6 +62,7 @@ describe('API e2e', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
+    app.use(cookieParser());
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -79,6 +90,7 @@ describe('API e2e', () => {
     const registerBody = register.body as TAuthBody;
     expect(registerBody.user.nickname).toBe(nickname.toLowerCase());
     expect(registerBody.tokens.accessToken.length).toBeGreaterThan(10);
+    expect(pickRefreshCookie(register)).toContain(`${REFRESH_COOKIE_NAME}=`);
 
     const login = await request(server)
       .post('/auth/login')
@@ -138,28 +150,31 @@ describe('API e2e', () => {
     expect(entries.some((row) => row.nickname === 'test_user')).toBe(true);
   });
 
-  it('refreshes tokens and rejects invalid refresh', async () => {
+  it('refreshes via cookie with rotation and rejects reuse / logout', async () => {
     const login = await request(server)
       .post('/auth/login')
       .send({ nickname: 'test_user', password: '1234' })
       .expect(201);
-    const refreshToken = (login.body as TAuthBody).tokens.refreshToken;
+    const oldCookie = pickRefreshCookie(login);
 
     const refreshed = await request(server)
       .post('/auth/refresh')
-      .send({ refreshToken })
+      .set('Cookie', oldCookie)
       .expect(201);
-    const accessToken = (refreshed.body as { tokens: { accessToken: string } }).tokens.accessToken;
+    const refreshedBody = refreshed.body as TAuthBody;
+    const accessToken = refreshedBody.tokens.accessToken;
+    const newCookie = pickRefreshCookie(refreshed);
 
     await request(server).get('/auth/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
 
-    await request(server)
-      .post('/auth/refresh')
-      .send({
-        refreshToken:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ4Iiwibmlja25hbWUiOiJ4In0.invalid',
-      })
-      .expect(401);
+    // Старый refresh после ротации больше недействителен
+    await request(server).post('/auth/refresh').set('Cookie', oldCookie).expect(401);
+
+    await request(server).post('/auth/refresh').expect(401);
+
+    // Logout отзывает текущую сессию и чистит cookie
+    await request(server).post('/auth/logout').set('Cookie', newCookie).expect(204);
+    await request(server).post('/auth/refresh').set('Cookie', newCookie).expect(401);
   });
 
   it('rejects duplicate register', async () => {

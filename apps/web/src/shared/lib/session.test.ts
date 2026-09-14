@@ -1,35 +1,29 @@
-import { describe, expect, it } from 'vitest';
-import { AUTH_STORAGE_KEY } from '@/shared/config';
+import { describe, expect, it, beforeEach } from 'vitest';
 import { clearAuthSession, readAuthSession, writeAuthSession } from './session';
 
-describe('auth session storage', () => {
-  it('returns null when storage is empty', () => {
+describe('auth session memory', () => {
+  beforeEach(() => {
+    clearAuthSession();
+    localStorage.clear();
+  });
+
+  it('returns null when memory is empty', () => {
     expect(readAuthSession()).toBeNull();
   });
 
-  it('writes and reads a valid session', () => {
-    const session = { accessToken: 'access', refreshToken: 'refresh' };
+  it('writes and reads access token from memory', () => {
+    writeAuthSession({ accessToken: 'access' });
 
-    writeAuthSession(session);
-
-    expect(readAuthSession()).toEqual(session);
-    expect(JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) ?? '')).toEqual(session);
+    expect(readAuthSession()).toEqual({ accessToken: 'access' });
   });
 
-  it('clears the stored session', () => {
-    writeAuthSession({ accessToken: 'a', refreshToken: 'b' });
+  it('clears memory and legacy localStorage key', () => {
+    localStorage.setItem('racing-auth', JSON.stringify({ accessToken: 'a', refreshToken: 'b' }));
+    writeAuthSession({ accessToken: 'a' });
 
     clearAuthSession();
 
     expect(readAuthSession()).toBeNull();
-    expect(localStorage.getItem(AUTH_STORAGE_KEY)).toBeNull();
-  });
-
-  it('rejects incomplete or invalid JSON', () => {
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ accessToken: 'only' }));
-    expect(readAuthSession()).toBeNull();
-
-    localStorage.setItem(AUTH_STORAGE_KEY, '{broken');
-    expect(readAuthSession()).toBeNull();
+    expect(localStorage.getItem('racing-auth')).toBeNull();
   });
 });

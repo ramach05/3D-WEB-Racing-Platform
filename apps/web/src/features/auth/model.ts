@@ -9,7 +9,7 @@ const initialState: TAuthState = {
 
 /**
  * Сессия пользователя в Redux.
- * Токены живут в localStorage (shared/lib/session), чтобы RTK baseQuery не тянул app-слой.
+ * Access JWT — в памяти (shared/lib/session); refresh — httpOnly cookie.
  */
 export const authSlice = createSlice({
   name: 'auth',
@@ -36,7 +36,7 @@ type TAuthRoot = {
 /** Текущий пользователь или null */
 export const selectUser = (state: TAuthRoot): TUserPublic | null => state.auth.user;
 
-/** Есть ли сохранённая сессия */
-export const persistTokens = (accessToken: string, refreshToken: string): void => {
-  writeAuthSession({ accessToken, refreshToken });
+/** Сохраняет access JWT в памяти */
+export const persistAccessToken = (accessToken: string): void => {
+  writeAuthSession({ accessToken });
 };

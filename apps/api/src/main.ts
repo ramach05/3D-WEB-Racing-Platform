@@ -2,11 +2,15 @@ import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 
-/** Поднимает HTTP-сервер Nest: CORS, валидация, Swagger */
+/** Поднимает HTTP-сервер Nest: CORS, cookies, валидация, Swagger */
 const bootstrap = async (): Promise<void> => {
   const app = await NestFactory.create(AppModule);
+  app.use(helmet());
+  app.use(cookieParser());
   const origin = process.env.CORS_ORIGIN ?? 'http://localhost:5180';
   app.enableCors({ origin, credentials: true });
   app.useGlobalPipes(

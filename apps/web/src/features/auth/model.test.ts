@@ -1,7 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { AUTH_STORAGE_KEY } from '@/shared/config';
-import { authReducer, logout, persistTokens, selectUser, setUser } from './model';
+import { clearAuthSession, readAuthSession } from '@/shared/lib';
+import { authReducer, logout, persistAccessToken, selectUser, setUser } from './model';
 
 const createAuthStore = () =>
   configureStore({
@@ -10,6 +10,7 @@ const createAuthStore = () =>
 
 describe('auth model', () => {
   beforeEach(() => {
+    clearAuthSession();
     localStorage.clear();
   });
 
@@ -26,18 +27,15 @@ describe('auth model', () => {
     expect(selectUser(store.getState())).toEqual(user);
   });
 
-  it('persists tokens to storage', () => {
-    persistTokens('access', 'refresh');
+  it('persists access token to memory', () => {
+    persistAccessToken('access');
 
-    expect(JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) ?? '')).toEqual({
-      accessToken: 'access',
-      refreshToken: 'refresh',
-    });
+    expect(readAuthSession()).toEqual({ accessToken: 'access' });
   });
 
   it('clears user and session on logout', () => {
     const store = createAuthStore();
-    persistTokens('access', 'refresh');
+    persistAccessToken('access');
     store.dispatch(
       setUser({
         id: '1',
@@ -49,6 +47,6 @@ describe('auth model', () => {
     store.dispatch(logout());
 
     expect(selectUser(store.getState())).toBeNull();
-    expect(localStorage.getItem(AUTH_STORAGE_KEY)).toBeNull();
+    expect(readAuthSession()).toBeNull();
   });
 });

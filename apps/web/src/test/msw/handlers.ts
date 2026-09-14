@@ -41,9 +41,13 @@ export const handlers = [
     }
     return HttpResponse.json({
       user: mockUser,
-      tokens: { accessToken: 'access-token', refreshToken: 'refresh-token' },
+      tokens: { accessToken: 'access-token' },
     });
   }),
+  http.post(`${api}/auth/refresh`, () =>
+    HttpResponse.json({ message: 'Unauthorized' }, { status: 401 }),
+  ),
+  http.post(`${api}/auth/logout`, () => new HttpResponse(null, { status: 204 })),
   http.get(`${api}/auth/me`, () => HttpResponse.json(mockMe)),
   http.get(`${api}/leaderboard`, () => HttpResponse.json([])),
 ];

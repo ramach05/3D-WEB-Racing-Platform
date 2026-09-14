@@ -1,8 +1,14 @@
-import type { TAuthResponse, TLoginRequest, TMeResponse, TRegisterRequest } from '@racing/shared';
+import type {
+  TAuthResponse,
+  TLoginRequest,
+  TMeResponse,
+  TRefreshResponse,
+  TRegisterRequest,
+} from '@racing/shared';
 import { racingApi } from '@/shared/api';
-import { persistTokens, logout, setUser } from './model';
+import { persistAccessToken, logout as clearAuth, setUser } from './model';
 
-/** RTK endpoints: register / login / me */
+/** RTK endpoints: register / login / refresh / logout / me */
 export const authApi = racingApi.injectEndpoints({
   endpoints: (build) => ({
     register: build.mutation<TAuthResponse, TRegisterRequest>({
@@ -10,7 +16,7 @@ export const authApi = racingApi.injectEndpoints({
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
-          persistTokens(data.tokens.accessToken, data.tokens.refreshToken);
+          persistAccessToken(data.tokens.accessToken);
           dispatch(setUser(data.user));
         } catch {
           return;
@@ -23,10 +29,34 @@ export const authApi = racingApi.injectEndpoints({
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
-          persistTokens(data.tokens.accessToken, data.tokens.refreshToken);
+          persistAccessToken(data.tokens.accessToken);
           dispatch(setUser(data.user));
         } catch {
           return;
+        }
+      },
+      invalidatesTags: ['Me'],
+    }),
+    refreshSession: build.mutation<TRefreshResponse, void>({
+      query: () => ({ url: '/auth/refresh', method: 'POST' }),
+      async onQueryStarted(_arg, { queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          persistAccessToken(data.tokens.accessToken);
+        } catch {
+          return;
+        }
+      },
+    }),
+    logoutSession: build.mutation<void, void>({
+      query: () => ({ url: '/auth/logout', method: 'POST' }),
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+        } catch {
+          // Локальный выход даже если revoke на сервере не удался
+        } finally {
+          dispatch(clearAuth());
         }
       },
       invalidatesTags: ['Me'],
@@ -38,7 +68,7 @@ export const authApi = racingApi.injectEndpoints({
           const { data } = await queryFulfilled;
           dispatch(setUser(data.user));
         } catch {
-          dispatch(logout());
+          dispatch(clearAuth());
         }
       },
       providesTags: ['Me'],
@@ -46,4 +76,11 @@ export const authApi = racingApi.injectEndpoints({
   }),
 });
 
-export const { useLoginMutation, useRegisterMutation, useGetMeQuery, useLazyGetMeQuery } = authApi;
+export const {
+  useLoginMutation,
+  useRegisterMutation,
+  useRefreshSessionMutation,
+  useLogoutSessionMutation,
+  useGetMeQuery,
+  useLazyGetMeQuery,
+} = authApi;

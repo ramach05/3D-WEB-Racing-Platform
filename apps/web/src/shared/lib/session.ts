@@ -1,36 +1,28 @@
-import { AUTH_STORAGE_KEY } from '@/shared/config';
 import type { TAuthSession } from './session.types';
 
-type TStoredSession = {
-  /** JWT access из localStorage */
-  accessToken?: string;
-  /** JWT refresh из localStorage */
-  refreshToken?: string;
-};
+const LEGACY_AUTH_STORAGE_KEY = 'racing-auth';
 
-/** Читает JWT из localStorage */
+let accessTokenMemory: string | null = null;
+
+/** Читает access JWT из памяти (refresh — только httpOnly cookie) */
 export const readAuthSession = (): TAuthSession | null => {
-  const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-  if (!raw) {
+  if (!accessTokenMemory) {
     return null;
   }
-  try {
-    const parsed = JSON.parse(raw) as TStoredSession;
-    if (typeof parsed.accessToken === 'string' && typeof parsed.refreshToken === 'string') {
-      return { accessToken: parsed.accessToken, refreshToken: parsed.refreshToken };
-    }
-    return null;
-  } catch {
-    return null;
-  }
+  return { accessToken: accessTokenMemory };
 };
 
-/** Пишет JWT в localStorage */
+/** Пишет access JWT в память */
 export const writeAuthSession = (session: TAuthSession): void => {
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+  accessTokenMemory = session.accessToken;
 };
 
-/** Удаляет JWT из localStorage */
+/** Удаляет access JWT из памяти и старый localStorage-ключ */
 export const clearAuthSession = (): void => {
-  localStorage.removeItem(AUTH_STORAGE_KEY);
+  accessTokenMemory = null;
+  try {
+    localStorage.removeItem(LEGACY_AUTH_STORAGE_KEY);
+  } catch {
+    // SSR / private mode
+  }
 };

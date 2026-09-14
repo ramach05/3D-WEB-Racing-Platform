@@ -17,21 +17,15 @@ export type TLoginRequest = {
   password: string;
 };
 
-/** Пара JWT */
+/** Access JWT в JSON; refresh только в httpOnly cookie */
 export type TAuthTokens = {
   accessToken: string;
-  refreshToken: string;
 };
 
 /** Ответ login/register */
 export type TAuthResponse = {
   user: TUserPublic;
   tokens: TAuthTokens;
-};
-
-/** Обновление access-токена */
-export type TRefreshRequest = {
-  refreshToken: string;
 };
 
 /** Ответ refresh */

@@ -34,7 +34,7 @@ ffmpeg -i recording.mov -vf "fps=15,scale=960:-1" docs/screenshots/gameplay.gif
 | **Rapier (**`@react-three/rapier`**)** | WASM-физика в том же дереве, что R3F. Arcade, не симулятор F1.                               |
 | **FSD**                                | Границы модулей читаются на собеседовании.                                                   |
 | **Redux Toolkit + RTK Query**          | Auth/API. Симуляция гонки **не** в Redux: vanilla-store + `useSyncExternalStore`.            |
-| **JWT access + refresh**               | Refresh в `localStorage`. Для продакшена лучше httpOnly cookie — здесь локальный пет-проект. |
+| **JWT access + httpOnly refresh**      | Access JWT 15m в памяти; refresh — opaque httpOnly cookie + ротация/revoke в БД. |
 
 Пакеты: `@racing/web`, `@racing/api`, `@racing/shared`. Node **22.12+**, pnpm **10**.
 
@@ -163,12 +163,13 @@ pnpm --filter @racing/web e2e:install
 - Геймпад
 - Более богатая физика (отдельные колёса, разный грип)
 - Третья трасса / GLTF-окружение
-- httpOnly cookie для refresh
 - Мобильный UX
 
 ## Известные ограничения
 
 - Физика arcade: yaw-only, скольжение вдоль стен без отскока, макс. ~108 км/ч (30 м/с).
 - Лучшее время гостя — `localStorage`; в лидерборд попадает только авторизованный финиш.
-- JWT в `localStorage` (XSS-риск, для локального MVP приемлемо).
+- Access JWT в памяти (сбрасывается при reload — поднимается через refresh-cookie).
 - Минимальное время результата на сервере — 8 секунд (анти-чит).
+- Helmet + rate limit на auth-эндпоинтах; пароль от 4 символов (демо seed `1234`).
+- В prod включите `COOKIE_SECURE=true` (и при необходимости `COOKIE_SAME_SITE=none` для cross-site).

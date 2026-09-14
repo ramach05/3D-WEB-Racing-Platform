@@ -9,4 +9,5 @@ export type TJwtPayload = {
 };
 
 export const ACCESS_TOKEN_EXPIRES = '15m';
-export const REFRESH_TOKEN_EXPIRES = '7d';
+/** TTL opaque refresh-сессии */
+export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;

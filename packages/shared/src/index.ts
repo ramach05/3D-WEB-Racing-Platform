@@ -3,7 +3,6 @@ export type {
   TAuthTokens,
   TLoginRequest,
   TMeResponse,
-  TRefreshRequest,
   TRefreshResponse,
   TRegisterRequest,
   TUserBestResult,

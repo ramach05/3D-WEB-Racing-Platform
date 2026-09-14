@@ -1,12 +1,37 @@
-import { useDispatch, useSelector } from 'react-redux';
+import { useCallback, useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { readAuthSession } from '@/shared/lib';
-import { useGetMeQuery } from './api';
-import { logout, selectUser } from './model';
+import { useGetMeQuery, useLogoutSessionMutation, useRefreshSessionMutation } from './api';
+import { selectUser } from './model';
 
-/** Гидрация сессии: если в localStorage есть токен, тянем /auth/me */
+/** Гидрация: refresh cookie → access в памяти → /auth/me */
 export const AuthHydrator = () => {
-  const hasSession = Boolean(readAuthSession());
-  useGetMeQuery(undefined, { skip: !hasSession });
+  const [bootstrapped, setBootstrapped] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
+  const [refreshSession] = useRefreshSessionMutation();
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        if (!readAuthSession()) {
+          await refreshSession().unwrap();
+        }
+      } catch {
+        // Гость без cookie / протухшая сессия
+      } finally {
+        if (!cancelled) {
+          setHasAccess(Boolean(readAuthSession()));
+          setBootstrapped(true);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshSession]);
+
+  useGetMeQuery(undefined, { skip: !bootstrapped || !hasAccess });
   return null;
 };
 
@@ -15,10 +40,11 @@ export const useAuthUser = () => {
   return useSelector(selectUser);
 };
 
-/** Выход: чистим store и JWT */
+/** Выход: revoke refresh-cookie на сервере + локальная очистка */
 export const useLogout = () => {
-  const dispatch = useDispatch();
-  return () => {
-    dispatch(logout());
-  };
+  const [logoutSession] = useLogoutSessionMutation();
+
+  return useCallback(() => {
+    void logoutSession();
+  }, [logoutSession]);
 };

@@ -8,8 +8,8 @@ import { PageShell, ProfilePageSkeleton, StatusText } from '@/shared/ui';
 export const ProfilePage = () => {
   const { t } = useTranslation();
   const user = useAuthUser();
-  const hasSession = Boolean(readAuthSession());
-  const { data, isLoading, isError } = useGetMeQuery(undefined, { skip: !user && !hasSession });
+  const hasAccess = Boolean(readAuthSession());
+  const { data, isLoading, isError } = useGetMeQuery(undefined, { skip: !user && !hasAccess });
 
   if (!user && !isLoading) {
     return (
