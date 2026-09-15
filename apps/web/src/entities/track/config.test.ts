@@ -131,10 +131,11 @@ describe('track config geometry', () => {
     }
   });
 
-  it('places sparse obstacles on night city and denser ones on coastal', () => {
+  it('places obstacles on both tracks', () => {
     expect(coastalOvalTrack.obstacles.length).toBeGreaterThan(0);
     expect(nightCityTrack.obstacles.length).toBeGreaterThan(0);
-    expect(nightCityTrack.obstacles.length).toBeLessThan(coastalOvalTrack.obstacles.length);
+    // Night City: 4 ряда × несколько банков — плотнее Coastal (3 ряда)
+    expect(nightCityTrack.obstacles.length).toBeGreaterThan(coastalOvalTrack.obstacles.length);
   });
 
   it('mixes tire stacks and fuel barrels on both tracks', () => {

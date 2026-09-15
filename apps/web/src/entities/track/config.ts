@@ -13,6 +13,43 @@ import type {
 import { buildTribuneTreeExclusionZone } from './tribune-layout';
 import { yawFacingRaceDirection } from './race-direction';
 
+/** Точка на полилинии на заданном расстоянии от начала (рост индекса). */
+const placeAlongPolyline = (
+  points: TLoopPoint[],
+  distanceMeters: number,
+): { x: number; z: number; dx: number; dz: number } => {
+  const pointCount = points.length;
+  const first = points[0];
+  const second = points[1] ?? first;
+  if (!first || !second || pointCount < 2) {
+    return { x: first?.x ?? 0, z: first?.z ?? 0, dx: 0, dz: 1 };
+  }
+
+  let remaining = Math.max(0, distanceMeters);
+  for (let i = 0; i < pointCount; i += 1) {
+    const a = points[i];
+    const b = points[(i + 1) % pointCount];
+    if (!a || !b) {
+      continue;
+    }
+    const dx = b.x - a.x;
+    const dz = b.z - a.z;
+    const segLen = Math.hypot(dx, dz);
+    if (segLen < 1e-6) {
+      continue;
+    }
+    if (remaining <= segLen) {
+      const t = remaining / segLen;
+      return { x: a.x + dx * t, z: a.z + dz * t, dx, dz };
+    }
+    remaining -= segLen;
+  }
+
+  const dx = second.x - first.x;
+  const dz = second.z - first.z;
+  return { x: first.x, z: first.z, dx, dz };
+};
+
 /** Строит замкнутую трассу по точкам центральной линии */
 const buildLoopTrack = ({
   slug,
@@ -21,7 +58,7 @@ const buildLoopTrack = ({
   palette,
   carSkin,
   audioTheme,
-  spawnRatio,
+  spawnOffsetMeters,
   startTribuneSide,
 }: TBuildLoopOptions): TTrackConfig => {
   const pointCount = points.length;
@@ -127,23 +164,14 @@ const buildLoopTrack = ({
     startFinishLine,
   ];
 
-  const spawnIndex = Math.floor(spawnRatio * pointCount) % pointCount;
-  const spawn = points[spawnIndex];
-  const spawnNext = points[(spawnIndex + 1) % pointCount];
-  const spawnDx = (spawnNext?.x ?? 0) - (spawn?.x ?? 0);
-  const spawnDz = (spawnNext?.z ?? 0) - (spawn?.z ?? 0);
-  const spawnLen = Math.hypot(spawnDx, spawnDz) || 1;
-  const spawnAdvance = 5;
+  /** Фиксированные метры от финиша — одинаково на любой плотности точек. */
+  const spawnPose = placeAlongPolyline(points, spawnOffsetMeters);
 
   return {
     slug,
-    spawnPosition: [
-      (spawn?.x ?? 0) + (spawnDx / spawnLen) * spawnAdvance,
-      0.85,
-      (spawn?.z ?? 0) + (spawnDz / spawnLen) * spawnAdvance,
-    ],
+    spawnPosition: [spawnPose.x, 0.85, spawnPose.z],
     // Направление заезда ≠ рост индекса centerline — см. race-direction.ts
-    spawnRotationY: yawFacingRaceDirection(spawnDx, spawnDz),
+    spawnRotationY: yawFacingRaceDirection(spawnPose.dx, spawnPose.dz),
     startFinishLine,
     walls,
     checkpoints,
@@ -253,39 +281,47 @@ const buildCoastalOvalObstacles = (points: TLoopPoint[], roadWidth: number): TTr
   ]);
 };
 
-/** Редкие препятствия у стенок Night City: стопки шин и топливные бочки. */
+/** Препятствия Night City: 4 ряда от бордюра (дорога 10 м) — шины и бочки. */
 const buildNightCityObstacles = (points: TLoopPoint[], roadWidth: number): TTrackObstacle[] => {
-  /** 2–3 ряда от бордюра; точек вдоль трассы меньше, чем у coastal. */
+  /** Четвёртый inset ≈ центр полосы с зазором; шаги ~1.15 м под габарит стопки. */
+  const quad = [0.7, 1.85, 3.0, 4.15] as const;
+  const tires: TObstacleKind[] = ['tireStack', 'tireStack', 'tireStack', 'tireStack'];
+  const barrels: TObstacleKind[] = ['fuelBarrel', 'fuelBarrel', 'fuelBarrel', 'fuelBarrel'];
+
   return buildObstaclesFromBanks(points, roadWidth, [
+    { ratio: 0.1, side: 1, kinds: tires, rowInsets: quad },
     {
-      ratio: 0.09,
-      side: 1,
-      kinds: ['tireStack', 'tireStack', 'fuelBarrel'],
-      rowInsets: [0.7, 1.85, 3.0],
-    },
-    {
-      ratio: 0.45,
-      side: 1,
-      kinds: ['fuelBarrel', 'fuelBarrel', 'fuelBarrel'],
-      rowInsets: [0.7, 1.85, 3.0],
-    },
-    {
-      ratio: 0.62,
+      ratio: 0.18,
       side: -1,
-      kinds: ['tireStack', 'tireStack', 'fuelBarrel'],
-      rowInsets: [0.7, 1.85, 3.0],
+      kinds: ['fuelBarrel', 'tireStack', 'tireStack', 'fuelBarrel'],
+      rowInsets: quad,
+    },
+    { ratio: 0.28, side: 1, kinds: barrels, rowInsets: quad },
+    {
+      ratio: 0.38,
+      side: -1,
+      kinds: ['tireStack', 'fuelBarrel', 'tireStack', 'tireStack'],
+      rowInsets: quad,
     },
     {
-      ratio: 0.79,
+      ratio: 0.48,
       side: 1,
-      kinds: ['fuelBarrel', 'tireStack', 'tireStack'],
-      rowInsets: [0.7, 1.85, 3.0],
+      kinds: ['fuelBarrel', 'fuelBarrel', 'tireStack', 'fuelBarrel'],
+      rowInsets: quad,
     },
+    { ratio: 0.58, side: -1, kinds: tires, rowInsets: quad },
     {
-      ratio: 0.82,
+      ratio: 0.68,
       side: 1,
-      kinds: ['fuelBarrel', 'fuelBarrel'],
-      rowInsets: [0.7, 1.85],
+      kinds: ['tireStack', 'tireStack', 'fuelBarrel', 'tireStack'],
+      rowInsets: quad,
+    },
+    { ratio: 0.78, side: -1, kinds: barrels, rowInsets: quad },
+    {
+      ratio: 0.88,
+      side: 1,
+      kinds: ['fuelBarrel', 'tireStack', 'tireStack', 'tireStack'],
+      rowInsets: quad,
     },
   ]);
 };
@@ -300,47 +336,32 @@ const buildEllipsePoints = (radiusX: number, radiusZ: number, count: number): TL
   return points;
 };
 
-/** Стадион: непрерывный скруглённый прямоугольник (4 прямых + 4 четверти). */
-const buildStadiumPoints = (
-  width: number,
-  depth: number,
-  cornerRadius: number,
-  count: number,
-): TLoopPoint[] => {
-  const r = Math.min(cornerRadius, width / 2, depth / 2);
-  const hw = width / 2 - r;
-  const hd = depth / 2 - r;
-  const quarter = (Math.PI / 2) * r;
-  const straightX = 2 * hw;
-  const straightZ = 2 * hd;
+type TPathSegment =
+  | {
+      kind: 'line';
+      from: readonly [number, number];
+      to: readonly [number, number];
+      length: number;
+    }
+  | {
+      kind: 'arc';
+      center: readonly [number, number];
+      radius: number;
+      angleStart: number;
+      angleDelta: number;
+      length: number;
+    };
 
-  type TStadiumSegment =
-    | {
-        kind: 'line';
-        from: readonly [number, number];
-        to: readonly [number, number];
-        length: number;
-      }
-    | {
-        kind: 'arc';
-        center: readonly [number, number];
-        angleStart: number;
-        length: number;
-      };
+type TDriveCommand =
+  | { type: 'line'; length: number }
+  | { type: 'arc'; radius: number; delta: number };
 
-  // CCW: низ → BR → право → TR → верх → TL → лево → BL
-  const segments: TStadiumSegment[] = [
-    { kind: 'line', from: [-hw, -hd - r], to: [hw, -hd - r], length: straightX },
-    { kind: 'arc', center: [hw, -hd], angleStart: -Math.PI / 2, length: quarter },
-    { kind: 'line', from: [hw + r, -hd], to: [hw + r, hd], length: straightZ },
-    { kind: 'arc', center: [hw, hd], angleStart: 0, length: quarter },
-    { kind: 'line', from: [hw, hd + r], to: [-hw, hd + r], length: straightX },
-    { kind: 'arc', center: [-hw, hd], angleStart: Math.PI / 2, length: quarter },
-    { kind: 'line', from: [-hw - r, hd], to: [-hw - r, -hd], length: straightZ },
-    { kind: 'arc', center: [-hw, -hd], angleStart: Math.PI, length: quarter },
-  ];
-
+/** Равномерная выборка по длине пути из line/arc сегментов */
+const samplePathSegments = (segments: readonly TPathSegment[], count: number): TLoopPoint[] => {
   const perimeter = segments.reduce((sum, seg) => sum + seg.length, 0);
+  if (perimeter < 1e-3 || count < 8) {
+    return [];
+  }
   const points: TLoopPoint[] = [];
   for (let i = 0; i < count; i += 1) {
     let remaining = (i / count) * perimeter;
@@ -357,10 +378,10 @@ const buildStadiumPoints = (
           z: seg.from[1] + (seg.to[1] - seg.from[1]) * t,
         };
       } else {
-        const angle = seg.angleStart + t * (Math.PI / 2);
+        const angle = seg.angleStart + t * seg.angleDelta;
         point = {
-          x: seg.center[0] + Math.cos(angle) * r,
-          z: seg.center[1] + Math.sin(angle) * r,
+          x: seg.center[0] + Math.cos(angle) * seg.radius,
+          z: seg.center[1] + Math.sin(angle) * seg.radius,
         };
       }
       break;
@@ -371,6 +392,78 @@ const buildStadiumPoints = (
   }
   return points;
 };
+
+/**
+ * Строит замкнутую трассу из команд «прямая / дуга» (heading 0 = +X, CCW+).
+ * Сумма дуг должна быть ±2π, длины прямых — подобраны под замыкание петли.
+ */
+const buildDrivenLoopPoints = (
+  start: TLoopPoint,
+  startHeading: number,
+  commands: readonly TDriveCommand[],
+  count: number,
+): TLoopPoint[] => {
+  let x = start.x;
+  let z = start.z;
+  let heading = startHeading;
+  const segments: TPathSegment[] = [];
+
+  for (const cmd of commands) {
+    if (cmd.type === 'line') {
+      const x1 = x + Math.cos(heading) * cmd.length;
+      const z1 = z + Math.sin(heading) * cmd.length;
+      segments.push({
+        kind: 'line',
+        from: [x, z],
+        to: [x1, z1],
+        length: cmd.length,
+      });
+      x = x1;
+      z = z1;
+      continue;
+    }
+
+    const side = Math.sign(cmd.delta) || 1;
+    const cx = x - Math.sin(heading) * cmd.radius * side;
+    const cz = z + Math.cos(heading) * cmd.radius * side;
+    const angleStart = Math.atan2(z - cz, x - cx);
+    segments.push({
+      kind: 'arc',
+      center: [cx, cz],
+      radius: cmd.radius,
+      angleStart,
+      angleDelta: cmd.delta,
+      length: Math.abs(cmd.delta) * cmd.radius,
+    });
+    heading += cmd.delta;
+    x = cx + Math.cos(angleStart + cmd.delta) * cmd.radius;
+    z = cz + Math.sin(angleStart + cmd.delta) * cmd.radius;
+  }
+
+  return samplePathSegments(segments, count);
+};
+
+/**
+ * Night City street circuit: стартовая прямая, T1-sweeper, эски (S),
+ * широкие углы. Дуги как раньше (min R=26); прямые укорочены для компактности.
+ * L0+L5 — одна стартовая прямая; L5 подобран под замыкание петли.
+ */
+const NIGHT_CITY_DRIVE: readonly TDriveCommand[] = [
+  { type: 'line', length: 52 },
+  { type: 'arc', radius: 34, delta: Math.PI / 2 },
+  { type: 'line', length: 14 },
+  { type: 'arc', radius: 28, delta: Math.PI / 2 },
+  { type: 'line', length: 6 },
+  // Эски: net turn 0, извилистая связка
+  { type: 'arc', radius: 26, delta: Math.PI * 0.4 },
+  { type: 'arc', radius: 26, delta: -Math.PI * 0.8 },
+  { type: 'arc', radius: 26, delta: Math.PI * 0.4 },
+  { type: 'line', length: 6 },
+  { type: 'arc', radius: 30, delta: Math.PI / 2 },
+  { type: 'line', length: 14 },
+  { type: 'arc', radius: 32, delta: Math.PI / 2 },
+  { type: 'line', length: 50.91 },
+];
 
 const coastalOvalPoints = buildEllipsePoints(58, 36, 44);
 const coastalOvalRoadWidth = 10;
@@ -383,14 +476,19 @@ export const coastalOvalTrack: TTrackConfig = {
     palette: trackPalettes.coastal,
     carSkin: carSkins.coastal,
     audioTheme: 'coastal',
-    spawnRatio: 0.02,
+    spawnOffsetMeters: 5,
     startTribuneSide: 'left',
   }),
   obstacles: buildCoastalOvalObstacles(coastalOvalPoints, coastalOvalRoadWidth),
 };
 
-/** R≈22 как min radius Coastal (b²/a); раньше 14 давал более резкие углы */
-const nightCityPoints = buildStadiumPoints(72, 48, 22, 48);
+/** Street-circuit Night City: drive-команды → равномерная выборка */
+const nightCityPoints = buildDrivenLoopPoints(
+  { x: -28, z: -48 },
+  0,
+  NIGHT_CITY_DRIVE,
+  64,
+);
 const nightCityRoadWidth = 10;
 
 export const nightCityTrack: TTrackConfig = {
@@ -401,7 +499,7 @@ export const nightCityTrack: TTrackConfig = {
     palette: trackPalettes.night,
     carSkin: carSkins.night,
     audioTheme: 'night',
-    spawnRatio: 0.04,
+    spawnOffsetMeters: 5,
     startTribuneSide: 'left',
   }),
   obstacles: buildNightCityObstacles(nightCityPoints, nightCityRoadWidth),

@@ -16,7 +16,7 @@ export const ruMessages = {
     title: '3D WEB Racing',
     subtitle: 'Аркадный заезд на время. Жми газ — бей рекорд!',
     cta: 'ИГРАТЬ',
-    pressStart: 'PRESS START',
+    pressStart: 'ЖМИ START',
     tagline: 'SEGA-style time trial в браузере',
     controlsTitle: 'Управление',
     throttle: 'W / ↑ — газ',

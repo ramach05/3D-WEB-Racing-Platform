@@ -88,8 +88,8 @@ export type TBuildLoopOptions = {
   carSkin: TCarSkin;
   /** Тема аудио */
   audioTheme: TTrackAudioTheme;
-  /** Доля петли для спавна 0..1 */
-  spawnRatio: number;
+  /** Метры от линии финиша вдоль centerline (сторона +lz) */
+  spawnOffsetMeters: number;
   /** Сторона трибун */
   startTribuneSide: TStartTribuneSide;
 };
