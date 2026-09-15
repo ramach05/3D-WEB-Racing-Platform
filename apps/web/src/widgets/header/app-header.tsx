@@ -15,9 +15,7 @@ type TNavClassArgs = {
 const navClass = ({ isActive }: TNavClassArgs): string =>
   cx(
     'sega-nav-link sega-header-nav__link px-1.5 py-2 text-center text-[0.65rem] font-medium uppercase leading-tight sm:text-xs md:px-3 md:py-1.5 md:text-sm',
-    isActive
-      ? 'bg-[var(--surface-hover)] text-[var(--sega-yellow)]'
-      : 'text-[var(--muted)] hover:text-[var(--fg)]',
+    isActive ? 'bg-[var(--surface-hover)] text-[var(--sega-yellow)]' : 'text-[var(--muted)]',
   );
 
 /** Шапка сайта: навигация, тема, язык, сессия */
@@ -69,20 +67,20 @@ export const AppHeader = () => {
           style={{ ['--sega-nav-cols' as string]: String(navCols) }}
         >
           <NavLink to="/" className={navClass} end>
-            {t('nav.home')}
+            <span className="sega-header-nav__label">{t('nav.home')}</span>
           </NavLink>
           <NavLink to="/tracks" className={navClass}>
-            {t('nav.tracks')}
+            <span className="sega-header-nav__label">{t('nav.tracks')}</span>
           </NavLink>
           <NavLink to="/leaderboard" className={navClass}>
-            {t('nav.leaderboard')}
+            <span className="sega-header-nav__label">{t('nav.leaderboard')}</span>
           </NavLink>
           <NavLink to="/profile" className={navClass}>
-            {t('nav.profile')}
+            <span className="sega-header-nav__label">{t('nav.profile')}</span>
           </NavLink>
           {user ? null : (
             <NavLink to="/login" className={navClass}>
-              {t('nav.login')}
+              <span className="sega-header-nav__label">{t('nav.login')}</span>
             </NavLink>
           )}
         </nav>

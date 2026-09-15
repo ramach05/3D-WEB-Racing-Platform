@@ -20,6 +20,13 @@
 /* Цветовые --* задаёт applyTheme из @/shared/config uiPalette / uiChrome */
 :root {
   --pixel-border: 3px;
+  /* Единый arcade hover: pixel punch */
+  --sega-hover-tx: -3px;
+  --sega-hover-ty: -3px;
+  --sega-hover-shadow: 4px 4px 0 0 var(--sega-cyan), 7px 7px 0 0 var(--sega-magenta);
+  --sega-hover-shadow-pressed: 1px 1px 0 0 var(--sega-cyan);
+  --sega-seg-hover-tx: -2px;
+  --sega-seg-hover-ty: -2px;
 }
 
 .dark {
@@ -367,9 +374,11 @@ button:disabled,
   letter-spacing: 0.04em;
   box-shadow: 3px 3px 0 0 var(--sega-cyan);
   transition:
-    transform 120ms steps(3),
-    box-shadow 120ms steps(3),
-    background-color 120ms ease;
+    transform 140ms steps(4),
+    box-shadow 140ms steps(4),
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease;
 }
 
 .sega-btn--sm {
@@ -379,13 +388,14 @@ button:disabled,
 }
 
 .sega-btn:hover:not(:disabled) {
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 0 var(--sega-cyan);
+  transform: translate(var(--sega-hover-tx), var(--sega-hover-ty));
+  box-shadow: var(--sega-hover-shadow);
+  border-color: var(--sega-yellow);
 }
 
 .sega-btn:active:not(:disabled) {
   transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 0 var(--sega-cyan);
+  box-shadow: var(--sega-hover-shadow-pressed);
 }
 
 .sega-btn--ghost {
@@ -395,34 +405,41 @@ button:disabled,
 }
 
 .sega-btn--ghost:hover:not(:disabled) {
-  box-shadow: 5px 5px 0 0 var(--sega-magenta);
+  background: var(--surface-hover);
+  color: var(--sega-yellow);
+  box-shadow: var(--sega-hover-shadow);
 }
 
 .sega-card-link {
   color: inherit;
   transition:
-    transform 120ms steps(3),
-    box-shadow 120ms steps(3),
-    background-color 120ms ease;
+    transform 140ms steps(4),
+    box-shadow 140ms steps(4),
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease;
 }
 
 .sega-card-link:hover {
-  transform: translate(-2px, -2px);
+  transform: translate(var(--sega-hover-tx), var(--sega-hover-ty));
   background: var(--surface-hover);
+  border-color: var(--sega-yellow);
   box-shadow:
     0 0 0 2px var(--bg),
-    6px 6px 0 0 var(--sega-magenta);
+    var(--sega-hover-shadow);
 }
 
 .sega-nav-link {
   transition:
-    color 100ms ease,
-    background-color 100ms ease,
-    transform 80ms steps(2);
+    color 140ms ease,
+    background-color 140ms ease,
+    transform 140ms steps(4);
 }
 
 .sega-nav-link:hover {
-  transform: translateY(-1px);
+  transform: translate(var(--sega-seg-hover-tx), var(--sega-seg-hover-ty));
+  background: var(--surface-hover);
+  color: var(--sega-yellow);
 }
 
 /** Мобильная навигация: равные ячейки в пиксельной рамке */
@@ -446,6 +463,21 @@ button:disabled,
 
 .sega-header-nav__link:last-child {
   border-right: 0;
+}
+
+.sega-header-nav__label {
+  display: inline-block;
+  transition: transform 140ms steps(4);
+}
+
+.sega-header-nav__link:hover {
+  transform: none;
+  background: var(--surface-hover);
+  color: var(--sega-yellow);
+}
+
+.sega-header-nav__link:hover .sega-header-nav__label {
+  transform: translateY(var(--sega-seg-hover-ty));
 }
 
 @media (min-width: 768px) {
@@ -472,8 +504,11 @@ button:disabled,
   min-width: 6.5rem;
   box-shadow: 2px 2px 0 0 var(--sega-magenta);
   transition:
-    transform 100ms steps(2),
-    box-shadow 100ms steps(2);
+    transform 140ms steps(4),
+    box-shadow 140ms steps(4),
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease;
 }
 
 .sega-select-trigger--sm {
@@ -483,13 +518,17 @@ button:disabled,
 }
 
 .sega-select-trigger:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 0 var(--sega-magenta);
+  transform: translate(var(--sega-hover-tx), var(--sega-hover-ty));
+  box-shadow: var(--sega-hover-shadow);
+  border-color: var(--sega-yellow);
+  color: var(--sega-yellow);
+  background: var(--surface-hover);
 }
 
 .sega-select-trigger[aria-expanded="true"] {
   background: var(--surface-hover);
-  box-shadow: 1px 1px 0 0 var(--sega-magenta);
+  box-shadow: var(--sega-hover-shadow-pressed);
+  color: var(--sega-yellow);
 }
 
 .sega-select-chevron {
@@ -536,12 +575,15 @@ button:disabled,
   padding: 0.45rem 0.65rem;
   text-align: left;
   font: inherit;
-  transition: background-color 80ms ease;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
 }
 
 .sega-select-item--highlight,
 .sega-select-item:hover {
   background: var(--surface-hover);
+  color: var(--sega-yellow);
 }
 
 .sega-select-item--active {
@@ -570,18 +612,19 @@ button:disabled,
   text-transform: uppercase;
   letter-spacing: 0.04em;
   transition:
-    background-color 100ms ease,
-    color 100ms ease,
-    transform 100ms steps(2);
+    background-color 140ms ease,
+    color 140ms ease,
+    transform 140ms steps(4);
 }
 
 .sega-track-tab:last-child {
   border-right: 0;
 }
 
-.sega-track-tab:hover {
+.sega-track-tab:hover:not(.sega-track-tab--active) {
+  transform: translateY(var(--sega-seg-hover-ty));
   background: var(--surface-hover);
-  color: var(--fg);
+  color: var(--sega-yellow);
 }
 
 .sega-track-tab--active {
@@ -955,10 +998,21 @@ button:disabled,
   .sega-btn,
   .sega-card-link,
   .sega-nav-link,
+  .sega-header-nav__label,
   .sega-select-trigger,
   .sega-select-menu,
+  .sega-select-item,
   .sega-track-tab,
   .sega-touch-btn {
     transition: none;
+  }
+
+  .sega-btn:hover:not(:disabled),
+  .sega-card-link:hover,
+  .sega-nav-link:hover,
+  .sega-header-nav__link:hover .sega-header-nav__label,
+  .sega-select-trigger:hover,
+  .sega-track-tab:hover:not(.sega-track-tab--active) {
+    transform: none;
   }
 }
