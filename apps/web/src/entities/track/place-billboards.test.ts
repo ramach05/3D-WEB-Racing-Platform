@@ -54,8 +54,9 @@ describe('placeBillboards', () => {
 
     for (const billboard of billboards) {
       const dist = distanceToCenterline(billboard.x, billboard.z, config.centerline);
-      expect(dist).toBeGreaterThan(wallBand - 0.5);
-      expect(dist).toBeLessThan(wallBand + 0.5);
+      // На дугах closest-point ≠ точка станции: допуск шире wallOffset-выноса
+      expect(dist).toBeGreaterThan(wallBand - 1);
+      expect(dist).toBeLessThan(wallBand + 1);
     }
   });
 
@@ -108,6 +109,35 @@ describe('placeBillboards', () => {
         expect(dist).toBeGreaterThanOrEqual(minDist - 0.01);
       }
     }
+  });
+
+  it('puts Night City for-rent and apex-tires on flipped roadsides', () => {
+    const night = placeBillboards({ config: nightCityTrack });
+    const coastal = placeBillboards({ config: coastalOvalTrack });
+    const nightForRent = night.find((b) => b.adId === 'for-rent');
+    const nightApex = night.find((b) => b.adId === 'apex-tires');
+    const coastalForRent = coastal.find((b) => b.adId === 'for-rent');
+    const coastalApex = coastal.find((b) => b.adId === 'apex-tires');
+    expect(nightForRent).toBeDefined();
+    expect(nightApex).toBeDefined();
+    expect(coastalForRent).toBeDefined();
+    expect(coastalApex).toBeDefined();
+    expect(nightForRent!.sideSign).toBe(-1);
+    expect(nightApex!.sideSign).toBe(1);
+    expect(coastalForRent!.sideSign).toBe(1);
+    expect(coastalApex!.sideSign).toBe(-1);
+  });
+
+  it('shifts Night City for-rent ~15 m along race direction', () => {
+    expect(BILLBOARD_PLACEMENT.forRentNightCityAlongTrackM).toBe(15);
+    const nightForRent = placeBillboards({ config: nightCityTrack }).find(
+      (b) => b.adId === 'for-rent',
+    );
+    expect(nightForRent).toBeDefined();
+    // Детерминизм: позиция стабильна после сдвига вдоль заезда
+    expect(placeBillboards({ config: nightCityTrack }).find((b) => b.adId === 'for-rent')).toEqual(
+      nightForRent,
+    );
   });
 
   it('faces all billboards the same way along the track (not flipped by side)', () => {

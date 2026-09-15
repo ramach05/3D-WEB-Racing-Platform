@@ -1,3 +1,4 @@
+import { TRACK_SLUG_NIGHT_CITY } from '@racing/shared';
 import { isInsideCheckpoint } from './oriented-box';
 import type { TLoopPoint, TOrientedBox, TTrackConfig } from './config.types';
 import {
@@ -27,6 +28,13 @@ const TANGENT_NUDGES_M = [5, 7, 9, 11, -5, -7, -9] as const;
 const DEFAULT_TARGET_COUNT = 5;
 /** Индекс слота с «Место для вашей рекламы» */
 const FOR_RENT_SLOT = 2;
+/**
+ * Night City: сдвиг for-rent вдоль заезда по дуге centerline (м).
+ * Заезд против роста индекса → target = stationDist − offset.
+ */
+const FOR_RENT_NIGHT_CITY_ALONG_TRACK_M = 15;
+/** Night City: щиты, которые ставим на сторону, противоположную обычному чередованию */
+const NIGHT_CITY_FLIP_SIDE_ADS = new Set<TBillboardAdId>(['for-rent', 'apex-tires']);
 
 const isInsideAnyZone = (x: number, z: number, zones: TOrientedBox[]): boolean => {
   for (const zone of zones) {
@@ -68,6 +76,39 @@ const frameAtEdge = (
     nz = -nz;
   }
   return { px, pz, nx, nz, tx, tz };
+};
+
+/** Кадр (точка + нормаль + касательная) на дуговой длине вдоль centerline (с wrap) */
+const frameAtArcDistance = (
+  points: TLoopPoint[],
+  arcDistance: number,
+  perimeter: number,
+): { px: number; pz: number; nx: number; nz: number; tx: number; tz: number } | null => {
+  if (points.length < 2 || perimeter < 1e-3) {
+    return null;
+  }
+  let target = arcDistance % perimeter;
+  if (target < 0) {
+    target += perimeter;
+  }
+  let traveled = 0;
+  for (let i = 0; i < points.length; i += 1) {
+    const current = points[i];
+    const next = points[(i + 1) % points.length];
+    if (!current || !next) {
+      continue;
+    }
+    const edgeLen = Math.hypot(next.x - current.x, next.z - current.z);
+    if (edgeLen < 1e-6) {
+      continue;
+    }
+    if (target <= traveled + edgeLen) {
+      const t = (target - traveled) / edgeLen;
+      return frameAtEdge(points, i, t);
+    }
+    traveled += edgeLen;
+  }
+  return frameAtEdge(points, points.length - 1, 1);
 };
 
 const isFarEnough = (
@@ -154,6 +195,7 @@ const collectAlongCenterline = (
   lamps: readonly TPlacedStreetLamp[],
 ): void => {
   const points = config.centerline;
+  const perimeter = perimeterOf(points);
   const wallOffset = config.roadWidth / 2 + WALL_THICKNESS + WALL_OUTSET;
   let nextDist = spacing * phase;
   let traveled = 0;
@@ -175,10 +217,28 @@ const collectAlongCenterline = (
 
     while (nextDist <= traveled + edgeLen && placed.length < targetCount) {
       const t = (nextDist - traveled) / edgeLen;
-      const frame = frameAtEdge(points, i, t);
+      let frame = frameAtEdge(points, i, t);
+      const slotIndex = placed.length;
+      const isForRentSlot = slotIndex === Math.min(FOR_RENT_SLOT, targetCount - 1);
+      /** Night City for-rent: сдвиг по дуге centerline в сторону заезда (−T) */
+      if (frame && isForRentSlot && config.slug === TRACK_SLUG_NIGHT_CITY) {
+        frame = frameAtArcDistance(
+          points,
+          nextDist - FOR_RENT_NIGHT_CITY_ALONG_TRACK_M,
+          perimeter,
+        );
+      }
       if (frame) {
         const { px, pz, nx, nz, tx, tz } = frame;
-        const preferOuter = stationIndex % 2 === 0;
+        const adId = adIdForSlot(slotIndex, targetCount);
+        /** Night City: отдельные щиты на стороне напротив обычного чередования */
+        let preferOuter = stationIndex % 2 === 0;
+        if (
+          config.slug === TRACK_SLUG_NIGHT_CITY &&
+          NIGHT_CITY_FLIP_SIDE_ADS.has(adId)
+        ) {
+          preferOuter = !preferOuter;
+        }
         const sideOrder: readonly { sx: number; sz: number; sideSign: 1 | -1 }[] = preferOuter
           ? [
               { sx: nx, sz: nz, sideSign: 1 },
@@ -205,7 +265,6 @@ const collectAlongCenterline = (
             if (!canPlaceAt(x, z, config, placed, startFinishClearanceSq, lamps)) {
               continue;
             }
-            const slotIndex = placed.length;
             // Нормаль панели = касательная centerline (рост индекса).
             // Заезд идёт против роста индекса → щит смотрит навстречу машинам.
             placed.push({
@@ -213,7 +272,7 @@ const collectAlongCenterline = (
               z,
               rotationY: yawToward(tx, tz),
               sideSign,
-              adId: adIdForSlot(slotIndex, targetCount),
+              adId,
             });
             placedHere = true;
             break;
@@ -290,4 +349,5 @@ export const BILLBOARD_PLACEMENT = {
   minBillboardSpacing: MIN_BILLBOARD_SPACING,
   minLampClearance: MIN_LAMP_CLEARANCE,
   forRentSlot: FOR_RENT_SLOT,
+  forRentNightCityAlongTrackM: FOR_RENT_NIGHT_CITY_ALONG_TRACK_M,
 } as const;
