@@ -84,6 +84,19 @@ export const STREET_LAMP_POINT = {
   decay: 2,
 } as const;
 
+/**
+ * Shadow map только у одного ближайшего Spot (бюджет Night City ≤3 passes).
+ * PointLight без теней — дорого и почти не читается.
+ */
+export const STREET_LAMP_SPOT_SHADOW = {
+  mapSize: 256,
+  bias: -0.0001,
+  normalBias: 0.02,
+  near: 0.5,
+  /** Переключать кастер только если новый ближе текущего на столько метров */
+  switchHysteresis: 8,
+} as const;
+
 /** Emissive линзы под Bloom */
 export const STREET_LAMP_LENS_EMISSIVE_INTENSITY = 2.4;
 

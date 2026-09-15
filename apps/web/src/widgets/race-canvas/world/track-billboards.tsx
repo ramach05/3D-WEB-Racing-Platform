@@ -57,7 +57,7 @@ type TFloodLightProps = {
   isOn: boolean;
 };
 
-/** Визуал gooseneck-корпуса (свет лица — RectAreaLight на щите) */
+/** Визуал gooseneck-корпуса (свет лица — RectAreaLight на щите; без cast — тонкие трубки) */
 const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
   const { mount, riserHeight, armLength, armPitch, neckLength, neckPitch, armRadius, housing, bulbRadius } =
     BILLBOARD_FLOOD;
@@ -66,7 +66,7 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
 
   return (
     <group position={[BILLBOARD_PANEL_FORWARD_X, BILLBOARD_FRAME_TOP_Y, localZ]}>
-      <mesh position={[0, mount.height / 2, 0]} castShadow>
+      <mesh position={[0, mount.height / 2, 0]}>
         <boxGeometry args={[mount.depth, mount.height, mount.width]} />
         <meshStandardMaterial
           color={billboardPalette.floodArm}
@@ -75,7 +75,7 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
         />
       </mesh>
 
-      <mesh position={[0, mount.height + riserHeight / 2, 0]} castShadow>
+      <mesh position={[0, mount.height + riserHeight / 2, 0]}>
         <cylinderGeometry args={[armRadius, armRadius * 1.05, riserHeight, 8]} />
         <meshStandardMaterial
           color={billboardPalette.floodArm}
@@ -84,7 +84,7 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
         />
       </mesh>
 
-      <mesh position={[0, elbowY, 0]} castShadow>
+      <mesh position={[0, elbowY, 0]}>
         <sphereGeometry args={[armRadius * 1.55, 10, 8]} />
         <meshStandardMaterial
           color={billboardPalette.floodArm}
@@ -94,7 +94,7 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
       </mesh>
 
       <group position={[0, elbowY, 0]} rotation={[0, 0, -armPitch]}>
-        <mesh position={[armLength / 2, 0, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
+        <mesh position={[armLength / 2, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
           <cylinderGeometry args={[armRadius, armRadius * 0.95, armLength, 8]} />
           <meshStandardMaterial
             color={billboardPalette.floodArm}
@@ -104,7 +104,7 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
         </mesh>
 
         <group position={[armLength, 0, 0]} rotation={[0, 0, -neckPitch]}>
-          <mesh position={[0, 0, 0]} castShadow>
+          <mesh position={[0, 0, 0]}>
             <sphereGeometry args={[armRadius * 1.35, 10, 8]} />
             <meshStandardMaterial
               color={billboardPalette.floodArm}
@@ -112,7 +112,7 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
               roughness={0.4}
             />
           </mesh>
-          <mesh position={[neckLength / 2, 0, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
+          <mesh position={[neckLength / 2, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
             <cylinderGeometry args={[armRadius * 0.95, armRadius * 0.85, neckLength, 8]} />
             <meshStandardMaterial
               color={billboardPalette.floodArm}
@@ -122,7 +122,7 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
           </mesh>
 
           <group position={[neckLength, 0, 0]}>
-            <mesh castShadow>
+            <mesh>
               <boxGeometry args={[housing.depth, housing.height, housing.width]} />
               <meshStandardMaterial
                 color={billboardPalette.floodHousing}

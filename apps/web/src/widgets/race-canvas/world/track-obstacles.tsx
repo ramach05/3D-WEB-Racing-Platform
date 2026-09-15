@@ -48,7 +48,8 @@ const TireVisual = () => (
       <torusGeometry args={[TIRE_RADIUS, TIRE_TUBE, 10, 18]} />
       <meshStandardMaterial color={TIRE_RUBBER} roughness={0.86} metalness={0} />
     </mesh>
-    <mesh castShadow>
+    {/* Sidewall без cast — силуэт даёт основной тор, меньше work в shadow passes */}
+    <mesh>
       <torusGeometry args={[TIRE_SIDEWALL_RADIUS, TIRE_SIDEWALL_TUBE, 8, 18]} />
       <meshStandardMaterial color={TIRE_SIDEWALL} roughness={0.88} metalness={0} />
     </mesh>
@@ -62,15 +63,16 @@ const FuelBarrelVisual = () => (
       <cylinderGeometry args={[0.38, 0.4, 1.2, 14]} />
       <meshStandardMaterial color={BARREL_BODY} roughness={0.55} metalness={0.45} />
     </mesh>
-    <mesh castShadow position={[0, 0.12, 0]}>
+    {/* Обручи и крышка без cast — корпус даёт читаемый силуэт */}
+    <mesh position={[0, 0.12, 0]}>
       <cylinderGeometry args={[0.405, 0.405, 0.12, 14]} />
       <meshStandardMaterial color={BARREL_BAND} roughness={0.7} metalness={0.2} />
     </mesh>
-    <mesh castShadow position={[0, -0.28, 0]}>
+    <mesh position={[0, -0.28, 0]}>
       <cylinderGeometry args={[0.405, 0.405, 0.1, 14]} />
       <meshStandardMaterial color={BARREL_BAND} roughness={0.7} metalness={0.2} />
     </mesh>
-    <mesh castShadow position={[0, 0.58, 0]}>
+    <mesh position={[0, 0.58, 0]}>
       <cylinderGeometry args={[0.36, 0.36, 0.06, 14]} />
       <meshStandardMaterial color={BARREL_LID} roughness={0.4} metalness={0.55} />
     </mesh>

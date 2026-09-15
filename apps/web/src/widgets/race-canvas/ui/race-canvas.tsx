@@ -1,7 +1,13 @@
-import { type RefObject, useRef } from 'react';
+import { type RefObject, useLayoutEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Sky, Stars } from '@react-three/drei';
-import { PCFShadowMap, type Group, type PointLight } from 'three';
+import {
+  PCFSoftShadowMap,
+  type DirectionalLight,
+  type Group,
+  type Object3D,
+  type PointLight,
+} from 'three';
 import { Physics, type RapierRigidBody } from '@react-three/rapier';
 import type { TTrackConfig } from '@/entities/track';
 import { scenePalette } from '@/shared/config';
@@ -51,7 +57,20 @@ const SUN_LIGHT_POSITION: [number, number, number] = [0, 140, -255];
 /** Высокое солнце только для Sky (~45°) — ясное голубое небо */
 const SKY_SUN_POSITION: [number, number, number] = [80, 140, -120];
 const MOON_HORIZON_POSITION: [number, number, number] = [-240, 21, 50];
-const MOON_LIGHT_POSITION: [number, number, number] = [-180, 24, 38];
+/** Смещение лунного DirectionalLight относительно машины (направление сохраняется) */
+const MOON_LIGHT_OFFSET: [number, number, number] = [-180, 24, 38];
+/** Половина ortho-frustum луны вокруг машины — выше texel density без роста mapSize */
+const MOON_SHADOW_HALF_EXTENT = 95;
+const MOON_SHADOW_MAP = 1024;
+const MOON_SHADOW_BIAS = -0.00015;
+const MOON_SHADOW_NORMAL_BIAS = 0.03;
+const MOON_SHADOW_INTENSITY = 0.5;
+const MOON_SHADOW_NEAR = 1;
+const MOON_SHADOW_FAR = 320;
+const DAY_SHADOW_HALF_EXTENT = 140;
+const DAY_SHADOW_MAP = 2048;
+/** Квадрат шага follow луны (м²) — реже двигаем shadow camera */
+const MOON_FOLLOW_STEP_SQ = 12 * 12;
 
 /** Солнце (горизонт) днём или луна ночью */
 const CelestialBody = ({ config }: TCelestialBodyProps) => {
@@ -62,6 +81,114 @@ const CelestialBody = ({ config }: TCelestialBodyProps) => {
   }
 
   return <HorizonSun position={SUN_HORIZON_POSITION} />;
+};
+
+type TPrimaryDirectionalLightProps = {
+  /** Ночная трасса — луна с follow-frustum */
+  isNight: boolean;
+  /** Ref машины для центрирования moon shadow camera */
+  bodyRef: RefObject<RapierRigidBody | null>;
+  /** Цвет направленного света */
+  color: string;
+  /** Интенсивность */
+  intensity: number;
+};
+
+/**
+ * Солнце (день) или луна (ночь).
+ * Target — sibling в сцене (не child light): иначе direction = 0 и WebGL падает.
+ * Ночью light+target сдвигаются шагами ~12 м вокруг машины.
+ */
+const PrimaryDirectionalLight = ({
+  isNight,
+  bodyRef,
+  color,
+  intensity,
+}: TPrimaryDirectionalLightProps) => {
+  const lightRef = useRef<DirectionalLight>(null);
+  const targetRef = useRef<Object3D>(null);
+  const followRef = useRef({ x: 0, z: 0, ready: false });
+
+  // Привязывает target и ortho frustum.
+  useLayoutEffect(() => {
+    const light = lightRef.current;
+    const target = targetRef.current;
+    if (!light || !target) {
+      return;
+    }
+    light.target = target;
+    const half = isNight ? MOON_SHADOW_HALF_EXTENT : DAY_SHADOW_HALF_EXTENT;
+    const cam = light.shadow.camera;
+    cam.near = MOON_SHADOW_NEAR;
+    cam.far = MOON_SHADOW_FAR;
+    cam.left = -half;
+    cam.right = half;
+    cam.top = half;
+    cam.bottom = -half;
+    cam.updateProjectionMatrix();
+    followRef.current.ready = false;
+
+    if (!isNight) {
+      target.position.set(0, 0, 0);
+      target.updateMatrixWorld();
+      light.position.set(SUN_LIGHT_POSITION[0], SUN_LIGHT_POSITION[1], SUN_LIGHT_POSITION[2]);
+    }
+  }, [isNight]);
+
+  // Ночью двигает light+target шагами ~12 м (не каждый кадр).
+  useFrame(() => {
+    if (!isNight) {
+      return;
+    }
+    const light = lightRef.current;
+    const target = targetRef.current;
+    const body = bodyRef.current;
+    if (!light || !target || !body) {
+      return;
+    }
+    const { x, z } = body.translation();
+    const follow = followRef.current;
+    if (follow.ready) {
+      const dx = x - follow.x;
+      const dz = z - follow.z;
+      if (dx * dx + dz * dz < MOON_FOLLOW_STEP_SQ) {
+        return;
+      }
+    }
+    follow.x = x;
+    follow.z = z;
+    follow.ready = true;
+    target.position.set(x, 0, z);
+    target.updateMatrixWorld();
+    light.position.set(x + MOON_LIGHT_OFFSET[0], MOON_LIGHT_OFFSET[1], z + MOON_LIGHT_OFFSET[2]);
+  });
+
+  const mapSize = isNight ? MOON_SHADOW_MAP : DAY_SHADOW_MAP;
+  const half = isNight ? MOON_SHADOW_HALF_EXTENT : DAY_SHADOW_HALF_EXTENT;
+
+  return (
+    <>
+      <object3D ref={targetRef} />
+      <directionalLight
+        ref={lightRef}
+        position={isNight ? MOON_LIGHT_OFFSET : SUN_LIGHT_POSITION}
+        intensity={intensity}
+        color={color}
+        castShadow
+        shadow-mapSize-width={mapSize}
+        shadow-mapSize-height={mapSize}
+        shadow-bias={isNight ? MOON_SHADOW_BIAS : -0.0002}
+        shadow-normalBias={isNight ? MOON_SHADOW_NORMAL_BIAS : 0.04}
+        shadow-camera-near={MOON_SHADOW_NEAR}
+        shadow-camera-far={MOON_SHADOW_FAR}
+        shadow-camera-left={-half}
+        shadow-camera-right={half}
+        shadow-camera-top={half}
+        shadow-camera-bottom={-half}
+        shadow-intensity={isNight ? MOON_SHADOW_INTENSITY : 1}
+      />
+    </>
+  );
 };
 
 type TNeonAccentLightProps = {
@@ -111,22 +238,11 @@ const RaceSceneInner = ({
       <color attach="background" args={[config.palette.sky]} />
       <fog attach="fog" args={[config.palette.fog, isNight ? 80 : 300, isNight ? 220 : 560]} />
       <hemisphereLight args={[config.palette.sky, config.palette.ground, isNight ? 0.58 : 1.28]} />
-      <directionalLight
-        position={isNight ? MOON_LIGHT_POSITION : SUN_LIGHT_POSITION}
+      <PrimaryDirectionalLight
+        isNight={isNight}
+        bodyRef={bodyRef}
         intensity={isNight ? 0.85 : 3.6}
         color={isNight ? scenePalette.sunNight : scenePalette.sunDay}
-        castShadow
-        shadow-mapSize-width={isNight ? 1024 : 2048}
-        shadow-mapSize-height={isNight ? 1024 : 2048}
-        shadow-bias={-0.0002}
-        shadow-normalBias={0.04}
-        shadow-camera-near={1}
-        shadow-camera-far={320}
-        shadow-camera-left={-140}
-        shadow-camera-right={140}
-        shadow-camera-top={140}
-        shadow-camera-bottom={-140}
-        shadow-intensity={isNight ? 0.25 : 1}
       />
       <CelestialBody config={config} />
       {isNight ? (
@@ -181,7 +297,7 @@ const RaceSceneInner = ({
         paused={crowdPaused}
       />
       <TrackTrees config={config} />
-      <TrackStreetLights config={config} />
+      <TrackStreetLights config={config} bodyRef={bodyRef} />
       <TrackBillboards config={config} />
       <CheckpointDetector
         config={config}
@@ -214,7 +330,7 @@ export const RaceCanvas = ({
 
   return (
     <Canvas
-      shadows={{ type: PCFShadowMap }}
+      shadows={{ type: PCFSoftShadowMap }}
       dpr={[1, 1.5]}
       camera={{ fov: 60, near: 0.1, far: 500, position: [0, 8, 16] }}
       gl={{ antialias: true, powerPreference: 'high-performance' }}

@@ -8,6 +8,7 @@ import {
   STREET_LAMP_POLE_HEIGHT,
   STREET_LAMP_POLE_TOP_Y,
   STREET_LAMP_SPOT,
+  STREET_LAMP_SPOT_SHADOW,
 } from './street-lamp';
 
 describe('street-lamp constants', () => {
@@ -29,10 +30,16 @@ describe('street-lamp constants', () => {
     expect(tip.y).toBeLessThan(elbow.y);
   });
 
-  it('uses soft spot without requiring shadows', () => {
+  it('uses soft spot without requiring shadows on every lamp', () => {
     expect(STREET_LAMP_SPOT.penumbra).toBeGreaterThan(0.4);
     expect(STREET_LAMP_SPOT.distance).toBeGreaterThan(10);
     expect(STREET_LAMP_SPOT.intensity).toBeGreaterThan(80);
     expect(STREET_LAMP_COLLIDER.halfHeight).toBeCloseTo(STREET_LAMP_POLE_HEIGHT / 2);
+  });
+
+  it('keeps a low-budget single-lamp shadow map', () => {
+    expect(STREET_LAMP_SPOT_SHADOW.mapSize).toBe(256);
+    expect(STREET_LAMP_SPOT_SHADOW.switchHysteresis).toBeGreaterThan(0);
+    expect(STREET_LAMP_SPOT_SHADOW.near).toBeLessThan(STREET_LAMP_SPOT.distance);
   });
 });
