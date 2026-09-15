@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { CuboidCollider, HeightfieldCollider, RigidBody } from '@react-three/rapier';
-import { DoubleSide } from 'three';
+import { DoubleSide, MeshStandardMaterial } from 'three';
 import type { TTrackConfig } from '@/entities/track';
 import {
   ASPHALT_TILE_SIZE,
@@ -11,6 +11,7 @@ import {
   createGroundTexture,
 } from '@/widgets/race-canvas/lib/asphalt-texture';
 import { WORLD_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
+import { getSharedConcreteTexture } from '@/widgets/race-canvas/lib/concrete-texture';
 import { buildRoadRibbonGeometry } from '@/widgets/race-canvas/lib/road-ribbon-geometry';
 import {
   buildTerrainGeometry,
@@ -93,9 +94,8 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
   const isNight = config.timeOfDay === 'night';
   const roadRoughness = isNight ? 0.78 : 0.74;
   const groundRoughness = isNight ? 0.88 : 0.95;
-  const wallEmissiveIntensity = isNight ? 0.02 : 0.15;
-  const wallRoughness = isNight ? 0.82 : 0.65;
-  const wallMetalness = isNight ? 0.04 : 0;
+  const wallEmissiveIntensity = isNight ? 0 : 0.15;
+  const wallRoughness = isNight ? 0.92 : 0.88;
   const terrainSeed = terrainSeedForSlug(config.slug);
   const groundWorldSize = TRACK_TERRAIN.worldSize;
   const terrainY = TRACK_TERRAIN.yOffset;
@@ -106,6 +106,21 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
     () => cloneMapForSize(groundSource, groundWorldSize, groundWorldSize, GROUND_TILE_SIZE),
     [groundSource, groundWorldSize],
   );
+
+  const concreteMap = useMemo(() => getSharedConcreteTexture(256), []);
+
+  const wallMaterial = useMemo(() => {
+    const material = new MeshStandardMaterial({
+      color: palette.wall,
+      map: concreteMap,
+      emissive: palette.accent,
+      emissiveIntensity: wallEmissiveIntensity,
+      roughness: wallRoughness,
+      metalness: 0,
+      shadowSide: DoubleSide,
+    });
+    return material;
+  }, [palette.wall, palette.accent, concreteMap, wallEmissiveIntensity, wallRoughness]);
 
   const terrainGeometry = useMemo(
     () =>
@@ -127,14 +142,15 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
     [config.centerline, config.roadWidth, terrainSeed],
   );
 
-  // Освобождает исходные текстуры пола и heightfield при размонтировании.
+  // Освобождает текстуры пола и wall material (бетон — singleton, не dispose).
   useEffect(
     () => () => {
       groundSource.dispose();
       groundMap.dispose();
+      wallMaterial.dispose();
       terrainGeometry.dispose();
     },
-    [groundSource, groundMap, terrainGeometry],
+    [groundSource, groundMap, wallMaterial, terrainGeometry],
   );
 
   return (
@@ -186,17 +202,15 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
             restitution={0}
             collisionGroups={WORLD_GROUPS}
           />
-          {/* Визуал чуть глубже в пол — иначе SpotLight протекает под нижней кромкой */}
-          <mesh castShadow receiveShadow position={[0, -0.12, 0]}>
+          {/* receiveShadow без cast — 256 стен не заполняют shadow maps */}
+          <mesh
+            castShadow={false}
+            receiveShadow
+            position={[0, -0.12, 0]}
+            material={wallMaterial}
+            dispose={null}
+          >
             <boxGeometry args={[wall.size[0], wall.size[1] + 0.24, wall.size[2]]} />
-            <meshStandardMaterial
-              color={palette.wall}
-              emissive={palette.accent}
-              emissiveIntensity={wallEmissiveIntensity}
-              roughness={wallRoughness}
-              metalness={wallMetalness}
-              shadowSide={DoubleSide}
-            />
           </mesh>
         </RigidBody>
       ))}

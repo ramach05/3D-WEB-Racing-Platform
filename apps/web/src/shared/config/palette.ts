@@ -75,7 +75,7 @@ export const trackPalettes = {
     fog: '#241038',
     ground: '#6a5848',
     road: '#5a5a66',
-    wall: '#00e5ff',
+    wall: '#8a847c',
     accent: '#ff2bd6',
     minimapRoad: '#3a3a48',
     minimapWall: '#ff2bd6',
@@ -154,10 +154,10 @@ export const tribunePalette = {
     platform: '#a89e90',
   },
   night: {
-    structure: '#5a4878',
-    step: '#6e5c8e',
-    platform: '#3a2858',
-    rail: '#7a6898',
+    structure: '#6e6860',
+    step: '#7a746c',
+    platform: '#5c5650',
+    rail: '#707068',
   },
   emissiveOff: '#000000',
 } as const satisfies TTribunePalette;

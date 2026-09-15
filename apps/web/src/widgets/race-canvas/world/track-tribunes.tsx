@@ -1,6 +1,5 @@
-import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
-import type { PointLight } from 'three';
+import { useEffect, useMemo } from 'react';
+import { MeshStandardMaterial } from 'three';
 import type { TOrientedBox, TStartTribuneSide, TTrackPalette } from '@/entities/track';
 import {
   ROW_DEPTH,
@@ -13,6 +12,7 @@ import {
   WALL_OFFSET,
 } from '@/entities/track';
 import { tribunePalette } from '@/shared/config';
+import { getSharedConcreteTexture } from '@/widgets/race-canvas/lib/concrete-texture';
 import { buildSpectatorSeats, SpectatorCrowd } from './spectator-crowd';
 
 type TTrackTribunesProps = {
@@ -33,6 +33,14 @@ type TTrackTribunesProps = {
 const SPECTATORS_PER_SECTION = 30;
 const ROAD_TOP_Y = 0.1;
 
+type TTribuneMaterials = {
+  platform: MeshStandardMaterial;
+  stepEven: MeshStandardMaterial;
+  stepOdd: MeshStandardMaterial;
+  canopy: MeshStandardMaterial;
+  seatRail: MeshStandardMaterial;
+};
+
 type TTribuneSectionProps = {
   /** Z-центр секции */
   sectionZ: number;
@@ -46,6 +54,8 @@ type TTribuneSectionProps = {
   isNight: boolean;
   /** Пауза анимации толпы */
   paused: boolean;
+  /** Shared concrete-материалы секции */
+  materials: TTribuneMaterials;
 };
 
 /** X центра ряда трибуны */
@@ -64,73 +74,31 @@ type TTribuneNightLightsProps = {
   sectionZ: number;
   /** Accent-цвет неона */
   accent: string;
-  /** Цвет стены / прожекторов */
-  wall: string;
 };
 
-/** Два flood + emissive-ленты (без per-row pointLight — бюджет FPS Night City) */
-const TribuneNightLights = ({
-  tribuneInnerX,
-  sideSign,
-  sectionZ,
-  accent,
-  wall,
-}: TTribuneNightLightsProps) => {
-  const tribuneCenterX = tribuneInnerX + (sideSign * TRIBUNE_ROWS * ROW_DEPTH) / 2;
-  const frontLightX = tribuneInnerX - sideSign * 1.8;
-  const pulseA = useRef<PointLight>(null);
-  const pulseB = useRef<PointLight>(null);
-
-  // Пульсирует прожекторы трибуны по sin-времени.
-  useFrame((state) => {
-    const t = state.clock.elapsedTime;
-    const breathe = 1 + Math.sin(t * 2.4 + sectionZ * 0.2) * 0.22;
-    if (pulseA.current) {
-      pulseA.current.intensity = 2.6 * breathe;
-    }
-    if (pulseB.current) {
-      pulseB.current.intensity = 1.8 * (1 + Math.sin(t * 3.1 + 1.2) * 0.28);
-    }
-  });
-
-  return (
-    <group position={[0, ROAD_TOP_Y, sectionZ]}>
-      <pointLight
-        ref={pulseA}
-        position={[frontLightX, 5.5, 0]}
-        intensity={2.6}
-        color={wall}
-        distance={18}
-      />
-      <pointLight
-        ref={pulseB}
-        position={[tribuneCenterX, 4.8, 0]}
-        intensity={1.8}
-        color={accent}
-        distance={15}
-      />
-
-      {Array.from({ length: TRIBUNE_ROWS }, (_, row) => (
-        <mesh
-          key={`row-emissive-${row}`}
-          position={[
-            rowCenterX(tribuneInnerX, sideSign, row) - sideSign * (ROW_DEPTH / 2 + 0.04),
-            rowTopY(row) - 0.04,
-            0,
-          ]}
-        >
-          <boxGeometry args={[0.06, 0.08, SECTION_WIDTH - 0.2]} />
-          <meshStandardMaterial
-            color={accent}
-            emissive={accent}
-            emissiveIntensity={1.4}
-            toneMapped={false}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-};
+/** Только emissive neon-ленты (без PointLight — бюджет FPS Night City) */
+const TribuneNightLights = ({ tribuneInnerX, sideSign, sectionZ, accent }: TTribuneNightLightsProps) => (
+  <group position={[0, ROAD_TOP_Y, sectionZ]}>
+    {Array.from({ length: TRIBUNE_ROWS }, (_, row) => (
+      <mesh
+        key={`row-emissive-${row}`}
+        position={[
+          rowCenterX(tribuneInnerX, sideSign, row) - sideSign * (ROW_DEPTH / 2 + 0.04),
+          rowTopY(row) - 0.04,
+          0,
+        ]}
+      >
+        <boxGeometry args={[0.06, 0.08, SECTION_WIDTH - 0.2]} />
+        <meshStandardMaterial
+          color={accent}
+          emissive={accent}
+          emissiveIntensity={1.6}
+          toneMapped={false}
+        />
+      </mesh>
+    ))}
+  </group>
+);
 
 /** Одна секция трибуны: ступени, перила, навес и зрители */
 const TribuneSection = ({
@@ -140,6 +108,7 @@ const TribuneSection = ({
   palette,
   isNight,
   paused,
+  materials,
 }: TTribuneSectionProps) => {
   const seats = useMemo(
     () =>
@@ -153,10 +122,6 @@ const TribuneSection = ({
     [tribuneInnerX, sideSign],
   );
 
-  const structureColor = isNight ? tribunePalette.night.structure : tribunePalette.day.structure;
-  const stepColor = isNight ? tribunePalette.night.step : tribunePalette.day.step;
-  const structureEmissive = isNight ? palette.wall : tribunePalette.emissiveOff;
-  const structureEmissiveIntensity = isNight ? 0.12 : 0;
   const backRowX = rowCenterX(tribuneInnerX, sideSign, TRIBUNE_ROWS - 1);
   const backOuterX = tribuneInnerX + sideSign * TRIBUNE_ROWS * ROW_DEPTH;
 
@@ -169,43 +134,28 @@ const TribuneSection = ({
           0,
         ]}
         receiveShadow
+        material={materials.platform}
+        dispose={null}
       >
         <boxGeometry args={[TRIBUNE_ROWS * ROW_DEPTH + 0.4, ROW_HEIGHT, SECTION_WIDTH + 0.6]} />
-        <meshStandardMaterial
-          color={isNight ? tribunePalette.night.platform : tribunePalette.day.platform}
-          emissive={structureEmissive}
-          emissiveIntensity={structureEmissiveIntensity}
-          roughness={0.95}
-        />
       </mesh>
 
-      {Array.from({ length: TRIBUNE_ROWS }, (_, row) => {
-        let emissive: string = tribunePalette.emissiveOff;
-        if (isNight) {
-          emissive = row % 2 === 0 ? palette.accent : palette.wall;
-        }
-
-        return (
-          <mesh
-            key={`step-${row}`}
-            position={[
-              rowCenterX(tribuneInnerX, sideSign, row),
-              row * ROW_HEIGHT + ROW_HEIGHT / 2,
-              0,
-            ]}
-            castShadow
-            receiveShadow
-          >
-            <boxGeometry args={[ROW_DEPTH, ROW_HEIGHT, SECTION_WIDTH]} />
-            <meshStandardMaterial
-              color={row % 2 === 0 ? stepColor : structureColor}
-              emissive={emissive}
-              emissiveIntensity={isNight ? 0.1 : 0}
-              roughness={0.92}
-            />
-          </mesh>
-        );
-      })}
+      {Array.from({ length: TRIBUNE_ROWS }, (_, row) => (
+        <mesh
+          key={`step-${row}`}
+          position={[
+            rowCenterX(tribuneInnerX, sideSign, row),
+            row * ROW_HEIGHT + ROW_HEIGHT / 2,
+            0,
+          ]}
+          castShadow
+          receiveShadow
+          material={row % 2 === 0 ? materials.stepEven : materials.stepOdd}
+          dispose={null}
+        >
+          <boxGeometry args={[ROW_DEPTH, ROW_HEIGHT, SECTION_WIDTH]} />
+        </mesh>
+      ))}
 
       <mesh
         position={[backOuterX + sideSign * 0.06, rowTopY(TRIBUNE_ROWS - 1) + 0.42, 0]}
@@ -229,20 +179,19 @@ const TribuneSection = ({
         ]}
         castShadow
         receiveShadow
+        material={materials.canopy}
+        dispose={null}
       >
         <boxGeometry args={[TRIBUNE_ROWS * ROW_DEPTH + 0.8, 0.12, SECTION_WIDTH + 1]} />
-        <meshStandardMaterial
-          color={isNight ? tribunePalette.night.rail : structureColor}
-          emissive={isNight ? palette.wall : tribunePalette.emissiveOff}
-          emissiveIntensity={isNight ? 0.18 : 0}
-          roughness={0.85}
-          metalness={0.15}
-        />
       </mesh>
 
-      <mesh position={[backRowX, rowTopY(TRIBUNE_ROWS - 1) + 0.43, 0]} castShadow>
+      <mesh
+        position={[backRowX, rowTopY(TRIBUNE_ROWS - 1) + 0.43, 0]}
+        castShadow
+        material={materials.seatRail}
+        dispose={null}
+      >
         <boxGeometry args={[ROW_DEPTH, 0.08, SECTION_WIDTH + 0.2]} />
-        <meshStandardMaterial color={stepColor} roughness={0.9} />
       </mesh>
 
       <SpectatorCrowd seats={seats} palette={palette} isNight={isNight} paused={paused} />
@@ -262,6 +211,57 @@ export const TrackTribunes = ({
   const sideSign = side === 'left' ? 1 : -1;
   const tribuneInnerX = sideSign * (roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);
 
+  const structureColor = isNight ? tribunePalette.night.structure : tribunePalette.day.structure;
+  const stepColor = isNight ? tribunePalette.night.step : tribunePalette.day.step;
+  const platformColor = isNight ? tribunePalette.night.platform : tribunePalette.day.platform;
+  const canopyColor = isNight ? tribunePalette.night.rail : structureColor;
+
+  const concreteMap = useMemo(() => getSharedConcreteTexture(256), []);
+
+  const materials = useMemo((): TTribuneMaterials => {
+    const shared = { map: concreteMap, metalness: 0 as const };
+    return {
+      platform: new MeshStandardMaterial({
+        ...shared,
+        color: platformColor,
+        roughness: 0.95,
+      }),
+      stepEven: new MeshStandardMaterial({
+        ...shared,
+        color: stepColor,
+        roughness: 0.92,
+      }),
+      stepOdd: new MeshStandardMaterial({
+        ...shared,
+        color: structureColor,
+        roughness: 0.92,
+      }),
+      canopy: new MeshStandardMaterial({
+        ...shared,
+        color: canopyColor,
+        roughness: 0.85,
+        metalness: 0.15,
+      }),
+      seatRail: new MeshStandardMaterial({
+        ...shared,
+        color: stepColor,
+        roughness: 0.9,
+      }),
+    };
+  }, [concreteMap, platformColor, stepColor, structureColor, canopyColor]);
+
+  // Освобождает shared-материалы трибун (текстура бетона — singleton, не dispose).
+  useEffect(
+    () => () => {
+      materials.platform.dispose();
+      materials.stepEven.dispose();
+      materials.stepOdd.dispose();
+      materials.canopy.dispose();
+      materials.seatRail.dispose();
+    },
+    [materials],
+  );
+
   return (
     <group position={[line.position[0], 0, line.position[2]]} rotation={[0, line.rotationY, 0]}>
       {SECTION_Z_OFFSETS.map((sectionZ) => (
@@ -273,22 +273,20 @@ export const TrackTribunes = ({
           palette={palette}
           isNight={isNight}
           paused={paused}
+          materials={materials}
         />
       ))}
-      {isNight ? (
-        <>
-          {SECTION_Z_OFFSETS.map((sectionZ) => (
+      {isNight
+        ? SECTION_Z_OFFSETS.map((sectionZ) => (
             <TribuneNightLights
               key={`tribune-light-${sectionZ}`}
               tribuneInnerX={tribuneInnerX}
               sideSign={sideSign}
               sectionZ={sectionZ}
               accent={palette.accent}
-              wall={palette.wall}
             />
-          ))}
-        </>
-      ) : null}
+          ))
+        : null}
     </group>
   );
 };
