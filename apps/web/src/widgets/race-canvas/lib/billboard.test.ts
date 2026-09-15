@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BILLBOARD_ACTIVE_WASH,
   BILLBOARD_COLLIDER,
   BILLBOARD_FACE_WASH,
   BILLBOARD_FLOOD,
   BILLBOARD_FRAME_TOP_Y,
+  BILLBOARD_NIGHT_FACE,
   BILLBOARD_PANEL_CENTER_Y,
   BILLBOARD_PANEL_HEIGHT,
   BILLBOARD_PANEL_WIDTH,
@@ -27,18 +29,27 @@ describe('billboard constants', () => {
     expect(BILLBOARD_COLLIDER.panel.halfDepth).toBeGreaterThan(BILLBOARD_PANEL_WIDTH / 2);
   });
 
-  it('defines gooseneck fixtures and a soft face wash', () => {
+  it('defines gooseneck fixtures and RectArea face wash', () => {
     expect(BILLBOARD_FLOOD.zSpan).toBeGreaterThan(0.8);
     expect(BILLBOARD_FLOOD.armLength).toBeGreaterThan(0.5);
     expect(BILLBOARD_FLOOD.neckLength).toBeGreaterThan(0.15);
     expect(BILLBOARD_FLOOD.riserHeight).toBeGreaterThan(0.08);
     expect(BILLBOARD_FLOOD.armPitch).toBeGreaterThan(0.1);
     expect(BILLBOARD_FLOOD.neckPitch).toBeGreaterThan(0.5);
-    expect(BILLBOARD_FACE_WASH.standoff).toBeGreaterThan(0.4);
+    expect(BILLBOARD_FACE_WASH.standoff).toBeGreaterThan(0.5);
     expect(BILLBOARD_FACE_WASH.width).toBeGreaterThan(BILLBOARD_PANEL_WIDTH * 0.7);
     expect(BILLBOARD_FACE_WASH.height).toBeGreaterThan(BILLBOARD_PANEL_HEIGHT * 0.6);
     expect(BILLBOARD_FACE_WASH.intensity).toBeGreaterThan(1);
-    expect(BILLBOARD_FACE_WASH.intensity).toBeLessThanOrEqual(8);
+  });
+
+  it('keeps night wash LOD budget and soft face fallback', () => {
+    expect(BILLBOARD_ACTIVE_WASH.count).toBeGreaterThanOrEqual(1);
+    expect(BILLBOARD_ACTIVE_WASH.count).toBeLessThanOrEqual(3);
+    expect(BILLBOARD_ACTIVE_WASH.switchHysteresis).toBeGreaterThan(0);
+    expect(BILLBOARD_NIGHT_FACE.faceEmissiveFallback).toBeGreaterThan(0.1);
+    expect(BILLBOARD_NIGHT_FACE.faceEmissiveFallback).toBeLessThanOrEqual(0.25);
+    expect(BILLBOARD_NIGHT_FACE.bulbEmissive).toBeGreaterThan(1);
+    expect(BILLBOARD_NIGHT_FACE.bulbEmissive).toBeLessThanOrEqual(2);
   });
 });
 

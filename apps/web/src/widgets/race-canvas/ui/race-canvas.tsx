@@ -298,7 +298,7 @@ const RaceSceneInner = ({
       />
       <TrackTrees config={config} />
       <TrackStreetLights config={config} bodyRef={bodyRef} />
-      <TrackBillboards config={config} />
+      <TrackBillboards config={config} bodyRef={bodyRef} />
       <CheckpointDetector
         config={config}
         bodyRef={bodyRef}

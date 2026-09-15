@@ -100,6 +100,27 @@ export const BILLBOARD_FACE_WASH = {
   intensity: 2.8,
 } as const;
 
+/**
+ * Бюджет Night City: RectAreaLight только у K ближайших щитов.
+ * Дальние — слабый emissive-fallback лица.
+ */
+export const BILLBOARD_ACTIVE_WASH = {
+  /** Сколько RectAreaLight монтировать одновременно */
+  count: 2,
+  /** Держать прежний wash, пока щит не дальше K-го + hysteresis (м) */
+  switchHysteresis: 10,
+} as const;
+
+/**
+ * Ночные emissive: колба всегда; лицо — только fallback без активного wash.
+ */
+export const BILLBOARD_NIGHT_FACE = {
+  /** EmissiveIntensity лица у дальних щитов (без RectAreaLight) */
+  faceEmissiveFallback: 0.18,
+  /** EmissiveIntensity колбы flood (bloom) */
+  bulbEmissive: 1.4,
+} as const;
+
 /** @deprecated Оставлен для совместимости тестов; лицо заливает BILLBOARD_FACE_WASH */
 export const BILLBOARD_FLOOD_SPOT = {
   intensity: 6.5,
