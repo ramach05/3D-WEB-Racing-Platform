@@ -1,0 +1,402 @@
+import { type RefObject, Suspense, useLayoutEffect, useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
+import {
+  Box3,
+  Color,
+  Group,
+  MathUtils,
+  Quaternion,
+  Vector3,
+  type Material,
+  type Mesh,
+  type MeshStandardMaterial,
+  type Object3D,
+} from 'three';
+import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import type { TCarSkin } from '@/entities/track';
+import { vehiclePalette } from '@/shared/config';
+import {
+  VEHICLE_TARGET_LENGTH,
+  computeVehicleFit,
+  type TVehicleFit,
+} from '@/widgets/race-canvas/vehicle/vehicle-fit';
+import {
+  computeAckermannScale,
+  computeSteerAxisLocal,
+  computeToeYawCorrection,
+} from '@/widgets/race-canvas/vehicle/vehicle-wheel-rig';
+
+export const VEHICLE_GLTF_PATH = '/models/vehicle/car-concept.glb';
+
+/** Прогревает GLB машины (tracks / race page) */
+export const preloadVehicleModel = () => {
+  useGLTF.preload(VEHICLE_GLTF_PATH);
+};
+
+/** Максимальный угол поворота передних колёс (рад ≈ 32°) */
+const MAX_STEER_ANGLE = 0.56;
+/** Скорость сглаживания руля (MathUtils.damp lambda) */
+const STEER_DAMP = 14;
+/** Радиус колеса модели до scale — для spin от forwardSpeed */
+const MODEL_WHEEL_RADIUS = 0.42;
+/** Emissive стопов в покое / при торможении */
+const BRAKE_EMISSIVE_IDLE = 0.35;
+const BRAKE_EMISSIVE_ON = 2.4;
+const HEADLIGHT_EMISSIVE_ON = 1.8;
+const HEADLIGHT_EMISSIVE_OFF = 0.05;
+
+const FRONT_WHEEL_NAMES = ['WheelFrontL', 'WheelFrontR'] as const;
+const REAR_WHEEL_NAMES = ['WheelRearL', 'WheelRearR'] as const;
+const HIDDEN_NODE_NAMES = ['InteriorSteeringEmblem'] as const;
+
+const tmpBox = new Box3();
+const tmpCenter = new Vector3();
+const tmpColor = new Color();
+const tmpQuat = new Quaternion();
+const tmpAxleWorld = new Vector3();
+/** Ось шины в локальном пространстве колеса CarConcept (тонкое измерение геометрии) */
+const WHEEL_AXLE_LOCAL = new Vector3(1, 0, 0);
+
+type TWheelRig = {
+  /** Pivot руления вокруг мировой вертикали (в осях родителя) */
+  steerPivot: Group;
+  /** Pivot вращения вокруг оси шины через центр колеса */
+  spinPivot: Group;
+  /** Ось руления в локальном пространстве родителя (= world up) */
+  steerAxisLocal: Vector3;
+  /** Ось шины в пространстве spinPivot (rest) */
+  axleLocal: Vector3;
+  /** +1 левое (CarConcept +X), −1 правое — для Ackermann */
+  sideSign: number;
+  /** Переднее колесо */
+  isFront: boolean;
+};
+
+export type TVehicleDriveVisual = {
+  /** Продольная скорость м/с */
+  forwardSpeed: number;
+  /** Руль −1…1 (влево +) */
+  steer: number;
+  /** Тормоз 0…1 */
+  brake: number;
+};
+
+type TVehicleModelProps = {
+  /** Скин трассы */
+  carSkin: TCarSkin;
+  /** Ночные фары */
+  headlightsOn: boolean;
+  /** Скорость / руль / тормоз с кадра физики */
+  driveVisualRef: RefObject<TVehicleDriveVisual>;
+};
+
+const isMesh = (object: Object3D): object is Mesh => (object as Mesh).isMesh === true;
+
+const isStandardMaterial = (material: Material): material is MeshStandardMaterial =>
+  (material as MeshStandardMaterial).isMeshStandardMaterial === true;
+
+/** Клонирует материалы меша, чтобы скины не портили кэш useGLTF */
+const cloneMeshMaterials = (mesh: Mesh) => {
+  if (Array.isArray(mesh.material)) {
+    mesh.material = mesh.material.map((material) => material.clone());
+    return;
+  }
+  mesh.material = mesh.material.clone();
+};
+
+/** Прячет ноды-логотипы Khronos */
+const hideBrandingNodes = (root: Object3D) => {
+  for (const name of HIDDEN_NODE_NAMES) {
+    const node = root.getObjectByName(name);
+    if (node) {
+      node.visible = false;
+    }
+  }
+};
+
+/**
+ * Pivot-иерархия: steer (world-up) → align (нейтрализация toe) → spin (ось шины) → wheel.
+ * attach сохраняет authored world matrix до коррекции toe.
+ */
+const buildWheelRig = (wheel: Object3D, isFront: boolean): TWheelRig | null => {
+  const parent = wheel.parent;
+  if (!parent) {
+    return null;
+  }
+
+  parent.updateMatrixWorld(true);
+  wheel.updateMatrixWorld(true);
+
+  tmpBox.setFromObject(wheel);
+  tmpBox.getCenter(tmpCenter);
+  parent.worldToLocal(tmpCenter);
+
+  const steerAxisLocal = computeSteerAxisLocal(parent.getWorldQuaternion(tmpQuat));
+
+  const steerPivot = new Group();
+  steerPivot.name = `${wheel.name}_steer`;
+  steerPivot.position.copy(tmpCenter);
+  parent.add(steerPivot);
+
+  const alignPivot = new Group();
+  alignPivot.name = `${wheel.name}_align`;
+  steerPivot.add(alignPivot);
+
+  const spinPivot = new Group();
+  spinPivot.name = `${wheel.name}_spin`;
+  alignPivot.add(spinPivot);
+
+  // attach сохраняет world matrix на момент сборки
+  spinPivot.attach(wheel);
+
+  tmpAxleWorld.copy(WHEEL_AXLE_LOCAL).applyQuaternion(wheel.getWorldQuaternion(tmpQuat)).normalize();
+  const yawCorr = computeToeYawCorrection(tmpAxleWorld);
+  if (Math.abs(yawCorr) > 1e-5) {
+    alignPivot.quaternion.setFromAxisAngle(steerAxisLocal, yawCorr);
+  }
+
+  // Ось шины в пространстве spinPivot после attach (align крутит родителя, не wheel.local)
+  const axleLocal = WHEEL_AXLE_LOCAL.clone().applyQuaternion(wheel.quaternion).normalize();
+  // Левое колесо CarConcept на +X
+  const sideSign = tmpCenter.x >= 0 ? 1 : -1;
+
+  return {
+    steerPivot,
+    spinPivot,
+    steerAxisLocal,
+    axleLocal,
+    sideSign,
+    isFront,
+  };
+};
+
+/** Применяет цвета скина к paint / interior / tire материалам */
+const applyCarSkin = (root: Object3D, carSkin: TCarSkin) => {
+  root.traverse((object) => {
+    if (!isMesh(object)) {
+      return;
+    }
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    for (const material of materials) {
+      if (!isStandardMaterial(material)) {
+        continue;
+      }
+      const name = material.name;
+      if (name.startsWith('Paint')) {
+        material.color.set(carSkin.body);
+        continue;
+      }
+      if (name.startsWith('Interior') || name === 'Dashboard' || name === 'Floormat') {
+        tmpColor.set(carSkin.cabin);
+        material.color.copy(tmpColor);
+        continue;
+      }
+      if (name === 'Tireside' || name === 'Tiretread') {
+        material.color.set(carSkin.wheel);
+      }
+    }
+  });
+};
+
+/** Включает/выключает castShadow на непрозрачных мешах */
+const setCastShadow = (root: Object3D, castShadow: boolean) => {
+  root.traverse((object) => {
+    if (!isMesh(object)) {
+      return;
+    }
+    object.castShadow = castShadow;
+    object.receiveShadow = true;
+  });
+};
+
+/** Настраивает emissive фар по ночному режиму */
+const setHeadlightEmissive = (root: Object3D, headlightsOn: boolean) => {
+  const intensity = headlightsOn ? HEADLIGHT_EMISSIVE_ON : HEADLIGHT_EMISSIVE_OFF;
+  root.traverse((object) => {
+    if (!isMesh(object)) {
+      return;
+    }
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    for (const material of materials) {
+      if (!isStandardMaterial(material)) {
+        continue;
+      }
+      if (material.name !== 'Headlight') {
+        continue;
+      }
+      material.emissive.set(vehiclePalette.headlampEmissive);
+      material.emissiveIntensity = intensity;
+    }
+  });
+};
+
+/** Собирает материалы стопов один раз после клонирования */
+const collectBrakeMaterials = (root: Object3D): MeshStandardMaterial[] => {
+  const result: MeshStandardMaterial[] = [];
+  root.traverse((object) => {
+    if (!isMesh(object)) {
+      return;
+    }
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    for (const material of materials) {
+      if (!isStandardMaterial(material)) {
+        continue;
+      }
+      if (material.name !== 'Brakelight' && material.name !== 'Signallight') {
+        continue;
+      }
+      material.emissive.set(vehiclePalette.brakeEmissive);
+      result.push(material);
+    }
+  });
+  return result;
+};
+
+/** Обновляет яркость стоп-сигналов */
+const setBrakeEmissive = (materials: MeshStandardMaterial[], brake: number) => {
+  const intensity = MathUtils.lerp(
+    BRAKE_EMISSIVE_IDLE,
+    BRAKE_EMISSIVE_ON,
+    MathUtils.clamp(brake, 0, 1),
+  );
+  for (const material of materials) {
+    material.emissiveIntensity = intensity;
+  }
+};
+
+/** Imperative-анимация колёс и стопов (вне React render rules) */
+const applyWheelAnimation = (
+  wheelRigs: TWheelRig[],
+  brakeMaterials: MeshStandardMaterial[],
+  steerAngle: number,
+  spinAngle: number,
+  brake: number,
+) => {
+  for (const wheelRig of wheelRigs) {
+    if (wheelRig.isFront) {
+      const angle = steerAngle * computeAckermannScale(steerAngle, wheelRig.sideSign);
+      wheelRig.steerPivot.quaternion.setFromAxisAngle(wheelRig.steerAxisLocal, angle);
+    }
+    wheelRig.spinPivot.quaternion.setFromAxisAngle(wheelRig.axleLocal, spinAngle);
+  }
+  setBrakeEmissive(brakeMaterials, brake);
+};
+
+/** Считает fit по текущему клону сцены */
+const measureFit = (root: Object3D): TVehicleFit => {
+  root.updateMatrixWorld(true);
+  tmpBox.setFromObject(root);
+  const size = tmpBox.getSize(new Vector3());
+  const center = tmpBox.getCenter(new Vector3());
+  return computeVehicleFit({
+    size: { x: size.x, y: size.y, z: size.z },
+    min: { x: tmpBox.min.x, y: tmpBox.min.y, z: tmpBox.min.z },
+    center: { x: center.x, y: center.y, z: center.z },
+  });
+};
+
+type TVehicleModelInnerProps = TVehicleModelProps;
+
+/** Загруженный GLTF-кузов с анимацией колёс */
+const VehicleModelInner = ({ carSkin, headlightsOn, driveVisualRef }: TVehicleModelInnerProps) => {
+  const { scene } = useGLTF(VEHICLE_GLTF_PATH);
+  const steerAngleRef = useRef(0);
+  const spinAngleRef = useRef(0);
+  const rigsRef = useRef<TWheelRig[]>([]);
+  const brakeMaterialsRef = useRef<MeshStandardMaterial[]>([]);
+  const fitScaleRef = useRef(1);
+
+  const prepared = useMemo(() => {
+    const cloned = cloneSkinned(scene) as Group;
+    cloned.traverse((object) => {
+      if (isMesh(object)) {
+        cloneMeshMaterials(object);
+      }
+    });
+    hideBrandingNodes(cloned);
+
+    const rigs: TWheelRig[] = [];
+    for (const name of FRONT_WHEEL_NAMES) {
+      const wheel = cloned.getObjectByName(name);
+      if (wheel) {
+        const rig = buildWheelRig(wheel, true);
+        if (rig) {
+          rigs.push(rig);
+        }
+      }
+    }
+    for (const name of REAR_WHEEL_NAMES) {
+      const wheel = cloned.getObjectByName(name);
+      if (wheel) {
+        const rig = buildWheelRig(wheel, false);
+        if (rig) {
+          rigs.push(rig);
+        }
+      }
+    }
+
+    const brakeMaterials = collectBrakeMaterials(cloned);
+    const fit = measureFit(cloned);
+    return { cloned, rigs, fit, brakeMaterials };
+  }, [scene]);
+
+  // Скины, тени, emissive и кэш pivots для useFrame.
+  useLayoutEffect(() => {
+    rigsRef.current = prepared.rigs;
+    brakeMaterialsRef.current = prepared.brakeMaterials;
+    fitScaleRef.current = prepared.fit.scale;
+    applyCarSkin(prepared.cloned, carSkin);
+    setCastShadow(prepared.cloned, !headlightsOn);
+    setHeadlightEmissive(prepared.cloned, headlightsOn);
+  }, [prepared, carSkin, headlightsOn]);
+
+  // Крутит колёса, рулит передними и жжёт стопы.
+  useFrame((_, dt) => {
+    const drive = driveVisualRef.current;
+    if (!drive) {
+      return;
+    }
+    const clampedDt = Math.min(dt, 1 / 20);
+    const targetSteer = drive.steer * MAX_STEER_ANGLE;
+    steerAngleRef.current = MathUtils.damp(steerAngleRef.current, targetSteer, STEER_DAMP, clampedDt);
+
+    const wheelRadius = MODEL_WHEEL_RADIUS * fitScaleRef.current;
+    spinAngleRef.current += (drive.forwardSpeed / Math.max(wheelRadius, 0.05)) * clampedDt;
+
+    applyWheelAnimation(
+      rigsRef.current,
+      brakeMaterialsRef.current,
+      steerAngleRef.current,
+      spinAngleRef.current,
+      drive.brake,
+    );
+  });
+
+  const { fit } = prepared;
+
+  return (
+    <group scale={fit.scale} position={[fit.offset.x, fit.offset.y, fit.offset.z]}>
+      <primitive object={prepared.cloned} />
+    </group>
+  );
+};
+
+/** Fallback тех же габаритов, пока грузится GLB */
+const VehicleModelFallback = ({ carSkin }: { carSkin: TCarSkin }) => (
+  <group>
+    <mesh position={[0, 0.35, 0.1]} castShadow receiveShadow>
+      <boxGeometry args={[VEHICLE_TARGET_LENGTH * 0.48, 0.28, VEHICLE_TARGET_LENGTH * 0.88]} />
+      <meshStandardMaterial color={carSkin.body} metalness={0.35} roughness={0.45} />
+    </mesh>
+  </group>
+);
+
+/** GLTF-машина с Suspense и preload-дружелюбным путём */
+export const VehicleModel = (props: TVehicleModelProps) => (
+  <Suspense fallback={<VehicleModelFallback carSkin={props.carSkin} />}>
+    <VehicleModelInner {...props} />
+  </Suspense>
+);
+
+useGLTF.preload(VEHICLE_GLTF_PATH);

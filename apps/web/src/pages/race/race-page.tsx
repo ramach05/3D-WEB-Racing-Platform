@@ -18,7 +18,7 @@ import {
 } from '@/features/race-session';
 import { Button, PageShell, SegaLoader, StatusText } from '@/shared/ui';
 import { RaceHud, RacePerfHud } from '@/widgets/hud';
-import { RaceCanvas } from '@/widgets/race-canvas';
+import { preloadVehicleModel, RaceCanvas } from '@/widgets/race-canvas';
 import { resetSkidMarks } from '@/widgets/race-canvas/lib/skid-marks-store';
 import { RaceControls, RaceTouchControls } from '@/widgets/race-controls';
 import { RaceCountdownOverlay } from '@/widgets/race-countdown';
@@ -72,6 +72,11 @@ export const RacePage = () => {
   const [prevSessionKey, setPrevSessionKey] = useState(sessionKey);
   const submittedRef = useRef(false);
   const toastTimerRef = useRef<number | null>(null);
+
+  // Прогревает GLB до монтирования Canvas.
+  useEffect(() => {
+    preloadVehicleModel();
+  }, []);
 
   if (sessionKey !== prevSessionKey) {
     setPrevSessionKey(sessionKey);

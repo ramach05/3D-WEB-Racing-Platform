@@ -27,6 +27,10 @@ import {
   resetTireHitDamping,
   tickTireHitDamping,
 } from '@/widgets/race-canvas/lib/tire-hit-damping';
+import {
+  VehicleModel,
+  type TVehicleDriveVisual,
+} from '@/widgets/race-canvas/vehicle/vehicle-model';
 
 type TSkidWheelPos = { x: number; z: number };
 
@@ -38,13 +42,15 @@ const HEADLIGHT_DISTANCE = 24;
 const HEADLIGHT_DECAY = 2;
 /** Прицел: в плоскость асфальта впереди */
 const HEADLIGHT_TARGET: TVec3 = [0, -1.0, 11];
-const HEADLIGHT_LOCAL_LEFT: TVec3 = [-0.55, 0.5, 1.7];
-const HEADLIGHT_LOCAL_RIGHT: TVec3 = [0.55, 0.5, 1.7];
-/** Одна shadowed-фара × 512² вместо двух × 1024² — главный shadow hotspot ночи */
-const HEADLIGHT_SHADOW_MAP = 512;
+const HEADLIGHT_LOCAL_LEFT: TVec3 = [-0.58, 0.48, 1.55];
+const HEADLIGHT_LOCAL_RIGHT: TVec3 = [0.58, 0.48, 1.55];
+/** Одна shadowed-фара × 768² вместо двух — главный shadow hotspot ночи */
+const HEADLIGHT_SHADOW_MAP = 768;
 const HEADLIGHT_SHADOW_NEAR = 0.5;
 const HEADLIGHT_SHADOW_BIAS = -0.00002;
-const HEADLIGHT_SHADOW_NORMAL_BIAS = 0.02;
+const HEADLIGHT_SHADOW_NORMAL_BIAS = 0.015;
+/** fov shadow camera ≈ 2 × spot angle (градусы) — без пустого frustum */
+const HEADLIGHT_SHADOW_FOV = (2 * HEADLIGHT_ANGLE * 180) / Math.PI;
 
 type TVehicleProps = {
   /** Позиция спавна на трассе */
@@ -76,6 +82,7 @@ const configureHeadlightShadow = (light: SpotLight) => {
   light.shadow.normalBias = HEADLIGHT_SHADOW_NORMAL_BIAS;
   light.shadow.camera.near = HEADLIGHT_SHADOW_NEAR;
   light.shadow.camera.far = HEADLIGHT_DISTANCE;
+  light.shadow.camera.fov = HEADLIGHT_SHADOW_FOV;
   light.shadow.camera.updateProjectionMatrix();
 };
 
@@ -156,6 +163,7 @@ const VehicleHeadlights = ({ bodyRef }: TVehicleHeadlightsProps) => {
         shadow-normalBias={HEADLIGHT_SHADOW_NORMAL_BIAS}
         shadow-camera-near={HEADLIGHT_SHADOW_NEAR}
         shadow-camera-far={HEADLIGHT_DISTANCE}
+        shadow-camera-fov={HEADLIGHT_SHADOW_FOV}
       />
       <spotLight
         ref={rightHeadlightRef}
@@ -188,7 +196,9 @@ const COLLIDER_RADIUS = COLLIDER_HALF_X;
 const COLLIDER_HALF_HEIGHT = COLLIDER_HALF_Z - COLLIDER_RADIUS;
 const COLLIDER_Y = COLLIDER_RADIUS;
 /** Запас луча за край коллайдера для раннего slide */
-const WALL_PROBE_MARGIN = 0.15;
+const WALL_PROBE_MARGIN = 0.2;
+/** Look-ahead (с): удлиняет probe на скорость «в стену», ~2–3 кадра @ 60 fps */
+const WALL_PROBE_LOOKAHEAD = 0.04;
 /** Высота спавна над точкой старта — машина падает на трассу */
 const SPAWN_DROP_HEIGHT = 3.2;
 /** После касания ждём почти нулевую вертикальную скорость */
@@ -210,7 +220,7 @@ const tmpDesired = new Vector3();
 const tmpNormal = new Vector3();
 const tmpSlide = new Vector3();
 
-/** Скользит вдоль стены: убирает нормальную составляющую скорости */
+/** Скользит вдоль стены: убирает составляющую скорости по нормали стены */
 const slideAlongWalls = (
   world: ReturnType<typeof useRapier>['world'],
   rapier: ReturnType<typeof useRapier>['rapier'],
@@ -228,23 +238,42 @@ const slideAlongWalls = (
   const result = velocity.clone();
 
   for (const dir of probes) {
+    // dir — луч к стене; удлиняем probe при движении навстречу
+    const intoProbe = Math.max(0, velocity.dot(dir));
+    if (intoProbe < 0.01) {
+      continue;
+    }
     const probeLen =
       Math.abs(dir.dot(tmpForward)) * COLLIDER_HALF_Z +
       Math.abs(dir.dot(tmpRight)) * COLLIDER_HALF_X +
-      WALL_PROBE_MARGIN;
+      WALL_PROBE_MARGIN +
+      intoProbe * WALL_PROBE_LOOKAHEAD;
     const ray = new rapier.Ray(
       { x: translation.x, y: translation.y + COLLIDER_Y, z: translation.z },
       { x: dir.x, y: 0, z: dir.z },
     );
-    const hit = world.castRay(ray, probeLen, true, undefined, WALL_PROBE_GROUPS, undefined, body);
+    const hit = world.castRayAndGetNormal(
+      ray,
+      probeLen,
+      true,
+      undefined,
+      WALL_PROBE_GROUPS,
+      undefined,
+      body,
+    );
     if (!hit) {
       continue;
     }
-    tmpNormal.set(-dir.x, 0, -dir.z);
+    // Нормаль стены (не ось машины) — иначе под углом обнуляется весь forward
+    tmpNormal.set(hit.normal.x, 0, hit.normal.z);
     if (tmpNormal.lengthSq() < 0.001) {
       continue;
     }
     tmpNormal.normalize();
+    // Нормаль должна смотреть навстречу лучу (из стены к машине)
+    if (tmpNormal.dot(dir) > 0) {
+      tmpNormal.negate();
+    }
     const intoWall = result.dot(tmpNormal);
     if (intoWall < 0) {
       tmpSlide.copy(tmpNormal).multiplyScalar(intoWall);
@@ -270,6 +299,11 @@ export const Vehicle = ({
   const awaitingLand = useRef(true);
   const lastSkidPos = useRef<(TSkidWheelPos | null)[]>([null, null, null, null]);
   const smokeTimer = useRef(0);
+  const driveVisualRef = useRef<TVehicleDriveVisual>({
+    forwardSpeed: 0,
+    steer: 0,
+    brake: 0,
+  });
 
   const clearSkidTrail = () => {
     lastSkidPos.current = [null, null, null, null];
@@ -327,6 +361,12 @@ export const Vehicle = ({
     const grounded = wheelGrounded || translation.y < 2.5;
 
     const hud = getRaceHudSnapshot();
+    const input = getDriveInput();
+    const forwardSpeed = tmpVel.dot(tmpForward);
+    driveVisualRef.current.forwardSpeed = hud.status === 'racing' ? forwardSpeed : 0;
+    driveVisualRef.current.steer = input.steer;
+    driveVisualRef.current.brake = input.brake;
+
     if (awaitingLand.current && hud.status === 'ready') {
       if (wheelGrounded && Math.abs(linvel.y) < LAND_SETTLE_VY) {
         awaitingLand.current = false;
@@ -346,8 +386,6 @@ export const Vehicle = ({
       return;
     }
 
-    const input = getDriveInput();
-    const forwardSpeed = tmpVel.dot(tmpForward);
     let targetForward = integrateDriveForward(forwardSpeed, {
       throttle: input.throttle,
       brake: input.brake,
@@ -465,80 +503,11 @@ export const Vehicle = ({
           collisionGroups={VEHICLE_GROUPS}
         />
         <group ref={visualRef}>
-          {/* Ночью кузов не кастит тени: иначе self-shadow режет пучки фар */}
-          <mesh position={[0, 0.32, 0.15]} castShadow={!headlightsOn} receiveShadow>
-            <boxGeometry args={[1.6, 0.28, 2.9]} />
-            <meshStandardMaterial color={carSkin.body} metalness={0.2} roughness={0.5} />
-          </mesh>
-          <mesh position={[0, 0.48, -0.35]} castShadow={!headlightsOn} receiveShadow>
-            <boxGeometry args={[1.35, 0.22, 1.1]} />
-            <meshStandardMaterial color={carSkin.cabin} metalness={0.1} roughness={0.35} />
-          </mesh>
-          <mesh position={[0, 0.58, -0.35]} castShadow={!headlightsOn} receiveShadow>
-            <boxGeometry args={[1.1, 0.12, 0.9]} />
-            <meshStandardMaterial
-              color={vehiclePalette.glass}
-              transparent
-              opacity={0.55}
-              metalness={0.4}
-            />
-          </mesh>
-          <mesh position={[0, 0.28, 1.55]} castShadow={!headlightsOn} receiveShadow>
-            <boxGeometry args={[1.5, 0.18, 0.25]} />
-            <meshStandardMaterial color={carSkin.body} metalness={0.15} roughness={0.55} />
-          </mesh>
-          <mesh position={[0, 0.28, -1.55]} castShadow={!headlightsOn} receiveShadow>
-            <boxGeometry args={[1.5, 0.18, 0.25]} />
-            <meshStandardMaterial color={carSkin.body} metalness={0.15} roughness={0.55} />
-          </mesh>
-          <mesh position={[-0.62, 0.42, -1.35]} castShadow={!headlightsOn} receiveShadow>
-            <boxGeometry args={[0.12, 0.1, 0.08]} />
-            <meshStandardMaterial
-              color={vehiclePalette.brake}
-              emissive={vehiclePalette.brakeEmissive}
-              emissiveIntensity={0.8}
-            />
-          </mesh>
-          <mesh position={[0.62, 0.42, -1.35]} castShadow={!headlightsOn} receiveShadow>
-            <boxGeometry args={[0.12, 0.1, 0.08]} />
-            <meshStandardMaterial
-              color={vehiclePalette.brake}
-              emissive={vehiclePalette.brakeEmissive}
-              emissiveIntensity={0.8}
-            />
-          </mesh>
-          {headlightsOn ? (
-            <>
-              <mesh position={[-0.55, 0.38, 1.62]}>
-                <boxGeometry args={[0.2, 0.12, 0.08]} />
-                <meshStandardMaterial
-                  color={vehiclePalette.headlamp}
-                  emissive={vehiclePalette.headlampEmissive}
-                  emissiveIntensity={0.45}
-                />
-              </mesh>
-              <mesh position={[0.55, 0.38, 1.62]}>
-                <boxGeometry args={[0.2, 0.12, 0.08]} />
-                <meshStandardMaterial
-                  color={vehiclePalette.headlamp}
-                  emissive={vehiclePalette.headlampEmissive}
-                  emissiveIntensity={0.45}
-                />
-              </mesh>
-            </>
-          ) : null}
-          {WHEEL_LOCAL.map((offset) => (
-            <group key={`${offset[0]}-${offset[2]}`} position={[offset[0], 0.2, offset[2]]}>
-              <mesh rotation={[0, 0, Math.PI / 2]} castShadow={!headlightsOn} receiveShadow>
-                <cylinderGeometry args={[0.28, 0.28, 0.22, 12]} />
-                <meshStandardMaterial color={carSkin.wheel} roughness={0.95} />
-              </mesh>
-              <mesh rotation={[0, 0, Math.PI / 2]} receiveShadow>
-                <cylinderGeometry args={[0.14, 0.14, 0.24, 8]} />
-                <meshStandardMaterial color={vehiclePalette.rim} metalness={0.6} roughness={0.3} />
-              </mesh>
-            </group>
-          ))}
+          <VehicleModel
+            carSkin={carSkin}
+            headlightsOn={headlightsOn}
+            driveVisualRef={driveVisualRef}
+          />
         </group>
       </RigidBody>
       {headlightsOn ? <VehicleHeadlights bodyRef={bodyRef} /> : null}

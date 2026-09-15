@@ -1,13 +1,20 @@
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getTrackConfig, useGetTracksQuery } from '@/entities/track';
 import { PageShell, StatusText, TracksPageSkeleton } from '@/shared/ui';
+import { preloadVehicleModel } from '@/widgets/race-canvas';
 import { TrackMinimap } from '@/widgets/track-minimap';
 
 /** Список трасс с API и планом сверху */
 export const TracksPage = () => {
   const { t } = useTranslation();
   const { data, isLoading, isError } = useGetTracksQuery();
+
+  // Прогревает GLB машины до входа в заезд.
+  useEffect(() => {
+    preloadVehicleModel();
+  }, []);
 
   return (
     <PageShell>
@@ -21,8 +28,8 @@ export const TracksPage = () => {
         <ul className="mt-6 grid gap-4 sm:grid-cols-2 sm:items-stretch">
           {data.map((track) => {
             const config = getTrackConfig(track.slug);
-            return (
-              <li key={track.id} className="sega-panel flex h-full flex-col p-4">
+            const body = (
+              <>
                 <h2 className="text-lg font-medium text-[var(--sega-cyan)]">{track.name}</h2>
                 <p className="mt-1 text-sm text-[var(--muted)]">
                   {t(`tracks.descriptions.${track.slug}`, { defaultValue: '' })}
@@ -38,13 +45,26 @@ export const TracksPage = () => {
                     </div>
                   ) : null}
                   {track.isAvailable ? (
-                    <Link to={`/race/${track.slug}`} className="sega-btn mt-4 inline-flex text-sm">
-                      {t('tracks.start')}
-                    </Link>
+                    <span className="sega-btn mt-4 inline-flex text-sm">{t('tracks.start')}</span>
                   ) : (
                     <p className="mt-3 text-sm text-[var(--muted)]">{t('tracks.unavailable')}</p>
                   )}
                 </div>
+              </>
+            );
+
+            return (
+              <li key={track.id} className="h-full">
+                {track.isAvailable ? (
+                  <Link
+                    to={`/race/${track.slug}`}
+                    className="sega-panel sega-card-link flex h-full flex-col p-4 no-underline"
+                  >
+                    {body}
+                  </Link>
+                ) : (
+                  <div className="sega-panel flex h-full flex-col p-4">{body}</div>
+                )}
               </li>
             );
           })}
