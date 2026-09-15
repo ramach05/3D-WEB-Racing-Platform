@@ -66,7 +66,7 @@ export const STREET_LAMP_SPOT_AIM_LOCAL_X = STREET_LAMP_LUMINAIRE_LOCAL_X + 3.4;
 
 /**
  * SpotLight: яркий LED-конус на дорогу.
- * При шаге ~44 м пятна должны почти смыкаться; intensity сопоставима с фарами машины.
+ * Intensity сопоставима с фарами машины; активны только у ближайших K столбов.
  */
 export const STREET_LAMP_SPOT = {
   intensity: 110,
@@ -77,16 +77,19 @@ export const STREET_LAMP_SPOT = {
   decay: 2,
 } as const;
 
-/** PointLight: spill на столб, стену и ближний асфальт */
-export const STREET_LAMP_POINT = {
-  intensity: 4.2,
-  distance: 14,
-  decay: 2,
+/**
+ * Бюджет Night City: Spot только у K ближайших фонарей (дальние — emissive-линза).
+ * Shadow map — у одного ближайшего среди активных.
+ */
+export const STREET_LAMP_ACTIVE_SPOTS = {
+  /** Сколько SpotLight монтировать одновременно */
+  count: 4,
+  /** Держать прежний Spot, пока он не дальше K-го + hysteresis (м) */
+  switchHysteresis: 8,
 } as const;
 
 /**
  * Shadow map только у одного ближайшего Spot (бюджет Night City ≤3 passes).
- * PointLight без теней — дорого и почти не читается.
  */
 export const STREET_LAMP_SPOT_SHADOW = {
   mapSize: 256,

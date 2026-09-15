@@ -7,13 +7,13 @@ const WALL_THICKNESS = 0.5;
 const WALL_OUTSET = 1.2;
 /**
  * Шаг станций вдоль периметра (по одной лампе, стороны чередуются).
- * Подобран так, чтобы на Night City было примерно вдвое меньше прежних ~11.
+ * Реже столбы — меньше Spot-кандидатов и draw calls на Night City.
  */
-const DEFAULT_SPACING = 20;
+const DEFAULT_SPACING = 28;
 /** Не ставить фонари слишком близко к гантри / старту */
 const START_FINISH_CLEARANCE = 14;
 /** Минимальный зазор между столбами (после фильтра зон) */
-const MIN_LAMP_SPACING = 35;
+const MIN_LAMP_SPACING = 42;
 
 /** Точка внутри любой из exclusion-зон */
 const isInsideAnyZone = (x: number, z: number, zones: TOrientedBox[]): boolean => {
@@ -201,6 +201,10 @@ export const expectedNightCityLampCount = (config: TTrackConfig): { min: number;
     perimeter += Math.hypot(b.x - a.x, b.z - a.z);
   }
   const stations = Math.max(1, Math.floor(perimeter / DEFAULT_SPACING));
-  // одна лампа на станцию; допуск на отсев у трибун / старта / min spacing
-  return { min: Math.max(3, stations - 8), max: stations + 2 };
+  // После отсева у трибун / старта ещё MIN_LAMP_SPACING режет близкие столбы на длинных петлях
+  const spacingCap = Math.max(3, Math.floor(perimeter / MIN_LAMP_SPACING) + 2);
+  return {
+    min: Math.max(3, Math.min(stations - 8, spacingCap - 6)),
+    max: Math.min(stations + 2, spacingCap + 2),
+  };
 };

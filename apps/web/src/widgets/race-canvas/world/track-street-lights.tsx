@@ -5,6 +5,7 @@ import type { RapierRigidBody } from '@react-three/rapier';
 import { placeStreetLamps, type TPlacedStreetLamp, type TTrackConfig } from '@/entities/track';
 import { startLightPalette, streetLampPalette } from '@/shared/config';
 import {
+  STREET_LAMP_ACTIVE_SPOTS,
   STREET_LAMP_ARM_JOINT_OVERLAP,
   STREET_LAMP_ARM_JOINTS,
   STREET_LAMP_ARM_RADIUS,
@@ -13,7 +14,6 @@ import {
   STREET_LAMP_LENS_EMISSIVE_INTENSITY,
   STREET_LAMP_LUMINAIRE_LOCAL_X,
   STREET_LAMP_LUMINAIRE_Y,
-  STREET_LAMP_POINT,
   STREET_LAMP_POLE_HEIGHT,
   STREET_LAMP_POLE_RADIUS,
   STREET_LAMP_POLE_SEGMENTS,
@@ -27,15 +27,17 @@ import {
 type TTrackStreetLightsProps = {
   /** Конфиг трассы */
   config: TTrackConfig;
-  /** Ref машины — выбираем ближайший фонарь для shadow map */
+  /** Ref машины — выбираем ближайшие фонари для Spot / shadow */
   bodyRef?: RefObject<RapierRigidBody | null>;
 };
 
 type TStreetLampProps = {
   /** Размещённый фонарь */
   lamp: TPlacedStreetLamp;
-  /** Горит ли фонарь */
+  /** Горит ли линза (ночь) */
   isOn: boolean;
+  /** Монтировать SpotLight (distance-LOD) */
+  hasSpot: boolean;
   /** Этот Spot кастит shadow map (только один на сцене) */
   castLightShadow: boolean;
 };
@@ -92,14 +94,14 @@ const configureLampSpotShadow = (light: SpotLight) => {
   light.shadow.camera.updateProjectionMatrix();
 };
 
-/** Один cobra-head фонарь: столб, непрерывный кронштейн, плафон; свет — только при isOn */
-const StreetLamp = ({ lamp, isOn, castLightShadow }: TStreetLampProps) => {
+/** Один cobra-head фонарь: столб, непрерывный кронштейн, плафон; Spot — только при hasSpot */
+const StreetLamp = ({ lamp, isOn, hasSpot, castLightShadow }: TStreetLampProps) => {
   const spotRef = useRef<SpotLight>(null);
   const targetRef = useRef<Object3D>(null);
 
   // Привязывает SpotLight к aim и настраивает shadow map вне render-loop.
   useLayoutEffect(() => {
-    if (!isOn) {
+    if (!hasSpot) {
       return;
     }
     const spot = spotRef.current;
@@ -114,7 +116,7 @@ const StreetLamp = ({ lamp, isOn, castLightShadow }: TStreetLampProps) => {
     } else {
       spot.castShadow = false;
     }
-  }, [isOn, castLightShadow]);
+  }, [hasSpot, castLightShadow]);
 
   const poleCenterY = STREET_LAMP_ROAD_TOP_Y + STREET_LAMP_POLE_HEIGHT / 2;
   const armTipX = STREET_LAMP_LUMINAIRE_LOCAL_X;
@@ -176,7 +178,7 @@ const StreetLamp = ({ lamp, isOn, castLightShadow }: TStreetLampProps) => {
         />
       </mesh>
 
-      {isOn ? (
+      {hasSpot ? (
         <>
           {/* Aim: пятно на проезжей части, не под столб */}
           <object3D
@@ -201,17 +203,158 @@ const StreetLamp = ({ lamp, isOn, castLightShadow }: TStreetLampProps) => {
             shadow-camera-near={STREET_LAMP_SPOT_SHADOW.near}
             shadow-camera-far={STREET_LAMP_SPOT.distance}
           />
-
-          <pointLight
-            position={[armTipX, luminaireY - 0.05, 0]}
-            intensity={STREET_LAMP_POINT.intensity}
-            distance={STREET_LAMP_POINT.distance}
-            decay={STREET_LAMP_POINT.decay}
-            color={streetLampPalette.light}
-            castShadow={false}
-          />
         </>
       ) : null}
+    </group>
+  );
+};
+
+/** Расстояние от (x,z) до фонаря */
+const lampDistance = (lamp: TPlacedStreetLamp, x: number, z: number): number =>
+  Math.hypot(lamp.x - x, lamp.z - z);
+
+/**
+ * K ближайших фонарей с hysteresis: прежние Spot остаются, пока не дальше K-го + margin.
+ * Возвращает отсортированные индексы (ближайший первым).
+ */
+const selectActiveSpotIndices = (
+  lamps: TPlacedStreetLamp[],
+  x: number,
+  z: number,
+  k: number,
+  prev: readonly number[],
+  hysteresis: number,
+): number[] => {
+  if (lamps.length === 0 || k <= 0) {
+    return [];
+  }
+  const ranked = lamps.map((lamp, index) => ({ index, d: lampDistance(lamp, x, z) }));
+  ranked.sort((a, b) => a.d - b.d);
+  const limit = Math.min(k, ranked.length);
+  const kthDist = ranked[limit - 1]?.d ?? 0;
+  const cutoff = kthDist + hysteresis;
+
+  const next = new Set<number>();
+  for (const index of prev) {
+    const lamp = lamps[index];
+    if (!lamp || next.size >= limit) {
+      continue;
+    }
+    if (lampDistance(lamp, x, z) <= cutoff) {
+      next.add(index);
+    }
+  }
+  for (const { index } of ranked) {
+    if (next.size >= limit) {
+      break;
+    }
+    next.add(index);
+  }
+
+  return [...next].sort((a, b) => {
+    const da = lampDistance(lamps[a]!, x, z);
+    const db = lampDistance(lamps[b]!, x, z);
+    return da - db;
+  });
+};
+
+/** Стабильный ключ набора индексов для сравнения */
+const indicesKey = (indices: readonly number[]): string => [...indices].sort((a, b) => a - b).join(',');
+
+/**
+ * Уличные фонари вдоль трассы.
+ * Столбы есть днём и ночью; Spot — только у K ближайших ночью; shadow — у одного nearest.
+ */
+export const TrackStreetLights = ({ config, bodyRef }: TTrackStreetLightsProps) => {
+  const lamps = useMemo(() => placeStreetLamps({ config }), [config]);
+  const isOn = config.timeOfDay === 'night';
+  const initialActive = useMemo(
+    () => lamps.slice(0, STREET_LAMP_ACTIVE_SPOTS.count).map((_, i) => i),
+    [lamps],
+  );
+  const [activeSpotIndices, setActiveSpotIndices] = useState<number[]>(initialActive);
+  const [shadowLampIndex, setShadowLampIndex] = useState(initialActive[0] ?? 0);
+  const activeRef = useRef(initialActive);
+  const shadowIndexRef = useRef(initialActive[0] ?? 0);
+  const pendingActiveKeyRef = useRef<string | null>(null);
+  const pendingShadowRef = useRef<number | null>(null);
+
+  // Обновляет active Spot set и shadow caster; setState — после кадра.
+  useFrame(() => {
+    if (!isOn || !bodyRef?.current || lamps.length === 0) {
+      return;
+    }
+    const { x, z } = bodyRef.current.translation();
+    const nextActive = selectActiveSpotIndices(
+      lamps,
+      x,
+      z,
+      STREET_LAMP_ACTIVE_SPOTS.count,
+      activeRef.current,
+      STREET_LAMP_ACTIVE_SPOTS.switchHysteresis,
+    );
+    const nextKey = indicesKey(nextActive);
+    const prevKey = indicesKey(activeRef.current);
+    if (nextKey !== prevKey && pendingActiveKeyRef.current !== nextKey) {
+      pendingActiveKeyRef.current = nextKey;
+      activeRef.current = nextActive;
+      queueMicrotask(() => {
+        setActiveSpotIndices(nextActive);
+        pendingActiveKeyRef.current = null;
+      });
+    }
+
+    const nearest = nextActive[0] ?? findNearestLampIndex(lamps, x, z);
+    if (nearest < 0) {
+      return;
+    }
+    const current = shadowIndexRef.current;
+    if (current === nearest) {
+      return;
+    }
+    const currentLamp = lamps[current];
+    const nearestLamp = lamps[nearest];
+    if (!nearestLamp) {
+      return;
+    }
+    let nextShadow = current;
+    if (!currentLamp) {
+      nextShadow = nearest;
+    } else {
+      const currentDist = lampDistance(currentLamp, x, z);
+      const nearestDist = lampDistance(nearestLamp, x, z);
+      if (nearestDist + STREET_LAMP_SPOT_SHADOW.switchHysteresis < currentDist) {
+        nextShadow = nearest;
+      }
+    }
+    if (nextShadow === current || pendingShadowRef.current === nextShadow) {
+      return;
+    }
+    pendingShadowRef.current = nextShadow;
+    shadowIndexRef.current = nextShadow;
+    queueMicrotask(() => {
+      setShadowLampIndex(nextShadow);
+      pendingShadowRef.current = null;
+    });
+  });
+
+  const activeSet = useMemo(() => new Set(activeSpotIndices), [activeSpotIndices]);
+
+  if (lamps.length === 0) {
+    return null;
+  }
+
+  return (
+    <group>
+      {lamps.map((lamp, index) => (
+        <StreetLamp
+          key={`street-lamp-${index}`}
+          lamp={lamp}
+          isOn={isOn}
+          hasSpot={isOn && activeSet.has(index)}
+          castLightShadow={isOn && index === shadowLampIndex}
+        />
+      ))}
     </group>
   );
 };
@@ -234,74 +377,4 @@ const findNearestLampIndex = (lamps: TPlacedStreetLamp[], x: number, z: number):
     }
   }
   return bestIndex;
-};
-
-/**
- * Уличные фонари вдоль трассы.
- * Столбы есть днём и ночью; свет — только при `timeOfDay === 'night'`.
- * Ночью ровно один ближайший Spot кастит shadow map (hysteresis; переключение через React state).
- */
-export const TrackStreetLights = ({ config, bodyRef }: TTrackStreetLightsProps) => {
-  const lamps = useMemo(() => placeStreetLamps({ config }), [config]);
-  const isOn = config.timeOfDay === 'night';
-  const [shadowLampIndex, setShadowLampIndex] = useState(0);
-  const shadowIndexRef = useRef(0);
-  const pendingIndexRef = useRef<number | null>(null);
-
-  // Выбирает nearest Spot; setState откладываем на конец кадра (не mid-shadow-pass).
-  useFrame(() => {
-    if (!isOn || !bodyRef?.current || lamps.length === 0) {
-      return;
-    }
-    const { x, z } = bodyRef.current.translation();
-    const nearest = findNearestLampIndex(lamps, x, z);
-    if (nearest < 0) {
-      return;
-    }
-    const current = shadowIndexRef.current;
-    if (current === nearest) {
-      return;
-    }
-    const currentLamp = lamps[current];
-    const nearestLamp = lamps[nearest];
-    if (!nearestLamp) {
-      return;
-    }
-    let next = current;
-    if (!currentLamp) {
-      next = nearest;
-    } else {
-      const currentDist = Math.hypot(currentLamp.x - x, currentLamp.z - z);
-      const nearestDist = Math.hypot(nearestLamp.x - x, nearestLamp.z - z);
-      if (nearestDist + STREET_LAMP_SPOT_SHADOW.switchHysteresis < currentDist) {
-        next = nearest;
-      }
-    }
-    if (next === current || pendingIndexRef.current === next) {
-      return;
-    }
-    pendingIndexRef.current = next;
-    shadowIndexRef.current = next;
-    queueMicrotask(() => {
-      setShadowLampIndex(next);
-      pendingIndexRef.current = null;
-    });
-  });
-
-  if (lamps.length === 0) {
-    return null;
-  }
-
-  return (
-    <group>
-      {lamps.map((lamp, index) => (
-        <StreetLamp
-          key={`street-lamp-${index}`}
-          lamp={lamp}
-          isOn={isOn}
-          castLightShadow={isOn && index === shadowLampIndex}
-        />
-      ))}
-    </group>
-  );
 };
