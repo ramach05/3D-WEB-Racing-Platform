@@ -56,8 +56,8 @@ export type TDriveLongitudinalInput = {
 };
 
 /**
- * Интегрирует продольную скорость: ножной тормоз как раньше;
- * ручник замедляет к нулю (не даёт задний ход); ручник+газ — медленный спад.
+ * Интегрирует продольную скорость: ручник приоритетнее ножного тормоза
+ * и гасит скорость к нулю с обеих сторон; без ручника — тормоз/реверс как раньше.
  */
 export const integrateDriveForward = (
   forwardSpeed: number,
@@ -65,14 +65,6 @@ export const integrateDriveForward = (
 ): number => {
   let target = forwardSpeed;
   const { throttle, brake, handbrake, dt } = input;
-
-  if (brake > 0) {
-    if (throttle > 0) {
-      target += throttle * VEHICLE_ACCEL * dt;
-    }
-    target -= brake * VEHICLE_BRAKE * dt;
-    return target;
-  }
 
   if (handbrake > 0) {
     if (throttle > 0) {
@@ -83,6 +75,14 @@ export const integrateDriveForward = (
     } else if (target < 0) {
       target = Math.min(0, target + handbrake * HANDBRAKE_DECEL * dt);
     }
+    return target;
+  }
+
+  if (brake > 0) {
+    if (throttle > 0) {
+      target += throttle * VEHICLE_ACCEL * dt;
+    }
+    target -= brake * VEHICLE_BRAKE * dt;
     return target;
   }
 

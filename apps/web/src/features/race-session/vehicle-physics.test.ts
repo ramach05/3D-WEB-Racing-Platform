@@ -96,20 +96,46 @@ describe('handbrake longitudinal', () => {
     expect(next).toBe(0);
   });
 
-  it('keeps foot-brake behavior when brake is held', () => {
-    const withBrake = integrateDriveForward(20, {
+  it('decelerates reverse speed toward zero with handbrake alone', () => {
+    const speed = -8;
+    const next = integrateDriveForward(speed, {
+      throttle: 0,
+      brake: 0,
+      handbrake: 1,
+      dt,
+    });
+    expect(next).toBeGreaterThan(speed);
+    expect(next).toBeLessThanOrEqual(0);
+    expect(next).toBeCloseTo(speed + HANDBRAKE_DECEL * dt, 5);
+  });
+
+  it('prioritizes handbrake over foot-brake when both are held', () => {
+    const withBoth = integrateDriveForward(20, {
       throttle: 0,
       brake: 1,
       handbrake: 1,
       dt,
     });
-    const brakeOnly = integrateDriveForward(20, {
+    const handbrakeOnly = integrateDriveForward(20, {
       throttle: 0,
-      brake: 1,
-      handbrake: 0,
+      brake: 0,
+      handbrake: 1,
       dt,
     });
-    expect(withBrake).toBeCloseTo(brakeOnly, 5);
+    expect(withBoth).toBeCloseTo(handbrakeOnly, 5);
+  });
+
+  it('stops reverse when handbrake is held with brake (S+Space)', () => {
+    const speed = -8;
+    const next = integrateDriveForward(speed, {
+      throttle: 0,
+      brake: 1,
+      handbrake: 1,
+      dt,
+    });
+    expect(next).toBeGreaterThan(speed);
+    expect(next).toBeLessThanOrEqual(0);
+    expect(next).toBeCloseTo(speed + HANDBRAKE_DECEL * dt, 5);
   });
 });
 
