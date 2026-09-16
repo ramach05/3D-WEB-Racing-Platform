@@ -1,18 +1,36 @@
-import { useEffect, useMemo } from 'react';
-import { MeshStandardMaterial } from 'three';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { Euler, Matrix4, MeshStandardMaterial, Quaternion, Vector3, type InstancedMesh } from 'three';
 import type { TOrientedBox, TStartTribuneSide, TTrackPalette } from '@/entities/track';
 import {
+  CANOPY_POST_SIZE,
+  CANOPY_THICKNESS,
+  FASCIA_HEIGHT,
+  FASCIA_THICKNESS,
+  FOUNDATION_OVERHANG,
+  FOUNDATION_THICKNESS,
   ROW_DEPTH,
   ROW_HEIGHT,
   SECTION_PITCH,
   SECTION_WIDTH,
   SECTION_Z_OFFSETS,
+  STAIR_WIDTH,
   TRIBUNE_MARGIN,
   TRIBUNE_ROWS,
   WALL_OFFSET,
+  buildTribuneBackRails,
+  buildTribuneCanopyPosts,
+  buildTribuneSeatPlanks,
+  buildTribuneStairRails,
+  buildTribuneStairStringer,
+  buildTribuneStairs,
+  canopyCenterY,
+  rowTopY,
+  tribuneRowCenterX,
 } from '@/entities/track';
 import { tribunePalette } from '@/shared/config';
 import { getSharedConcreteTexture } from '@/widgets/race-canvas/lib/concrete-texture';
+import { getSharedCorrugatedMetalTexture } from '@/widgets/race-canvas/lib/metal-texture';
+import { getSharedWoodTexture } from '@/widgets/race-canvas/lib/wood-texture';
 import { buildSpectatorSeats, SpectatorCrowd } from './spectator-crowd';
 
 type TTrackTribunesProps = {
@@ -38,12 +56,16 @@ type TTribuneMaterials = {
   stepEven: MeshStandardMaterial;
   stepOdd: MeshStandardMaterial;
   canopy: MeshStandardMaterial;
-  seatRail: MeshStandardMaterial;
+  seat: MeshStandardMaterial;
+  metal: MeshStandardMaterial;
+  structure: MeshStandardMaterial;
 };
 
 type TTribuneSectionProps = {
   /** Z-центр секции */
   sectionZ: number;
+  /** Индекс секции в SECTION_Z_OFFSETS */
+  sectionIndex: number;
   /** Внутренний X трибуны */
   tribuneInnerX: number;
   /** Знак стороны (−1 / +1) */
@@ -54,16 +76,9 @@ type TTribuneSectionProps = {
   isNight: boolean;
   /** Пауза анимации толпы */
   paused: boolean;
-  /** Shared concrete-материалы секции */
+  /** Shared-материалы секции */
   materials: TTribuneMaterials;
 };
-
-/** X центра ряда трибуны */
-const rowCenterX = (tribuneInnerX: number, sideSign: number, row: number) =>
-  tribuneInnerX + sideSign * (row * ROW_DEPTH + ROW_DEPTH / 2);
-
-/** Y верхней кромки ряда */
-const rowTopY = (row: number) => (row + 1) * ROW_HEIGHT;
 
 type TTribuneNightLightsProps = {
   /** Внутренний X трибуны */
@@ -83,16 +98,16 @@ const TribuneNightLights = ({ tribuneInnerX, sideSign, sectionZ, accent }: TTrib
       <mesh
         key={`row-emissive-${row}`}
         position={[
-          rowCenterX(tribuneInnerX, sideSign, row) - sideSign * (ROW_DEPTH / 2 + 0.04),
+          tribuneRowCenterX(tribuneInnerX, sideSign, row) - sideSign * (ROW_DEPTH / 2 + 0.04),
           rowTopY(row) - 0.04,
           0,
         ]}
       >
-        <boxGeometry args={[0.06, 0.08, SECTION_WIDTH - 0.2]} />
+        <boxGeometry args={[0.05, 0.06, SECTION_WIDTH - 0.4]} />
         <meshStandardMaterial
           color={accent}
           emissive={accent}
-          emissiveIntensity={1.6}
+          emissiveIntensity={1.4}
           toneMapped={false}
         />
       </mesh>
@@ -100,9 +115,82 @@ const TribuneNightLights = ({ tribuneInnerX, sideSign, sectionZ, accent }: TTrib
   </group>
 );
 
-/** Одна секция трибуны: ступени, перила, навес и зрители */
+type TInstancedBoxItem = {
+  position: readonly [number, number, number];
+  size?: readonly [number, number, number];
+  height?: number;
+  rotation?: readonly [number, number, number];
+};
+
+type TInstancedBoxesProps = {
+  /** Центры и размеры боксов */
+  items: ReadonlyArray<TInstancedBoxItem>;
+  /** Фиксированный размер XZ для стоек (высота из item.height) */
+  fixedSizeXZ?: number;
+  /** Материал */
+  material: MeshStandardMaterial;
+  /** Тень */
+  castShadow?: boolean;
+};
+
+const _instPos = new Vector3();
+const _instQuat = new Quaternion();
+const _instScale = new Vector3();
+const _instEuler = new Euler();
+
+/** Один InstancedMesh из списка боксов (поддержка Euler-поворота) */
+const InstancedBoxes = ({ items, fixedSizeXZ, material, castShadow = true }: TInstancedBoxesProps) => {
+  const meshRef = useRef<InstancedMesh>(null);
+  const count = items.length;
+
+  useLayoutEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh || count === 0) return;
+    const matrix = new Matrix4();
+    for (let i = 0; i < count; i += 1) {
+      const item = items[i];
+      if (!item) continue;
+      const [x, y, z] = item.position;
+      _instPos.set(x, y, z);
+      if (item.rotation) {
+        _instEuler.set(item.rotation[0], item.rotation[1], item.rotation[2], 'XYZ');
+        _instQuat.setFromEuler(_instEuler);
+      } else {
+        _instQuat.identity();
+      }
+      if (item.size) {
+        _instScale.set(item.size[0], item.size[1], item.size[2]);
+      } else if (fixedSizeXZ != null && item.height != null) {
+        _instScale.set(fixedSizeXZ, item.height, fixedSizeXZ);
+      } else {
+        continue;
+      }
+      matrix.compose(_instPos, _instQuat, _instScale);
+      mesh.setMatrixAt(i, matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [items, count, fixedSizeXZ]);
+
+  if (count === 0) return null;
+
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[undefined, undefined, count]}
+      castShadow={castShadow}
+      receiveShadow
+      material={material}
+      frustumCulled={false}
+    >
+      <boxGeometry args={[1, 1, 1]} />
+    </instancedMesh>
+  );
+};
+
+/** Открытая секция грандстенда: бетон, дерево, сталь — без торцевых стен */
 const TribuneSection = ({
   sectionZ,
+  sectionIndex,
   tribuneInnerX,
   sideSign,
   palette,
@@ -122,29 +210,83 @@ const TribuneSection = ({
     [tribuneInnerX, sideSign],
   );
 
-  const backRowX = rowCenterX(tribuneInnerX, sideSign, TRIBUNE_ROWS - 1);
+  const canopyPosts = useMemo(
+    () => buildTribuneCanopyPosts(tribuneInnerX, sideSign),
+    [tribuneInnerX, sideSign],
+  );
+
+  const { seats: seatPlanks, backs: seatBacks } = useMemo(
+    () => buildTribuneSeatPlanks(tribuneInnerX, sideSign),
+    [tribuneInnerX, sideSign],
+  );
+
+  const woodParts = useMemo(() => [...seatPlanks, ...seatBacks], [seatPlanks, seatBacks]);
+
+  const stairSteps = useMemo(
+    () =>
+      buildTribuneStairs({
+        tribuneInnerX,
+        sideSign,
+        sectionIndex,
+      }),
+    [tribuneInnerX, sideSign, sectionIndex],
+  );
+
+  const stairStringer = useMemo(
+    () =>
+      buildTribuneStairStringer({
+        tribuneInnerX,
+        sideSign,
+        sectionIndex,
+      }),
+    [tribuneInnerX, sideSign, sectionIndex],
+  );
+
+  const railParts = useMemo(() => {
+    const back = buildTribuneBackRails(tribuneInnerX, sideSign);
+    const stair = buildTribuneStairRails(stairSteps, tribuneInnerX, sideSign);
+    return [...back, ...stair];
+  }, [tribuneInnerX, sideSign, stairSteps]);
+
   const backOuterX = tribuneInnerX + sideSign * TRIBUNE_ROWS * ROW_DEPTH;
+  const platformCenterX = tribuneInnerX + (sideSign * TRIBUNE_ROWS * ROW_DEPTH) / 2;
+  const platformDepth = TRIBUNE_ROWS * ROW_DEPTH + 0.35;
+  const platformWidth = SECTION_WIDTH + 0.45;
+  const hasStairs = stairSteps.length > 0;
+  const foundationWidth = hasStairs
+    ? platformWidth + FOUNDATION_OVERHANG * 2 + STAIR_WIDTH * 2
+    : platformWidth + FOUNDATION_OVERHANG * 2;
+  const canopyY = canopyCenterY();
+  const topRowTop = rowTopY(TRIBUNE_ROWS - 1);
 
   return (
     <group position={[0, ROAD_TOP_Y, sectionZ]}>
       <mesh
-        position={[
-          tribuneInnerX + (sideSign * TRIBUNE_ROWS * ROW_DEPTH) / 2,
-          ROW_HEIGHT / 2 - 0.02,
-          0,
-        ]}
+        position={[platformCenterX, -FOUNDATION_THICKNESS / 2 + 0.02, 0]}
+        receiveShadow
+        castShadow
+        material={materials.platform}
+        dispose={null}
+      >
+        <boxGeometry
+          args={[platformDepth + FOUNDATION_OVERHANG * 2, FOUNDATION_THICKNESS, foundationWidth]}
+        />
+      </mesh>
+
+      <mesh
+        position={[platformCenterX, ROW_HEIGHT / 2 - 0.02, 0]}
         receiveShadow
         material={materials.platform}
         dispose={null}
       >
-        <boxGeometry args={[TRIBUNE_ROWS * ROW_DEPTH + 0.4, ROW_HEIGHT, SECTION_WIDTH + 0.6]} />
+        <boxGeometry args={[platformDepth, ROW_HEIGHT, platformWidth]} />
       </mesh>
 
       {Array.from({ length: TRIBUNE_ROWS }, (_, row) => (
         <mesh
           key={`step-${row}`}
           position={[
-            rowCenterX(tribuneInnerX, sideSign, row),
+            tribuneRowCenterX(tribuneInnerX, sideSign, row),
             row * ROW_HEIGHT + ROW_HEIGHT / 2,
             0,
           ]}
@@ -157,24 +299,47 @@ const TribuneSection = ({
         </mesh>
       ))}
 
+      <InstancedBoxes items={woodParts} material={materials.seat} castShadow={false} />
+
       <mesh
-        position={[backOuterX + sideSign * 0.06, rowTopY(TRIBUNE_ROWS - 1) + 0.42, 0]}
+        position={[backOuterX + sideSign * (FASCIA_THICKNESS / 2), topRowTop + FASCIA_HEIGHT / 2, 0]}
         castShadow
+        receiveShadow
+        material={materials.structure}
+        dispose={null}
       >
-        <boxGeometry args={[0.1, 0.85, SECTION_WIDTH + 0.3]} />
-        <meshStandardMaterial
-          color={palette.accent}
-          emissive={palette.accent}
-          emissiveIntensity={isNight ? 1.2 : 0.25}
-          toneMapped={false}
-          roughness={0.55}
-        />
+        <boxGeometry args={[FASCIA_THICKNESS, FASCIA_HEIGHT, SECTION_WIDTH + 0.2]} />
       </mesh>
 
       <mesh
         position={[
-          tribuneInnerX + (sideSign * (TRIBUNE_ROWS * ROW_DEPTH + 0.5)) / 2,
-          rowTopY(TRIBUNE_ROWS - 1) + 1.1,
+          backOuterX + sideSign * (FASCIA_THICKNESS + 0.02),
+          topRowTop + FASCIA_HEIGHT * 0.65,
+          0,
+        ]}
+        castShadow
+      >
+        <boxGeometry args={[0.03, 0.12, SECTION_WIDTH - 0.4]} />
+        <meshStandardMaterial
+          color={palette.accent}
+          emissive={palette.accent}
+          emissiveIntensity={isNight ? 0.9 : 0.15}
+          toneMapped={false}
+          roughness={0.5}
+          metalness={0.2}
+        />
+      </mesh>
+
+      <InstancedBoxes
+        items={canopyPosts}
+        fixedSizeXZ={CANOPY_POST_SIZE}
+        material={materials.metal}
+      />
+
+      <mesh
+        position={[
+          tribuneInnerX + (sideSign * (TRIBUNE_ROWS * ROW_DEPTH + 0.35)) / 2,
+          canopyY,
           0,
         ]}
         castShadow
@@ -182,24 +347,42 @@ const TribuneSection = ({
         material={materials.canopy}
         dispose={null}
       >
-        <boxGeometry args={[TRIBUNE_ROWS * ROW_DEPTH + 0.8, 0.12, SECTION_WIDTH + 1]} />
+        <boxGeometry args={[TRIBUNE_ROWS * ROW_DEPTH + 0.7, CANOPY_THICKNESS, SECTION_WIDTH + 0.8]} />
       </mesh>
 
-      <mesh
-        position={[backRowX, rowTopY(TRIBUNE_ROWS - 1) + 0.43, 0]}
-        castShadow
-        material={materials.seatRail}
-        dispose={null}
-      >
-        <boxGeometry args={[ROW_DEPTH, 0.08, SECTION_WIDTH + 0.2]} />
-      </mesh>
+      {stairSteps.map((step, i) => (
+        <mesh
+          key={`stair-${i}`}
+          position={step.position}
+          castShadow
+          receiveShadow
+          material={i % 2 === 0 ? materials.stepEven : materials.stepOdd}
+          dispose={null}
+        >
+          <boxGeometry args={[...step.size]} />
+        </mesh>
+      ))}
+
+      {stairStringer ? (
+        <mesh
+          position={stairStringer.position}
+          castShadow
+          receiveShadow
+          material={materials.metal}
+          dispose={null}
+        >
+          <boxGeometry args={[...stairStringer.size]} />
+        </mesh>
+      ) : null}
+
+      <InstancedBoxes items={railParts} material={materials.metal} castShadow={false} />
 
       <SpectatorCrowd seats={seats} palette={palette} isNight={isNight} paused={paused} />
     </group>
   );
 };
 
-/** Трибуны с зрителями у линии старт/финиш (визуал; коллайдеры — TrackTribuneColliders) */
+/** Открытые трибуны у старт/финиш (визуал; коллайдеры — TrackTribuneColliders) */
 export const TrackTribunes = ({
   line,
   roadWidth,
@@ -214,60 +397,81 @@ export const TrackTribunes = ({
   const structureColor = isNight ? tribunePalette.night.structure : tribunePalette.day.structure;
   const stepColor = isNight ? tribunePalette.night.step : tribunePalette.day.step;
   const platformColor = isNight ? tribunePalette.night.platform : tribunePalette.day.platform;
-  const canopyColor = isNight ? tribunePalette.night.rail : structureColor;
+  const canopyColor = isNight ? tribunePalette.night.rail : tribunePalette.day.metal;
+  const seatColor = isNight ? tribunePalette.night.seat : tribunePalette.day.seat;
+  const metalColor = isNight ? tribunePalette.night.metal : tribunePalette.day.metal;
 
   const concreteMap = useMemo(() => getSharedConcreteTexture(256), []);
+  const woodMap = useMemo(() => getSharedWoodTexture(256), []);
+  const metalMap = useMemo(() => getSharedCorrugatedMetalTexture(256), []);
 
   const materials = useMemo((): TTribuneMaterials => {
-    const shared = { map: concreteMap, metalness: 0 as const };
     return {
       platform: new MeshStandardMaterial({
-        ...shared,
+        map: concreteMap,
         color: platformColor,
-        roughness: 0.95,
+        roughness: 0.92,
+        metalness: 0.02,
       }),
       stepEven: new MeshStandardMaterial({
-        ...shared,
-        color: stepColor,
-        roughness: 0.92,
-      }),
-      stepOdd: new MeshStandardMaterial({
-        ...shared,
-        color: structureColor,
-        roughness: 0.92,
-      }),
-      canopy: new MeshStandardMaterial({
-        ...shared,
-        color: canopyColor,
-        roughness: 0.85,
-        metalness: 0.15,
-      }),
-      seatRail: new MeshStandardMaterial({
-        ...shared,
+        map: concreteMap,
         color: stepColor,
         roughness: 0.9,
+        metalness: 0.02,
+      }),
+      stepOdd: new MeshStandardMaterial({
+        map: concreteMap,
+        color: structureColor,
+        roughness: 0.9,
+        metalness: 0.02,
+      }),
+      canopy: new MeshStandardMaterial({
+        map: metalMap,
+        color: canopyColor,
+        roughness: 0.35,
+        metalness: 0.82,
+      }),
+      seat: new MeshStandardMaterial({
+        map: woodMap,
+        color: seatColor,
+        roughness: 0.78,
+        metalness: 0,
+      }),
+      metal: new MeshStandardMaterial({
+        color: metalColor,
+        roughness: 0.38,
+        metalness: 0.75,
+      }),
+      structure: new MeshStandardMaterial({
+        map: concreteMap,
+        color: structureColor,
+        roughness: 0.88,
+        metalness: 0.04,
       }),
     };
-  }, [concreteMap, platformColor, stepColor, structureColor, canopyColor]);
+  }, [concreteMap, woodMap, metalMap, platformColor, stepColor, structureColor, canopyColor, seatColor, metalColor]);
 
-  // Освобождает shared-материалы трибун (текстура бетона — singleton, не dispose).
+  // Освобождает материалы (текстуры — singleton, не dispose).
   useEffect(
     () => () => {
       materials.platform.dispose();
       materials.stepEven.dispose();
       materials.stepOdd.dispose();
       materials.canopy.dispose();
-      materials.seatRail.dispose();
+      materials.seat.dispose();
+      materials.metal.dispose();
+      materials.structure.dispose();
     },
     [materials],
   );
 
   return (
     <group position={[line.position[0], 0, line.position[2]]} rotation={[0, line.rotationY, 0]}>
-      {SECTION_Z_OFFSETS.map((sectionZ) => (
+      {SECTION_Z_OFFSETS.map((sectionZ, sectionIndex) => (
         <TribuneSection
           key={`tribune-${sectionZ}`}
           sectionZ={sectionZ}
+          sectionIndex={sectionIndex}
           tribuneInnerX={tribuneInnerX}
           sideSign={sideSign}
           palette={palette}

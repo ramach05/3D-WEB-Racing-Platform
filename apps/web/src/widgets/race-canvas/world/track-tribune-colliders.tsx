@@ -1,6 +1,12 @@
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import type { TOrientedBox, TStartTribuneSide } from '@/entities/track';
 import {
+  CANOPY_POST_SIZE,
+  CANOPY_THICKNESS,
+  FASCIA_HEIGHT,
+  FASCIA_THICKNESS,
+  FOUNDATION_OVERHANG,
+  FOUNDATION_THICKNESS,
   ROW_DEPTH,
   ROW_HEIGHT,
   SECTION_WIDTH,
@@ -8,6 +14,13 @@ import {
   TRIBUNE_MARGIN,
   TRIBUNE_ROWS,
   WALL_OFFSET,
+  buildTribuneCanopyPosts,
+  buildTribuneStairs,
+  buildTribuneStairStringer,
+  canopyCenterY,
+  canopyUndersideY,
+  rowTopY,
+  tribuneRowCenterX,
 } from '@/entities/track';
 import { WORLD_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
 
@@ -25,18 +38,6 @@ const FRICTION = 0.4;
 /** Зазор под навесом, чтобы кубы зрителей не пересекали крышу */
 const CANOPY_CLEARANCE = 0.06;
 
-/** X центра ряда трибуны */
-const rowCenterX = (tribuneInnerX: number, sideSign: number, row: number) =>
-  tribuneInnerX + sideSign * (row * ROW_DEPTH + ROW_DEPTH / 2);
-
-/** Y верхней кромки ряда */
-const rowTopY = (row: number) => (row + 1) * ROW_HEIGHT;
-
-/** Y центра навеса (как в визуале) */
-const CANOPY_CENTER_Y = rowTopY(TRIBUNE_ROWS - 1) + 1.1;
-const CANOPY_HALF_H = 0.12 / 2;
-const CANOPY_UNDERSIDE_Y = CANOPY_CENTER_Y - CANOPY_HALF_H - CANOPY_CLEARANCE;
-
 type TTribuneSectionCollidersProps = {
   /** Z-центр секции */
   sectionZ: number;
@@ -48,7 +49,7 @@ type TTribuneSectionCollidersProps = {
   sectionIndex: number;
 };
 
-/** Fixed-коллайдеры одной секции: платформа, ступени, зрители, задняя стенка, навес */
+/** Fixed-коллайдеры открытой секции: цоколь, ступени, задние стойки, лестницы, навес */
 const TribuneSectionColliders = ({
   sectionZ,
   tribuneInnerX,
@@ -56,7 +57,16 @@ const TribuneSectionColliders = ({
   sectionIndex,
 }: TTribuneSectionCollidersProps) => {
   const backOuterX = tribuneInnerX + sideSign * TRIBUNE_ROWS * ROW_DEPTH;
-  const backRowX = rowCenterX(tribuneInnerX, sideSign, TRIBUNE_ROWS - 1);
+  const platformCenterX = tribuneInnerX + (sideSign * TRIBUNE_ROWS * ROW_DEPTH) / 2;
+  const platformDepth = TRIBUNE_ROWS * ROW_DEPTH + 0.35;
+  const platformWidth = SECTION_WIDTH + 0.45;
+  const canopyY = canopyCenterY();
+  const canopyHalfH = CANOPY_THICKNESS / 2;
+  const canopyUnderside = canopyUndersideY() - CANOPY_CLEARANCE;
+  const canopyPosts = buildTribuneCanopyPosts(tribuneInnerX, sideSign);
+  const stairSteps = buildTribuneStairs({ tribuneInnerX, sideSign, sectionIndex });
+  const stairStringer = buildTribuneStairStringer({ tribuneInnerX, sideSign, sectionIndex });
+  const topRowTop = rowTopY(TRIBUNE_ROWS - 1);
 
   return (
     <RigidBody
@@ -69,12 +79,19 @@ const TribuneSectionColliders = ({
       collisionGroups={WORLD_GROUPS}
     >
       <CuboidCollider
-        args={[(TRIBUNE_ROWS * ROW_DEPTH + 0.4) / 2, ROW_HEIGHT / 2, (SECTION_WIDTH + 0.6) / 2]}
-        position={[
-          tribuneInnerX + (sideSign * TRIBUNE_ROWS * ROW_DEPTH) / 2,
-          ROW_HEIGHT / 2 - 0.02,
-          0,
+        args={[
+          (platformDepth + FOUNDATION_OVERHANG * 2) / 2,
+          FOUNDATION_THICKNESS / 2,
+          (platformWidth + FOUNDATION_OVERHANG * 2) / 2,
         ]}
+        position={[platformCenterX, -FOUNDATION_THICKNESS / 2 + 0.02, 0]}
+        friction={FRICTION}
+        restitution={0}
+        collisionGroups={WORLD_GROUPS}
+      />
+      <CuboidCollider
+        args={[platformDepth / 2, ROW_HEIGHT / 2, platformWidth / 2]}
+        position={[platformCenterX, ROW_HEIGHT / 2 - 0.02, 0]}
         friction={FRICTION}
         restitution={0}
         collisionGroups={WORLD_GROUPS}
@@ -84,7 +101,7 @@ const TribuneSectionColliders = ({
           key={`step-${row}`}
           args={[ROW_DEPTH / 2, ROW_HEIGHT / 2, SECTION_WIDTH / 2]}
           position={[
-            rowCenterX(tribuneInnerX, sideSign, row),
+            tribuneRowCenterX(tribuneInnerX, sideSign, row),
             row * ROW_HEIGHT + ROW_HEIGHT / 2,
             0,
           ]}
@@ -95,12 +112,12 @@ const TribuneSectionColliders = ({
       ))}
       {Array.from({ length: TRIBUNE_ROWS }, (_, row) => {
         const seatTopY = rowTopY(row);
-        const crowdHeight = Math.max(0.2, CANOPY_UNDERSIDE_Y - seatTopY);
+        const crowdHeight = Math.max(0.2, canopyUnderside - seatTopY);
         return (
           <CuboidCollider
             key={`crowd-${row}`}
             args={[ROW_DEPTH / 2, crowdHeight / 2, SECTION_WIDTH / 2]}
-            position={[rowCenterX(tribuneInnerX, sideSign, row), seatTopY + crowdHeight / 2, 0]}
+            position={[tribuneRowCenterX(tribuneInnerX, sideSign, row), seatTopY + crowdHeight / 2, 0]}
             friction={FRICTION}
             restitution={0}
             collisionGroups={WORLD_GROUPS}
@@ -108,24 +125,46 @@ const TribuneSectionColliders = ({
         );
       })}
       <CuboidCollider
-        args={[0.1 / 2, 0.85 / 2, (SECTION_WIDTH + 0.3) / 2]}
-        position={[backOuterX + sideSign * 0.06, rowTopY(TRIBUNE_ROWS - 1) + 0.42, 0]}
+        args={[FASCIA_THICKNESS / 2, FASCIA_HEIGHT / 2, (SECTION_WIDTH + 0.2) / 2]}
+        position={[backOuterX + sideSign * (FASCIA_THICKNESS / 2), topRowTop + FASCIA_HEIGHT / 2, 0]}
         friction={FRICTION}
         restitution={0}
         collisionGroups={WORLD_GROUPS}
       />
+      {canopyPosts.map((post, i) => (
+        <CuboidCollider
+          key={`post-${i}`}
+          args={[CANOPY_POST_SIZE / 2, post.height / 2, CANOPY_POST_SIZE / 2]}
+          position={[...post.position]}
+          friction={FRICTION}
+          restitution={0}
+          collisionGroups={WORLD_GROUPS}
+        />
+      ))}
+      {stairSteps.map((step, i) => (
+        <CuboidCollider
+          key={`stair-${i}`}
+          args={[step.size[0] / 2, step.size[1] / 2, step.size[2] / 2]}
+          position={[...step.position]}
+          friction={FRICTION}
+          restitution={0}
+          collisionGroups={WORLD_GROUPS}
+        />
+      ))}
+      {stairStringer ? (
+        <CuboidCollider
+          args={[stairStringer.size[0] / 2, stairStringer.size[1] / 2, stairStringer.size[2] / 2]}
+          position={[...stairStringer.position]}
+          friction={FRICTION}
+          restitution={0}
+          collisionGroups={WORLD_GROUPS}
+        />
+      ) : null}
       <CuboidCollider
-        args={[ROW_DEPTH / 2, 0.08 / 2, (SECTION_WIDTH + 0.2) / 2]}
-        position={[backRowX, rowTopY(TRIBUNE_ROWS - 1) + 0.43, 0]}
-        friction={FRICTION}
-        restitution={0}
-        collisionGroups={WORLD_GROUPS}
-      />
-      <CuboidCollider
-        args={[(TRIBUNE_ROWS * ROW_DEPTH + 0.8) / 2, CANOPY_HALF_H, (SECTION_WIDTH + 1) / 2]}
+        args={[(TRIBUNE_ROWS * ROW_DEPTH + 0.7) / 2, canopyHalfH, (SECTION_WIDTH + 0.8) / 2]}
         position={[
-          tribuneInnerX + (sideSign * (TRIBUNE_ROWS * ROW_DEPTH + 0.5)) / 2,
-          CANOPY_CENTER_Y,
+          tribuneInnerX + (sideSign * (TRIBUNE_ROWS * ROW_DEPTH + 0.35)) / 2,
+          canopyY,
           0,
         ]}
         friction={FRICTION}
@@ -137,7 +176,7 @@ const TribuneSectionColliders = ({
 };
 
 /**
- * Fixed-коллайдеры трибун внутри Physics (платформа, ступени, зрители, стенка, навес).
+ * Fixed-коллайдеры открытых трибун (цоколь, ступени, задние стойки, лестницы, навес).
  * Визуал остаётся в TrackTribunes вне Physics.
  */
 export const TrackTribuneColliders = ({ line, roadWidth, side }: TTrackTribuneCollidersProps) => {

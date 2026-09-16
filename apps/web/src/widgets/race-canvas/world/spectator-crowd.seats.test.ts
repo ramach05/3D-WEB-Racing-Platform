@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SECTION_PITCH, SECTION_WIDTH } from '@/entities/track';
+import { SECTION_PITCH, SECTION_WIDTH, SEAT_PLANK_HEIGHT } from '@/entities/track';
 import { buildSpectatorSeats } from './spectator-crowd';
 import type { TSpectatorBehavior } from './spectator-crowd.types';
 

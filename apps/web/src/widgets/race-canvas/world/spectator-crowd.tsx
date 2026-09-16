@@ -11,6 +11,7 @@ import {
   type WebGLProgramParametersWithUniforms,
 } from 'three';
 import type { TTrackPalette } from '@/entities/track';
+import { SEAT_PLANK_HEIGHT } from '@/entities/track';
 import { getRaceHudSnapshot } from '@/features/race-session';
 import { crowdPalette } from '@/shared/config';
 import type {
@@ -97,7 +98,7 @@ export const buildSpectatorSeats = ({
 
       seats.push({
         x: tribuneInnerX + sideSign * (row * rowDepth + rowDepth / 2),
-        y: (row + 1) * rowHeight + 0.02,
+        y: (row + 1) * rowHeight + SEAT_PLANK_HEIGHT + 0.02,
         z: colOffset,
         yaw,
         phase: Math.random() * Math.PI * 2,
