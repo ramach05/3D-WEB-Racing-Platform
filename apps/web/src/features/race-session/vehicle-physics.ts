@@ -30,12 +30,12 @@ export const VEHICLE_YAW_FOLLOW = -Math.log(0.78) * 60;
  */
 export const VEHICLE_YAW_STOP = -Math.log(0.12) * 60;
 
-/** Замедление ручника (м/с²) — заметно слабее ножного тормоза */
-export const HANDBRAKE_DECEL = 22;
+/** Замедление ручника (м/с²) — слабее ножного тормоза, но без долгого выбега */
+export const HANDBRAKE_DECEL = 40;
 
 /**
  * Доля газа при зажатом ручнике.
- * 0.35 * ACCEL − HANDBRAKE_DECEL ≈ −5.2 м/с² — медленное падение скорости в дрифте.
+ * 0.35 * ACCEL − HANDBRAKE_DECEL ≈ −23 м/с² — дрифт с заметным падением скорости.
  */
 export const HANDBRAKE_THROTTLE_FACTOR = 0.35;
 
