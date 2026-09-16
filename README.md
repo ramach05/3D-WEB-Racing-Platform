@@ -79,7 +79,7 @@ pnpm --filter @racing/shared build
 pnpm --filter @racing/api exec prisma generate
 pnpm --filter @racing/api exec prisma migrate deploy
 pnpm --filter @racing/api exec prisma db seed
-pnpm dev
+pnpm start
 ```
 
 - Web: [http://localhost:5180](http://localhost:5180)
