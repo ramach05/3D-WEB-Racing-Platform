@@ -19,6 +19,7 @@ import { SkidMarks } from '@/widgets/race-canvas/world/skid-marks';
 import { TrackBillboardColliders } from '@/widgets/race-canvas/world/track-billboard-colliders';
 import { TrackBillboards } from '@/widgets/race-canvas/world/track-billboards';
 import { TrackKerbs } from '@/widgets/race-canvas/world/track-kerbs';
+import { TrackOilSlicks } from '@/widgets/race-canvas/world/track-oil-slicks';
 import { TrackStartFinishColliders } from '@/widgets/race-canvas/world/track-start-finish-colliders';
 import { TrackStartFinishLine } from '@/widgets/race-canvas/world/track-start-finish-line';
 import { TrackStreetLightColliders } from '@/widgets/race-canvas/world/track-street-light-colliders';
@@ -278,10 +279,12 @@ const RaceSceneInner = ({
           visualRef={visualRef}
           carSkin={config.carSkin}
           headlightsOn={isNight}
+          oilSlicks={config.oilSlicks}
         />
       </Physics>
       <SkidMarks />
       <TrackKerbs config={config} />
+      <TrackOilSlicks config={config} />
       <TrackStartFinishLine
         line={config.startFinishLine}
         roadWidth={config.roadWidth}

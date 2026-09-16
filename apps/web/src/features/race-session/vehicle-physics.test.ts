@@ -149,4 +149,17 @@ describe('handbrake lateral', () => {
     expect(drifting).toBeGreaterThan(gripped);
     expect(gripped).toBeCloseTo(lateral * Math.exp(-VEHICLE_LATERAL_GRIP * dt), 5);
   });
+
+  it('keeps more lateral slip when surfaceGrip is below asphalt grip', () => {
+    const asphalt = dampLateralVelocity(lateral, 0, 0, dt);
+    const oily = dampLateralVelocity(lateral, 0, 0, dt, 2.2);
+    expect(oily).toBeGreaterThan(asphalt);
+    expect(oily).toBeCloseTo(lateral * Math.exp(-2.2 * dt), 5);
+  });
+
+  it('does not raise grip above handbrake when surfaceGrip is high', () => {
+    const handbrake = dampLateralVelocity(lateral, 1, 0, dt);
+    const withSurface = dampLateralVelocity(lateral, 1, 0, dt, VEHICLE_LATERAL_GRIP);
+    expect(withSurface).toBeCloseTo(handbrake, 5);
+  });
 });

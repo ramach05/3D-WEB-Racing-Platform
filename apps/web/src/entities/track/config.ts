@@ -176,6 +176,7 @@ const buildLoopTrack = ({
     walls,
     checkpoints,
     obstacles: [],
+    oilSlicks: [],
     centerline: points,
     roadWidth,
     palette,
@@ -262,6 +263,96 @@ const buildObstaclesFromBanks = (
   }
   return obstacles;
 };
+
+/** Ширина × толщина × длина пятна масла (м) */
+const OIL_SLICK_SIZE: TVec3 = [2.2, 0.04, 3.0];
+
+/** Высота центра пятна над y=0 (асфальт ~0.1) */
+const OIL_SLICK_CENTER_Y = 0.12;
+
+/**
+ * Размещает лужу масла вдоль centerline с боковым смещением (нормаль влево).
+ * y не участвует в hit-тесте (XZ), но задаёт высоту меша.
+ */
+const placeOilSlickAlongCenterline = (
+  points: TLoopPoint[],
+  ratio: number,
+  lateral: number,
+  size: TVec3 = OIL_SLICK_SIZE,
+): TOrientedBox => {
+  const pointCount = points.length;
+  const index = Math.floor(((((ratio % 1) + 1) % 1) * pointCount) % pointCount);
+  const current = points[index];
+  const next = points[(index + 1) % pointCount];
+  if (!current || !next) {
+    return {
+      position: [0, OIL_SLICK_CENTER_Y, 0],
+      size,
+      rotationY: 0,
+    };
+  }
+  const dx = next.x - current.x;
+  const dz = next.z - current.z;
+  const len = Math.hypot(dx, dz) || 1;
+  const nx = -dz / len;
+  const nz = dx / len;
+  return {
+    position: [current.x + nx * lateral, OIL_SLICK_CENTER_Y, current.z + nz * lateral],
+    size,
+    rotationY: Math.atan2(dx, dz),
+  };
+};
+
+/**
+ * Лужа за N метров до финиша по направлению заезда.
+ * Заезд: сторона спавна (+lz) → через линию → конец петли (−lz).
+ * Подход к финишу — вдоль роста centerline от линии (как спавн), не с конца петли.
+ */
+const placeOilSlickMetersBeforeFinish = (
+  points: TLoopPoint[],
+  metersBeforeFinish: number,
+  lateral: number,
+  size: TVec3 = OIL_SLICK_SIZE,
+): TOrientedBox => {
+  const pose = placeAlongPolyline(points, Math.max(0, metersBeforeFinish));
+  const segLen = Math.hypot(pose.dx, pose.dz) || 1;
+  const nx = -pose.dz / segLen;
+  const nz = pose.dx / segLen;
+  return {
+    position: [pose.x + nx * lateral, OIL_SLICK_CENTER_Y, pose.z + nz * lateral],
+    size,
+    rotationY: Math.atan2(pose.dx, pose.dz),
+  };
+};
+
+type TOilSlickSpot = {
+  /** Доля петли centerline 0..1 */
+  ratio: number;
+  /** Смещение от центра полосы по нормали (м) */
+  lateral: number;
+};
+
+/** Собирает лужи масла из точек вдоль centerline. */
+const buildOilSlicks = (points: TLoopPoint[], spots: TOilSlickSpot[]): TOrientedBox[] =>
+  spots.map((spot) => placeOilSlickAlongCenterline(points, spot.ratio, spot.lateral));
+
+/**
+ * Coastal Oval: свободные участки между банками препятствий.
+ * 0.12 — после старта до первого банка (0.27); 0.54 — между 0.485 и 0.61.
+ */
+const buildCoastalOvalOilSlicks = (points: TLoopPoint[]): TOrientedBox[] =>
+  buildOilSlicks(points, [
+    { ratio: 0.12, lateral: 0.85 },
+    { ratio: 0.54, lateral: -0.95 },
+  ]);
+
+/**
+ * Night City: первая — просвет между банками; вторая — 70 м до финиша по заезду.
+ */
+const buildNightCityOilSlicks = (points: TLoopPoint[]): TOrientedBox[] => [
+  placeOilSlickAlongCenterline(points, 0.23, 1.05),
+  placeOilSlickMetersBeforeFinish(points, 50, -0.75),
+];
 
 /** Стопки шин и бочки у стенок Coastal Oval: несколько рядов от бордюра. */
 const buildCoastalOvalObstacles = (points: TLoopPoint[], roadWidth: number): TTrackObstacle[] => {
@@ -353,8 +444,7 @@ type TPathSegment =
     };
 
 type TDriveCommand =
-  | { type: 'line'; length: number }
-  | { type: 'arc'; radius: number; delta: number };
+  { type: 'line'; length: number } | { type: 'arc'; radius: number; delta: number };
 
 /** Равномерная выборка по длине пути из line/arc сегментов */
 const samplePathSegments = (segments: readonly TPathSegment[], count: number): TLoopPoint[] => {
@@ -480,15 +570,11 @@ export const coastalOvalTrack: TTrackConfig = {
     startTribuneSide: 'left',
   }),
   obstacles: buildCoastalOvalObstacles(coastalOvalPoints, coastalOvalRoadWidth),
+  oilSlicks: buildCoastalOvalOilSlicks(coastalOvalPoints),
 };
 
 /** Street-circuit Night City: drive-команды → равномерная выборка */
-const nightCityPoints = buildDrivenLoopPoints(
-  { x: -28, z: -48 },
-  0,
-  NIGHT_CITY_DRIVE,
-  64,
-);
+const nightCityPoints = buildDrivenLoopPoints({ x: -28, z: -48 }, 0, NIGHT_CITY_DRIVE, 64);
 const nightCityRoadWidth = 10;
 
 export const nightCityTrack: TTrackConfig = {
@@ -503,6 +589,7 @@ export const nightCityTrack: TTrackConfig = {
     startTribuneSide: 'left',
   }),
   obstacles: buildNightCityObstacles(nightCityPoints, nightCityRoadWidth),
+  oilSlicks: buildNightCityOilSlicks(nightCityPoints),
 };
 
 const TRACKS_BY_SLUG: Record<TTrackSlug, TTrackConfig> = {

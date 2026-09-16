@@ -57,6 +57,8 @@ export type TTrackConfig = {
   checkpoints: TOrientedBox[];
   /** Динамические препятствия */
   obstacles: TTrackObstacle[];
+  /** Лужи масла на асфальте (зоны потери сцепления) */
+  oilSlicks: TOrientedBox[];
   /** Центровая линия: ratio растёт с индексом; заезд идёт против роста — см. `race-direction.ts` */
   centerline: TLoopPoint[];
   /** Ширина дороги */

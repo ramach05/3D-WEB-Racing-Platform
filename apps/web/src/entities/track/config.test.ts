@@ -159,4 +159,69 @@ describe('track config geometry', () => {
       }
     }
   });
+
+  it('places two oil slicks on each track', () => {
+    for (const config of [coastalOvalTrack, nightCityTrack]) {
+      expect(config.oilSlicks).toHaveLength(2);
+      for (const slick of config.oilSlicks) {
+        expect(slick.size[0]).toBeGreaterThan(1.5);
+        expect(slick.size[0]).toBeLessThan(3);
+        expect(slick.size[2]).toBeGreaterThan(2);
+        expect(slick.size[2]).toBeLessThan(4);
+      }
+    }
+  });
+
+  it('places Night City second oil slick ~70m before the finish on the race approach', () => {
+    const finish = nightCityTrack.startFinishLine;
+    const spawn = nightCityTrack.spawnPosition;
+    const slick = nightCityTrack.oilSlicks[1]!;
+    const dx = slick.position[0] - finish.position[0];
+    const dz = slick.position[2] - finish.position[2];
+    const distance = Math.hypot(dx, dz);
+    expect(distance).toBeGreaterThan(60);
+    expect(distance).toBeLessThan(80);
+
+    // Подход заезда: сторона спавна (+lz), не «после» линии (−lz)
+    const sin = Math.sin(finish.rotationY);
+    const cos = Math.cos(finish.rotationY);
+    const slickLz = dx * sin + dz * cos;
+    const spawnLz =
+      (spawn[0] - finish.position[0]) * sin + (spawn[2] - finish.position[2]) * cos;
+    expect(spawnLz).toBeGreaterThan(0);
+    expect(slickLz).toBeGreaterThan(0);
+  });
+
+  it('keeps oil slicks clear of spawn and start/finish', () => {
+    const minSpawnClearance = 10;
+    for (const config of [coastalOvalTrack, nightCityTrack]) {
+      const spawn = config.spawnPosition;
+      for (const slick of config.oilSlicks) {
+        const dx = slick.position[0] - spawn[0];
+        const dz = slick.position[2] - spawn[2];
+        const distance = Math.hypot(dx, dz);
+        const slickRadius = Math.hypot(slick.size[0], slick.size[2]) / 2;
+        expect(distance - slickRadius).toBeGreaterThan(minSpawnClearance);
+        expect(isInsideCheckpoint(slick.position[0], slick.position[2], config.startFinishLine)).toBe(
+          false,
+        );
+      }
+    }
+  });
+
+  it('keeps oil slicks clear of dynamic obstacles', () => {
+    const minClearance = 4;
+    for (const config of [coastalOvalTrack, nightCityTrack]) {
+      for (const slick of config.oilSlicks) {
+        const slickRadius = Math.hypot(slick.size[0], slick.size[2]) / 2;
+        for (const obstacle of config.obstacles) {
+          const dx = slick.position[0] - obstacle.position[0];
+          const dz = slick.position[2] - obstacle.position[2];
+          const distance = Math.hypot(dx, dz);
+          const obstacleRadius = Math.hypot(obstacle.size[0], obstacle.size[2]) / 2;
+          expect(distance - slickRadius - obstacleRadius).toBeGreaterThan(minClearance);
+        }
+      }
+    }
+  });
 });

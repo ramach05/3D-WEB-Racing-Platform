@@ -98,10 +98,14 @@ export const dampLateralVelocity = (
   handbrake: number,
   throttle: number,
   dt: number,
+  surfaceGrip?: number,
 ): number => {
   let grip = VEHICLE_LATERAL_GRIP;
   if (handbrake > 0) {
     grip = throttle > 0 ? HANDBRAKE_THROTTLE_LATERAL_GRIP : HANDBRAKE_LATERAL_GRIP;
+  }
+  if (surfaceGrip !== undefined) {
+    grip = Math.min(grip, surfaceGrip);
   }
   return lateral * Math.exp(-grip * dt);
 };
