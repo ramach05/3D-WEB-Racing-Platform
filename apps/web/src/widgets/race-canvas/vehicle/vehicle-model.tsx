@@ -22,6 +22,11 @@ import {
   type TVehicleFit,
 } from '@/widgets/race-canvas/vehicle/vehicle-fit';
 import {
+  rearLightEmissiveIntensity,
+  resolveRearLightMode,
+  type TRearLightMode,
+} from '@/widgets/race-canvas/vehicle/vehicle-rear-lights';
+import {
   computeAckermannScale,
   computeSteerAxisLocal,
   computeToeYawCorrection,
@@ -40,9 +45,6 @@ const MAX_STEER_ANGLE = 0.56;
 const STEER_DAMP = 14;
 /** Радиус колеса модели до scale — для spin от forwardSpeed */
 const MODEL_WHEEL_RADIUS = 0.42;
-/** Emissive стопов в покое / при торможении */
-const BRAKE_EMISSIVE_IDLE = 0.35;
-const BRAKE_EMISSIVE_ON = 2.4;
 const HEADLIGHT_EMISSIVE_ON = 1.8;
 const HEADLIGHT_EMISSIVE_OFF = 0.05;
 
@@ -253,25 +255,49 @@ const collectBrakeMaterials = (root: Object3D): MeshStandardMaterial[] => {
   return result;
 };
 
-/** Обновляет яркость стоп-сигналов */
-const setBrakeEmissive = (materials: MeshStandardMaterial[], brake: number) => {
-  const intensity = MathUtils.lerp(
-    BRAKE_EMISSIVE_IDLE,
-    BRAKE_EMISSIVE_ON,
-    MathUtils.clamp(brake, 0, 1),
-  );
+/** Цвет emissive для режима задних огней */
+const rearLightEmissiveColor = (mode: TRearLightMode): string => {
+  if (mode === 'reverse') {
+    return vehiclePalette.reverseEmissive;
+  }
+  return vehiclePalette.brakeEmissive;
+};
+
+/**
+ * Обновляет цвет/яркость задних огней.
+ * Цвет меняется только при смене режима (дешевле set каждый кадр).
+ */
+const setRearLightEmissive = (
+  materials: MeshStandardMaterial[],
+  mode: TRearLightMode,
+  brake: number,
+  lastMode: { current: TRearLightMode | null },
+) => {
+  const intensity = rearLightEmissiveIntensity(mode, brake);
+  const modeChanged = lastMode.current !== mode;
+  if (modeChanged) {
+    lastMode.current = mode;
+    const color = rearLightEmissiveColor(mode);
+    for (const material of materials) {
+      material.emissive.set(color);
+      material.emissiveIntensity = intensity;
+    }
+    return;
+  }
   for (const material of materials) {
     material.emissiveIntensity = intensity;
   }
 };
 
-/** Imperative-анимация колёс и стопов (вне React render rules) */
+/** Imperative-анимация колёс и задних огней (вне React render rules) */
 const applyWheelAnimation = (
   wheelRigs: TWheelRig[],
   brakeMaterials: MeshStandardMaterial[],
   steerAngle: number,
   spinAngle: number,
   brake: number,
+  forwardSpeed: number,
+  lastRearLightMode: { current: TRearLightMode | null },
 ) => {
   for (const wheelRig of wheelRigs) {
     if (wheelRig.isFront) {
@@ -280,7 +306,8 @@ const applyWheelAnimation = (
     }
     wheelRig.spinPivot.quaternion.setFromAxisAngle(wheelRig.axleLocal, spinAngle);
   }
-  setBrakeEmissive(brakeMaterials, brake);
+  const mode = resolveRearLightMode(brake, forwardSpeed);
+  setRearLightEmissive(brakeMaterials, mode, brake, lastRearLightMode);
 };
 
 /** Считает fit по текущему клону сцены */
@@ -305,6 +332,7 @@ const VehicleModelInner = ({ carSkin, headlightsOn, driveVisualRef }: TVehicleMo
   const spinAngleRef = useRef(0);
   const rigsRef = useRef<TWheelRig[]>([]);
   const brakeMaterialsRef = useRef<MeshStandardMaterial[]>([]);
+  const rearLightModeRef = useRef<TRearLightMode | null>(null);
   const fitScaleRef = useRef(1);
 
   const prepared = useMemo(() => {
@@ -345,13 +373,14 @@ const VehicleModelInner = ({ carSkin, headlightsOn, driveVisualRef }: TVehicleMo
   useLayoutEffect(() => {
     rigsRef.current = prepared.rigs;
     brakeMaterialsRef.current = prepared.brakeMaterials;
+    rearLightModeRef.current = null;
     fitScaleRef.current = prepared.fit.scale;
     applyCarSkin(prepared.cloned, carSkin);
     setCastShadow(prepared.cloned, !headlightsOn);
     setHeadlightEmissive(prepared.cloned, headlightsOn);
   }, [prepared, carSkin, headlightsOn]);
 
-  // Крутит колёса, рулит передними и жжёт стопы.
+  // Крутит колёса, рулит передними и жжёт задние огни.
   useFrame((_, dt) => {
     const drive = driveVisualRef.current;
     if (!drive) {
@@ -370,6 +399,8 @@ const VehicleModelInner = ({ carSkin, headlightsOn, driveVisualRef }: TVehicleMo
       steerAngleRef.current,
       spinAngleRef.current,
       drive.brake,
+      drive.forwardSpeed,
+      rearLightModeRef,
     );
   });
 
