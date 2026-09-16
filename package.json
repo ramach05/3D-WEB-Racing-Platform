@@ -6,8 +6,8 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "prestart": "node scripts/check-node.mjs",
-    "start": "pnpm --filter @racing/shared build && pnpm --filter @racing/api prisma:setup && pnpm --parallel --filter @racing/web --filter @racing/api dev",
+    "preready-steady-go": "node scripts/check-node.mjs",
+    "ready-steady-go": "pnpm --filter @racing/shared build && pnpm --filter @racing/api prisma:setup && pnpm --parallel --filter @racing/web --filter @racing/api dev",
     "build": "pnpm -r --filter @racing/shared --filter @racing/api --filter @racing/web run build",
     "typecheck": "pnpm --filter @racing/shared build && pnpm exec tsc -b --pretty false",
     "lint": "eslint apps/web/src apps/api/src packages/shared/src --max-warnings=0 --ignore-pattern '**/*.js'",
