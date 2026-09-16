@@ -434,12 +434,18 @@ export const Vehicle = ({
 
       if (smoking) {
         smokeTimer.current += clampedDt;
-        if (smokeTimer.current >= 0.06) {
+        const smokeInterval = 0.09 - intensity * 0.055;
+        if (smokeTimer.current >= smokeInterval) {
           smokeTimer.current = 0;
-          for (const wheelIndex of [2, 3] as const) {
+          const smokeWheels =
+            wheels === 'all' ? ([0, 1, 2, 3] as const) : ([2, 3] as const);
+          // Wake: текущая скорость кузова + доля бокового сноса
+          const wakeX = linvel.x + tmpRight.x * dampedLateral * 0.25;
+          const wakeZ = linvel.z + tmpRight.z * dampedLateral * 0.25;
+          for (const wheelIndex of smokeWheels) {
             const pos = lastSkidPos.current[wheelIndex];
             if (pos) {
-              pushSkidSmoke(pos.x, ROAD_TOP_Y + 0.06, pos.z, intensity);
+              pushSkidSmoke(pos.x, ROAD_TOP_Y + 0.06, pos.z, intensity, wakeX, 0, wakeZ);
             }
           }
         }

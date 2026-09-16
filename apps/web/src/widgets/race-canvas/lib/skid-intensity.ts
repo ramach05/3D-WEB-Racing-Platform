@@ -32,7 +32,7 @@ export const HANDBRAKE_SKID_LATERAL_WEIGHT = 0.55;
 export const HANDBRAKE_THROTTLE_SKID_BOOST = 1.15;
 
 /** Порог intensity для дыма от шин */
-export const SKID_SMOKE_THRESHOLD = 0.65;
+export const SKID_SMOKE_THRESHOLD = 0.55;
 
 export type TSkidWheels = 'all' | 'rear';
 
