@@ -18,20 +18,35 @@ export const LeaderboardTable = ({ entries, highlightUserId, maxRows }: TLeaderb
 
   return (
     <div className="sega-panel mt-4 overflow-x-auto p-2">
-      <table className="w-full min-w-[28rem] border-collapse text-left text-sm md:min-w-[32rem]">
+      <table className="w-full min-w-[28rem] table-fixed border-collapse text-left text-sm md:min-w-[32rem]">
         <caption className="sr-only">{t('leaderboard.title')}</caption>
+        <colgroup>
+          <col className="w-[5.5rem]" />
+          <col />
+          <col className="w-[6.75rem]" />
+          <col className="w-[7.25rem]" />
+        </colgroup>
         <thead>
           <tr className="border-b-2 border-[var(--border)]">
-            <th scope="col" className="px-3 py-2 font-medium uppercase text-[var(--sega-cyan)]">
+            <th
+              scope="col"
+              className="px-3 py-2 font-medium uppercase whitespace-nowrap text-[var(--sega-cyan)]"
+            >
               {t('leaderboard.rank')}
             </th>
             <th scope="col" className="px-3 py-2 font-medium uppercase text-[var(--sega-cyan)]">
               {t('leaderboard.racer')}
             </th>
-            <th scope="col" className="px-3 py-2 font-medium uppercase text-[var(--sega-cyan)]">
+            <th
+              scope="col"
+              className="px-3 py-2 font-medium uppercase whitespace-nowrap text-[var(--sega-cyan)]"
+            >
               {t('leaderboard.time')}
             </th>
-            <th scope="col" className="px-3 py-2 font-medium uppercase text-[var(--sega-cyan)]">
+            <th
+              scope="col"
+              className="px-3 py-2 font-medium uppercase whitespace-nowrap text-[var(--sega-cyan)]"
+            >
               {t('leaderboard.date')}
             </th>
           </tr>
@@ -47,10 +62,10 @@ export const LeaderboardTable = ({ entries, highlightUserId, maxRows }: TLeaderb
                   isHighlight && 'bg-[var(--sega-yellow)]/15',
                 )}
               >
-                <td className="px-3 py-2">{entry.rank}</td>
+                <td className="px-3 py-2 whitespace-nowrap tabular-nums">{entry.rank}</td>
                 <td
                   className={cx(
-                    'px-3 py-2',
+                    'truncate px-3 py-2',
                     isHighlight
                       ? 'font-semibold text-[var(--sega-yellow)]'
                       : 'text-[var(--sega-magenta)]',
@@ -58,8 +73,12 @@ export const LeaderboardTable = ({ entries, highlightUserId, maxRows }: TLeaderb
                 >
                   {entry.nickname}
                 </td>
-                <td className="px-3 py-2">{formatRaceTime(entry.timeMs)}</td>
-                <td className="px-3 py-2">{new Date(entry.createdAt).toLocaleDateString()}</td>
+                <td className="px-3 py-2 whitespace-nowrap tabular-nums">
+                  {formatRaceTime(entry.timeMs)}
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap">
+                  {new Date(entry.createdAt).toLocaleDateString()}
+                </td>
               </tr>
             );
           })}

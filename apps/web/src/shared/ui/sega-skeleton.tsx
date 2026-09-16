@@ -93,7 +93,13 @@ export const LeaderboardTableSkeleton = () => {
   return (
     <SkeletonRegion label={t('leaderboard.loading')}>
       <div className="sega-panel mt-4 overflow-x-auto p-2">
-        <table className="w-full min-w-[28rem] border-collapse text-left text-sm md:min-w-[32rem]">
+        <table className="w-full min-w-[28rem] table-fixed border-collapse text-left text-sm md:min-w-[32rem]">
+          <colgroup>
+            <col className="w-[5.5rem]" />
+            <col />
+            <col className="w-[6.75rem]" />
+            <col className="w-[7.25rem]" />
+          </colgroup>
           <thead>
             <tr className="border-b-2 border-[var(--border)]">
               <th scope="col" className="px-3 py-2 font-medium">
