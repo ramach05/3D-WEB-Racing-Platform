@@ -90,13 +90,10 @@ export const RacePage = () => {
     setShowFinishOverlay(false);
   }
 
-  const leaderboardReady =
-    Boolean(user) &&
-    hud.status === 'finished' &&
-    (finishMeta?.submitState === 'done' || finishMeta?.submitState === 'error');
   const { data: leaderboard } = useGetLeaderboardQuery(trackSlug ?? '', {
-    skip: !trackSlug || !leaderboardReady,
+    skip: !trackSlug,
   });
+  const trackBestMs = leaderboard?.[0]?.timeMs ?? null;
 
   useRaceAudio({
     theme: hud.status === 'finished' ? 'finish' : (config?.audioTheme ?? null),
@@ -295,7 +292,7 @@ export const RacePage = () => {
       </div>
       <div className="absolute top-2 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-col items-end gap-2 md:top-4 md:right-4">
         <div className="pointer-events-none max-w-full">
-          <RaceHud trackName={track.name} />
+          <RaceHud trackName={track.name} bestMs={trackBestMs} />
         </div>
         <Button
           variant="ghost"
@@ -330,7 +327,7 @@ export const RacePage = () => {
         open={hud.status === 'finished' && showFinishOverlay}
         trackName={track.name}
         timeMs={finishMeta?.timeMs ?? hud.timeMs}
-        bestMs={hud.bestMs}
+        bestMs={trackBestMs}
         isNewBest={finishMeta?.isNewBest ?? false}
         isGuest={!user}
         submitState={finishMeta?.submitState ?? 'idle'}

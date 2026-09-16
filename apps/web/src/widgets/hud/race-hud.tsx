@@ -61,10 +61,12 @@ const getLabelSlotCh = (t: TFunction): number =>
 type TRaceHudProps = {
   /** Название текущей трассы */
   trackName: string;
+  /** Рекорд трассы из лидерборда (#1), мс */
+  bestMs?: number | null;
 };
 
 /** Текстовый HUD поверх канваса. Время/скорость — через rAF без React-ререндеров. */
-export const RaceHud = ({ trackName }: TRaceHudProps) => {
+export const RaceHud = ({ trackName, bestMs = null }: TRaceHudProps) => {
   const { t } = useTranslation();
   const hud = useRaceHud();
   const timeRef = useRef<HTMLSpanElement>(null);
@@ -143,7 +145,7 @@ export const RaceHud = ({ trackName }: TRaceHudProps) => {
           {t('race.best')}:
         </span>
         <span className="sega-race-hud__value" style={{ minWidth: `${TIME_SLOT_CH}ch` }}>
-          {hud.bestMs === null ? '—' : formatRaceTime(hud.bestMs)}
+          {bestMs === null ? '—' : formatRaceTime(bestMs)}
         </span>
       </p>
       <p className="sega-race-hud__row">
