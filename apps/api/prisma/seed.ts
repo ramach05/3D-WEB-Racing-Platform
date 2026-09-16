@@ -40,13 +40,13 @@ const COASTAL_TIMES_MS = [
 
 /** Лучшие времена на Night City */
 const NIGHT_TIMES_MS = [
-  39_840, // neon_fox
-  40_120, // rival_racer
-  40_550, // blaze_nova
-  41_480, // turbo_mia
-  42_050, // volt_rider
-  42_350, // apex_wolf
-  56_900, // test_user
+  44_840, // neon_fox
+  45_120, // rival_racer
+  45_550, // blaze_nova
+  46_480, // turbo_mia
+  47_050, // volt_rider
+  47_350, // apex_wolf
+  61_900, // test_user
 ] as const;
 
 /** Фиксированные даты демо-заездов (январь–август 2026) */
