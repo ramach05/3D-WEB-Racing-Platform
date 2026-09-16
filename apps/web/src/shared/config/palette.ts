@@ -85,20 +85,26 @@ export const trackPalettes = {
 
 /** Окраска машины по трассе (shape совместим с TCarSkin) */
 export const carSkins = {
-  coastal: { body: '#ff7a00', cabin: '#1a1208', wheel: '#222222' },
+  coastal: { body: '#ffe600', cabin: '#1a1208', wheel: '#222222' },
   night: { body: '#00e5ff', cabin: '#120018', wheel: '#ff2bd6' },
 } as const satisfies TCarSkins;
 
 export const treePalette = {
   day: {
-    trunk: '#5c4030',
-    pine: '#2f6b3a',
-    broadleaf: '#3d8c4a',
+    trunk: '#6a5648',
+    pine: '#2f5c36',
+    pineDark: '#243f2a',
+    pineLight: '#3a6e40',
+    broadleaf: '#3d7340',
+    broadleafLight: '#4a8648',
   },
   night: {
-    trunk: '#2a1e18',
-    pine: '#1a2e22',
-    broadleaf: '#243828',
+    trunk: '#2a221c',
+    pine: '#1a2a20',
+    pineDark: '#121c16',
+    pineLight: '#223428',
+    broadleaf: '#1e2c22',
+    broadleafLight: '#263830',
   },
 } as const satisfies TTreePalette;
 
@@ -149,15 +155,19 @@ export const crowdPalette = {
 
 export const tribunePalette = {
   day: {
-    structure: '#9a9288',
-    step: '#b8b0a4',
-    platform: '#a89e90',
+    structure: '#c4bbb0',
+    step: '#d2c9bc',
+    platform: '#c9c0b4',
+    seat: '#c4a574',
+    metal: '#9aa3ab',
   },
   night: {
-    structure: '#6e6860',
-    step: '#7a746c',
-    platform: '#5c5650',
-    rail: '#707068',
+    structure: '#8a837a',
+    step: '#958e84',
+    platform: '#7e776e',
+    seat: '#8f7350',
+    metal: '#6e767e',
+    rail: '#8a9298',
   },
   emissiveOff: '#000000',
 } as const satisfies TTribunePalette;
@@ -166,7 +176,8 @@ export const vehiclePalette = {
   headlight: '#fff8e0',
   glass: '#88ccff',
   brake: '#ff3333',
-  brakeEmissive: '#ff2222',
+  brakeEmissive: '#ff0a0a',
+  reverseEmissive: '#f2f5ff',
   headlamp: '#ffffcc',
   headlampEmissive: '#ffffaa',
   rim: '#aaaaaa',
@@ -226,13 +237,20 @@ export const horizonMoonStops = {
     { stop: 1, color: 'rgba(40, 50, 80, 0.22)' },
   ],
   glow: [
-    { stop: 0, color: 'rgba(210, 220, 245, 0.22)' },
-    { stop: 0.4, color: 'rgba(170, 185, 220, 0.1)' },
+    { stop: 0, color: 'rgba(210, 220, 245, 0.2)' },
+    { stop: 0.18, color: 'rgba(195, 205, 235, 0.13)' },
+    { stop: 0.36, color: 'rgba(175, 190, 225, 0.075)' },
+    { stop: 0.55, color: 'rgba(155, 175, 215, 0.038)' },
+    { stop: 0.72, color: 'rgba(140, 160, 205, 0.016)' },
+    { stop: 0.88, color: 'rgba(125, 145, 195, 0.004)' },
     { stop: 1, color: 'rgba(120, 140, 190, 0)' },
   ],
   halo: [
-    { stop: 0, color: 'rgba(230, 235, 250, 0.12)' },
-    { stop: 0.55, color: 'rgba(180, 195, 230, 0.05)' },
+    { stop: 0, color: 'rgba(230, 235, 250, 0.1)' },
+    { stop: 0.2, color: 'rgba(210, 220, 245, 0.065)' },
+    { stop: 0.42, color: 'rgba(185, 200, 235, 0.032)' },
+    { stop: 0.65, color: 'rgba(160, 180, 220, 0.012)' },
+    { stop: 0.85, color: 'rgba(145, 165, 210, 0.003)' },
     { stop: 1, color: 'rgba(140, 160, 210, 0)' },
   ],
 } as const satisfies THorizonMoonStops;

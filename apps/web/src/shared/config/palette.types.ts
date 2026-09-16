@@ -107,12 +107,18 @@ export type TCarSkinToken = keyof TCarSkinColors;
 export type TCarSkins = Record<TTrackPaletteId, TCarSkinColors>;
 
 export type TTreeTimeOfDayColors = {
-  /** Ствол */
+  /** Ствол / кора */
   trunk: TCssColor;
-  /** Крона сосны */
+  /** Средний ярус хвои */
   pine: TCssColor;
-  /** Крона лиственного */
+  /** Нижний ярус хвои (темнее) */
+  pineDark: TCssColor;
+  /** Верхний ярус хвои (светлее) */
+  pineLight: TCssColor;
+  /** Основная крона лиственного */
   broadleaf: TCssColor;
+  /** Светлые lobes лиственного */
+  broadleafLight: TCssColor;
 };
 
 export type TTreePaletteToken = keyof TTreeTimeOfDayColors;
@@ -154,6 +160,10 @@ export type TTribuneDayColors = {
   step: TCssColor;
   /** Платформа */
   platform: TCssColor;
+  /** Планки сидений */
+  seat: TCssColor;
+  /** Металл перил */
+  metal: TCssColor;
 };
 
 export type TTribuneNightColors = TTribuneDayColors & {
@@ -179,6 +189,8 @@ export type TVehiclePalette = {
   brake: TCssColor;
   /** Emissive стоп-сигналов */
   brakeEmissive: TCssColor;
+  /** Emissive фонарей заднего хода */
+  reverseEmissive: TCssColor;
   /** Корпус фары */
   headlamp: TCssColor;
   /** Emissive фары */
