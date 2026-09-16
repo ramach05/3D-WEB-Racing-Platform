@@ -79,13 +79,15 @@ type TInputHandlers = {
   onRestart: () => void;
   /** Пауза / снятие паузы (Escape) */
   onTogglePause: () => void;
+  /** Переключение режима камеры (C) */
+  onCycleCamera: () => void;
   /** true, пока можно принимать WASD/стрелки */
   isRaceActive: () => boolean;
 };
 
 /** Подписывается на клавиши гонки. preventDefault только на WASD/стрелках во время заезда. */
 export const bindRaceInput = (handlers: TInputHandlers): (() => void) => {
-  /** keydown: оси, Escape, рестарт */
+  /** keydown: оси, Escape, рестарт, камера */
   const onKeyDown = (event: KeyboardEvent): void => {
     if (event.repeat) {
       return;
@@ -103,6 +105,11 @@ export const bindRaceInput = (handlers: TInputHandlers): (() => void) => {
     if (event.code === 'KeyR') {
       event.preventDefault();
       handlers.onRestart();
+      return;
+    }
+    if (event.code === 'KeyC') {
+      event.preventDefault();
+      handlers.onCycleCamera();
       return;
     }
     if (!RACE_KEYS.has(event.code)) {

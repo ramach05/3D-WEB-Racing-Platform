@@ -1,7 +1,13 @@
 import { useTranslation } from 'react-i18next';
+import type { TCameraMode } from '@/widgets/race-canvas';
+
+type TRaceControlsProps = {
+  /** Текущий режим камеры для подписи в списке */
+  cameraMode: TCameraMode;
+};
 
 /** Постоянная панель горячих клавиш в левом нижнем углу */
-export const RaceControls = () => {
+export const RaceControls = ({ cameraMode }: TRaceControlsProps) => {
   const { t } = useTranslation();
 
   return (
@@ -18,6 +24,9 @@ export const RaceControls = () => {
           <li>{t('home.steer')}</li>
           <li>{t('home.restart')}</li>
           <li>{t('home.pause')}</li>
+          <li>
+            {t('home.camera')} ({t(`race.cameraModes.${cameraMode}`)})
+          </li>
         </ul>
       </div>
     </div>

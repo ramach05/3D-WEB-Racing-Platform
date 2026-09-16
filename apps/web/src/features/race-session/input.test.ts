@@ -12,6 +12,7 @@ describe('bindRaceInput', () => {
     const cleanup = bindRaceInput({
       onRestart,
       onTogglePause: vi.fn(),
+      onCycleCamera: vi.fn(),
       isRaceActive: () => true,
     });
 
@@ -28,6 +29,7 @@ describe('bindRaceInput', () => {
     const cleanup = bindRaceInput({
       onRestart,
       onTogglePause: vi.fn(),
+      onCycleCamera: vi.fn(),
       isRaceActive: () => true,
     });
 
@@ -39,10 +41,28 @@ describe('bindRaceInput', () => {
     cleanup();
   });
 
+  it('calls cycle camera once on KeyC', () => {
+    const onCycleCamera = vi.fn();
+    const cleanup = bindRaceInput({
+      onRestart: vi.fn(),
+      onTogglePause: vi.fn(),
+      onCycleCamera,
+      isRaceActive: () => true,
+    });
+
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { code: 'KeyC', repeat: false, bubbles: true }),
+    );
+
+    expect(onCycleCamera).toHaveBeenCalledTimes(1);
+    cleanup();
+  });
+
   it('sets handbrake from Space while racing', () => {
     const cleanup = bindRaceInput({
       onRestart: vi.fn(),
       onTogglePause: vi.fn(),
+      onCycleCamera: vi.fn(),
       isRaceActive: () => true,
     });
 
@@ -95,6 +115,7 @@ describe('touch axes', () => {
     const cleanup = bindRaceInput({
       onRestart: vi.fn(),
       onTogglePause: vi.fn(),
+      onCycleCamera: vi.fn(),
       isRaceActive: () => true,
     });
     setTouchAxis('throttle', true);

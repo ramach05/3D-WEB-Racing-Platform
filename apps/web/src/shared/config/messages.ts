@@ -25,6 +25,7 @@ export const ruMessages = {
     steer: 'A / D или ← / → — руль',
     restart: 'R — рестарт',
     pause: 'Esc — пауза',
+    camera: 'C — камера',
     featuredTracks: 'Трассы сезона',
     marqueeItems: [
       '▶ ЖМИ ГАЗ',
@@ -99,6 +100,12 @@ export const ruMessages = {
       steerRight: 'Вправо',
       pause: 'Пауза',
       restart: 'Рестарт',
+      camera: 'Камера',
+    },
+    cameraModes: {
+      chase: 'chase',
+      bumper: 'bumper',
+      tv: 'TV',
     },
   },
   leaderboard: {
@@ -181,6 +188,7 @@ export const enMessages = {
     steer: 'A / D or ← / → — steer',
     restart: 'R — restart',
     pause: 'Esc — pause',
+    camera: 'C — camera',
     featuredTracks: 'Season tracks',
     marqueeItems: [
       '▶ FLOOR IT',
@@ -255,6 +263,12 @@ export const enMessages = {
       steerRight: 'Steer right',
       pause: 'Pause',
       restart: 'Restart',
+      camera: 'Camera',
+    },
+    cameraModes: {
+      chase: 'chase',
+      bumper: 'bumper',
+      tv: 'TV',
     },
   },
   leaderboard: {

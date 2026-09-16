@@ -13,6 +13,7 @@ import {
   resetDriveSfx,
   tickDriveSfxSample,
 } from '@/features/race-audio';
+import { pulseCameraShake } from '@/widgets/race-canvas/lib/camera-shake';
 import {
   beginCountdown,
   computeSteerStrength,
@@ -467,7 +468,9 @@ export const Vehicle = ({
     const oilSurfaceGrip = resolveOilSurfaceGrip(oilStrength);
 
     if (prevWheelsOnOil.current === 0 && wheelsOnOil > 0) {
-      pulseDriveOilSlap(mapOilSlapFromSpeed(speed));
+      const slap = mapOilSlapFromSpeed(speed);
+      pulseDriveOilSlap(slap);
+      pulseCameraShake(slap);
     }
     prevWheelsOnOil.current = wheelsOnOil;
 

@@ -18,7 +18,15 @@ import {
 } from '@/features/race-session';
 import { Button, PageShell, SegaLoader, StatusText } from '@/shared/ui';
 import { RaceHud, RacePerfHud } from '@/widgets/hud';
-import { preloadVehicleModel, RaceCanvas, resetSkidMarks } from '@/widgets/race-canvas';
+import {
+  cycleCameraMode,
+  preloadVehicleModel,
+  RaceCanvas,
+  resetCameraMode,
+  resetCameraShake,
+  resetSkidMarks,
+  useCameraMode,
+} from '@/widgets/race-canvas';
 import { RaceControls, RaceTouchControls } from '@/widgets/race-controls';
 import { RaceCountdownOverlay } from '@/widgets/race-countdown';
 import { RaceFinishMomentOverlay } from '@/widgets/race-finish-moment';
@@ -59,6 +67,7 @@ export const RacePage = () => {
   const trackId = track?.id;
   const config = track ? getTrackConfig(track.slug) : null;
   const hud = useRaceHud();
+  const cameraMode = useCameraMode();
   const user = useAuthUser();
   const [createResult] = useCreateRaceResultMutation();
   const [resetNonce, setResetNonce] = useState(0);
@@ -117,6 +126,7 @@ export const RacePage = () => {
     setFinishMeta(null);
     setShowFinishOverlay(false);
     setResetNonce((value) => value + 1);
+    resetCameraShake();
     resetRaceSession(trackId, config.checkpoints.length);
     setRestartToast(true);
     if (toastTimerRef.current !== null) {
@@ -179,9 +189,13 @@ export const RacePage = () => {
     submittedRef.current = false;
     resetRaceSession(trackId, config.checkpoints.length);
     resetSkidMarks();
+    resetCameraMode();
+    resetCameraShake();
     return () => {
       resetRaceSession(trackId, config.checkpoints.length);
       resetSkidMarks();
+      resetCameraMode();
+      resetCameraShake();
     };
   }, [config, trackId]);
 
@@ -190,6 +204,7 @@ export const RacePage = () => {
     return bindRaceInput({
       onRestart: restart,
       onTogglePause: togglePause,
+      onCycleCamera: cycleCameraMode,
       isRaceActive: () => true,
     });
   }, [restart]);
@@ -305,10 +320,11 @@ export const RacePage = () => {
         </Button>
       </div>
       <RacePerfHud />
-      <RaceControls />
+      <RaceControls cameraMode={cameraMode} />
       <RaceTouchControls
         onRestart={restart}
         onTogglePause={togglePause}
+        onCycleCamera={cycleCameraMode}
         footer={!user && hud.status !== 'finished' ? t('race.guestHint') : undefined}
       />
       <RaceCountdownOverlay />

@@ -2,6 +2,7 @@ import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import type { CollisionEnterPayload } from '@react-three/rapier';
 import type { TTrackObstacle, TVec3 } from '@/entities/track';
 import { mapImpactFromSpeed, pulseDriveImpact } from '@/features/race-audio';
+import { pulseCameraShake } from '@/widgets/race-canvas/lib/camera-shake';
 import { TIRE_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
 import { registerTireHit } from '@/widgets/race-canvas/lib/tire-hit-damping';
 
@@ -104,7 +105,9 @@ const handleObstacleHit = (payload: CollisionEnterPayload, options: TObstacleHit
 
   const vel = vehicleBody.linvel();
   const speed = Math.hypot(vel.x, vel.z);
-  pulseDriveImpact(mapImpactFromSpeed(speed));
+  const impact = mapImpactFromSpeed(speed);
+  pulseDriveImpact(impact);
+  pulseCameraShake(impact);
   if (speed < 0.5) {
     return;
   }

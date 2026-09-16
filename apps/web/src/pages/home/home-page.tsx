@@ -76,6 +76,7 @@ export const HomePage = () => {
             <li>{t('home.steer')}</li>
             <li>{t('home.restart')}</li>
             <li>{t('home.pause')}</li>
+            <li>{t('home.camera')}</li>
           </ul>
         </section>
       </section>

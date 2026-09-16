@@ -8,8 +8,14 @@ describe('RaceTouchControls', () => {
     clearTouchAxes();
   });
 
-  it('renders steer, throttle, brake, handbrake, pause and restart buttons', () => {
-    render(<RaceTouchControls onRestart={vi.fn()} onTogglePause={vi.fn()} />);
+  it('renders steer, throttle, brake, handbrake, pause, restart and camera buttons', () => {
+    render(
+      <RaceTouchControls
+        onRestart={vi.fn()}
+        onTogglePause={vi.fn()}
+        onCycleCamera={vi.fn()}
+      />,
+    );
 
     expect(screen.getByRole('button', { name: /газ|throttle/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^(тормоз|brake)$/i })).toBeInTheDocument();
@@ -18,10 +24,17 @@ describe('RaceTouchControls', () => {
     expect(screen.getByRole('button', { name: /вправо|steer right/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /пауза|pause/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /рестарт|restart/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /камера|camera/i })).toBeInTheDocument();
   });
 
   it('sets throttle on pointerdown and clears on pointerup', () => {
-    render(<RaceTouchControls onRestart={vi.fn()} onTogglePause={vi.fn()} />);
+    render(
+      <RaceTouchControls
+        onRestart={vi.fn()}
+        onTogglePause={vi.fn()}
+        onCycleCamera={vi.fn()}
+      />,
+    );
     const throttle = screen.getByRole('button', { name: /газ|throttle/i });
 
     fireEvent.pointerDown(throttle);
@@ -32,7 +45,13 @@ describe('RaceTouchControls', () => {
   });
 
   it('sets handbrake on pointerdown and clears on pointerup', () => {
-    render(<RaceTouchControls onRestart={vi.fn()} onTogglePause={vi.fn()} />);
+    render(
+      <RaceTouchControls
+        onRestart={vi.fn()}
+        onTogglePause={vi.fn()}
+        onCycleCamera={vi.fn()}
+      />,
+    );
     const handbrake = screen.getByRole('button', { name: /ручник|handbrake/i });
 
     fireEvent.pointerDown(handbrake);
@@ -42,16 +61,25 @@ describe('RaceTouchControls', () => {
     expect(getDriveInput().handbrake).toBe(0);
   });
 
-  it('calls pause and restart handlers', () => {
+  it('calls pause, restart and camera handlers', () => {
     const onRestart = vi.fn();
     const onTogglePause = vi.fn();
-    render(<RaceTouchControls onRestart={onRestart} onTogglePause={onTogglePause} />);
+    const onCycleCamera = vi.fn();
+    render(
+      <RaceTouchControls
+        onRestart={onRestart}
+        onTogglePause={onTogglePause}
+        onCycleCamera={onCycleCamera}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /пауза|pause/i }));
     fireEvent.click(screen.getByRole('button', { name: /рестарт|restart/i }));
+    fireEvent.click(screen.getByRole('button', { name: /камера|camera/i }));
 
     expect(onTogglePause).toHaveBeenCalledTimes(1);
     expect(onRestart).toHaveBeenCalledTimes(1);
+    expect(onCycleCamera).toHaveBeenCalledTimes(1);
   });
 
   it('renders optional footer under the pad', () => {
@@ -59,6 +87,7 @@ describe('RaceTouchControls', () => {
       <RaceTouchControls
         onRestart={vi.fn()}
         onTogglePause={vi.fn()}
+        onCycleCamera={vi.fn()}
         footer="Guest hint"
       />,
     );

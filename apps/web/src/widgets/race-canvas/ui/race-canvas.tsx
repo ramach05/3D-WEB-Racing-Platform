@@ -29,7 +29,7 @@ import { TrackTrees } from '@/widgets/race-canvas/world/track-trees';
 import { TrackTribuneColliders } from '@/widgets/race-canvas/world/track-tribune-colliders';
 import { TrackTribunes } from '@/widgets/race-canvas/world/track-tribunes';
 import { TrackWorld } from '@/widgets/race-canvas/world/track-world';
-import { ChaseCamera } from './chase-camera';
+import { RaceCamera } from './race-camera';
 import { FramePerfTracker } from './frame-perf-tracker';
 import { RacePostFx } from './race-postfx';
 import { WebGlContextGuard } from './webgl-context-guard';
@@ -308,7 +308,7 @@ const RaceSceneInner = ({
         resetNonce={resetNonce}
         onFinished={onFinished}
       />
-      <ChaseCamera
+      <RaceCamera
         target={visualRef}
         spawnPosition={config.spawnPosition}
         spawnRotationY={config.spawnRotationY}

@@ -13,6 +13,8 @@ type TRaceTouchControlsProps = {
   onRestart: () => void;
   /** Пауза / снятие паузы */
   onTogglePause: () => void;
+  /** Переключение режима камеры */
+  onCycleCamera: () => void;
   /** Текст под кнопками (например guest hint) */
   footer?: ReactNode;
 };
@@ -74,6 +76,7 @@ const AxisButton = ({ axis, symbol, label, className }: TAxisButtonProps) => {
 export const RaceTouchControls = ({
   onRestart,
   onTogglePause,
+  onCycleCamera,
   footer,
 }: TRaceTouchControlsProps) => {
   const { t } = useTranslation();
@@ -106,6 +109,14 @@ export const RaceTouchControls = ({
           onClick={onRestart}
         >
           <span aria-hidden>R</span>
+        </button>
+        <button
+          type="button"
+          className="sega-touch-btn sega-touch-btn--sm"
+          aria-label={t('race.touch.camera')}
+          onClick={onCycleCamera}
+        >
+          <span aria-hidden>CAM</span>
         </button>
       </div>
       <div className="sega-touch-pad__row">
