@@ -1,5 +1,8 @@
 import type { TTrackAudioTheme } from '@/entities/track';
 
+/** Тема BGM заезда: луп трассы или финишный victory */
+export type TRaceMusicTheme = TTrackAudioTheme | 'finish';
+
 type TNote = {
   /** Частота, Гц (для tone) */
   freq: number;
@@ -207,12 +210,48 @@ const NIGHT_LEAD: TNote[] = [
 
 const NIGHT_LOOP: TNote[] = [...NIGHT_BASS, ...NIGHT_LEAD, ...NIGHT_DRUMS];
 
-const LOOPS: Record<TTrackAudioTheme, { notes: TNote[]; loopSec: number }> = {
+// ---------------------------------------------------------------------------
+// Finish — торжественный victory fanfare (~100 BPM, мажор C, ~3.2 с)
+// доля 0.6 с; спокойнее race-лупов, яркий square lead + мягкий бас
+// C3=131 G3=196 E3=165 | C4=262 E4=330 G4=392 C5=523
+// ---------------------------------------------------------------------------
+const F_BEAT = 0.6;
+const F_LOOP = 3.2;
+
+const FINISH_DRUMS: TNote[] = [
+  noise(0, 0.1, 0.38, 140),
+  noise(F_BEAT, 0.08, 0.22, 3200),
+  noise(F_BEAT * 2, 0.1, 0.36, 150),
+  noise(F_BEAT * 3, 0.08, 0.2, 3500),
+  noise(F_BEAT * 4, 0.12, 0.4, 130),
+  noise(F_BEAT * 4.5, 0.06, 0.18, 4000),
+];
+
+const FINISH_BASS: TNote[] = [
+  ...power(131, 196, 0, F_BEAT * 1.8, 'triangle', 0.2),
+  ...power(165, 247, F_BEAT * 2, F_BEAT * 1.6, 'triangle', 0.18),
+  ...power(131, 196, F_BEAT * 4, F_BEAT * 1.2, 'triangle', 0.22),
+];
+
+/** Восходящий fanfare: C–E–G–C, затем удержание */
+const FINISH_LEAD: TNote[] = [
+  tone(262, 0.05, F_BEAT * 0.85, 'square', 0.34),
+  tone(330, F_BEAT * 0.9, F_BEAT * 0.85, 'square', 0.36),
+  tone(392, F_BEAT * 1.8, F_BEAT * 0.9, 'square', 0.38),
+  tone(523, F_BEAT * 2.75, F_BEAT * 1.4, 'square', 0.42),
+  tone(392, F_BEAT * 4.2, F_BEAT * 0.7, 'sawtooth', 0.3),
+  tone(523, F_BEAT * 4.85, F_BEAT * 0.45, 'square', 0.36),
+];
+
+const FINISH_LOOP: TNote[] = [...FINISH_BASS, ...FINISH_LEAD, ...FINISH_DRUMS];
+
+const LOOPS: Record<TRaceMusicTheme, { notes: TNote[]; loopSec: number }> = {
   coastal: { notes: COASTAL_LOOP, loopSec: C_LOOP },
   night: { notes: NIGHT_LOOP, loopSec: N_LOOP },
+  finish: { notes: FINISH_LOOP, loopSec: F_LOOP },
 };
 
-const MASTER_GAIN = 0.1;
+const MASTER_GAIN = 0.07;
 const DEFAULT_NOTE_GAIN = 0.35;
 
 /** Оригинальный chip-rock на Web Audio (в духе Rock n' Roll Racing / SEGA Genesis, не OST) */
@@ -220,7 +259,7 @@ export class ChiptuneEngine {
   private ctx: AudioContext | null = null;
   private gain: GainNode | null = null;
   private noiseBuffer: AudioBuffer | null = null;
-  private theme: TTrackAudioTheme | null = null;
+  private theme: TRaceMusicTheme | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private paused = true;
   private muted = false;
@@ -404,7 +443,7 @@ export class ChiptuneEngine {
   };
 
   /** Стартует тему (resume AudioContext при необходимости) */
-  start = async (theme: TTrackAudioTheme): Promise<void> => {
+  start = async (theme: TRaceMusicTheme): Promise<void> => {
     const generation = ++this.generation;
     this.running = true;
     this.theme = theme;

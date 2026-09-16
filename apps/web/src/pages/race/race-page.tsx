@@ -6,7 +6,7 @@ import { useGetLeaderboardQuery } from '@/entities/leaderboard';
 import { useCreateRaceResultMutation } from '@/entities/race-result';
 import { getTrackConfig, useGetTracksQuery } from '@/entities/track';
 import { useAuthUser } from '@/features/auth';
-import { useRaceAudio } from '@/features/race-audio';
+import { useRaceAudio, useRaceDrivingSfx } from '@/features/race-audio';
 import {
   bindRaceInput,
   finishRace,
@@ -18,8 +18,7 @@ import {
 } from '@/features/race-session';
 import { Button, PageShell, SegaLoader, StatusText } from '@/shared/ui';
 import { RaceHud, RacePerfHud } from '@/widgets/hud';
-import { preloadVehicleModel, RaceCanvas } from '@/widgets/race-canvas';
-import { resetSkidMarks } from '@/widgets/race-canvas/lib/skid-marks-store';
+import { preloadVehicleModel, RaceCanvas, resetSkidMarks } from '@/widgets/race-canvas';
 import { RaceControls, RaceTouchControls } from '@/widgets/race-controls';
 import { RaceCountdownOverlay } from '@/widgets/race-countdown';
 import { RaceFinishMomentOverlay } from '@/widgets/race-finish-moment';
@@ -100,9 +99,15 @@ export const RacePage = () => {
   });
 
   useRaceAudio({
-    theme: config?.audioTheme ?? null,
-    paused: false,
+    theme: hud.status === 'finished' ? 'finish' : (config?.audioTheme ?? null),
+    paused: hud.status === 'paused',
+    enabled: Boolean(config),
+    muted: musicMuted,
+  });
+
+  useRaceDrivingSfx({
     enabled: Boolean(config) && hud.status === 'racing',
+    paused: hud.status === 'paused',
     muted: musicMuted,
   });
 
@@ -299,7 +304,7 @@ export const RacePage = () => {
           aria-pressed={!musicMuted}
           onClick={() => setMusicMuted((value) => !value)}
         >
-          {musicMuted ? t('race.musicOff') : t('race.musicOn')}
+          {musicMuted ? t('race.soundOff') : t('race.soundOn')}
         </Button>
       </div>
       <RacePerfHud />

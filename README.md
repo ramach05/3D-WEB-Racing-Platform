@@ -104,7 +104,7 @@ pnpm ready-steady-go
 
 Трассы: **Coastal Oval** (день, овал), **Night City** (ночь, стадион).
 
-**Музыка:** в игре звучит оригинальный chip-rock чиптюн на Web Audio (в духе Rock n' Roll Racing / SEGA Genesis). Это **не** саундтрек Rock n' Roll Racing — лицензионный OST в репозиторий не включён.
+**Музыка:** в игре звучит оригинальный chip-rock чиптюн на Web Audio (в духе Rock n' Roll Racing / SEGA Genesis). BGM стартует с входа в заезд (включая countdown), на паузе останавливается, после финиша сменяется victory-темой. Это **не** саундтрек Rock n' Roll Racing — лицензионный OST в репозиторий не включён.
 
 ## Управление в игре
 

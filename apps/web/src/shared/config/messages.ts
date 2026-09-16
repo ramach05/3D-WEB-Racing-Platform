@@ -89,6 +89,8 @@ export const ruMessages = {
     speed: 'Скорость',
     musicOn: 'Музыка',
     musicOff: 'Музыка выкл.',
+    soundOn: 'Звук',
+    soundOff: 'Звук выкл.',
     touch: {
       throttle: 'Газ',
       brake: 'Тормоз',
@@ -243,6 +245,8 @@ export const enMessages = {
     speed: 'Speed',
     musicOn: 'Music',
     musicOff: 'Music off',
+    soundOn: 'Sound',
+    soundOff: 'Sound off',
     touch: {
       throttle: 'Throttle',
       brake: 'Brake',

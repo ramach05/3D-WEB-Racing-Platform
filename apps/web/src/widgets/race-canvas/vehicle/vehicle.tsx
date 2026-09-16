@@ -6,6 +6,14 @@ import { Quaternion, Vector3 } from 'three';
 import type { Group, Object3D, SpotLight } from 'three';
 import type { TCarSkin, TOrientedBox, TVec3 } from '@/entities/track';
 import {
+  IDLE_DRIVE_SFX_SAMPLE,
+  mapOilSlapFromSpeed,
+  mapWallScrape,
+  pulseDriveOilSlap,
+  resetDriveSfx,
+  tickDriveSfxSample,
+} from '@/features/race-audio';
+import {
   beginCountdown,
   computeSteerStrength,
   dampLateralVelocity,
@@ -29,7 +37,10 @@ import {
   tickOilGrip,
 } from '@/widgets/race-canvas/lib/oil-grip';
 import { ROAD_TOP_Y } from '@/widgets/race-canvas/lib/road-ribbon-geometry';
-import { computeSkidIntensity, SKID_SMOKE_THRESHOLD } from '@/widgets/race-canvas/lib/skid-intensity';
+import {
+  computeSkidIntensity,
+  SKID_SMOKE_THRESHOLD,
+} from '@/widgets/race-canvas/lib/skid-intensity';
 import { pushSkidSample, pushSkidSmoke } from '@/widgets/race-canvas/lib/skid-marks-store';
 import {
   resetTireHitDamping,
@@ -327,6 +338,7 @@ export const Vehicle = ({
   const lastSkidPos = useRef<(TSkidWheelPos | null)[]>([null, null, null, null]);
   const smokeTimer = useRef(0);
   const prevOilWheelPos = useRef<(TSkidWheelPos | null)[]>([null, null, null, null]);
+  const prevWheelsOnOil = useRef(0);
   const driveVisualRef = useRef<TVehicleDriveVisual>({
     forwardSpeed: 0,
     steer: 0,
@@ -350,7 +362,9 @@ export const Vehicle = ({
       awaitingLand.current = true;
       resetTireHitDamping();
       resetOilGrip();
+      resetDriveSfx();
       prevOilWheelPos.current = [null, null, null, null];
+      prevWheelsOnOil.current = 0;
       clearSkidTrail();
       body.setTranslation(elevatedSpawn(spawnPosition), true);
       body.setRotation(
@@ -402,17 +416,28 @@ export const Vehicle = ({
         awaitingLand.current = false;
         beginCountdown();
       }
+      tickDriveSfxSample(IDLE_DRIVE_SFX_SAMPLE);
       return;
     }
 
     if (hud.status !== 'racing') {
       clearSkidTrail();
+      tickDriveSfxSample(IDLE_DRIVE_SFX_SAMPLE);
       return;
     }
 
     const clampedDt = Math.min(dt, 1 / 30);
     if (!grounded) {
       clearSkidTrail();
+      tickDriveSfxSample({
+        ...IDLE_DRIVE_SFX_SAMPLE,
+        active: true,
+        speedMs: speed,
+        throttle: input.throttle,
+        brake: input.brake,
+        handbrake: input.handbrake,
+        grounded: false,
+      });
       return;
     }
 
@@ -440,6 +465,11 @@ export const Vehicle = ({
     }
     const oilStrength = tickOilGrip(wheelsOnOil / WHEEL_LOCAL.length, clampedDt);
     const oilSurfaceGrip = resolveOilSurfaceGrip(oilStrength);
+
+    if (prevWheelsOnOil.current === 0 && wheelsOnOil > 0) {
+      pulseDriveOilSlap(mapOilSlapFromSpeed(speed));
+    }
+    prevWheelsOnOil.current = wheelsOnOil;
 
     let targetForward = integrateDriveForward(forwardSpeed, {
       throttle: input.throttle,
@@ -475,16 +505,14 @@ export const Vehicle = ({
       grounded: wheelGrounded,
     });
     // Intensity следа масла для колеса, которое сейчас на луже (не residual).
-    const oilSkidActive =
-      wheelsOnOil > 0 ? computeOilSkidIntensity(1, forwardSpeed) : 0;
+    const oilSkidActive = wheelsOnOil > 0 ? computeOilSkidIntensity(1, forwardSpeed) : 0;
 
     let anySkid = false;
     if (!wheelGrounded) {
       clearSkidTrail();
     } else {
       for (let i = 0; i < WHEEL_LOCAL.length; i += 1) {
-        const inNormalSkid =
-          skid.intensity > 0 && (skid.wheels === 'all' || i >= 2);
+        const inNormalSkid = skid.intensity > 0 && (skid.wheels === 'all' || i >= 2);
         const inOilSkid = wheelOnOil[i] === true && oilSkidActive > 0;
         const wheelIntensity = Math.max(
           inNormalSkid ? skid.intensity : 0,
@@ -511,9 +539,7 @@ export const Vehicle = ({
       if (!anySkid) {
         smokeTimer.current = 0;
       } else {
-        const smoking =
-          skid.smoking ||
-          (oilSkidActive > SKID_SMOKE_THRESHOLD && wheelsOnOil > 0);
+        const smoking = skid.smoking || (oilSkidActive > SKID_SMOKE_THRESHOLD && wheelsOnOil > 0);
         if (smoking) {
           smokeTimer.current += clampedDt;
           const peakIntensity = Math.max(skid.intensity, oilSkidActive);
@@ -523,10 +549,8 @@ export const Vehicle = ({
             const wakeX = linvel.x + tmpRight.x * dampedLateral * 0.25;
             const wakeZ = linvel.z + tmpRight.z * dampedLateral * 0.25;
             for (let i = 0; i < WHEEL_LOCAL.length; i += 1) {
-              const inNormalSkid =
-                skid.smoking && (skid.wheels === 'all' || i >= 2);
-              const inOilSmoke =
-                wheelOnOil[i] === true && oilSkidActive > SKID_SMOKE_THRESHOLD;
+              const inNormalSkid = skid.smoking && (skid.wheels === 'all' || i >= 2);
+              const inOilSmoke = wheelOnOil[i] === true && oilSkidActive > SKID_SMOKE_THRESHOLD;
               if (!inNormalSkid && !inOilSmoke) {
                 continue;
               }
@@ -551,22 +575,31 @@ export const Vehicle = ({
       .multiplyScalar(targetForward)
       .add(tmpRight.clone().multiplyScalar(dampedLateral));
 
+    const desiredHz = Math.hypot(tmpDesired.x, tmpDesired.z);
     const slid = slideAlongWalls(world, rapier, body, tmpDesired);
+    const slidHz = Math.hypot(slid.x, slid.z);
     // На земле не даём коллизиям (шины) подбрасывать машину вверх
     body.setLinvel({ x: slid.x, y: Math.min(linvel.y, 0), z: slid.z }, true);
 
     const steerStrength = computeSteerStrength(forwardSpeed, input.handbrake);
     const angvel = body.angvel();
     const steerSign = Math.sign(forwardSpeed || input.throttle - input.brake || 1);
-    let nextYaw = integrateSteerYaw(
-      angvel.y,
-      input.steer,
-      steerStrength,
-      steerSign,
-      clampedDt,
-    );
+    let nextYaw = integrateSteerYaw(angvel.y, input.steer, steerStrength, steerSign, clampedDt);
     nextYaw += computeOilYawKick(oilStrength, input.steer, forwardSpeed, lateral);
     body.setAngvel({ x: 0, y: nextYaw, z: 0 }, true);
+
+    tickDriveSfxSample({
+      active: true,
+      speedMs: speed,
+      throttle: input.throttle,
+      brake: input.brake,
+      handbrake: input.handbrake,
+      skidIntensity: Math.max(skid.intensity, oilSkidActive),
+      oilStrength,
+      wheelsOnOil,
+      wallScrape: mapWallScrape(desiredHz, slidHz),
+      grounded: wheelGrounded,
+    });
   });
 
   const dropSpawn: TVec3 = [
