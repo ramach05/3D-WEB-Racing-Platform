@@ -10,9 +10,10 @@ import {
   PINE_CROWN_LOCAL_Y,
   PINE_CROWN_RADIUS,
   TRUNK_HEIGHT,
+  TRUNK_KIND_SCALE,
   TRUNK_LOCAL_Y,
   TRUNK_RADIUS,
-} from '@/widgets/race-canvas/world/track-trees';
+} from '@/widgets/race-canvas/lib/tree-geometry';
 
 type TTrackTreeCollidersProps = {
   /** Конфиг трассы — тот же список деревьев, что у визуала */
@@ -26,11 +27,12 @@ type TTreeColliderProps = {
   index: number;
 };
 
-/** Fixed-тело одного дерева: ствол + крона */
+/** Fixed-тело одного дерева: ствол + аппроксимация кроны */
 const TreeCollider = ({ tree, index }: TTreeColliderProps) => {
   const { x, z, groundY, scale, kind } = tree;
-  const trunkHalfHeight = (TRUNK_HEIGHT / 2) * scale;
-  const trunkRadius = TRUNK_RADIUS * scale;
+  const kindScale = TRUNK_KIND_SCALE[kind];
+  const trunkHalfHeight = (TRUNK_HEIGHT / 2) * scale * kindScale.y;
+  const trunkRadius = TRUNK_RADIUS * scale * kindScale.xz;
 
   return (
     <RigidBody
@@ -44,7 +46,7 @@ const TreeCollider = ({ tree, index }: TTreeColliderProps) => {
     >
       <CylinderCollider
         args={[trunkHalfHeight, trunkRadius]}
-        position={[0, TRUNK_LOCAL_Y * scale, 0]}
+        position={[0, TRUNK_LOCAL_Y * scale * kindScale.y, 0]}
         friction={0.4}
         restitution={0}
         collisionGroups={WORLD_GROUPS}
