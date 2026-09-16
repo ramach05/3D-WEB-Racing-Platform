@@ -161,8 +161,8 @@ export const HorizonMoon = ({ position }: THorizonMoonProps) => {
   const textures = useMemo(
     () => ({
       disk: createMoonDiskTexture(),
-      halo: createRadialGradientTexture(horizonMoonStops.halo),
-      glow: createRadialGradientTexture(horizonMoonStops.glow),
+      halo: createRadialGradientTexture(horizonMoonStops.halo, 512),
+      glow: createRadialGradientTexture(horizonMoonStops.glow, 512),
     }),
     [],
   );

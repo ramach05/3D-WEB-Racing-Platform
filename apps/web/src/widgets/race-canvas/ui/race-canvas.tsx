@@ -56,9 +56,9 @@ const SUN_HORIZON_POSITION: [number, number, number] = [0, 30, -255];
 const SUN_LIGHT_POSITION: [number, number, number] = [0, 140, -255];
 /** Высокое солнце только для Sky (~45°) — ясное голубое небо */
 const SKY_SUN_POSITION: [number, number, number] = [80, 140, -120];
-const MOON_HORIZON_POSITION: [number, number, number] = [-240, 21, 50];
+const MOON_HORIZON_POSITION: [number, number, number] = [-245, 21, -14];
 /** Смещение лунного DirectionalLight относительно машины (направление сохраняется) */
-const MOON_LIGHT_OFFSET: [number, number, number] = [-180, 24, 38];
+const MOON_LIGHT_OFFSET: [number, number, number] = [-184, 24, -10];
 /** Половина ortho-frustum луны вокруг машины — выше texel density без роста mapSize */
 const MOON_SHADOW_HALF_EXTENT = 95;
 const MOON_SHADOW_MAP = 1024;
