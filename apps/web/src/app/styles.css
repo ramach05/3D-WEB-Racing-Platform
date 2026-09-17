@@ -916,10 +916,6 @@ button:disabled,
   }
 }
 
-.sega-countdown {
-  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.35) 0%, transparent 65%);
-}
-
 .sega-countdown__digit {
   margin: 0;
   font-size: clamp(4.5rem, 18vw, 9rem);
