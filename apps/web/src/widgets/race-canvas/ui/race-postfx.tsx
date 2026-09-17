@@ -14,7 +14,7 @@ export const RacePostFx = ({ enabled }: TRacePostFxProps) => {
   return (
     <EffectComposer multisampling={0}>
       <Bloom luminanceThreshold={0.7} intensity={0.5} mipmapBlur levels={2} />
-      <Vignette offset={0.28} darkness={0.5} />
+      <Vignette offset={0.22} darkness={0.28} />
     </EffectComposer>
   );
 };
