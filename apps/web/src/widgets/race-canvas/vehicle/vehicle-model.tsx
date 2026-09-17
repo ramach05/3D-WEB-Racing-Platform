@@ -82,6 +82,8 @@ export type TVehicleDriveVisual = {
   steer: number;
   /** Тормоз 0…1 */
   brake: number;
+  /** Визуальный rumble поребрика 0…1 (применяется снаружи на visual group) */
+  kerbRumble: number;
 };
 
 type TVehicleModelProps = {

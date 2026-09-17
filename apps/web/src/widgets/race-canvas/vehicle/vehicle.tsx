@@ -4,7 +4,7 @@ import { CapsuleCollider, RigidBody, useRapier } from '@react-three/rapier';
 import type { RapierRigidBody } from '@react-three/rapier';
 import { Quaternion, Vector3 } from 'three';
 import type { Group, Object3D, SpotLight } from 'three';
-import type { TCarSkin, TOrientedBox, TVec3 } from '@/entities/track';
+import type { TCarSkin, TLoopPoint, TOrientedBox, TVec3 } from '@/entities/track';
 import {
   IDLE_DRIVE_SFX_SAMPLE,
   mapOilSlapFromSpeed,
@@ -48,6 +48,16 @@ import {
   tickTireHitDamping,
 } from '@/widgets/race-canvas/lib/tire-hit-damping';
 import {
+  aggregateWheelSurfaces,
+  applyOffroadThrottleFactor,
+  combineSurfaceGrip,
+  computeKerbRumble,
+  computeOffroadFxStrength,
+  sampleAsphaltMicroGrip,
+  sampleTrackSurfaceKind,
+  type TTrackSurfaceKind,
+} from '@/widgets/race-canvas/lib/track-surface';
+import {
   VehicleModel,
   type TVehicleDriveVisual,
 } from '@/widgets/race-canvas/vehicle/vehicle-model';
@@ -89,6 +99,10 @@ type TVehicleProps = {
   headlightsOn: boolean;
   /** Зоны луж масла на трассе */
   oilSlicks: TOrientedBox[];
+  /** Центровая линия трассы */
+  centerline: TLoopPoint[];
+  /** Ширина дороги */
+  roadWidth: number;
 };
 
 type TVehicleHeadlightsProps = {
@@ -306,16 +320,16 @@ const slideAlongWalls = (
   return result;
 };
 
-/** Проезд колеса через любую лужу масла с subsample между кадрами. */
-const isWheelOnAnyOilSlick = (
+/** Проезд колеса через любую oriented-box зону с subsample между кадрами. */
+const isWheelOnAnyZone = (
   prevX: number | null,
   prevZ: number | null,
   x: number,
   z: number,
-  oilSlicks: TOrientedBox[],
+  zones: TOrientedBox[],
 ): boolean => {
-  for (const slick of oilSlicks) {
-    if (passedCheckpointZone(prevX, prevZ, x, z, slick)) {
+  for (const zone of zones) {
+    if (passedCheckpointZone(prevX, prevZ, x, z, zone)) {
       return true;
     }
   }
@@ -332,23 +346,30 @@ export const Vehicle = ({
   carSkin,
   headlightsOn,
   oilSlicks,
+  centerline,
+  roadWidth,
 }: TVehicleProps) => {
   const { world, rapier } = useRapier();
   const lastNonce = useRef(resetNonce);
   const awaitingLand = useRef(true);
   const lastSkidPos = useRef<(TSkidWheelPos | null)[]>([null, null, null, null]);
   const smokeTimer = useRef(0);
-  const prevOilWheelPos = useRef<(TSkidWheelPos | null)[]>([null, null, null, null]);
+  const dirtSmokeTimer = useRef(0);
+  const prevZoneWheelPos = useRef<(TSkidWheelPos | null)[]>([null, null, null, null]);
   const prevWheelsOnOil = useRef(0);
+  const kerbPhase = useRef(0);
+  const kerbShakeCooldown = useRef(0);
   const driveVisualRef = useRef<TVehicleDriveVisual>({
     forwardSpeed: 0,
     steer: 0,
     brake: 0,
+    kerbRumble: 0,
   });
 
   const clearSkidTrail = () => {
     lastSkidPos.current = [null, null, null, null];
     smokeTimer.current = 0;
+    dirtSmokeTimer.current = 0;
   };
 
   // Arcade-физика: рестарт, ввод, grip и скольжение вдоль стен.
@@ -364,9 +385,17 @@ export const Vehicle = ({
       resetTireHitDamping();
       resetOilGrip();
       resetDriveSfx();
-      prevOilWheelPos.current = [null, null, null, null];
+      prevZoneWheelPos.current = [null, null, null, null];
       prevWheelsOnOil.current = 0;
+      kerbPhase.current = 0;
+      kerbShakeCooldown.current = 0;
+      driveVisualRef.current.kerbRumble = 0;
       clearSkidTrail();
+      const visual = visualRef.current;
+      if (visual) {
+        visual.position.y = 0;
+        visual.rotation.x = 0;
+      }
       body.setTranslation(elevatedSpawn(spawnPosition), true);
       body.setRotation(
         { x: 0, y: Math.sin(spawnRotationY / 2), z: 0, w: Math.cos(spawnRotationY / 2) },
@@ -423,6 +452,7 @@ export const Vehicle = ({
 
     if (hud.status !== 'racing') {
       clearSkidTrail();
+      driveVisualRef.current.kerbRumble = 0;
       tickDriveSfxSample(IDLE_DRIVE_SFX_SAMPLE);
       return;
     }
@@ -430,6 +460,7 @@ export const Vehicle = ({
     const clampedDt = Math.min(dt, 1 / 30);
     if (!grounded) {
       clearSkidTrail();
+      driveVisualRef.current.kerbRumble = 0;
       tickDriveSfxSample({
         ...IDLE_DRIVE_SFX_SAMPLE,
         active: true,
@@ -442,16 +473,18 @@ export const Vehicle = ({
       return;
     }
 
-    // Детект масла по каждому колесу — следы только от шин, попавших в лужу.
+    // Детект поверхностей / масла по каждому колесу.
     const wheelOnOil: boolean[] = [false, false, false, false];
+    const wheelKinds: TTrackSurfaceKind[] = ['asphalt', 'asphalt', 'asphalt', 'asphalt'];
     let wheelsOnOil = 0;
+    let microSum = 0;
     for (let i = 0; i < WHEEL_LOCAL.length; i += 1) {
       const offset = WHEEL_LOCAL[i]!;
       tmpOrigin.set(offset[0], offset[1], offset[2]).applyQuaternion(tmpQuat);
       const wx = tmpOrigin.x + translation.x;
       const wz = tmpOrigin.z + translation.z;
-      const prevWheel = prevOilWheelPos.current[i];
-      const onOil = isWheelOnAnyOilSlick(
+      const prevWheel = prevZoneWheelPos.current[i];
+      const onOil = isWheelOnAnyZone(
         prevWheel?.x ?? null,
         prevWheel?.z ?? null,
         wx,
@@ -462,10 +495,23 @@ export const Vehicle = ({
       if (onOil) {
         wheelsOnOil += 1;
       }
-      prevOilWheelPos.current[i] = { x: wx, z: wz };
+      wheelKinds[i] = sampleTrackSurfaceKind(wx, wz, centerline, roadWidth);
+      microSum += sampleAsphaltMicroGrip(wx, wz);
+      prevZoneWheelPos.current[i] = { x: wx, z: wz };
     }
+    const surfaces = aggregateWheelSurfaces(wheelKinds);
+    const asphaltMicro = microSum / WHEEL_LOCAL.length;
     const oilStrength = tickOilGrip(wheelsOnOil / WHEEL_LOCAL.length, clampedDt);
     const oilSurfaceGrip = resolveOilSurfaceGrip(oilStrength);
+    const surfaceGrip = combineSurfaceGrip(
+      oilSurfaceGrip,
+      surfaces.offroad,
+      surfaces.kerb,
+      asphaltMicro,
+    );
+    const offroadFx = computeOffroadFxStrength(surfaces.offroad, forwardSpeed);
+    const kerbRumble = computeKerbRumble(surfaces.kerb, forwardSpeed);
+    driveVisualRef.current.kerbRumble = kerbRumble;
 
     if (prevWheelsOnOil.current === 0 && wheelsOnOil > 0) {
       const slap = mapOilSlapFromSpeed(speed);
@@ -473,6 +519,29 @@ export const Vehicle = ({
       pulseCameraShake(slap);
     }
     prevWheelsOnOil.current = wheelsOnOil;
+
+    if (kerbRumble > 0) {
+      kerbPhase.current += clampedDt * (6 + speed * 0.35);
+      kerbShakeCooldown.current = Math.max(0, kerbShakeCooldown.current - clampedDt);
+      if (kerbShakeCooldown.current <= 0) {
+        pulseCameraShake(0.08 + kerbRumble * 0.22);
+        kerbShakeCooldown.current = 0.09 - kerbRumble * 0.035;
+      }
+      const visual = visualRef.current;
+      if (visual) {
+        const amp = 0.018 + kerbRumble * 0.022;
+        visual.position.y = Math.sin(kerbPhase.current * 18) * amp;
+        visual.rotation.x = Math.sin(kerbPhase.current * 23) * amp * 0.55;
+      }
+    } else {
+      kerbPhase.current = 0;
+      kerbShakeCooldown.current = 0;
+      const visual = visualRef.current;
+      if (visual) {
+        visual.position.y = 0;
+        visual.rotation.x = 0;
+      }
+    }
 
     let targetForward = integrateDriveForward(forwardSpeed, {
       throttle: input.throttle,
@@ -487,6 +556,12 @@ export const Vehicle = ({
       input.throttle,
       oilStrength,
     );
+    targetForward = applyOffroadThrottleFactor(
+      forwardSpeed,
+      targetForward,
+      input.throttle,
+      surfaces.offroad,
+    );
     targetForward = Math.max(-REVERSE_MAX, Math.min(MAX_SPEED, targetForward));
     targetForward *= tickTireHitDamping(clampedDt);
 
@@ -496,7 +571,7 @@ export const Vehicle = ({
       input.handbrake,
       input.throttle,
       clampedDt,
-      oilSurfaceGrip,
+      surfaceGrip,
     );
 
     const skid = computeSkidIntensity({
@@ -509,6 +584,7 @@ export const Vehicle = ({
     });
     // Intensity следа масла для колеса, которое сейчас на луже (не residual).
     const oilSkidActive = wheelsOnOil > 0 ? computeOilSkidIntensity(1, forwardSpeed) : 0;
+    const offroadSkidBoost = offroadFx * 0.35;
 
     let anySkid = false;
     if (!wheelGrounded) {
@@ -517,9 +593,11 @@ export const Vehicle = ({
       for (let i = 0; i < WHEEL_LOCAL.length; i += 1) {
         const inNormalSkid = skid.intensity > 0 && (skid.wheels === 'all' || i >= 2);
         const inOilSkid = wheelOnOil[i] === true && oilSkidActive > 0;
+        const inOffroadSkid = wheelKinds[i] === 'offroad' && offroadSkidBoost > 0;
         const wheelIntensity = Math.max(
           inNormalSkid ? skid.intensity : 0,
           inOilSkid ? oilSkidActive : 0,
+          inOffroadSkid ? offroadSkidBoost : 0,
         );
 
         if (wheelIntensity <= 0) {
@@ -539,37 +617,66 @@ export const Vehicle = ({
         lastSkidPos.current[i] = { x: wx, z: wz };
       }
 
-      if (!anySkid) {
+      const smoking =
+        skid.smoking || (oilSkidActive > SKID_SMOKE_THRESHOLD && wheelsOnOil > 0);
+      if (!anySkid && offroadFx <= 0) {
         smokeTimer.current = 0;
-      } else {
-        const smoking = skid.smoking || (oilSkidActive > SKID_SMOKE_THRESHOLD && wheelsOnOil > 0);
-        if (smoking) {
-          smokeTimer.current += clampedDt;
-          const peakIntensity = Math.max(skid.intensity, oilSkidActive);
-          const smokeInterval = 0.09 - peakIntensity * 0.055;
-          if (smokeTimer.current >= smokeInterval) {
-            smokeTimer.current = 0;
-            const wakeX = linvel.x + tmpRight.x * dampedLateral * 0.25;
-            const wakeZ = linvel.z + tmpRight.z * dampedLateral * 0.25;
-            for (let i = 0; i < WHEEL_LOCAL.length; i += 1) {
-              const inNormalSkid = skid.smoking && (skid.wheels === 'all' || i >= 2);
-              const inOilSmoke = wheelOnOil[i] === true && oilSkidActive > SKID_SMOKE_THRESHOLD;
-              if (!inNormalSkid && !inOilSmoke) {
-                continue;
-              }
-              const pos = lastSkidPos.current[i];
-              if (pos) {
-                const intensity = Math.max(
-                  inNormalSkid ? skid.intensity : 0,
-                  inOilSmoke ? oilSkidActive : 0,
-                );
-                pushSkidSmoke(pos.x, ROAD_TOP_Y + 0.06, pos.z, intensity, wakeX, 0, wakeZ);
-              }
+        dirtSmokeTimer.current = 0;
+      } else if (smoking) {
+        smokeTimer.current += clampedDt;
+        const peakIntensity = Math.max(skid.intensity, oilSkidActive);
+        const smokeInterval = 0.09 - peakIntensity * 0.055;
+        if (smokeTimer.current >= smokeInterval) {
+          smokeTimer.current = 0;
+          const wakeX = linvel.x + tmpRight.x * dampedLateral * 0.25;
+          const wakeZ = linvel.z + tmpRight.z * dampedLateral * 0.25;
+          for (let i = 0; i < WHEEL_LOCAL.length; i += 1) {
+            const inNormalSkid = skid.smoking && (skid.wheels === 'all' || i >= 2);
+            const inOilSmoke = wheelOnOil[i] === true && oilSkidActive > SKID_SMOKE_THRESHOLD;
+            if (!inNormalSkid && !inOilSmoke) {
+              continue;
+            }
+            const pos = lastSkidPos.current[i];
+            if (pos) {
+              const intensity = Math.max(
+                inNormalSkid ? skid.intensity : 0,
+                inOilSmoke ? oilSkidActive : 0,
+              );
+              pushSkidSmoke(pos.x, ROAD_TOP_Y + 0.06, pos.z, intensity, wakeX, 0, wakeZ);
             }
           }
-        } else {
-          smokeTimer.current = 0;
         }
+      } else {
+        smokeTimer.current = 0;
+      }
+
+      if (offroadFx > 0.08) {
+        dirtSmokeTimer.current += clampedDt;
+        const dirtInterval = 0.11 - offroadFx * 0.05;
+        if (dirtSmokeTimer.current >= dirtInterval) {
+          dirtSmokeTimer.current = 0;
+          const wakeX = linvel.x * 0.4;
+          const wakeZ = linvel.z * 0.4;
+          for (let i = 0; i < WHEEL_LOCAL.length; i += 1) {
+            if (wheelKinds[i] !== 'offroad') {
+              continue;
+            }
+            const pos = lastSkidPos.current[i] ?? prevZoneWheelPos.current[i];
+            if (pos) {
+              pushSkidSmoke(
+                pos.x,
+                ROAD_TOP_Y + 0.05,
+                pos.z,
+                0.25 + offroadFx * 0.45,
+                wakeX,
+                0.4,
+                wakeZ,
+              );
+            }
+          }
+        }
+      } else {
+        dirtSmokeTimer.current = 0;
       }
     }
 
@@ -597,9 +704,11 @@ export const Vehicle = ({
       throttle: input.throttle,
       brake: input.brake,
       handbrake: input.handbrake,
-      skidIntensity: Math.max(skid.intensity, oilSkidActive),
+      skidIntensity: Math.max(skid.intensity, oilSkidActive, offroadSkidBoost),
       oilStrength,
       wheelsOnOil,
+      offRoadStrength: offroadFx,
+      kerbRumble,
       wallScrape: mapWallScrape(desiredHz, slidHz),
       grounded: wheelGrounded,
     });

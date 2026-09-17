@@ -15,6 +15,10 @@ export type TDriveSfxSample = {
   oilStrength: number;
   /** Число колёс на луже 0…4 */
   wheelsOnOil: number;
+  /** Сила оффроуда 0…1 */
+  offRoadStrength: number;
+  /** Rumble поребрика 0…1 */
+  kerbRumble: number;
   /** Скрежет о стену 0…1 */
   wallScrape: number;
   /** Касание асфальта */
@@ -31,6 +35,8 @@ export const IDLE_DRIVE_SFX_SAMPLE: TDriveSfxSample = {
   skidIntensity: 0,
   oilStrength: 0,
   wheelsOnOil: 0,
+  offRoadStrength: 0,
+  kerbRumble: 0,
   wallScrape: 0,
   grounded: false,
 };

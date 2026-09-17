@@ -91,7 +91,7 @@ export const createAsphaltTexture = (size = 512): CanvasTexture => {
       const u = x / size;
       const v = y / size;
 
-      // Крупная неоднородность покрытия (очень мягкая)
+      // Крупная неоднородность покрытия (стёртые / свежие зоны)
       const macro = fbm(u * 3.5, v * 3.5, 11, 3);
       // Средний щебень
       const mid = fbm(u * 28, v * 28, 47, 4);
@@ -100,7 +100,7 @@ export const createAsphaltTexture = (size = 512): CanvasTexture => {
       // Пиксельный гравий
       const grit = (next() - 0.5) * 22;
 
-      let tone = 155 + (macro - 0.5) * 18 + (mid - 0.5) * 36 + (fine - 0.5) * 28 + grit;
+      let tone = 155 + (macro - 0.5) * 32 + (mid - 0.5) * 36 + (fine - 0.5) * 28 + grit;
 
       // Редкие мелкие камешки (1–2 px), не пятна
       if (next() < 0.012) {
@@ -141,10 +141,15 @@ export const createAsphaltRoughnessMap = (size = 512): CanvasTexture => {
     for (let x = 0; x < size; x++) {
       const u = x / size;
       const v = y / size;
+      // Крупные пятна свежего / стёртого асфальта
+      const macro = fbm(u * 4.5, v * 4.5, 117, 4);
       const n = fbm(u * 40, v * 40, 203, 3);
       const grit = next() * 0.15;
-      // 0.55–0.95 в linear: выше = матовее
-      const r = Math.max(0, Math.min(255, (0.62 + n * 0.28 + grit) * 255));
+      // 0.48–0.98 в linear: выше = матовее; макро сдвигает целые зоны
+      const r = Math.max(
+        0,
+        Math.min(255, (0.55 + macro * 0.22 + n * 0.2 + grit) * 255),
+      );
       const idx = (y * size + x) * 4;
       data[idx] = r;
       data[idx + 1] = r;

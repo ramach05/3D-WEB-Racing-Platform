@@ -351,7 +351,7 @@ const buildCoastalOvalOilSlicks = (points: TLoopPoint[]): TOrientedBox[] =>
  */
 const buildNightCityOilSlicks = (points: TLoopPoint[]): TOrientedBox[] => [
   placeOilSlickAlongCenterline(points, 0.23, 1.05),
-  placeOilSlickMetersBeforeFinish(points, 50, -0.75),
+  placeOilSlickMetersBeforeFinish(points, 70, -0.75),
 ];
 
 /** Стопки шин и бочки у стенок Coastal Oval: несколько рядов от бордюра. */

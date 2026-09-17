@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   IMPACT_FULL_MS,
+  mapGravelFromOffroad,
   mapImpactFromSpeed,
   mapOilSlapFromSpeed,
   mapWallScrape,
+  shouldPulseKerbTick,
   WALL_SCRAPE_FULL_LOSS,
 } from './drive-sfx-map';
 
@@ -34,5 +36,25 @@ describe('mapOilSlapFromSpeed', () => {
     expect(mapOilSlapFromSpeed(1)).toBe(0);
     expect(mapOilSlapFromSpeed(8)).toBeCloseTo(0.5, 5);
     expect(mapOilSlapFromSpeed(20)).toBe(1);
+  });
+});
+
+describe('mapGravelFromOffroad', () => {
+  it('is silent without offroad or at crawl', () => {
+    expect(mapGravelFromOffroad(0, 20)).toBe(0);
+    expect(mapGravelFromOffroad(1, 0.5)).toBe(0);
+  });
+
+  it('scales with strength and speed', () => {
+    expect(mapGravelFromOffroad(1, 22)).toBe(1);
+    expect(mapGravelFromOffroad(0.5, 22)).toBeCloseTo(0.5, 5);
+  });
+});
+
+describe('shouldPulseKerbTick', () => {
+  it('fires only with rumble and early phase window', () => {
+    expect(shouldPulseKerbTick(0, 0)).toBe(false);
+    expect(shouldPulseKerbTick(0.5, 0.02)).toBe(true);
+    expect(shouldPulseKerbTick(0.5, 0.5)).toBe(false);
   });
 });

@@ -280,6 +280,8 @@ const RaceSceneInner = ({
           carSkin={config.carSkin}
           headlightsOn={isNight}
           oilSlicks={config.oilSlicks}
+          centerline={config.centerline}
+          roadWidth={config.roadWidth}
         />
       </Physics>
       <SkidMarks />

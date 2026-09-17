@@ -14,7 +14,9 @@ export type { TDriveSfxSample } from './drive-sfx-bus';
 export {
   mapImpactFromSpeed,
   mapOilSlapFromSpeed,
+  mapGravelFromOffroad,
   mapWallScrape,
+  shouldPulseKerbTick,
 } from './drive-sfx-map';
 export { DrivingSfxEngine } from './driving-sfx-engine';
 export { useRaceAudio, useRaceDrivingSfx } from './hooks';

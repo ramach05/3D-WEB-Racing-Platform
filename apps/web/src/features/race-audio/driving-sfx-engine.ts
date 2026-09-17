@@ -1,4 +1,5 @@
 import type { TDriveSfxSample } from './drive-sfx-bus';
+import { mapGravelFromOffroad, shouldPulseKerbTick } from './drive-sfx-map';
 
 /** Тише музыки (~0.1), чтобы SFX не перекрикивали чиптюн */
 const MASTER_GAIN = 0.12;
@@ -12,7 +13,7 @@ type TNoiseLayer = {
 
 /**
  * Procedural driving SFX без непрерывного звука езды:
- * визг шин, скрежет, удары и oil-slap.
+ * визг шин, скрежет, удары, oil-slap, gravel и kerb tick.
  */
 export class DrivingSfxEngine {
   private ctx: AudioContext | null = null;
@@ -27,6 +28,9 @@ export class DrivingSfxEngine {
 
   private tire: TNoiseLayer | null = null;
   private scrape: TNoiseLayer | null = null;
+  private gravel: TNoiseLayer | null = null;
+  private kerbPhase = 0;
+  private lastKerbTickAt = 0;
 
   /** Можно ли звучать */
   private isAudible = (): boolean => this.running && !this.paused && !this.muted;
@@ -53,7 +57,7 @@ export class DrivingSfxEngine {
     return buffer;
   };
 
-  /** Коричневый шум — удары / oil-slap */
+  /** Коричневый шум — удары / oil-slap / gravel */
   private getBrownBuffer = (ctx: AudioContext): AudioBuffer => {
     if (this.brownBuffer && this.brownBuffer.sampleRate === ctx.sampleRate) {
       return this.brownBuffer;
@@ -121,9 +125,10 @@ export class DrivingSfxEngine {
 
     this.tire = this.createNoiseLayer(ctx, this.master, 'white', 'bandpass', 1600, 6);
     this.scrape = this.createNoiseLayer(ctx, this.master, 'white', 'bandpass', 400, 2.2);
+    this.gravel = this.createNoiseLayer(ctx, this.master, 'brown', 'lowpass', 700, 0.8);
   };
 
-  /** One-shot burst (impact / oil) */
+  /** One-shot burst (impact / oil / kerb) */
   private playBurst = (
     duration: number,
     peak: number,
@@ -211,6 +216,7 @@ export class DrivingSfxEngine {
     if (!live) {
       this.setGain(this.tire?.gain ?? null, 0, now);
       this.setGain(this.scrape?.gain ?? null, 0, now);
+      this.setGain(this.gravel?.gain ?? null, 0, now);
       return;
     }
 
@@ -229,6 +235,28 @@ export class DrivingSfxEngine {
     if (this.scrape) {
       this.scrape.filter.frequency.setTargetAtTime(320 + sample.wallScrape * 600, now, 0.03);
       this.setGain(this.scrape.gain, scrapeGain, now, 0.025);
+    }
+
+    const gravelLevel = mapGravelFromOffroad(sample.offRoadStrength, sample.speedMs);
+    if (this.gravel) {
+      this.gravel.filter.frequency.setTargetAtTime(400 + gravelLevel * 500, now, 0.04);
+      this.setGain(this.gravel.gain, gravelLevel * 0.22, now, 0.035);
+    }
+
+    if (sample.kerbRumble > 0) {
+      this.kerbPhase += 0.016 * (4 + sample.kerbRumble * 10 + sample.speedMs * 0.15);
+      const phase01 = this.kerbPhase % 1;
+      if (
+        shouldPulseKerbTick(sample.kerbRumble, phase01) &&
+        now - this.lastKerbTickAt > 0.07
+      ) {
+        this.lastKerbTickAt = now;
+        const peak = 0.12 + sample.kerbRumble * 0.22;
+        this.playBurst(0.045, peak, 'bandpass', 900 + sample.kerbRumble * 700, 'white');
+        this.playBurst(0.035, peak * 0.7, 'highpass', 2200, 'white');
+      }
+    } else {
+      this.kerbPhase = 0;
     }
   };
 
@@ -255,9 +283,13 @@ export class DrivingSfxEngine {
 
     stopOsc(this.tire?.source ?? null);
     stopOsc(this.scrape?.source ?? null);
+    stopOsc(this.gravel?.source ?? null);
 
     this.tire = null;
     this.scrape = null;
+    this.gravel = null;
+    this.kerbPhase = 0;
+    this.lastKerbTickAt = 0;
     this.whiteBuffer = null;
     this.brownBuffer = null;
 
