@@ -1,5 +1,14 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { Euler, Matrix4, MeshStandardMaterial, Quaternion, Vector3, type InstancedMesh } from 'three';
+import {
+  Euler,
+  Matrix4,
+  MeshStandardMaterial,
+  Quaternion,
+  Vector3,
+  type InstancedMesh,
+  type Object3D,
+  type SpotLight,
+} from 'three';
 import type { TOrientedBox, TStartTribuneSide, TTrackPalette } from '@/entities/track';
 import {
   CANOPY_POST_SIZE,
@@ -27,9 +36,20 @@ import {
   rowTopY,
   tribuneRowCenterX,
 } from '@/entities/track';
-import { tribunePalette } from '@/shared/config';
+import { startLightPalette, tribunePalette } from '@/shared/config';
 import { getSharedConcreteTexture } from '@/widgets/race-canvas/lib/concrete-texture';
 import { getSharedCorrugatedMetalTexture } from '@/widgets/race-canvas/lib/metal-texture';
+import {
+  TRIBUNE_EDGE_SPOT,
+  TRIBUNE_EDGE_Z_SIGNS,
+  TRIBUNE_FLOOD,
+  tribuneEdgeAimX,
+  tribuneEdgeAimY,
+  tribuneEdgeAimZ,
+  tribuneEdgeLightX,
+  tribuneEdgeLightY,
+  tribuneEdgeLightZ,
+} from '@/widgets/race-canvas/lib/tribune-night-lights';
 import { getSharedWoodTexture } from '@/widgets/race-canvas/lib/wood-texture';
 import { buildSpectatorSeats, SpectatorCrowd } from './spectator-crowd';
 
@@ -80,7 +100,7 @@ type TTribuneSectionProps = {
   materials: TTribuneMaterials;
 };
 
-type TTribuneNightLightsProps = {
+type TTribuneRowAccentsProps = {
   /** Внутренний X трибуны */
   tribuneInnerX: number;
   /** Знак стороны (−1 / +1) */
@@ -89,14 +109,102 @@ type TTribuneNightLightsProps = {
   sectionZ: number;
   /** Accent-цвет неона */
   accent: string;
+  /** Ночной glow лент */
+  isOn: boolean;
 };
 
-/** Только emissive neon-ленты (без PointLight — бюджет FPS Night City) */
-const TribuneNightLights = ({ tribuneInnerX, sideSign, sectionZ, accent }: TTribuneNightLightsProps) => (
+type TTribuneEdgeFloodProps = {
+  /** Внутренний X трибуны */
+  tribuneInnerX: number;
+  /** Знак стороны (−1 / +1) */
+  sideSign: number;
+  /** Знак края крыши по Z */
+  zSign: number;
+  /** Горит ли прожектор (ночь) */
+  isOn: boolean;
+};
+
+/** Один краевой прожектор: корпус всегда; SpotLight только при isOn */
+const TribuneEdgeFlood = ({ tribuneInnerX, sideSign, zSign, isOn }: TTribuneEdgeFloodProps) => {
+  const spotRef = useRef<SpotLight>(null);
+  const targetRef = useRef<Object3D>(null);
+
+  const lightX = tribuneEdgeLightX(tribuneInnerX, sideSign);
+  const lightY = tribuneEdgeLightY();
+  const lightZ = tribuneEdgeLightZ(zSign);
+  const aimX = tribuneEdgeAimX(tribuneInnerX, sideSign);
+  const aimY = tribuneEdgeAimY();
+  const aimZ = tribuneEdgeAimZ(zSign);
+
+  // Привязывает Spot к точке на средних рядах (внутрь от края).
+  useLayoutEffect(() => {
+    if (!isOn) {
+      return;
+    }
+    const spot = spotRef.current;
+    const target = targetRef.current;
+    if (!spot || !target) {
+      return;
+    }
+    spot.target = target;
+    spot.target.updateMatrixWorld();
+  }, [isOn]);
+
+  return (
+    <group position={[lightX, lightY, lightZ]}>
+      <mesh castShadow rotation={[0.7, 0, -sideSign * 0.12]}>
+        <boxGeometry
+          args={[TRIBUNE_FLOOD.housing.width, TRIBUNE_FLOOD.housing.height, TRIBUNE_FLOOD.housing.depth]}
+        />
+        <meshStandardMaterial
+          color={startLightPalette.housing}
+          metalness={0.55}
+          roughness={0.45}
+        />
+      </mesh>
+      <mesh position={[0, -TRIBUNE_FLOOD.housing.height * 0.4, 0]}>
+        <sphereGeometry args={[TRIBUNE_FLOOD.bulbRadius, 12, 10]} />
+        <meshStandardMaterial
+          color={isOn ? startLightPalette.floodLight : startLightPalette.idle}
+          emissive={isOn ? startLightPalette.floodLight : '#000000'}
+          emissiveIntensity={isOn ? TRIBUNE_FLOOD.lensEmissiveIntensity : 0}
+          metalness={0.1}
+          roughness={0.3}
+          toneMapped={false}
+        />
+      </mesh>
+      {isOn ? (
+        <>
+          <spotLight
+            ref={spotRef}
+            position={[0, -0.06, 0]}
+            color={startLightPalette.floodLight}
+            intensity={TRIBUNE_EDGE_SPOT.intensity}
+            distance={TRIBUNE_EDGE_SPOT.distance}
+            angle={TRIBUNE_EDGE_SPOT.angle}
+            penumbra={TRIBUNE_EDGE_SPOT.penumbra}
+            decay={TRIBUNE_EDGE_SPOT.decay}
+            castShadow={false}
+          />
+          <object3D ref={targetRef} position={[aimX - lightX, aimY - lightY, aimZ - lightZ]} />
+        </>
+      ) : null}
+    </group>
+  );
+};
+
+/** Neon-ленты рядов: днём видны как accent, ночью — emissive */
+const TribuneRowAccents = ({
+  tribuneInnerX,
+  sideSign,
+  sectionZ,
+  accent,
+  isOn,
+}: TTribuneRowAccentsProps) => (
   <group position={[0, ROAD_TOP_Y, sectionZ]}>
     {Array.from({ length: TRIBUNE_ROWS }, (_, row) => (
       <mesh
-        key={`row-emissive-${row}`}
+        key={`row-accent-${row}`}
         position={[
           tribuneRowCenterX(tribuneInnerX, sideSign, row) - sideSign * (ROW_DEPTH / 2 + 0.04),
           rowTopY(row) - 0.04,
@@ -106,11 +214,37 @@ const TribuneNightLights = ({ tribuneInnerX, sideSign, sectionZ, accent }: TTrib
         <boxGeometry args={[0.05, 0.06, SECTION_WIDTH - 0.4]} />
         <meshStandardMaterial
           color={accent}
-          emissive={accent}
-          emissiveIntensity={1.4}
+          emissive={isOn ? accent : '#000000'}
+          emissiveIntensity={isOn ? 1.4 : 0}
           toneMapped={false}
+          roughness={0.45}
+          metalness={0.15}
         />
       </mesh>
+    ))}
+  </group>
+);
+
+type TTribuneEdgeFloodsProps = {
+  /** Внутренний X трибуны */
+  tribuneInnerX: number;
+  /** Знак стороны (−1 / +1) */
+  sideSign: number;
+  /** Горят ли прожекторы */
+  isOn: boolean;
+};
+
+/** Два светильника на ±Z краях крыши (корпус всегда; свет — только isOn) */
+const TribuneEdgeFloods = ({ tribuneInnerX, sideSign, isOn }: TTribuneEdgeFloodsProps) => (
+  <group position={[0, ROAD_TOP_Y, 0]}>
+    {TRIBUNE_EDGE_Z_SIGNS.map((zSign) => (
+      <TribuneEdgeFlood
+        key={`tribune-edge-${zSign}`}
+        tribuneInnerX={tribuneInnerX}
+        sideSign={sideSign}
+        zSign={zSign}
+        isOn={isOn}
+      />
     ))}
   </group>
 );
@@ -418,12 +552,16 @@ export const TrackTribunes = ({
         color: stepColor,
         roughness: 0.9,
         metalness: 0.02,
+        emissive: isNight ? startLightPalette.floodLight : '#000000',
+        emissiveIntensity: isNight ? 0.08 : 0,
       }),
       stepOdd: new MeshStandardMaterial({
         map: concreteMap,
         color: structureColor,
         roughness: 0.9,
         metalness: 0.02,
+        emissive: isNight ? startLightPalette.floodLight : '#000000',
+        emissiveIntensity: isNight ? 0.06 : 0,
       }),
       canopy: new MeshStandardMaterial({
         map: metalMap,
@@ -436,6 +574,8 @@ export const TrackTribunes = ({
         color: seatColor,
         roughness: 0.78,
         metalness: 0,
+        emissive: isNight ? startLightPalette.floodLight : '#000000',
+        emissiveIntensity: isNight ? 0.12 : 0,
       }),
       metal: new MeshStandardMaterial({
         color: metalColor,
@@ -447,9 +587,22 @@ export const TrackTribunes = ({
         color: structureColor,
         roughness: 0.88,
         metalness: 0.04,
+        emissive: isNight ? startLightPalette.floodLight : '#000000',
+        emissiveIntensity: isNight ? 0.06 : 0,
       }),
     };
-  }, [concreteMap, woodMap, metalMap, platformColor, stepColor, structureColor, canopyColor, seatColor, metalColor]);
+  }, [
+    concreteMap,
+    woodMap,
+    metalMap,
+    platformColor,
+    stepColor,
+    structureColor,
+    canopyColor,
+    seatColor,
+    metalColor,
+    isNight,
+  ]);
 
   // Освобождает материалы (текстуры — singleton, не dispose).
   useEffect(
@@ -480,17 +633,17 @@ export const TrackTribunes = ({
           materials={materials}
         />
       ))}
-      {isNight
-        ? SECTION_Z_OFFSETS.map((sectionZ) => (
-            <TribuneNightLights
-              key={`tribune-light-${sectionZ}`}
-              tribuneInnerX={tribuneInnerX}
-              sideSign={sideSign}
-              sectionZ={sectionZ}
-              accent={palette.accent}
-            />
-          ))
-        : null}
+      {SECTION_Z_OFFSETS.map((sectionZ) => (
+        <TribuneRowAccents
+          key={`tribune-accent-${sectionZ}`}
+          tribuneInnerX={tribuneInnerX}
+          sideSign={sideSign}
+          sectionZ={sectionZ}
+          accent={palette.accent}
+          isOn={isNight}
+        />
+      ))}
+      <TribuneEdgeFloods tribuneInnerX={tribuneInnerX} sideSign={sideSign} isOn={isNight} />
     </group>
   );
 };

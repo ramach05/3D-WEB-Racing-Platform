@@ -6,6 +6,7 @@ import {
   CylinderGeometry,
   Matrix4,
   Object3D,
+  Vector3,
   type InstancedMesh,
   type MeshStandardMaterial,
   type WebGLProgramParametersWithUniforms,
@@ -14,6 +15,7 @@ import type { TTrackPalette } from '@/entities/track';
 import { SEAT_PLANK_HEIGHT } from '@/entities/track';
 import { getRaceHudSnapshot } from '@/features/race-session';
 import { crowdPalette } from '@/shared/config';
+import { TRIBUNE_CROWD_WASH } from '@/widgets/race-canvas/lib/tribune-night-lights';
 import type {
   TBuildSpectatorSeatsOptions,
   TSpectatorBehavior,
@@ -177,17 +179,35 @@ const applyInstanceColors = (mesh: InstancedMesh, colors: Color[]): void => {
   material.needsUpdate = true;
 };
 
-/** Подкрашивает emissive цветом инстанса — неон светится своим оттенком */
-const enableInstanceEmissiveTint = (material: MeshStandardMaterial): void => {
+/** Подкрашивает emissive цветом инстанса + тёплый stadium-wash / neon bounce */
+const enableInstanceEmissiveTint = (
+  material: MeshStandardMaterial,
+  washAdd: number,
+  neonAccentHex: string,
+): void => {
+  const wash = TRIBUNE_CROWD_WASH.color;
+  const neon = new Color(neonAccentHex);
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
-    shader.fragmentShader = shader.fragmentShader.replace(
+    shader.uniforms.uStadiumWash = { value: washAdd };
+    shader.uniforms.uStadiumColor = { value: new Vector3(wash[0], wash[1], wash[2]) };
+    shader.uniforms.uNeonBounce = { value: TRIBUNE_CROWD_WASH.neonBounce };
+    shader.uniforms.uNeonColor = { value: new Vector3(neon.r, neon.g, neon.b) };
+    shader.fragmentShader = `uniform float uStadiumWash;
+uniform vec3 uStadiumColor;
+uniform float uNeonBounce;
+uniform vec3 uNeonColor;
+${shader.fragmentShader}`.replace(
       '#include <emissivemap_fragment>',
       `#include <emissivemap_fragment>
 #ifdef USE_INSTANCING_COLOR
   totalEmissiveRadiance *= vInstanceColor;
-#endif`,
+#endif
+  totalEmissiveRadiance += uStadiumColor * uStadiumWash;
+  totalEmissiveRadiance += uNeonColor * uNeonBounce;`,
     );
   };
+  material.customProgramCacheKey = () =>
+    `tribune-crowd-wash-${washAdd.toFixed(3)}-${neonAccentHex}-${TRIBUNE_CROWD_WASH.neonBounce}`;
   material.needsUpdate = true;
 };
 
@@ -286,7 +306,7 @@ const computeArmAngles = ({
 };
 
 /** Анимированная толпа зрителей через InstancedMesh */
-export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps) => {
+export const SpectatorCrowd = ({ seats, palette, isNight, paused }: TSpectatorCrowdProps) => {
   const bodyRef = useRef<InstancedMesh>(null);
   const headRef = useRef<InstancedMesh>(null);
   const leftArmRef = useRef<InstancedMesh>(null);
@@ -297,6 +317,7 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
   const flagPoleRef = useRef<InstancedMesh>(null);
   const flagClothRef = useRef<InstancedMesh>(null);
   const bodyMatRef = useRef<MeshStandardMaterial>(null);
+  const headMatRef = useRef<MeshStandardMaterial>(null);
   const leftArmMatRef = useRef<MeshStandardMaterial>(null);
   const rightArmMatRef = useRef<MeshStandardMaterial>(null);
   const dummy = useMemo(() => new Object3D(), []);
@@ -390,16 +411,35 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
 
     if (isNight) {
       if (bodyMatRef.current) {
-        enableInstanceEmissiveTint(bodyMatRef.current);
+        enableInstanceEmissiveTint(
+          bodyMatRef.current,
+          TRIBUNE_CROWD_WASH.shirtAdd,
+          palette.accent,
+        );
+      }
+      if (headMatRef.current) {
+        enableInstanceEmissiveTint(
+          headMatRef.current,
+          TRIBUNE_CROWD_WASH.skinAdd,
+          palette.accent,
+        );
       }
       if (leftArmMatRef.current) {
-        enableInstanceEmissiveTint(leftArmMatRef.current);
+        enableInstanceEmissiveTint(
+          leftArmMatRef.current,
+          TRIBUNE_CROWD_WASH.skinAdd,
+          palette.accent,
+        );
       }
       if (rightArmMatRef.current) {
-        enableInstanceEmissiveTint(rightArmMatRef.current);
+        enableInstanceEmissiveTint(
+          rightArmMatRef.current,
+          TRIBUNE_CROWD_WASH.skinAdd,
+          palette.accent,
+        );
       }
     }
-  }, [coloredSeats, isNight]);
+  }, [coloredSeats, isNight, palette.accent]);
 
   // Анимирует bob/wave/lean зрителей по статусу гонки и behavior.
   useFrame((state) => {
@@ -583,9 +623,10 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
 
   const count = coloredSeats.length;
   // Слабый цветной glow; toneMapped=true — иначе bloom выжигает футболки в белый
-  const shirtEmissiveIntensity = isNight ? 0.22 : 0;
-  const armEmissiveIntensity = isNight ? 0.08 : 0;
-  const headEmissiveIntensity = isNight ? 0.06 : 0;
+  /** Stadium-wash: тёплый fill + лёгкий neon bounce (без PointLight на каждый ряд) */
+  const shirtEmissiveIntensity = isNight ? TRIBUNE_CROWD_WASH.shirtEmissive : 0;
+  const armEmissiveIntensity = isNight ? TRIBUNE_CROWD_WASH.skinEmissive : 0;
+  const headEmissiveIntensity = isNight ? TRIBUNE_CROWD_WASH.skinEmissive : 0;
 
   /** Ночью толпа не кастит тени — меньше work в moon/headlight shadow passes */
   const castCrowdShadow = !isNight;
@@ -610,6 +651,7 @@ export const SpectatorCrowd = ({ seats, isNight, paused }: TSpectatorCrowdProps)
       <instancedMesh ref={headRef} args={[undefined, undefined, count]} castShadow={castCrowdShadow}>
         <sphereGeometry args={[0.135, 8, 8]} />
         <meshStandardMaterial
+          ref={headMatRef}
           color={crowdPalette.meshBase}
           emissive={isNight ? crowdPalette.skinEmissiveNight : crowdPalette.emissiveOff}
           emissiveIntensity={headEmissiveIntensity}
