@@ -202,11 +202,11 @@ export type TVehiclePalette = {
 export type TVehiclePaletteToken = keyof TVehiclePalette;
 
 export type TStartLightPalette = {
-  /** Лампа выключена */
+  /** Лампа выключена (smoked glass) */
   idle: TCssColor;
   /** Красный (countdown F1) */
   red: TCssColor;
-  /** Жёлтый (зарезервирован, не на gantry) */
+  /** Жёлтый (финишное мигание) */
   amber: TCssColor;
   /** Зелёный (зарезервирован; старт F1 = гашение красных) */
   green: TCssColor;

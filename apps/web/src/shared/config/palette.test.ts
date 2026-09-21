@@ -35,6 +35,9 @@ describe('palette', () => {
     expect(startLightPalette.bezel).toBeTruthy();
     expect(startLightPalette.red).toBeTruthy();
     expect(startLightPalette.floodLight).toBeTruthy();
+    // Smoked glass, не slate-blue
+    expect(startLightPalette.idle).toBe('#14080a');
+    expect(startLightPalette.steel).toBe('#1a1c20');
   });
 
   it('has warm street-lamp colors', () => {

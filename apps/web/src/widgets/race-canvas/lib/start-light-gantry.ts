@@ -15,53 +15,119 @@ export const GANTRY_PANEL_HEIGHT = 0.85;
 export const GANTRY_PANEL_DEPTH = 0.28;
 
 /**
- * Stadium-прожекторы на столбах gantry (Night City).
- * 4 корпуса: ±пост × ±сторона линии; aim на асфальт у спавна / финишного проезда.
+ * Геометрия одной F1 lamp bay (козырёк, ниша, bezel, диск линзы).
+ * Коллайдеры панели не меняются — только визуал.
  */
-export const GANTRY_FLOOD = {
-  /** Опускание корпуса от центра балки */
-  housingDropY: 0.32,
-  /** Сдвиг корпуса от оси столба к полотну */
-  housingInsetX: 0.12,
-  /** Вынос корпуса от балки по |Z| */
-  housingOutsetZ: 0.48,
-  housing: {
-    width: 0.2,
-    height: 0.12,
-    depth: 0.26,
+export const START_LAMP_BAY = {
+  /** Радиус светящегося диска линзы */
+  lensRadius: 0.2,
+  /** Внешний радиус металлического кольца */
+  bezelOuterRadius: 0.255,
+  /** Глубина кольца по Z */
+  bezelDepth: 0.055,
+  /** Глубина тёмной ниши в корпусе */
+  recessDepth: 0.07,
+  /** Радиус ниши (чуть больше bezel) */
+  recessRadius: 0.27,
+  /** Шаг между центрами ламп по X */
+  spacing: 0.62,
+  /** Вынос лицевой плоскости от передней грани панели */
+  faceOutset: 0.02,
+  hood: {
+    width: 0.52,
+    height: 0.06,
+    depth: 0.22,
+    /** Смещение центра козырька вверх от центра линзы */
+    offsetY: 0.28,
+    /** Вынос козырька вперёд от плоскости линзы */
+    offsetZ: 0.08,
   },
-  bulbRadius: 0.045,
-  /** Aim |Z| на асфальте от линии */
-  aimZ: 4.2,
-  /** Aim |X| как доля half-roadWidth */
-  aimXFraction: 0.28,
-  /** Emissive линзы под Bloom */
-  lensEmissiveIntensity: 1.5,
+  /** Emissive выключенной линзы (еле видимая LED-сетка) */
+  idleEmissiveIntensity: 0.08,
+  /** Emissive включённой линзы — ярко днём без Bloom */
+  litEmissiveIntensity: 6.5,
 } as const;
 
-/** SpotLight: мягкая заливка полотна у линии (без shadow map) */
+/**
+ * Stadium-прожекторы на столбах gantry (Night City).
+ * Крепление на внутренней грани столба: пластина → кронштейн → корпус.
+ * 2 шт. (лево/право); aim — на линию финиша; Spot из линзы.
+ * Важно: Group.lookAt направляет +Z на цель (не −Z, как у Camera).
+ */
+export const GANTRY_FLOOD = {
+  /** Опускание узла крепления от центра балки (под низом балки) */
+  mountDropY: 0.22,
+  /** Смещение пластины по |Z| от оси столба (чуть к спавну) */
+  mountZOffset: 0.03,
+  /** Пластина на внутренней грани столба (к полотну) */
+  mountPlate: {
+    width: 0.08,
+    height: 0.1,
+    depth: 0.025,
+  },
+  /** Короткий кронштейн к полотну */
+  arm: {
+    radius: 0.012,
+    length: 0.12,
+  },
+  /** Вилка (yoke) на конце кронштейна */
+  yoke: {
+    width: 0.07,
+    height: 0.032,
+    depth: 0.028,
+  },
+  /** Компактный корпус прожектора */
+  housing: {
+    width: 0.11,
+    height: 0.065,
+    depth: 0.13,
+  },
+  /** Козырёк над линзой */
+  hood: {
+    width: 0.12,
+    height: 0.014,
+    depth: 0.07,
+    offsetY: 0.032,
+    offsetZ: 0.02,
+  },
+  /**
+   * Линза / Spot на передней грани (+Z после Group.lookAt).
+   * Диск, не сфера — свечение только со стороны трассы.
+   */
+  lens: {
+    localY: -0.005,
+    localZ: 0.068,
+    radius: 0.026,
+  },
+  /** Aim |Z| на линии финиша (шахматка ≈ 0) */
+  aimZ: 0.08,
+  /** Aim |X| — середина своей половины полотна */
+  aimXFraction: 0.22,
+  /** Emissive линзы под Bloom */
+  lensEmissiveIntensity: 1.6,
+} as const;
+
+/** SpotLight: пятно на линии финиша */
 export const GANTRY_FLOOD_SPOT = {
-  intensity: 55,
-  distance: 20,
-  /** ~49° — пятно ~половины полосы с высоты балки */
-  angle: 0.85,
-  penumbra: 0.92,
+  intensity: 85,
+  distance: 18,
+  /** ~35° — компактное пятно на шахматку */
+  angle: 0.62,
+  penumbra: 0.75,
   decay: 2,
 } as const;
 
-/** PointLight spill у столбов (2 шт. — левый/правый) */
+/** @deprecated spill у столбов убран — засвечивал столб вместо трассы */
 export const GANTRY_FLOOD_POINT = {
-  intensity: 3.2,
+  intensity: 0,
   distance: 12,
   decay: 2,
 } as const;
 
-/** sideX/sideZ: знаки поста и стороны линии (+Z = спавн) */
+/** 2 прожектора: левый/правый столб */
 export const GANTRY_FLOOD_PLACEMENTS = [
   { sideX: -1, sideZ: 1 },
   { sideX: 1, sideZ: 1 },
-  { sideX: -1, sideZ: -1 },
-  { sideX: 1, sideZ: -1 },
 ] as const;
 
 /** Сколько крайних ламп горят на шаге countdown (3→2→1); 0 = все гаснут (GO) */

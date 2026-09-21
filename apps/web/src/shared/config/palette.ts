@@ -184,14 +184,19 @@ export const vehiclePalette = {
 } as const satisfies TVehiclePalette;
 
 export const startLightPalette = {
-  idle: '#334155',
-  red: '#ff2244',
+  /** Тёмное smoked glass с красным undertone (выкл.) */
+  idle: '#14080a',
+  /** Насыщенный красный LED (countdown) */
+  red: '#ff1428',
   amber: '#ffcc00',
   green: '#33ff66',
-  steel: '#2a2e36',
-  steelDark: '#15181e',
-  housing: '#0c0e12',
-  bezel: '#3a3f4a',
+  /** Матовый порошковый чёрный каркас (реальный F1 gantry) */
+  steel: '#1a1c20',
+  steelDark: '#0c0d10',
+  /** Корпус панели ламп */
+  housing: '#101216',
+  /** Кольцо ниши — чуть светлее корпуса */
+  bezel: '#3a3e46',
   floodLight: '#fff2d6',
 } as const satisfies TStartLightPalette;
 

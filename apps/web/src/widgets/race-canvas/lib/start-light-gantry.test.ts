@@ -3,31 +3,57 @@ import {
   FINISH_LAMP_BLINK_PERIOD_S,
   GANTRY_FLOOD,
   GANTRY_FLOOD_PLACEMENTS,
-  GANTRY_FLOOD_POINT,
   GANTRY_FLOOD_SPOT,
   isFinishLampBlinkOn,
   isLampLit,
   litCountForHud,
+  START_LAMP_BAY,
   START_LAMP_COUNT,
 } from './start-light-gantry';
 
+describe('START_LAMP_BAY', () => {
+  it('keeps lens inside bezel and hood covering the bay', () => {
+    expect(START_LAMP_BAY.lensRadius).toBeLessThan(START_LAMP_BAY.bezelOuterRadius);
+    expect(START_LAMP_BAY.bezelOuterRadius).toBeLessThanOrEqual(START_LAMP_BAY.recessRadius);
+    expect(START_LAMP_BAY.hood.width).toBeGreaterThan(START_LAMP_BAY.bezelOuterRadius * 2);
+    expect(START_LAMP_BAY.idleEmissiveIntensity).toBeGreaterThan(0);
+    expect(START_LAMP_BAY.litEmissiveIntensity).toBeGreaterThan(
+      START_LAMP_BAY.idleEmissiveIntensity,
+    );
+  });
+});
+
 describe('gantry floodlights', () => {
-  it('defines four stadium flood placements around the line', () => {
-    expect(GANTRY_FLOOD_PLACEMENTS).toHaveLength(4);
+  it('defines two stadium floods on spawn-side posts', () => {
+    expect(GANTRY_FLOOD_PLACEMENTS).toHaveLength(2);
     const keys = GANTRY_FLOOD_PLACEMENTS.map(({ sideX, sideZ }) => `${sideX}:${sideZ}`);
-    expect(new Set(keys).size).toBe(4);
-    expect(GANTRY_FLOOD.aimZ).toBeGreaterThan(2);
+    expect(new Set(keys).size).toBe(2);
+    expect(GANTRY_FLOOD_PLACEMENTS.every(({ sideZ }) => sideZ === 1)).toBe(true);
+    // Aim на линию финиша (шахматка ≈ 0), не вбок вдоль трассы
+    expect(Math.abs(GANTRY_FLOOD.aimZ)).toBeLessThan(0.5);
     expect(GANTRY_FLOOD.aimXFraction).toBeGreaterThan(0.1);
-    expect(GANTRY_FLOOD.aimXFraction).toBeLessThan(0.5);
+    expect(GANTRY_FLOOD.aimXFraction).toBeLessThan(0.4);
   });
 
-  it('keeps road flood spot and post spill parameters usable at night', () => {
+  it('mounts floods to the post with plate, arm and yoke', () => {
+    expect(GANTRY_FLOOD.mountPlate.depth).toBeGreaterThan(0);
+    expect(GANTRY_FLOOD.arm.length).toBeGreaterThan(GANTRY_FLOOD.mountPlate.depth);
+    expect(GANTRY_FLOOD.yoke.width).toBeGreaterThan(GANTRY_FLOOD.arm.radius * 2);
+    expect(GANTRY_FLOOD.housing.depth).toBeGreaterThan(GANTRY_FLOOD.hood.depth);
+    expect(GANTRY_FLOOD.mountDropY).toBeGreaterThan(0);
+    // Group.lookAt → +Z на цель; линза на передней грани
+    expect(GANTRY_FLOOD.lens.localZ).toBeGreaterThan(0);
+    expect(GANTRY_FLOOD.lens.localZ).toBeGreaterThan(GANTRY_FLOOD.housing.depth / 2 - 0.02);
+    expect(GANTRY_FLOOD.arm.length).toBeLessThan(0.2);
+    expect(GANTRY_FLOOD.housing.width).toBeLessThan(0.16);
+  });
+
+  it('keeps road flood spot parameters aimed at the asphalt', () => {
     expect(GANTRY_FLOOD_SPOT.intensity).toBeGreaterThan(30);
     expect(GANTRY_FLOOD_SPOT.distance).toBeGreaterThan(12);
-    expect(GANTRY_FLOOD_SPOT.angle).toBeGreaterThan(0.5);
-    expect(GANTRY_FLOOD_SPOT.penumbra).toBeGreaterThan(0.7);
-    expect(GANTRY_FLOOD_POINT.intensity).toBeGreaterThan(1);
-    expect(GANTRY_FLOOD_POINT.distance).toBeGreaterThan(6);
+    expect(GANTRY_FLOOD_SPOT.angle).toBeGreaterThan(0.4);
+    expect(GANTRY_FLOOD_SPOT.angle).toBeLessThan(0.9);
+    expect(GANTRY_FLOOD_SPOT.penumbra).toBeGreaterThan(0.5);
   });
 });
 
