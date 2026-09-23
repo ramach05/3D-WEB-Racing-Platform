@@ -23,7 +23,7 @@ export const AppHeader = () => {
   const { t } = useTranslation();
   const user = useAuthUser();
   const logout = useLogout();
-  const navCols = user ? 4 : 5;
+  const navCols = user ? 5 : 6;
 
   return (
     <header className="border-b-4 border-[var(--border)] bg-[var(--surface)]">
@@ -71,6 +71,9 @@ export const AppHeader = () => {
           </NavLink>
           <NavLink to="/tracks" className={navClass}>
             <span className="sega-header-nav__label">{t('nav.tracks')}</span>
+          </NavLink>
+          <NavLink to="/garage" className={navClass}>
+            <span className="sega-header-nav__label">{t('nav.garage')}</span>
           </NavLink>
           <NavLink to="/leaderboard" className={navClass}>
             <span className="sega-header-nav__label">{t('nav.leaderboard')}</span>

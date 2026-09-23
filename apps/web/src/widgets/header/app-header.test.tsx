@@ -35,6 +35,7 @@ describe('AppHeader', () => {
     expect(nav).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /главная|home/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /трассы|tracks/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /гараж|garage/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /вход|log in/i })).toBeInTheDocument();
 
     expect(screen.getByRole('group', { name: /настройки|settings/i })).toBeInTheDocument();

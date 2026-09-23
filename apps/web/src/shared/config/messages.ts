@@ -5,6 +5,7 @@ export const ruMessages = {
   nav: {
     home: 'Главная',
     tracks: 'Трассы',
+    garage: 'Гараж',
     leaderboard: 'Лидеры',
     profile: 'Профиль',
     login: 'Вход',
@@ -55,6 +56,27 @@ export const ruMessages = {
         'Солнце жжёт асфальт, солёный ветер бьёт в лобовое, а стопки шин ждут ошибку на каждом вираже. Один идеальный овал — и рекорд твой.',
       'night-city':
         'Неон режет тьму, трибуны гудят, а стадион не прощает слабости. Здесь ночь не спит — и твой круг тоже.',
+    },
+  },
+  garage: {
+    title: 'Гараж',
+    subtitle: 'Выбери кузов. Цвет на дневной трассе — жёлтый, на ночной — голубой.',
+    selected: 'Выбрано',
+    dayColor: 'День',
+    nightColor: 'Ночь',
+    vehicles: {
+      hatchback: {
+        name: 'Хэтчбек',
+        description: 'Компактный кузов с высокой кормой — короткий и цепкий силуэт.',
+      },
+      sedan: {
+        name: 'Седан',
+        description: 'Классический гоночный седан — низкий профиль и длинный капот.',
+      },
+      pickup: {
+        name: 'Пикап',
+        description: 'Открытый кузов и чуть выше посадка — практичный рабочий силуэт.',
+      },
     },
   },
   race: {
@@ -168,6 +190,7 @@ export const enMessages = {
   nav: {
     home: 'Home',
     tracks: 'Tracks',
+    garage: 'Garage',
     leaderboard: 'Leaderboard',
     profile: 'Profile',
     login: 'Log in',
@@ -218,6 +241,27 @@ export const enMessages = {
         'Sun-scorched asphalt, salt wind in your face, tire stacks waiting for one wrong line. Nail the oval — claim the record.',
       'night-city':
         'Neon cuts the dark, the stands roar, and the stadium forgives nothing. Night never sleeps — neither does your lap.',
+    },
+  },
+  garage: {
+    title: 'Garage',
+    subtitle: 'Pick a body. Day track paint is yellow; night track paint is cyan.',
+    selected: 'Selected',
+    dayColor: 'Day',
+    nightColor: 'Night',
+    vehicles: {
+      hatchback: {
+        name: 'Hatchback',
+        description: 'Compact high-rear hatch — short, punchy silhouette.',
+      },
+      sedan: {
+        name: 'Sedan',
+        description: 'Classic race sedan — low stance and a long hood.',
+      },
+      pickup: {
+        name: 'Pickup',
+        description: 'Open bed and a slightly taller stance — a practical work silhouette.',
+      },
     },
   },
   race: {
