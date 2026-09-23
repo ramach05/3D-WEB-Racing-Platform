@@ -5,6 +5,7 @@ import type { RapierRigidBody } from '@react-three/rapier';
 import { Quaternion, Vector3 } from 'three';
 import type { Group, Object3D, SpotLight } from 'three';
 import type { TCarSkin, TLoopPoint, TOrientedBox, TVec3 } from '@/entities/track';
+import type { TVehicleId } from '@/entities/vehicle';
 import {
   IDLE_DRIVE_SFX_SAMPLE,
   mapOilSlapFromSpeed,
@@ -57,6 +58,7 @@ import {
   sampleTrackSurfaceKind,
   type TTrackSurfaceKind,
 } from '@/widgets/race-canvas/lib/track-surface';
+import { headlightLocalPositions } from '@/widgets/race-canvas/vehicle/vehicle-body-variants';
 import {
   VehicleModel,
   type TVehicleDriveVisual,
@@ -72,8 +74,6 @@ const HEADLIGHT_DISTANCE = 24;
 const HEADLIGHT_DECAY = 2;
 /** Прицел: в плоскость асфальта впереди */
 const HEADLIGHT_TARGET: TVec3 = [0, -1.0, 11];
-const HEADLIGHT_LOCAL_LEFT: TVec3 = [-0.58, 0.48, 1.55];
-const HEADLIGHT_LOCAL_RIGHT: TVec3 = [0.58, 0.48, 1.55];
 /** Одна shadowed-фара × 768² вместо двух — главный shadow hotspot ночи */
 const HEADLIGHT_SHADOW_MAP = 768;
 const HEADLIGHT_SHADOW_NEAR = 0.5;
@@ -93,6 +93,8 @@ type TVehicleProps = {
   bodyRef: RefObject<RapierRigidBody | null>;
   /** Ref визуальной группы кузова */
   visualRef: RefObject<Group | null>;
+  /** Выбранный кузов из гаража */
+  vehicleId: TVehicleId;
   /** Раскраска кузова / кабины / колёс */
   carSkin: TCarSkin;
   /** Включить фары (ночь) */
@@ -108,6 +110,8 @@ type TVehicleProps = {
 type TVehicleHeadlightsProps = {
   /** Ref физического тела для синхронизации фар */
   bodyRef: RefObject<RapierRigidBody | null>;
+  /** Кузов — сдвигает прожекторы под фары седана / внедорожника */
+  vehicleId: TVehicleId;
 };
 
 /** Настраивает shadow map только у левой фары */
@@ -123,11 +127,12 @@ const configureHeadlightShadow = (light: SpotLight) => {
 };
 
 /** Фары вне RigidBody — иначе shadow map SpotLight не окклюдирует стены */
-const VehicleHeadlights = ({ bodyRef }: TVehicleHeadlightsProps) => {
+const VehicleHeadlights = ({ bodyRef, vehicleId }: TVehicleHeadlightsProps) => {
   const groupRef = useRef<Group>(null);
   const headlightTargetRef = useRef<Object3D>(null);
   const leftHeadlightRef = useRef<SpotLight>(null);
   const rightHeadlightRef = useRef<SpotLight>(null);
+  const lampPos = headlightLocalPositions(vehicleId);
 
   /** Привязывает aim-target; тень только у левой фары */
   const bindTargets = () => {
@@ -185,7 +190,7 @@ const VehicleHeadlights = ({ bodyRef }: TVehicleHeadlightsProps) => {
       <object3D ref={headlightTargetRef} position={HEADLIGHT_TARGET} />
       <spotLight
         ref={leftHeadlightRef}
-        position={HEADLIGHT_LOCAL_LEFT}
+        position={lampPos.left}
         angle={HEADLIGHT_ANGLE}
         penumbra={HEADLIGHT_PENUMBRA}
         intensity={HEADLIGHT_INTENSITY}
@@ -203,7 +208,7 @@ const VehicleHeadlights = ({ bodyRef }: TVehicleHeadlightsProps) => {
       />
       <spotLight
         ref={rightHeadlightRef}
-        position={HEADLIGHT_LOCAL_RIGHT}
+        position={lampPos.right}
         angle={HEADLIGHT_ANGLE}
         penumbra={HEADLIGHT_PENUMBRA}
         intensity={HEADLIGHT_INTENSITY}
@@ -343,6 +348,7 @@ export const Vehicle = ({
   resetNonce,
   bodyRef,
   visualRef,
+  vehicleId,
   carSkin,
   headlightsOn,
   oilSlicks,
@@ -748,13 +754,14 @@ export const Vehicle = ({
         />
         <group ref={visualRef}>
           <VehicleModel
+            vehicleId={vehicleId}
             carSkin={carSkin}
             headlightsOn={headlightsOn}
             driveVisualRef={driveVisualRef}
           />
         </group>
       </RigidBody>
-      {headlightsOn ? <VehicleHeadlights bodyRef={bodyRef} /> : null}
+      {headlightsOn ? <VehicleHeadlights bodyRef={bodyRef} vehicleId={vehicleId} /> : null}
     </>
   );
 };

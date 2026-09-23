@@ -10,6 +10,7 @@ import {
 } from 'three';
 import { Physics, type RapierRigidBody } from '@react-three/rapier';
 import type { TTrackConfig } from '@/entities/track';
+import { readSelectedVehicle } from '@/features/vehicle-select';
 import { scenePalette } from '@/shared/config';
 import { CheckpointDetector } from '@/widgets/race-canvas/model/checkpoint-detector';
 import { Vehicle } from '@/widgets/race-canvas/vehicle/vehicle';
@@ -233,6 +234,7 @@ const RaceSceneInner = ({
   visualRef,
 }: TRaceSceneInnerProps) => {
   const isNight = config.timeOfDay === 'night';
+  const vehicleId = readSelectedVehicle();
 
   return (
     <>
@@ -277,6 +279,7 @@ const RaceSceneInner = ({
           resetNonce={resetNonce}
           bodyRef={bodyRef}
           visualRef={visualRef}
+          vehicleId={vehicleId}
           carSkin={config.carSkin}
           headlightsOn={isNight}
           oilSlicks={config.oilSlicks}
