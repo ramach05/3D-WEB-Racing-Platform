@@ -58,7 +58,7 @@ import {
   sampleTrackSurfaceKind,
   type TTrackSurfaceKind,
 } from '@/widgets/race-canvas/lib/track-surface';
-import { headlightLocalPositions } from '@/widgets/race-canvas/vehicle/vehicle-body-variants';
+import { headlightLocalPositions, type THeadlightLamps } from '@/widgets/race-canvas/vehicle/vehicle-body-variants';
 import {
   VehicleModel,
   type TVehicleDriveVisual,
@@ -110,8 +110,10 @@ type TVehicleProps = {
 type TVehicleHeadlightsProps = {
   /** Ref физического тела для синхронизации фар */
   bodyRef: RefObject<RapierRigidBody | null>;
-  /** Кузов — сдвигает прожекторы под фары седана / внедорожника */
+  /** Кузов — fallback, пока GLB не отдал измеренные лампы */
   vehicleId: TVehicleId;
+  /** Позиции из VehicleModel (меши Headlight после fit) */
+  headlightLampsRef: RefObject<THeadlightLamps | null>;
 };
 
 /** Настраивает shadow map только у левой фары */
@@ -127,12 +129,12 @@ const configureHeadlightShadow = (light: SpotLight) => {
 };
 
 /** Фары вне RigidBody — иначе shadow map SpotLight не окклюдирует стены */
-const VehicleHeadlights = ({ bodyRef, vehicleId }: TVehicleHeadlightsProps) => {
+const VehicleHeadlights = ({ bodyRef, vehicleId, headlightLampsRef }: TVehicleHeadlightsProps) => {
   const groupRef = useRef<Group>(null);
   const headlightTargetRef = useRef<Object3D>(null);
   const leftHeadlightRef = useRef<SpotLight>(null);
   const rightHeadlightRef = useRef<SpotLight>(null);
-  const lampPos = headlightLocalPositions(vehicleId);
+  const fallbackLamps = headlightLocalPositions(vehicleId);
 
   /** Привязывает aim-target; тень только у левой фары */
   const bindTargets = () => {
@@ -170,9 +172,16 @@ const VehicleHeadlights = ({ bodyRef, vehicleId }: TVehicleHeadlightsProps) => {
     const rotation = body.rotation();
     group.position.set(x, y, z);
     group.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
-    const aim = headlightTargetRef.current;
+    const lamps = headlightLampsRef.current ?? fallbackLamps;
     const left = leftHeadlightRef.current;
     const right = rightHeadlightRef.current;
+    if (left) {
+      left.position.set(lamps.left[0], lamps.left[1], lamps.left[2]);
+    }
+    if (right) {
+      right.position.set(lamps.right[0], lamps.right[1], lamps.right[2]);
+    }
+    const aim = headlightTargetRef.current;
     if (!aim) {
       return;
     }
@@ -190,7 +199,7 @@ const VehicleHeadlights = ({ bodyRef, vehicleId }: TVehicleHeadlightsProps) => {
       <object3D ref={headlightTargetRef} position={HEADLIGHT_TARGET} />
       <spotLight
         ref={leftHeadlightRef}
-        position={lampPos.left}
+        position={fallbackLamps.left}
         angle={HEADLIGHT_ANGLE}
         penumbra={HEADLIGHT_PENUMBRA}
         intensity={HEADLIGHT_INTENSITY}
@@ -208,7 +217,7 @@ const VehicleHeadlights = ({ bodyRef, vehicleId }: TVehicleHeadlightsProps) => {
       />
       <spotLight
         ref={rightHeadlightRef}
-        position={lampPos.right}
+        position={fallbackLamps.right}
         angle={HEADLIGHT_ANGLE}
         penumbra={HEADLIGHT_PENUMBRA}
         intensity={HEADLIGHT_INTENSITY}
@@ -371,6 +380,7 @@ export const Vehicle = ({
     brake: 0,
     kerbRumble: 0,
   });
+  const headlightLampsRef = useRef<THeadlightLamps | null>(null);
 
   const clearSkidTrail = () => {
     lastSkidPos.current = [null, null, null, null];
@@ -758,10 +768,17 @@ export const Vehicle = ({
             carSkin={carSkin}
             headlightsOn={headlightsOn}
             driveVisualRef={driveVisualRef}
+            headlightLampsRef={headlightLampsRef}
           />
         </group>
       </RigidBody>
-      {headlightsOn ? <VehicleHeadlights bodyRef={bodyRef} vehicleId={vehicleId} /> : null}
+      {headlightsOn ? (
+        <VehicleHeadlights
+          bodyRef={bodyRef}
+          vehicleId={vehicleId}
+          headlightLampsRef={headlightLampsRef}
+        />
+      ) : null}
     </>
   );
 };

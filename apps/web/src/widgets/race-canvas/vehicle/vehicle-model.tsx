@@ -15,9 +15,19 @@ import {
 } from 'three';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { TCarSkin } from '@/entities/track';
-import { HATCHBACK_GLTF_PATH, type TVehicleId } from '@/entities/vehicle';
+import {
+  getVehicle,
+  HATCHBACK_GLTF_PATH,
+  VEHICLES,
+  type TVehicleId,
+} from '@/entities/vehicle';
 import { vehiclePalette } from '@/shared/config';
-import { applyVehicleBodyVariant, VEHICLE_VARIANT_REV } from '@/widgets/race-canvas/vehicle/vehicle-body-variants';
+import {
+  normalizeVehicleGltf,
+  resolveHeadlightLampPositions,
+  VEHICLE_VARIANT_REV,
+  type THeadlightLamps,
+} from '@/widgets/race-canvas/vehicle/vehicle-body-variants';
 import {
   VEHICLE_TARGET_LENGTH,
   computeVehicleFit,
@@ -34,18 +44,21 @@ import {
   computeToeYawCorrection,
 } from '@/widgets/race-canvas/vehicle/vehicle-wheel-rig';
 
+/** @deprecated Путь хэтчбека; для конкретного кузова — getVehicle(id).gltfPath */
 export const VEHICLE_GLTF_PATH = HATCHBACK_GLTF_PATH;
 
-/** Прогревает GLB хэтчбека (tracks / race / garage) */
+/** Прогревает все GLB гаража (tracks / race / garage) */
 export const preloadVehicleModel = () => {
-  useGLTF.preload(VEHICLE_GLTF_PATH);
+  for (const vehicle of VEHICLES) {
+    useGLTF.preload(vehicle.gltfPath);
+  }
 };
 
 /** Максимальный угол поворота передних колёс (рад ≈ 32°) */
 const MAX_STEER_ANGLE = 0.56;
 /** Скорость сглаживания руля (MathUtils.damp lambda) */
 const STEER_DAMP = 14;
-/** Радиус колеса CarConcept до fit — для spin от forwardSpeed */
+/** Fallback радиус колеса до fit — для spin от forwardSpeed */
 const MODEL_WHEEL_RADIUS = 0.42;
 const HEADLIGHT_EMISSIVE_ON = 1.8;
 const HEADLIGHT_EMISSIVE_OFF = 0.05;
@@ -97,6 +110,8 @@ type TVehicleModelProps = {
   headlightsOn: boolean;
   /** Скорость / руль / тормоз с кадра физики */
   driveVisualRef: RefObject<TVehicleDriveVisual>;
+  /** Позиции прожекторов по мешам Headlight (пишет VehicleModel) */
+  headlightLampsRef?: RefObject<THeadlightLamps | null>;
 };
 
 type TPreparedVehicle = {
@@ -104,6 +119,10 @@ type TPreparedVehicle = {
   rigs: TWheelRig[];
   fit: TVehicleFit;
   brakeMaterials: MeshStandardMaterial[];
+  /** Радиус колеса в единицах модели (до fit.scale) */
+  wheelRadius: number;
+  /** Прожекторы в пространстве шасси после fit */
+  headlightLamps: THeadlightLamps;
 };
 
 const isMesh = (object: Object3D): object is Mesh => (object as Mesh).isMesh === true;
@@ -186,7 +205,7 @@ const buildWheelRig = (wheel: Object3D, isFront: boolean): TWheelRig | null => {
   };
 };
 
-/** Применяет цвета скина к paint / interior / tire материалам */
+/** Применяет цвета скина к paint / interior / tire (только хэтчбек) */
 const applyCarSkin = (root: Object3D, carSkin: TCarSkin) => {
   root.traverse((object) => {
     if (!isMesh(object)) {
@@ -200,6 +219,9 @@ const applyCarSkin = (root: Object3D, carSkin: TCarSkin) => {
       const name = material.name;
       if (name.startsWith('Paint')) {
         material.color.set(carSkin.body);
+        // Иначе map перебивает цвет трассы
+        material.map = null;
+        material.needsUpdate = true;
         continue;
       }
       if (name.startsWith('Interior') || name === 'Dashboard' || name === 'Floormat') {
@@ -209,6 +231,8 @@ const applyCarSkin = (root: Object3D, carSkin: TCarSkin) => {
       }
       if (name === 'Tireside' || name === 'Tiretread') {
         material.color.set(carSkin.wheel);
+        material.map = null;
+        material.needsUpdate = true;
       }
     }
   });
@@ -284,9 +308,10 @@ const setRearLightEmissive = (
   materials: MeshStandardMaterial[],
   mode: TRearLightMode,
   brake: number,
+  headlightsOn: boolean,
   lastMode: { current: TRearLightMode | null },
 ) => {
-  const intensity = rearLightEmissiveIntensity(mode, brake);
+  const intensity = rearLightEmissiveIntensity(mode, brake, headlightsOn);
   const modeChanged = lastMode.current !== mode;
   if (modeChanged) {
     lastMode.current = mode;
@@ -310,6 +335,7 @@ const applyWheelAnimation = (
   spinAngle: number,
   brake: number,
   forwardSpeed: number,
+  headlightsOn: boolean,
   lastRearLightMode: { current: TRearLightMode | null },
 ) => {
   for (const wheelRig of wheelRigs) {
@@ -320,13 +346,22 @@ const applyWheelAnimation = (
     wheelRig.spinPivot.quaternion.setFromAxisAngle(wheelRig.axleLocal, spinAngle);
   }
   const mode = resolveRearLightMode(brake, forwardSpeed);
-  setRearLightEmissive(brakeMaterials, mode, brake, lastRearLightMode);
+  setRearLightEmissive(brakeMaterials, mode, brake, headlightsOn, lastRearLightMode);
 };
 
-/** Считает fit по текущему клону сцены */
+/** Считает fit по видимым мешам клона (спрятанный GLB-кузов не влияет на кадр) */
 const measureFit = (root: Object3D): TVehicleFit => {
   root.updateMatrixWorld(true);
-  tmpBox.setFromObject(root);
+  tmpBox.makeEmpty();
+  root.traverse((object) => {
+    if (!isMesh(object) || !object.visible) {
+      return;
+    }
+    tmpBox.expandByObject(object);
+  });
+  if (tmpBox.isEmpty()) {
+    tmpBox.setFromObject(root);
+  }
   const size = tmpBox.getSize(new Vector3());
   const center = tmpBox.getCenter(new Vector3());
   return computeVehicleFit({
@@ -336,7 +371,20 @@ const measureFit = (root: Object3D): TVehicleFit => {
   });
 };
 
-/** Клонирует кузов, применяет вариант гаража, собирает wheel-rig и fit */
+/** Оценка радиуса колеса по bbox (половина меньшей стороны в плоскости YZ) */
+const measureWheelRadius = (root: Object3D): number => {
+  const wheel = root.getObjectByName('WheelFrontL') ?? root.getObjectByName('WheelRearL');
+  if (!wheel) {
+    return MODEL_WHEEL_RADIUS;
+  }
+  root.updateMatrixWorld(true);
+  tmpBox.setFromObject(wheel);
+  const size = tmpBox.getSize(tmpCenter);
+  const diameter = Math.min(size.y, size.z);
+  return Math.max(diameter * 0.5, 0.12);
+};
+
+/** Клонирует кузов, нормализует имена, собирает wheel-rig и fit */
 const prepareVehicleRoot = (
   source: Group,
   vehicleId: TVehicleId,
@@ -351,7 +399,7 @@ const prepareVehicleRoot = (
   if (hideBranding) {
     hideBrandingNodes(cloned);
   }
-  applyVehicleBodyVariant(cloned, vehicleId);
+  normalizeVehicleGltf(cloned, vehicleId);
 
   const rigs: TWheelRig[] = [];
   for (const name of FRONT_WHEEL_NAMES) {
@@ -373,17 +421,21 @@ const prepareVehicleRoot = (
     }
   }
 
+  const fit = measureFit(cloned);
   return {
     cloned,
     rigs,
-    fit: measureFit(cloned),
+    fit,
     brakeMaterials: collectBrakeMaterials(cloned),
+    wheelRadius: measureWheelRadius(cloned),
+    headlightLamps: resolveHeadlightLampPositions(cloned, fit, vehicleId),
   };
 };
 
 /** Скины + анимация колёс/огней для подготовленного кузова */
 const usePreparedVehicleVisuals = (
   prepared: TPreparedVehicle,
+  vehicleId: TVehicleId,
   carSkin: TCarSkin,
   headlightsOn: boolean,
   driveVisualRef: RefObject<TVehicleDriveVisual>,
@@ -393,17 +445,24 @@ const usePreparedVehicleVisuals = (
   const rigsRef = useRef<TWheelRig[]>([]);
   const brakeMaterialsRef = useRef<MeshStandardMaterial[]>([]);
   const rearLightModeRef = useRef<TRearLightMode | null>(null);
+  const headlightsOnRef = useRef(headlightsOn);
   const fitScaleRef = useRef(1);
+  const wheelRadiusRef = useRef(0.42);
 
   useLayoutEffect(() => {
     rigsRef.current = prepared.rigs;
     brakeMaterialsRef.current = prepared.brakeMaterials;
     rearLightModeRef.current = null;
+    headlightsOnRef.current = headlightsOn;
     fitScaleRef.current = prepared.fit.scale;
-    applyCarSkin(prepared.cloned, carSkin);
+    wheelRadiusRef.current = prepared.wheelRadius;
+    // Седан/пикап оставляем в authored-цветах GLB
+    if (vehicleId === 'hatchback') {
+      applyCarSkin(prepared.cloned, carSkin);
+    }
     setCastShadow(prepared.cloned, !headlightsOn);
     setHeadlightEmissive(prepared.cloned, headlightsOn);
-  }, [prepared, carSkin, headlightsOn]);
+  }, [prepared, vehicleId, carSkin, headlightsOn]);
 
   useFrame((_, dt) => {
     const drive = driveVisualRef.current;
@@ -414,7 +473,7 @@ const usePreparedVehicleVisuals = (
     const targetSteer = drive.steer * MAX_STEER_ANGLE;
     steerAngleRef.current = MathUtils.damp(steerAngleRef.current, targetSteer, STEER_DAMP, clampedDt);
 
-    const wheelRadius = MODEL_WHEEL_RADIUS * fitScaleRef.current;
+    const wheelRadius = wheelRadiusRef.current * fitScaleRef.current;
     spinAngleRef.current += (drive.forwardSpeed / Math.max(wheelRadius, 0.05)) * clampedDt;
 
     applyWheelAnimation(
@@ -424,26 +483,37 @@ const usePreparedVehicleVisuals = (
       spinAngleRef.current,
       drive.brake,
       drive.forwardSpeed,
+      headlightsOnRef.current,
       rearLightModeRef,
     );
   });
 };
 
-/** GLTF CarConcept + вариант силуэта (хэтчбек / седан / пикап) */
+/** Отдельный GLB на кузов + нормализация имён колёс/материалов */
 const GltfVehicleModelInner = ({
   vehicleId,
   carSkin,
   headlightsOn,
   driveVisualRef,
+  headlightLampsRef,
 }: TVehicleModelProps) => {
-  const { scene } = useGLTF(VEHICLE_GLTF_PATH);
+  const gltfPath = getVehicle(vehicleId)?.gltfPath ?? HATCHBACK_GLTF_PATH;
+  const { scene } = useGLTF(gltfPath);
   const prepared = useMemo(
-    () => prepareVehicleRoot(scene as Group, vehicleId, true),
-    // VEHICLE_VARIANT_REV — чтобы HMR морфов пересобрал клон (Fast Refresh ломается на preload)
+    () => prepareVehicleRoot(scene as Group, vehicleId, vehicleId === 'hatchback'),
+    // VEHICLE_VARIANT_REV — чтобы HMR нормализации пересобрал клон
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rev is intentional bust
     [scene, vehicleId, VEHICLE_VARIANT_REV],
   );
-  usePreparedVehicleVisuals(prepared, carSkin, headlightsOn, driveVisualRef);
+  usePreparedVehicleVisuals(prepared, vehicleId, carSkin, headlightsOn, driveVisualRef);
+
+  useLayoutEffect(() => {
+    if (!headlightLampsRef) {
+      return;
+    }
+    headlightLampsRef.current = prepared.headlightLamps;
+  }, [prepared, headlightLampsRef]);
+
   const { fit } = prepared;
 
   return (
@@ -463,11 +533,11 @@ const VehicleModelFallback = ({ carSkin }: { carSkin: TCarSkin }) => (
   </group>
 );
 
-/** Кузов: один GLB CarConcept, силуэт задаёт vehicleId */
+/** Кузов: отдельный GLB на каждый vehicleId */
 export const VehicleModel = (props: TVehicleModelProps) => (
   <Suspense fallback={<VehicleModelFallback carSkin={props.carSkin} />}>
     <GltfVehicleModelInner {...props} />
   </Suspense>
 );
 
-useGLTF.preload(VEHICLE_GLTF_PATH);
+preloadVehicleModel();

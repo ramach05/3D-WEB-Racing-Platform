@@ -1,5 +1,7 @@
 /** Emissive задних огней в покое / при торможении / при заднем ходе */
 export const REAR_LIGHT_EMISSIVE_IDLE = 0.4;
+/** Габариты на ночной трассе (headlightsOn) — читаемее idle */
+export const REAR_LIGHT_EMISSIVE_NIGHT_IDLE = 1.6;
 export const REAR_LIGHT_EMISSIVE_BRAKE = 5.5;
 export const REAR_LIGHT_EMISSIVE_REVERSE = 4.5;
 
@@ -22,16 +24,24 @@ export const resolveRearLightMode = (brake: number, forwardSpeed: number): TRear
   return 'idle';
 };
 
-/** Целевая emissiveIntensity для режима */
-export const rearLightEmissiveIntensity = (mode: TRearLightMode, brake: number): number => {
+/**
+ * Целевая emissiveIntensity для режима.
+ * @param headlightsOn — ночная трасса: габариты ярче в idle
+ */
+export const rearLightEmissiveIntensity = (
+  mode: TRearLightMode,
+  brake: number,
+  headlightsOn = false,
+): number => {
   switch (mode) {
     case 'reverse':
       return REAR_LIGHT_EMISSIVE_REVERSE;
     case 'brake': {
       const t = Math.min(Math.max(brake, 0), 1);
-      return REAR_LIGHT_EMISSIVE_IDLE + (REAR_LIGHT_EMISSIVE_BRAKE - REAR_LIGHT_EMISSIVE_IDLE) * t;
+      const idle = headlightsOn ? REAR_LIGHT_EMISSIVE_NIGHT_IDLE : REAR_LIGHT_EMISSIVE_IDLE;
+      return idle + (REAR_LIGHT_EMISSIVE_BRAKE - idle) * t;
     }
     default:
-      return REAR_LIGHT_EMISSIVE_IDLE;
+      return headlightsOn ? REAR_LIGHT_EMISSIVE_NIGHT_IDLE : REAR_LIGHT_EMISSIVE_IDLE;
   }
 };

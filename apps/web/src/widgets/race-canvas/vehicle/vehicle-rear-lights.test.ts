@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   REAR_LIGHT_EMISSIVE_BRAKE,
   REAR_LIGHT_EMISSIVE_IDLE,
+  REAR_LIGHT_EMISSIVE_NIGHT_IDLE,
   REAR_LIGHT_EMISSIVE_REVERSE,
   REVERSE_LIGHT_SPEED_THRESHOLD,
   rearLightEmissiveIntensity,
@@ -29,9 +30,13 @@ describe('resolveRearLightMode', () => {
 });
 
 describe('rearLightEmissiveIntensity', () => {
-  it('uses idle intensity for idle mode', () => {
+  it('uses idle intensity for idle mode by day', () => {
     expect(rearLightEmissiveIntensity('idle', 0)).toBe(REAR_LIGHT_EMISSIVE_IDLE);
     expect(rearLightEmissiveIntensity('idle', 1)).toBe(REAR_LIGHT_EMISSIVE_IDLE);
+  });
+
+  it('boosts marker idle on night track', () => {
+    expect(rearLightEmissiveIntensity('idle', 0, true)).toBe(REAR_LIGHT_EMISSIVE_NIGHT_IDLE);
   });
 
   it('lerps brake intensity by pedal amount', () => {
@@ -43,8 +48,14 @@ describe('rearLightEmissiveIntensity', () => {
     );
   });
 
+  it('lerps brake from night idle when headlights are on', () => {
+    expect(rearLightEmissiveIntensity('brake', 0, true)).toBe(REAR_LIGHT_EMISSIVE_NIGHT_IDLE);
+    expect(rearLightEmissiveIntensity('brake', 1, true)).toBe(REAR_LIGHT_EMISSIVE_BRAKE);
+  });
+
   it('uses full reverse intensity', () => {
     expect(rearLightEmissiveIntensity('reverse', 0)).toBe(REAR_LIGHT_EMISSIVE_REVERSE);
     expect(rearLightEmissiveIntensity('reverse', 1)).toBe(REAR_LIGHT_EMISSIVE_REVERSE);
+    expect(rearLightEmissiveIntensity('reverse', 1, true)).toBe(REAR_LIGHT_EMISSIVE_REVERSE);
   });
 });

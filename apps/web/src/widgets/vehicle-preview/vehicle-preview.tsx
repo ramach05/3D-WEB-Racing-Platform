@@ -26,8 +26,11 @@ const PREVIEW_CLEAR = '#ebe7f2';
 /** Скорость лёгкого вращения превью (рад/с) */
 const PREVIEW_SPIN = 0.35;
 
-/** Стартовый ракурс ~¾ */
-const INITIAL_YAW = Math.PI * 0.72;
+/**
+ * Стартовый ракурс ~¾ + 180° только для превью гаража (на гонку не влияет).
+ * Все кузова после normalize смотрят в +Z — крутим одинаково.
+ */
+const INITIAL_YAW = Math.PI * 0.72 + Math.PI;
 
 /** Точка взгляда камеры — примерно центр кузова после fit */
 const LOOK_AT: [number, number, number] = [0, 0.5, 0];

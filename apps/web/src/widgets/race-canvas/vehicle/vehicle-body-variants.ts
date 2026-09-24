@@ -1,608 +1,656 @@
 import {
   Box3,
-  BoxGeometry,
+  BufferAttribute,
+  BufferGeometry,
   Group,
   Mesh,
-  MeshStandardMaterial,
-  Quaternion,
   Vector3,
-  type BufferGeometry,
+  type Material,
   type Object3D,
+  type MeshStandardMaterial,
 } from 'three';
 import type { TVehicleId } from '@/entities/vehicle';
+import type { TVehicleFit } from '@/widgets/race-canvas/vehicle/vehicle-fit';
 
 /**
- * Седан / пикап: мягкий цельный warp вершин.
- * Длина AABB сохраняется, root.scale = (1,1,1) — иначе риг колёс на
- * BodyUnderside (−90° X) скашивается. Агрессивный Y-scale ломает сетку CarConcept —
- * профили держатся близко к 1. Геометрию клонируем до записи (кэш useGLTF).
+ * Bust useMemo clone cache when normalize logic changes (HMR).
+ * Bump when shipping visual fixes for garage bodies.
  */
+export const VEHICLE_VARIANT_REV = 27;
 
-/** Бамп ревизии — ломает useMemo клона при HMR морфов */
-export const VEHICLE_VARIANT_REV = 10;
+const WHEEL_PIVOT_NAMES = ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] as const;
+type TWheelPivotName = (typeof WHEEL_PIVOT_NAMES)[number];
 
-const WHEEL_NAMES = ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] as const;
+const PICKUP_WHEEL_NODE_NAMES = ['polySurface1', 'polySurface8441'] as const;
+const PICKUP_CALIPER_NODE_NAMES = ['polySurface9497', 'polySurface9559'] as const;
 
-type TAxlePins = {
-  frontZ: number;
-  rearZ: number;
-  midZ: number;
-  beltY: number;
-  wheelY: number;
-  trackHalfX: number;
-  wheelRadius: number;
-  bodyMinZ: number;
-  bodyMaxZ: number;
-};
+const LOGAN_WHEEL_NODE_NAMES = ['wheel', 'wheel001', 'wheel002', 'wheel003'] as const;
 
-type TWarpProfile = {
-  /** >0 оси к центру (длиннее свесы), <0 оси врозь (длиннее база) */
-  axleInset: number;
-  roofScaleY: number;
-  trunkScaleY: number;
-  trunkStartT: number;
-  /** >0 кузов ниже, <0 выше клиренс — только лёгкие значения */
-  bodyDropY: number;
-  bodyScaleX: number;
-  hoodScaleY: number;
-  hoodEndT: number;
-};
+const JUKE_WHEEL_MATERIAL_NAMES = new Set(['wheel1', 'wheel2', 'wheel3']);
+/** Combined juke wheel layers span ~full track width — hide them when using compact wheels */
+const JUKE_COMBINED_WHEEL_XZ_SPAN = 1.2;
 
-type TWheelEnrich = {
-  diameterScale: number;
-  widthScale: number;
-  rimTint?: string;
-};
+const SCIROCCO_WHEEL_MATERIAL_NAMES = new Set(['wheel.001', 'tire', 'rotor1', 'rotor0']);
 
 const tmpBox = new Box3();
-const tmpSize = new Vector3();
 const tmpCenter = new Vector3();
-const tmpWorld = new Vector3();
-const tmpLocal = new Vector3();
-const tmpAxle = new Vector3();
-const tmpOffset = new Vector3();
-const tmpRadial = new Vector3();
-const tmpAlong = new Vector3();
-const tmpQuat = new Quaternion();
+const tmpSize = new Vector3();
+const tmpA = new Vector3();
+const tmpB = new Vector3();
+const tmpC = new Vector3();
 
 const isMesh = (object: Object3D): object is Mesh => (object as Mesh).isMesh === true;
 
-const isWheelRelated = (object: Object3D): boolean => {
-  let current: Object3D | null = object;
-  while (current) {
-    const { name } = current;
-    if (name.startsWith('Wheel') || name === 'Axles') {
-      return true;
-    }
-    current = current.parent;
-  }
-  return false;
-};
+const isStandardMaterial = (material: Material): material is MeshStandardMaterial =>
+  (material as MeshStandardMaterial).isMeshStandardMaterial === true;
 
-const cloneAllGeometries = (root: Object3D) => {
+/** Переименовывает материалы по точному имени (все вхождения в дереве) */
+const renameMaterials = (root: Object3D, from: string, to: string) => {
   root.traverse((object) => {
     if (!isMesh(object)) {
       return;
     }
-    object.geometry = object.geometry.clone();
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    for (const material of materials) {
+      if (isStandardMaterial(material) && material.name === from) {
+        material.name = to;
+      }
+    }
   });
 };
 
-const findNamedMaterial = (root: Object3D, prefix: string): MeshStandardMaterial | null => {
-  let found: MeshStandardMaterial | null = null;
+/**
+ * Authored light-материалы часто metalness≈1 — ночью зеркалят тьму.
+ * Снижаем metalness у Headlight / Brakelight / Signallight, чтобы emissive читался.
+ */
+const prepareEmissiveLightMaterials = (root: Object3D): void => {
   root.traverse((object) => {
-    if (found || !isMesh(object)) {
+    if (!isMesh(object)) {
       return;
     }
     const materials = Array.isArray(object.material) ? object.material : [object.material];
     for (const material of materials) {
-      if (!(material as MeshStandardMaterial).isMeshStandardMaterial) {
+      if (!isStandardMaterial(material)) {
         continue;
       }
-      if (!material.name.startsWith(prefix) && material.name !== prefix) {
+      if (
+        material.name !== 'Headlight' &&
+        material.name !== 'Brakelight' &&
+        material.name !== 'Signallight'
+      ) {
         continue;
       }
-      found = material.clone();
-      return;
+      material.metalness = Math.min(material.metalness, 0.2);
+      material.roughness = Math.max(material.roughness, 0.35);
     }
-  });
-  return found;
-};
-
-const clonePaintMaterial = (root: Object3D): MeshStandardMaterial =>
-  findNamedMaterial(root, 'Paint') ??
-  new MeshStandardMaterial({
-    name: 'Paint',
-    color: '#ffffff',
-    metalness: 0.45,
-    roughness: 0.35,
-  });
-
-const cloneOrCreateEmissive = (
-  root: Object3D,
-  name: 'Headlight' | 'Brakelight' | 'Signallight',
-  fallbackColor: string,
-): MeshStandardMaterial => {
-  const existing = findNamedMaterial(root, name);
-  if (existing) {
-    existing.name = name;
-    return existing;
-  }
-  return new MeshStandardMaterial({
-    name,
-    color: fallbackColor,
-    emissive: fallbackColor,
-    emissiveIntensity: 0.05,
-    metalness: 0.1,
-    roughness: 0.4,
   });
 };
 
-const measureAxlePins = (root: Object3D): TAxlePins => {
-  root.updateMatrixWorld(true);
+const meshMaterialNames = (mesh: Mesh): string[] => {
+  const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  return materials.map((material) => material.name);
+};
 
-  const frontCenters: Vector3[] = [];
-  const rearCenters: Vector3[] = [];
-  for (const name of WHEEL_NAMES) {
-    const wheel = root.getObjectByName(name);
-    if (!wheel) {
-      continue;
-    }
-    tmpBox.setFromObject(wheel);
-    tmpBox.getCenter(tmpCenter);
-    const center = tmpCenter.clone();
-    if (name.startsWith('WheelFront')) {
-      frontCenters.push(center);
-    } else {
-      rearCenters.push(center);
-    }
+const worldCenterOf = (object: Object3D): Vector3 => {
+  tmpBox.setFromObject(object);
+  return tmpBox.getCenter(tmpCenter).clone();
+};
+
+const quadrantName = (x: number, z: number, midX: number, midZ: number): TWheelPivotName => {
+  const isFront = z >= midZ;
+  const isLeft = x >= midX;
+  if (isFront) {
+    return isLeft ? 'WheelFrontL' : 'WheelFrontR';
+  }
+  return isLeft ? 'WheelRearL' : 'WheelRearR';
+};
+
+/**
+ * Режет один меш «все 4 колеса» на до 4 мешей по квадрантам XZ (по центроиду треугольника).
+ * Геометрия остаётся в local space исходного меша.
+ */
+const splitMeshByXzQuadrants = (
+  mesh: Mesh,
+  midX: number,
+  midZ: number,
+): Partial<Record<TWheelPivotName, Mesh>> => {
+  const geometry = mesh.geometry;
+  const position = geometry.getAttribute('position');
+  if (!position) {
+    return {};
   }
 
-  const avg = (points: Vector3[], axis: 'x' | 'y' | 'z') =>
-    points.reduce((sum, point) => sum + point[axis], 0) / Math.max(points.length, 1);
-  const avgAbsX = (points: Vector3[]) =>
-    points.reduce((sum, point) => sum + Math.abs(point.x), 0) / Math.max(points.length, 1);
-
-  const allWheels = [...frontCenters, ...rearCenters];
-  let wheelRadius = 0.42;
-  if (allWheels.length > 0) {
-    const sample = root.getObjectByName(WHEEL_NAMES[0]);
-    if (sample) {
-      tmpBox.setFromObject(sample);
-      tmpBox.getSize(tmpSize);
-      wheelRadius = Math.max(tmpSize.y, tmpSize.z) * 0.5;
-    }
-  }
-
-  tmpBox.setFromObject(root);
-  const frontZ = frontCenters.length > 0 ? avg(frontCenters, 'z') : tmpBox.max.z * 0.55;
-  const rearZ = rearCenters.length > 0 ? avg(rearCenters, 'z') : tmpBox.min.z * 0.55;
-  const wheelY = allWheels.length > 0 ? avg(allWheels, 'y') : 0.35;
-  const trackHalfX = allWheels.length > 0 ? avgAbsX(allWheels) : 0.8;
-
-  return {
-    frontZ,
-    rearZ,
-    midZ: (frontZ + rearZ) * 0.5,
-    beltY: wheelY + wheelRadius * 0.55,
-    wheelY,
-    trackHalfX,
-    wheelRadius,
-    bodyMinZ: tmpBox.min.z,
-    bodyMaxZ: tmpBox.max.z,
+  mesh.updateMatrixWorld(true);
+  const index = geometry.getIndex();
+  const triCount = index ? index.count / 3 : position.count / 3;
+  const buckets: Record<TWheelPivotName, number[]> = {
+    WheelFrontL: [],
+    WheelFrontR: [],
+    WheelRearL: [],
+    WheelRearR: [],
   };
-};
 
-const smoothstep = (edge0: number, edge1: number, value: number): number => {
-  if (edge0 === edge1) {
-    return value >= edge1 ? 1 : 0;
-  }
-  const t = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
-  return t * t * (3 - 2 * t);
-};
+  for (let tri = 0; tri < triCount; tri += 1) {
+    const i0 = index ? index.getX(tri * 3) : tri * 3;
+    const i1 = index ? index.getX(tri * 3 + 1) : tri * 3 + 1;
+    const i2 = index ? index.getX(tri * 3 + 2) : tri * 3 + 2;
 
-const mapSegment = (z: number, a0: number, a1: number, b0: number, b1: number): number => {
-  if (Math.abs(a1 - a0) < 1e-8) {
-    return b0;
-  }
-  return b0 + ((z - a0) / (a1 - a0)) * (b1 - b0);
-};
+    tmpA.fromBufferAttribute(position, i0).applyMatrix4(mesh.matrixWorld);
+    tmpB.fromBufferAttribute(position, i1).applyMatrix4(mesh.matrixWorld);
+    tmpC.fromBufferAttribute(position, i2).applyMatrix4(mesh.matrixWorld);
 
-const remapZPreserveLength = (
-  z: number,
-  pins: TAxlePins,
-  newFront: number,
-  newRear: number,
-): number => {
-  const { frontZ: oldFront, rearZ: oldRear, bodyMinZ: zMin, bodyMaxZ: zMax } = pins;
-  if (z <= oldRear) {
-    return mapSegment(z, zMin, oldRear, zMin, newRear);
-  }
-  if (z >= oldFront) {
-    return mapSegment(z, oldFront, zMax, newFront, zMax);
-  }
-  return mapSegment(z, oldRear, oldFront, newRear, newFront);
-};
-
-const warpWorldPoint = (
-  point: Vector3,
-  pins: TAxlePins,
-  profile: TWarpProfile,
-  newFront: number,
-  newRear: number,
-) => {
-  const { x, y, z } = point;
-  const { beltY, wheelY, wheelRadius } = pins;
-  const wheelbase = Math.max(newFront - newRear, 1e-3);
-  const newMid = (newFront + newRear) * 0.5;
-  const zOut = remapZPreserveLength(z, pins, newFront, newRear);
-  const yDropped = y - profile.bodyDropY;
-
-  // Арки: только bodyDrop + ширина — без roof/trunk, иначе «чужие» крылья
-  const archR = wheelRadius * 1.4;
-  const nearFrontArch = Math.hypot(yDropped - wheelY, zOut - newFront) < archR;
-  const nearRearArch = Math.hypot(yDropped - wheelY, zOut - newRear) < archR;
-  if ((nearFrontArch || nearRearArch) && yDropped < wheelY + wheelRadius * 1.1) {
-    point.set(x * profile.bodyScaleX, yDropped, zOut);
-    return;
+    const cx = (tmpA.x + tmpB.x + tmpC.x) / 3;
+    const cz = (tmpA.z + tmpB.z + tmpC.z) / 3;
+    buckets[quadrantName(cx, cz, midX, midZ)].push(i0, i1, i2);
   }
 
-  const trunkZ = newRear + wheelbase * profile.trunkStartT;
-  const hoodZ = newFront - wheelbase * profile.hoodEndT;
-  let yOut = yDropped;
-
-  if (yOut > beltY) {
-    const above = yOut - beltY;
-    if (zOut >= hoodZ) {
-      const hoodBlend = smoothstep(hoodZ - wheelbase * 0.1, hoodZ + wheelbase * 0.15, zOut);
-      yOut = beltY + above * (1 + (profile.hoodScaleY - 1) * hoodBlend);
-    } else if (zOut <= trunkZ) {
-      const trunkBlend = 1 - smoothstep(trunkZ, trunkZ + wheelbase * 0.2, zOut);
-      yOut = beltY + above * (1 + (profile.trunkScaleY - 1) * trunkBlend);
-    } else {
-      const cabinBlend = smoothstep(trunkZ, newMid + (newFront - newMid) * 0.3, zOut);
-      yOut = beltY + above * (1 + (profile.roofScaleY - 1) * cabinBlend);
+  const result: Partial<Record<TWheelPivotName, Mesh>> = {};
+  for (const name of WHEEL_PIVOT_NAMES) {
+    const triIndices = buckets[name];
+    if (triIndices.length === 0) {
+      continue;
     }
+
+    const remapped = new Map<number, number>();
+    const newIndices: number[] = [];
+    const attrArrays: Record<string, number[]> = {};
+    for (const attrName of Object.keys(geometry.attributes)) {
+      attrArrays[attrName] = [];
+    }
+
+    for (const oldIndex of triIndices) {
+      let next = remapped.get(oldIndex);
+      if (next === undefined) {
+        next = remapped.size;
+        remapped.set(oldIndex, next);
+        for (const attrName of Object.keys(geometry.attributes)) {
+          const attribute = geometry.getAttribute(attrName);
+          const itemSize = attribute.itemSize;
+          const dest = attrArrays[attrName]!;
+          for (let c = 0; c < itemSize; c += 1) {
+            dest.push(attribute.getComponent(oldIndex, c));
+          }
+        }
+      }
+      newIndices.push(next);
+    }
+
+    const sliced = new BufferGeometry();
+    for (const attrName of Object.keys(attrArrays)) {
+      const attribute = geometry.getAttribute(attrName);
+      sliced.setAttribute(
+        attrName,
+        new BufferAttribute(new Float32Array(attrArrays[attrName]!), attribute.itemSize),
+      );
+    }
+    sliced.setIndex(newIndices);
+    sliced.computeBoundingBox();
+    sliced.computeBoundingSphere();
+
+    const part = new Mesh(sliced, mesh.material);
+    part.name = `${mesh.name || 'wheel'}_${name}`;
+    part.position.copy(mesh.position);
+    part.quaternion.copy(mesh.quaternion);
+    part.scale.copy(mesh.scale);
+    part.castShadow = mesh.castShadow;
+    part.receiveShadow = mesh.receiveShadow;
+    result[name] = part;
   }
 
-  point.set(x * profile.bodyScaleX, yOut, zOut);
+  return result;
 };
 
-const warpBodyMeshes = (
-  root: Object3D,
-  pins: TAxlePins,
-  profile: TWarpProfile,
-  newFront: number,
-  newRear: number,
-) => {
-  root.updateMatrixWorld(true);
-  root.traverse((object) => {
-    if (!isMesh(object) || isWheelRelated(object)) {
-      return;
+/** Собирает меши под нодой (сама нода, если Mesh) */
+const collectMeshesUnder = (node: Object3D): Mesh[] => {
+  const meshes: Mesh[] = [];
+  if (isMesh(node)) {
+    meshes.push(node);
+  }
+  node.traverse((object) => {
+    if (object !== node && isMesh(object)) {
+      meshes.push(object);
     }
-    const geometry = object.geometry as BufferGeometry;
-    const position = geometry.getAttribute('position');
-    if (!position) {
-      return;
-    }
-    for (let i = 0; i < position.count; i += 1) {
-      tmpLocal.fromBufferAttribute(position, i);
-      object.localToWorld(tmpWorld.copy(tmpLocal));
-      warpWorldPoint(tmpWorld, pins, profile, newFront, newRear);
-      object.worldToLocal(tmpLocal.copy(tmpWorld));
-      position.setXYZ(i, tmpLocal.x, tmpLocal.y, tmpLocal.z);
-    }
-    position.needsUpdate = true;
-    geometry.computeVertexNormals();
-    geometry.computeBoundingBox();
-    geometry.computeBoundingSphere();
   });
+  return meshes;
 };
 
-const shiftWheelToWorldZ = (wheel: Object3D, targetZ: number) => {
-  const parent = wheel.parent;
-  if (!parent) {
+const createEmptyPivots = (root: Object3D): Record<TWheelPivotName, Group> => {
+  const pivots: Record<TWheelPivotName, Group> = {
+    WheelFrontL: new Group(),
+    WheelFrontR: new Group(),
+    WheelRearL: new Group(),
+    WheelRearR: new Group(),
+  };
+  for (const name of WHEEL_PIVOT_NAMES) {
+    pivots[name].name = name;
+    root.add(pivots[name]);
+  }
+  return pivots;
+};
+
+/** Центрирует пивоты по bbox детей (local parent = root) */
+const recenterPivots = (root: Object3D, pivots: Record<TWheelPivotName, Group>): void => {
+  root.updateMatrixWorld(true);
+  for (const name of WHEEL_PIVOT_NAMES) {
+    const pivot = pivots[name];
+    if (pivot.children.length === 0) {
+      pivot.removeFromParent();
+      continue;
+    }
+    const center = worldCenterOf(pivot);
+    root.worldToLocal(center);
+    const children = [...pivot.children];
+    for (const child of children) {
+      root.attach(child);
+    }
+    pivot.position.copy(center);
+    pivot.updateMatrixWorld(true);
+    for (const child of children) {
+      pivot.attach(child);
+    }
+  }
+};
+
+/**
+ * Делит combined wheel-меши на 4 пивота; исходные меши удаляет.
+ * midX/midZ — центр кузова в world (обычно ~0).
+ */
+const buildWheelPivotsFromCombinedMeshes = (
+  root: Object3D,
+  sourceMeshes: Mesh[],
+  midX: number,
+  midZ: number,
+): void => {
+  if (sourceMeshes.length === 0) {
     return;
   }
-  parent.updateMatrixWorld(true);
-  wheel.updateMatrixWorld(true);
-  tmpBox.setFromObject(wheel);
-  tmpBox.getCenter(tmpCenter);
-  const fromLocal = parent.worldToLocal(tmpCenter.clone());
-  const toLocal = parent.worldToLocal(new Vector3(tmpCenter.x, tmpCenter.y, targetZ));
-  wheel.position.x += toLocal.x - fromLocal.x;
-  wheel.position.y += toLocal.y - fromLocal.y;
-  wheel.position.z += toLocal.z - fromLocal.z;
+
+  root.updateMatrixWorld(true);
+  const pivots = createEmptyPivots(root);
+
+  for (const mesh of sourceMeshes) {
+    const parts = splitMeshByXzQuadrants(mesh, midX, midZ);
+    const parent = mesh.parent;
+
+    for (const name of WHEEL_PIVOT_NAMES) {
+      const part = parts[name];
+      if (!part || !parent) {
+        continue;
+      }
+      parent.add(part);
+      part.updateMatrixWorld(true);
+      pivots[name].attach(part);
+    }
+
+    mesh.removeFromParent();
+  }
+
+  recenterPivots(root, pivots);
 };
 
-const moveAxlesTo = (root: Object3D, newFront: number, newRear: number) => {
+/**
+ * Вешает уже отдельные сборки колёс (группы/меши) на 4 пивота по world-квадранту.
+ */
+const buildWheelPivotsFromAssemblies = (
+  root: Object3D,
+  assemblies: Object3D[],
+  midX: number,
+  midZ: number,
+): void => {
+  if (assemblies.length === 0) {
+    return;
+  }
+
   root.updateMatrixWorld(true);
-  for (const name of WHEEL_NAMES) {
-    const wheel = root.getObjectByName(name);
-    if (!wheel) {
-      continue;
-    }
-    shiftWheelToWorldZ(wheel, name.startsWith('WheelFront') ? newFront : newRear);
+  const pivots = createEmptyPivots(root);
+
+  for (const assembly of assemblies) {
+    const center = worldCenterOf(assembly);
+    const name = quadrantName(center.x, center.z, midX, midZ);
+    pivots[name].attach(assembly);
+  }
+
+  recenterPivots(root, pivots);
+};
+
+/** Пустые зеркальные пивоты для отсутствующих задних колёс (симметрия rig) */
+const ensureMissingWheelPivots = (root: Object3D): void => {
+  const frontL = root.getObjectByName('WheelFrontL');
+  const frontR = root.getObjectByName('WheelFrontR');
+  const rearL = root.getObjectByName('WheelRearL');
+  const rearR = root.getObjectByName('WheelRearR');
+
+  if (!rearL && frontL?.parent) {
+    const mirror = new Group();
+    mirror.name = 'WheelRearL';
+    mirror.position.set(frontL.position.x, frontL.position.y, -Math.abs(frontL.position.z));
+    frontL.parent.add(mirror);
+  }
+  if (!rearR && frontR?.parent) {
+    const mirror = new Group();
+    mirror.name = 'WheelRearR';
+    mirror.position.set(frontR.position.x, frontR.position.y, -Math.abs(frontR.position.z));
+    frontR.parent.add(mirror);
   }
 };
 
-const enrichWheels = (root: Object3D, enrich: TWheelEnrich) => {
+/**
+ * Физика едет вдоль +Z. Если фары сзади стопов — крутим кузов на 180°,
+ * чтобы нос смотрел вперёд (колёса вешаем уже после этого).
+ */
+const ensureNoseTowardPlusZ = (root: Object3D): void => {
   root.updateMatrixWorld(true);
-  for (const name of WHEEL_NAMES) {
-    const wheel = root.getObjectByName(name);
-    if (!wheel) {
+  const headZs: number[] = [];
+  const brakeZs: number[] = [];
+  root.traverse((object) => {
+    if (!isMesh(object)) {
+      return;
+    }
+    const names = meshMaterialNames(object);
+    const isHead = names.some((name) => name === 'Headlight');
+    const isBrake = names.some((name) => name === 'Brakelight');
+    if (!isHead && !isBrake) {
+      return;
+    }
+    tmpBox.setFromObject(object);
+    const z = tmpBox.getCenter(tmpCenter).z;
+    if (isHead) {
+      headZs.push(z);
+    }
+    if (isBrake) {
+      brakeZs.push(z);
+    }
+  });
+  if (headZs.length === 0 || brakeZs.length === 0) {
+    return;
+  }
+  const headAvg = headZs.reduce((sum, z) => sum + z, 0) / headZs.length;
+  const brakeAvg = brakeZs.reduce((sum, z) => sum + z, 0) / brakeZs.length;
+  if (headAvg >= brakeAvg) {
+    return;
+  }
+  root.rotation.y += Math.PI;
+  root.updateMatrixWorld(true);
+};
+
+/** Logan: 4 отдельные группы wheel* */
+const normalizeSedan = (root: Object3D) => {
+  renameMaterials(root, 'fari', 'Headlight');
+  // sto1 — корпус, material_6 — красное стекло с authored emissive
+  renameMaterials(root, 'sto1', 'Brakelight');
+  renameMaterials(root, 'material_6', 'Brakelight');
+  renameMaterials(root, 'material_9', 'Signallight');
+  prepareEmissiveLightMaterials(root);
+  // Logan authored носом в −Z — выравниваем под контракт гонки (+Z)
+  ensureNoseTowardPlusZ(root);
+
+  root.updateMatrixWorld(true);
+  const bodyBox = tmpBox.setFromObject(root);
+  const mid = bodyBox.getCenter(tmpCenter);
+
+  const assemblies: Object3D[] = [];
+  for (const name of LOGAN_WHEEL_NODE_NAMES) {
+    const node = root.getObjectByName(name);
+    if (node) {
+      assemblies.push(node);
+    }
+  }
+
+  buildWheelPivotsFromAssemblies(root, assemblies, mid.x, mid.z);
+  ensureMissingWheelPivots(root);
+};
+
+const normalizePickup = (root: Object3D) => {
+  renameMaterials(root, 'RAM_1500TRX_2021LightA_Material', 'Headlight');
+  renameMaterials(root, 'RED_GLASS', 'Brakelight');
+  renameMaterials(root, 'ORANGE_GLASS', 'Signallight');
+  prepareEmissiveLightMaterials(root);
+  root.updateMatrixWorld(true);
+  const bodyBox = tmpBox.setFromObject(root);
+  const mid = bodyBox.getCenter(tmpCenter);
+
+  const sourceMeshes: Mesh[] = [];
+  for (const name of [...PICKUP_WHEEL_NODE_NAMES, ...PICKUP_CALIPER_NODE_NAMES]) {
+    const node = root.getObjectByName(name);
+    if (!node) {
       continue;
     }
-    tmpBox.setFromObject(wheel);
-    tmpBox.getCenter(tmpCenter);
-    const center = tmpCenter.clone();
-    tmpAxle.set(1, 0, 0).applyQuaternion(wheel.getWorldQuaternion(tmpQuat)).normalize();
+    sourceMeshes.push(...collectMeshesUnder(node));
+  }
 
-    wheel.traverse((object) => {
+  buildWheelPivotsFromCombinedMeshes(root, sourceMeshes, mid.x, mid.z);
+  ensureMissingWheelPivots(root);
+};
+
+/** Juke: компактные Object_* с материалом wheel*; combined-слои прячем */
+const normalizeJuke = (root: Object3D) => {
+  renameMaterials(root, 'orange', 'Signallight');
+  // material_15 — красные задние стёкла (Object_54..56)
+  renameMaterials(root, 'material_15', 'Brakelight');
+  // glass6 — тонированное стекло передних фар
+  renameMaterials(root, 'glass6', 'Headlight');
+  prepareEmissiveLightMaterials(root);
+  root.updateMatrixWorld(true);
+  const bodyBox = tmpBox.setFromObject(root);
+  const mid = bodyBox.getCenter(tmpCenter);
+
+  const compact: Mesh[] = [];
+  root.traverse((object) => {
+    if (!isMesh(object)) {
+      return;
+    }
+    const names = meshMaterialNames(object);
+    if (!names.some((name) => JUKE_WHEEL_MATERIAL_NAMES.has(name))) {
+      return;
+    }
+    tmpBox.setFromObject(object);
+    tmpBox.getSize(tmpSize);
+    if (tmpSize.x >= JUKE_COMBINED_WHEEL_XZ_SPAN || tmpSize.z >= JUKE_COMBINED_WHEEL_XZ_SPAN) {
+      object.visible = false;
+      return;
+    }
+    compact.push(object);
+  });
+
+  buildWheelPivotsFromAssemblies(root, compact, mid.x, mid.z);
+  ensureMissingWheelPivots(root);
+};
+
+/** Scirocco: меши tire/wheel/rotor по квадрантам */
+const normalizeScirocco = (root: Object3D) => {
+  renameMaterials(root, 'headlight.001', 'Headlight');
+  renameMaterials(root, 'headlightglass.001', 'Headlight');
+  renameMaterials(root, 'brakelight.001', 'Brakelight');
+  renameMaterials(root, 'brakelightglass.001', 'Brakelight');
+  renameMaterials(root, 'brakelightlit.001', 'Brakelight');
+  renameMaterials(root, 'brakelightglasslit', 'Brakelight');
+  prepareEmissiveLightMaterials(root);
+  root.updateMatrixWorld(true);
+  const bodyBox = tmpBox.setFromObject(root);
+  const mid = bodyBox.getCenter(tmpCenter);
+
+  // Предпочитаем готовые группы wheel.smd*; иначе — меши по материалу
+  const assemblies: Object3D[] = [];
+  root.traverse((object) => {
+    if (/^wheel\.smd/i.test(object.name) && object.parent) {
+      assemblies.push(object);
+    }
+  });
+
+  if (assemblies.length >= 4) {
+    buildWheelPivotsFromAssemblies(root, assemblies, mid.x, mid.z);
+  } else {
+    const meshes: Mesh[] = [];
+    root.traverse((object) => {
       if (!isMesh(object)) {
         return;
       }
-      const geometry = object.geometry as BufferGeometry;
-      const position = geometry.getAttribute('position');
-      if (!position) {
-        return;
-      }
-      for (let i = 0; i < position.count; i += 1) {
-        tmpLocal.fromBufferAttribute(position, i);
-        object.localToWorld(tmpWorld.copy(tmpLocal));
-        tmpOffset.copy(tmpWorld).sub(center);
-        const along = tmpOffset.dot(tmpAxle);
-        tmpAlong.copy(tmpAxle).multiplyScalar(along);
-        tmpRadial.copy(tmpOffset).sub(tmpAlong);
-        tmpRadial.multiplyScalar(enrich.diameterScale);
-        tmpAlong.multiplyScalar(enrich.widthScale);
-        tmpWorld.copy(center).add(tmpRadial).add(tmpAlong);
-        object.worldToLocal(tmpLocal.copy(tmpWorld));
-        position.setXYZ(i, tmpLocal.x, tmpLocal.y, tmpLocal.z);
-      }
-      position.needsUpdate = true;
-      geometry.computeVertexNormals();
-      geometry.computeBoundingBox();
-      geometry.computeBoundingSphere();
-
-      if (enrich.rimTint) {
-        const materials = Array.isArray(object.material) ? object.material : [object.material];
-        for (const material of materials) {
-          if (!(material as MeshStandardMaterial).isMeshStandardMaterial) {
-            continue;
-          }
-          if (!material.name.startsWith('Rim')) {
-            continue;
-          }
-          material.color.set(enrich.rimTint);
-        }
+      if (meshMaterialNames(object).some((name) => SCIROCCO_WHEEL_MATERIAL_NAMES.has(name))) {
+        meshes.push(object);
       }
     });
+    buildWheelPivotsFromAssemblies(root, meshes, mid.x, mid.z);
   }
-};
 
-const widenTrack = (root: Object3D, extraHalfX: number) => {
-  if (Math.abs(extraHalfX) < 1e-6) {
-    return;
-  }
-  root.updateMatrixWorld(true);
-  for (const name of WHEEL_NAMES) {
-    const wheel = root.getObjectByName(name);
-    if (!wheel) {
-      continue;
-    }
-    tmpBox.setFromObject(wheel);
-    tmpBox.getCenter(tmpCenter);
-    const sign = tmpCenter.x >= 0 ? 1 : -1;
-    wheel.position.x += sign * extraHalfX;
-  }
-};
-
-const addMesh = (
-  parent: Object3D,
-  name: string,
-  geometry: BufferGeometry,
-  material: MeshStandardMaterial,
-  position: [number, number, number],
-) => {
-  const mesh = new Mesh(geometry, material);
-  mesh.name = name;
-  mesh.position.set(...position);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  parent.add(mesh);
-  return mesh;
-};
-
-/** Узкие оверлеи фар/стопов — седан читается иначе, стоковые фары не прячем */
-const addSedanLightOverlays = (root: Object3D, pins: TAxlePins) => {
-  const headlightMat = cloneOrCreateEmissive(root, 'Headlight', '#f5f0d8');
-  const brakeMat = cloneOrCreateEmissive(root, 'Brakelight', '#ff2200');
-  const lamps = new Group();
-  lamps.name = 'SedanCustomLights';
-  root.add(lamps);
-
-  const hx = pins.trackHalfX * 0.7;
-  const lampY = pins.beltY * 0.88;
-  const lampZ = pins.frontZ + (pins.bodyMaxZ - pins.frontZ) * 0.48;
-  const lampW = pins.trackHalfX * 0.3;
-  const lampH = pins.wheelRadius * 0.2;
-  const lampD = pins.wheelRadius * 0.07;
-
-  addMesh(lamps, 'SedanHeadlightL', new BoxGeometry(lampW, lampH, lampD), headlightMat, [
-    hx,
-    lampY,
-    lampZ,
-  ]);
-  addMesh(lamps, 'SedanHeadlightR', new BoxGeometry(lampW, lampH, lampD), headlightMat, [
-    -hx,
-    lampY,
-    lampZ,
-  ]);
-
-  const tailY = pins.beltY * 1.0;
-  const tailZ = pins.rearZ - (pins.rearZ - pins.bodyMinZ) * 0.38;
-  addMesh(
-    lamps,
-    'SedanTailBar',
-    new BoxGeometry(pins.trackHalfX * 1.35, pins.wheelRadius * 0.14, pins.wheelRadius * 0.07),
-    brakeMat,
-    [0, tailY, tailZ],
-  );
+  ensureMissingWheelPivots(root);
 };
 
 /**
- * Кузов пикапа: борта грузовой платформы за кабиной — лежат на кузове,
- * без «висящих» труб и без отрыва от шасси.
+ * Нормализует клон GLB под контракт гаража: WheelFrontL/R, WheelRearL/R,
+ * фары/стопы (Headlight / Brakelight). Paint у authored-кузовов не трогаем.
+ * Киберпанк (hatchback / CarConcept) уже соответствует контракту — no-op.
  */
-const addPickupBedRails = (root: Object3D, pins: TAxlePins) => {
-  const paint = clonePaintMaterial(root);
-  paint.color.set('#1a1a18');
-  paint.metalness = 0.65;
-  paint.roughness = 0.5;
-
-  const bed = new Group();
-  bed.name = 'PickupBedRails';
-  root.add(bed);
-
-  const bedLen = Math.max(pins.rearZ - pins.bodyMinZ, 0.4) * 0.95;
-  const bedZ = (pins.rearZ + pins.bodyMinZ) * 0.5;
-  const bedY = pins.beltY + pins.wheelRadius * 0.05;
-  const railH = pins.wheelRadius * 0.32;
-  const railW = pins.wheelRadius * 0.1;
-  const x = pins.trackHalfX * 0.82;
-
-  // Пол платформы — тонкая плита между бортами
-  addMesh(
-    bed,
-    'PickupBedFloor',
-    new BoxGeometry(x * 2 - railW, pins.wheelRadius * 0.06, bedLen * 0.92),
-    paint,
-    [0, bedY - railH * 0.15, bedZ],
-  );
-  addMesh(bed, 'PickupRailL', new BoxGeometry(railW, railH, bedLen), paint, [
-    x,
-    bedY + railH * 0.25,
-    bedZ,
-  ]);
-  addMesh(bed, 'PickupRailR', new BoxGeometry(railW, railH, bedLen), paint, [
-    -x,
-    bedY + railH * 0.25,
-    bedZ,
-  ]);
-  addMesh(
-    bed,
-    'PickupRailTail',
-    new BoxGeometry(x * 2 + railW, railH * 0.9, railW * 1.1),
-    paint,
-    [0, bedY + railH * 0.2, bedZ - bedLen * 0.48],
-  );
-};
-
-/**
- * Седан: лёгкий 3-box — чуть длиннее свесы, чуть ниже корма/капот.
- * Без сплющивания кабины (иначе «раздавленная» крыша).
- */
-const SEDAN_WARP: TWarpProfile = {
-  axleInset: 0.08,
-  roofScaleY: 0.96,
-  trunkScaleY: 0.72,
-  trunkStartT: 0.18,
-  bodyDropY: 0.03,
-  bodyScaleX: 1.02,
-  hoodScaleY: 0.9,
-  hoodEndT: 0.22,
-};
-
-/**
- * Пикап: чуть выше посадка, чуть длиннее база, мягче корма (= кузов).
- * bodyDropY маленький — иначе кузов «висит» над колёсами.
- */
-const PICKUP_WARP: TWarpProfile = {
-  axleInset: -0.05,
-  roofScaleY: 1.06,
-  trunkScaleY: 0.78,
-  trunkStartT: 0.16,
-  bodyDropY: -0.05,
-  bodyScaleX: 1.05,
-  hoodScaleY: 1.04,
-  hoodEndT: 0.2,
-};
-
-const SEDAN_WHEELS: TWheelEnrich = {
-  diameterScale: 1.02,
-  widthScale: 1.06,
-  rimTint: '#4a4844',
-};
-
-const PICKUP_WHEELS: TWheelEnrich = {
-  diameterScale: 1.06,
-  widthScale: 1.1,
-  rimTint: '#2e2e2c',
-};
-
-const applyProfile = (root: Object3D, profile: TWarpProfile) => {
-  const pins = measureAxlePins(root);
-  const wheelbase = Math.max(pins.frontZ - pins.rearZ, 1e-3);
-  const newFront = pins.frontZ - profile.axleInset * wheelbase;
-  const newRear = pins.rearZ + profile.axleInset * wheelbase;
-  warpBodyMeshes(root, pins, profile, newFront, newRear);
-  moveAxlesTo(root, newFront, newRear);
-  return pins;
-};
-
-const applySedanVariant = (root: Object3D) => {
-  cloneAllGeometries(root);
-  applyProfile(root, SEDAN_WARP);
-  enrichWheels(root, SEDAN_WHEELS);
-  root.updateMatrixWorld(true);
-  const pinsAfter = measureAxlePins(root);
-  tmpBox.setFromObject(root);
-  pinsAfter.bodyMinZ = tmpBox.min.z;
-  pinsAfter.bodyMaxZ = tmpBox.max.z;
-  addSedanLightOverlays(root, pinsAfter);
-  root.scale.set(1, 1, 1);
-};
-
-const applyPickupVariant = (root: Object3D) => {
-  cloneAllGeometries(root);
-  const pins = applyProfile(root, PICKUP_WARP);
-  widenTrack(root, pins.trackHalfX * 0.03);
-  enrichWheels(root, PICKUP_WHEELS);
-  root.updateMatrixWorld(true);
-  const pinsAfter = measureAxlePins(root);
-  addPickupBedRails(root, pinsAfter);
-  root.scale.set(1, 1, 1);
-};
-
-/**
- * Превращает клон CarConcept в силуэт гаражного кузова.
- * Хэтчбек — без изменений (authored hatch).
- */
-export const applyVehicleBodyVariant = (root: Object3D, vehicleId: TVehicleId): void => {
+export const normalizeVehicleGltf = (root: Object3D, vehicleId: TVehicleId): void => {
   if (vehicleId === 'sedan') {
-    applySedanVariant(root);
+    normalizeSedan(root);
     return;
   }
   if (vehicleId === 'pickup') {
-    applyPickupVariant(root);
+    normalizePickup(root);
+    return;
+  }
+  if (vehicleId === 'juke') {
+    normalizeJuke(root);
+    return;
+  }
+  if (vehicleId === 'scirocco') {
+    normalizeScirocco(root);
   }
 };
 
-/** Локальные позиции прожекторов ночи */
-export const headlightLocalPositions = (
-  vehicleId: TVehicleId,
-): { left: [number, number, number]; right: [number, number, number] } => {
+/**
+ * @deprecated Имя сохранено для совместимости; теперь нормализует отдельный GLB.
+ */
+export const applyVehicleBodyVariant = normalizeVehicleGltf;
+
+export type THeadlightLamps = {
+  left: [number, number, number];
+  right: [number, number, number];
+};
+
+/** Сдвиг источника чуть вперёд от стекла, чтобы луч не стартовал внутри кузова */
+const HEADLIGHT_FORWARD_NUDGE = 0.05;
+/** Игнор «противотуманок» ниже основных фар (модель-единицы до fit) */
+const HEADLIGHT_BUMPER_Y_SLACK = 0.35;
+/** Кластер носа: меши далеко сзади от maxZ не считаем фарами */
+const HEADLIGHT_FRONT_Z_SLACK = 0.55;
+
+type TLampSample = {
+  x: number;
+  y: number;
+  z: number;
+  minX: number;
+  maxX: number;
+  maxZ: number;
+};
+
+const toFittedLamp = (
+  x: number,
+  y: number,
+  z: number,
+  fit: TVehicleFit,
+): [number, number, number] => [
+  x * fit.scale + fit.offset.x,
+  y * fit.scale + fit.offset.y,
+  z * fit.scale + fit.offset.z + HEADLIGHT_FORWARD_NUDGE,
+];
+
+const averageAxis = (samples: TLampSample[], axis: 'x' | 'y'): number =>
+  samples.reduce((sum, sample) => sum + sample[axis], 0) / samples.length;
+
+/**
+ * Позиции прожекторов по реальным мешам Headlight (пространство шасси после fit).
+ * Отдельные L/R — центры; один широкий меш — точки у левого/правого края передней грани.
+ */
+export const measureHeadlightLampPositions = (
+  root: Object3D,
+  fit: TVehicleFit,
+): THeadlightLamps | null => {
+  root.updateMatrixWorld(true);
+  const samples: TLampSample[] = [];
+  root.traverse((object) => {
+    if (!isMesh(object) || !object.visible) {
+      return;
+    }
+    if (!meshMaterialNames(object).includes('Headlight')) {
+      return;
+    }
+    tmpBox.setFromObject(object);
+    tmpBox.getCenter(tmpCenter);
+    samples.push({
+      x: tmpCenter.x,
+      y: tmpCenter.y,
+      z: tmpCenter.z,
+      minX: tmpBox.min.x,
+      maxX: tmpBox.max.x,
+      maxZ: tmpBox.max.z,
+    });
+  });
+  if (samples.length === 0) {
+    return null;
+  }
+
+  const maxY = Math.max(...samples.map((sample) => sample.y));
+  const upper = samples.filter((sample) => sample.y >= maxY - HEADLIGHT_BUMPER_Y_SLACK);
+  const poolY = upper.length > 0 ? upper : samples;
+  const maxZ = Math.max(...poolY.map((sample) => sample.maxZ));
+  const front = poolY.filter((sample) => sample.maxZ >= maxZ - HEADLIGHT_FRONT_Z_SLACK);
+  const pool = front.length > 0 ? front : poolY;
+
+  const leftMeshes = pool.filter((sample) => sample.x < -0.05);
+  const rightMeshes = pool.filter((sample) => sample.x > 0.05);
+  if (leftMeshes.length > 0 && rightMeshes.length > 0) {
+    return {
+      left: toFittedLamp(
+        averageAxis(leftMeshes, 'x'),
+        averageAxis(leftMeshes, 'y'),
+        Math.max(...leftMeshes.map((sample) => sample.maxZ)),
+        fit,
+      ),
+      right: toFittedLamp(
+        averageAxis(rightMeshes, 'x'),
+        averageAxis(rightMeshes, 'y'),
+        Math.max(...rightMeshes.map((sample) => sample.maxZ)),
+        fit,
+      ),
+    };
+  }
+
+  const minX = Math.min(...pool.map((sample) => sample.minX));
+  const maxX = Math.max(...pool.map((sample) => sample.maxX));
+  const span = Math.max(maxX - minX, 0.2);
+  const y = averageAxis(pool, 'y');
+  const z = Math.max(...pool.map((sample) => sample.maxZ));
+  return {
+    left: toFittedLamp(minX + span * 0.22, y, z, fit),
+    right: toFittedLamp(maxX - span * 0.22, y, z, fit),
+  };
+};
+
+/** Fallback, если у кузова нет мешей Headlight */
+export const headlightLocalPositions = (vehicleId: TVehicleId): THeadlightLamps => {
   if (vehicleId === 'sedan') {
     return {
-      left: [-0.6, 0.44, 1.58],
-      right: [0.6, 0.44, 1.58],
+      left: [-0.4, 0.58, 1.46],
+      right: [0.4, 0.58, 1.46],
     };
   }
   if (vehicleId === 'pickup') {
     return {
-      left: [-0.62, 0.52, 1.52],
-      right: [0.62, 0.52, 1.52],
+      left: [-0.85, 0.95, 2.35],
+      right: [0.85, 0.95, 2.35],
+    };
+  }
+  if (vehicleId === 'juke') {
+    return {
+      left: [-0.55, 0.55, 1.85],
+      right: [0.55, 0.55, 1.85],
+    };
+  }
+  if (vehicleId === 'scirocco') {
+    return {
+      left: [-0.55, 0.42, 1.65],
+      right: [0.55, 0.42, 1.65],
     };
   }
   return {
@@ -610,3 +658,11 @@ export const headlightLocalPositions = (
     right: [0.58, 0.48, 1.55],
   };
 };
+
+/** Измеряет фары или возвращает fallback по vehicleId */
+export const resolveHeadlightLampPositions = (
+  root: Object3D,
+  fit: TVehicleFit,
+  vehicleId: TVehicleId,
+): THeadlightLamps =>
+  measureHeadlightLampPositions(root, fit) ?? headlightLocalPositions(vehicleId);
