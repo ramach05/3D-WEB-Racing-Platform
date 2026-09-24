@@ -16,11 +16,11 @@ describe('GaragePage', () => {
     localStorage.clear();
   });
 
-  it('lists three vehicles and defaults to hatchback selected', () => {
+  it('lists five vehicles and defaults to cyberpunk (hatchback) selected', () => {
     renderWithRouter(<GaragePage />);
 
     expect(screen.getByRole('heading', { name: /гараж|garage/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /хэтчбек|hatchback/i })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: /киберпанк|cyberpunk/i })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
@@ -32,11 +32,20 @@ describe('GaragePage', () => {
       'aria-pressed',
       'false',
     );
+    expect(screen.getByRole('button', { name: /жук|bug/i })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(screen.getByRole('button', { name: /спорт|sport/i })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
     expect(screen.getByText(/выбрано|selected/i)).toBeInTheDocument();
-    expect(screen.queryByText(/выбрать|select(?!ed)/i)).not.toBeInTheDocument();
     expect(screen.getByTestId('vehicle-preview-hatchback')).toBeInTheDocument();
     expect(screen.getByTestId('vehicle-preview-sedan')).toBeInTheDocument();
     expect(screen.getByTestId('vehicle-preview-pickup')).toBeInTheDocument();
+    expect(screen.getByTestId('vehicle-preview-juke')).toBeInTheDocument();
+    expect(screen.getByTestId('vehicle-preview-scirocco')).toBeInTheDocument();
   });
 
   it('persists selection to localStorage', async () => {

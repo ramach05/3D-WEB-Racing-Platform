@@ -60,22 +60,35 @@ export const ruMessages = {
   },
   garage: {
     title: 'Гараж',
-    subtitle: 'Выбери кузов. Цвет на дневной трассе — жёлтый, на ночной — голубой.',
+    subtitle:
+      'Выбери кузов и выезжай. У Киберпанка краска меняется с трассой — день жёлтый, ночь голубой.',
     selected: 'Выбрано',
     dayColor: 'День',
     nightColor: 'Ночь',
     vehicles: {
       hatchback: {
-        name: 'Хэтчбек',
-        description: 'Компактный кузов с высокой кормой — короткий и цепкий силуэт.',
+        name: 'Киберпанк',
+        description:
+          'Неоновый призрак ночного города. Краска меняется с трассой — выбери маршрут и сорвись в темноту.',
       },
       sedan: {
         name: 'Седан',
-        description: 'Классический гоночный седан — низкий профиль и длинный капот.',
+        description:
+          'Тихий снаружи, злой внутри. Разгоняется раньше, чем соперник успеет моргнуть.',
       },
       pickup: {
         name: 'Пикап',
-        description: 'Открытый кузов и чуть выше посадка — практичный рабочий силуэт.',
+        description:
+          'Грубый крутящий момент и широкая колея. Давит асфальт так, будто тот ему должен.',
+      },
+      juke: {
+        name: 'Жук',
+        description: 'Компактный хищник: ныряет в повороты и выскакивает первым на прямой.',
+      },
+      scirocco: {
+        name: 'Спорт',
+        description:
+          'Низкий силуэт, острый нос. Создан одним желанием — обогнать всех до финишного огня.',
       },
     },
   },
@@ -245,22 +258,33 @@ export const enMessages = {
   },
   garage: {
     title: 'Garage',
-    subtitle: 'Pick a body. Day track paint is yellow; night track paint is cyan.',
+    subtitle:
+      'Pick a body and hit the grid. Cyberpunk paint follows the track — yellow by day, cyan by night.',
     selected: 'Selected',
     dayColor: 'Day',
     nightColor: 'Night',
     vehicles: {
       hatchback: {
-        name: 'Hatchback',
-        description: 'Compact high-rear hatch — short, punchy silhouette.',
+        name: 'Cyberpunk',
+        description:
+          'A neon ghost of the night city. Paint shifts with the track — pick a route and vanish into the dark.',
       },
       sedan: {
         name: 'Sedan',
-        description: 'Classic race sedan — low stance and a long hood.',
+        description: 'Quiet outside, vicious inside. It launches before the rival can blink.',
       },
       pickup: {
         name: 'Pickup',
-        description: 'Open bed and a slightly taller stance — a practical work silhouette.',
+        description: 'Raw torque and a wide stance. It punishes the asphalt like the road owes it.',
+      },
+      juke: {
+        name: 'Juke',
+        description: 'A compact predator: dives into corners and pops out first on the straight.',
+      },
+      scirocco: {
+        name: 'Sport',
+        description:
+          'Low silhouette, sharp nose. Built for one urge — beat everyone to the finish lights.',
       },
     },
   },

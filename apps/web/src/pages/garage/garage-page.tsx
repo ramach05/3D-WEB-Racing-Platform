@@ -39,7 +39,7 @@ export const GaragePage = () => {
         </span>
       </div>
 
-      <ul className="mt-6 grid gap-4 sm:grid-cols-3 sm:items-stretch">
+      <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:items-stretch">
         {VEHICLES.map((vehicle) => {
           const selected = vehicle.id === vehicleId;
           return (
