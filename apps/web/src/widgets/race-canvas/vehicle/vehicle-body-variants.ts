@@ -16,7 +16,7 @@ import type { TVehicleFit } from '@/widgets/race-canvas/vehicle/vehicle-fit';
  * Bust useMemo clone cache when normalize logic changes (HMR).
  * Bump when shipping visual fixes for garage bodies.
  */
-export const VEHICLE_VARIANT_REV = 29;
+export const VEHICLE_VARIANT_REV = 30;
 
 const WHEEL_PIVOT_NAMES = ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] as const;
 type TWheelPivotName = (typeof WHEEL_PIVOT_NAMES)[number];
@@ -27,9 +27,9 @@ const PICKUP_CALIPER_NODE_NAMES = ['polySurface9497', 'polySurface9559'] as cons
 /** Logan (Sketchfab «Renault Logan 2004»): базовый синий цвет кузова */
 export const SEDAN_BODY_COLOR = 0x1660c8;
 
-/** Панели кузова Logan, которые красим в синий (не бамперы/пластик/шины/свет) */
+/** Панели кузова Logan, которые красим в синий (не пластик/шины/свет; бамперы в атласе давали красный низ) */
 const SEDAN_BODY_PANEL_PATTERN =
-  /^(Kuzov_low|Kuzov_Bak_low|Kapot_low|Dver_1_low|Dver_2_low|Bagajnik_low)_/i;
+  /^(Kuzov_low|Kuzov_Bak_low|Kapot_low|Dver_1_low|Dver_2_low|Bagajnik_low|Bamper_(?:pered|zad)_[0-9]_low)_/i;
 
 /**
  * Logan: светильники делят общий атлас-материал Kuzov1 с кузовом,
@@ -435,7 +435,7 @@ const splitSedanMeshesByLightRule = (root: Object3D): void => {
   });
 };
 
-/** Logan: красит панели кузова в синий, отвязав их от атласа-текстуры */
+/** Logan: красит панели кузова и бамперы в синий, отвязав их от атласа-текстуры */
 const paintSedanBodyBlue = (root: Object3D): void => {
   root.traverse((object) => {
     if (!isMesh(object)) {
@@ -466,7 +466,7 @@ const paintSedanBodyBlue = (root: Object3D): void => {
 /**
  * Logan (Sketchfab «Renault Logan 2004»): один атлас-материал Kuzov1 на кузов,
  * светильники — отдельные меши по имени. Картируем их на контракт, красим
- * панели в синий, combined-колёса (Rezina/Disk) режем на 4 пивота как у пикапа.
+ * панели и бамперы в синий, combined-колёса (Rezina/Disk) режем на 4 пивота как у пикапа.
  */
 const normalizeSedan = (root: Object3D) => {
   splitSedanMeshesByLightRule(root);
@@ -752,6 +752,7 @@ export const normalizeVehicleGltf = (root: Object3D, vehicleId: TVehicleId): voi
 };
 
 /**
+ * Алиас для обратной совместимости.
  * @deprecated Имя сохранено для совместимости; теперь нормализует отдельный GLB.
  */
 export const applyVehicleBodyVariant = normalizeVehicleGltf;

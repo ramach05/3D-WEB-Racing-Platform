@@ -81,6 +81,12 @@ const buildSedanStub = (): Group => {
   panel('Bagajnik_low_Kuzov1_0', 0, 1.15, -1.95, 2.4, 0.2, 0.6);
   panel('Kuzov_Bak_low_Kuzov1_0', 0, 1.1, -1.85, 0.3, 0.1, 0.1);
 
+  // Бамперы — тоже красим в синий (в атласе у них красный низ)
+  panel('Bamper_pered_1_low_Kuzov1_0', 0, 0.75, 2.5, 3.0, 0.35, 0.25);
+  panel('Bamper_pered_3_low_Kuzov1_0', 0, 0.5, 2.5, 3.0, 0.2, 0.2);
+  panel('Bamper_zad_1_low_Kuzov1_0', 0, 0.8, -2.5, 3.0, 0.35, 0.25);
+  panel('Bamper_zad_2_low_Kuzov1_0', 0, 0.55, -2.5, 3.0, 0.2, 0.2);
+
   // Светильники: стёкла фар отдельными мешами, фонарь — единая полноширинная плашка
   const hl = new Mesh(new BoxGeometry(0.15, 0.1, 0.1), glass);
   hl.name = 'Fara_1_low_glass_0';
@@ -366,6 +372,14 @@ describe('normalizeVehicleGltf', () => {
     expect(bodyMat.color.getHex()).toBe(SEDAN_BODY_COLOR);
     expect(bodyMat.map).toBeNull();
     expect(bodyMat.name).not.toBe('Kuzov1');
+
+    // Бамперы красятся в цвет кузова — иначе атлас даёт красный низ
+    for (const bumper of ['Bamper_pered_1_low_Kuzov1_0', 'Bamper_zad_1_low_Kuzov1_0']) {
+      const bumperMat = (root.getObjectByName(bumper) as Mesh).material as MeshStandardMaterial;
+      expect(bumperMat.name).toBe('SedanBodyPaint');
+      expect(bumperMat.color.getHex()).toBe(SEDAN_BODY_COLOR);
+      expect(bumperMat.map).toBeNull();
+    }
 
     // То, что краситься не должно (шины/диски на пивотах), остаётся в атласе
     let tireMat: MeshStandardMaterial | null = null;
