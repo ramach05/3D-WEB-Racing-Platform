@@ -4,10 +4,15 @@ import {
   Group,
   Mesh,
   MeshStandardMaterial,
+  Texture,
   Vector3,
   type Object3D,
 } from 'three';
-import { normalizeVehicleGltf, measureHeadlightLampPositions } from './vehicle-body-variants';
+import {
+  SEDAN_BODY_COLOR,
+  measureHeadlightLampPositions,
+  normalizeVehicleGltf,
+} from './vehicle-body-variants';
 import { computeVehicleFit } from './vehicle-fit';
 import { describe, expect, it } from 'vitest';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -40,61 +45,89 @@ const buildHatchStub = (): Group => {
   return root;
 };
 
-/** Logan: 4 отдельные группы wheel*; фары сзади по −Z (как в реальном GLB) */
+/** Logan (Sketchfab «Renault Logan 2004»): атласный Kuzov1 на весь кузов + отдельные меши света */
 const buildSedanStub = (): Group => {
   const root = new Group();
-  const paint = new MeshStandardMaterial({ name: 'kuzov', color: '#2244aa' });
-  const headlight = new MeshStandardMaterial({
-    name: 'fari',
-    color: '#fff8e0',
-    metalness: 1,
-    roughness: 0.34,
+  const kuzov1 = new MeshStandardMaterial({
+    name: 'Kuzov1',
+    color: '#cc3333',
+    map: new Texture(),
+    metalness: 0.7,
+    roughness: 0.4,
   });
-  const brakelightHousing = new MeshStandardMaterial({ name: 'sto1', color: '#440000' });
-  const brakelightGlass = new MeshStandardMaterial({
-    name: 'material_6',
-    color: '#af0000',
+  const glass = new MeshStandardMaterial({
+    name: 'glass',
+    color: '#88ccff',
+    map: new Texture(),
     metalness: 1,
-    emissive: '#ff0000',
-    emissiveIntensity: 10,
+    roughness: 0.1,
   });
-  const signal = new MeshStandardMaterial({ name: 'material_9', color: '#ff8c00' });
-  const disk = new MeshStandardMaterial({ name: 'disk', color: '#888888' });
-  const tire = new MeshStandardMaterial({ name: 'chernot', color: '#111111' });
+  root.add(
+    new Mesh(new BoxGeometry(3.2, 0.4, 4.6), new MeshStandardMaterial({ name: 'Podveska_Salon' })),
+  );
 
-  const bodyMesh = new Mesh(new BoxGeometry(1.8, 1.0, 4.2), paint);
-  bodyMesh.name = 'BodyPaint';
-  root.add(bodyMesh);
-  const hl = new Mesh(new BoxGeometry(1.4, 0.1, 0.16), headlight);
-  hl.name = 'HeadlightGlass';
-  hl.position.set(0, 0.4, -2.0);
+  const panel = (name: string, x: number, y: number, z: number, w: number, h: number, d: number) => {
+    const mesh = new Mesh(new BoxGeometry(w, h, d), kuzov1);
+    mesh.name = name;
+    mesh.position.set(x, y, z);
+    root.add(mesh);
+  };
+
+  // Панели кузова — красим в синий
+  panel('Kuzov_low_Kuzov1_0', 0, 1.05, 0, 3.2, 0.9, 4.6);
+  panel('Kapot_low_Kuzov1_0', 0, 1.5, 2.2, 2.8, 0.18, 0.7);
+  panel('Dver_1_low_Kuzov1_0', 0, 1.05, 0.8, 3.2, 0.9, 0.4);
+  panel('Dver_2_low_Kuzov1_0', 0, 1.05, -0.8, 3.2, 0.9, 0.4);
+  panel('Bagajnik_low_Kuzov1_0', 0, 1.15, -1.95, 2.4, 0.2, 0.6);
+  panel('Kuzov_Bak_low_Kuzov1_0', 0, 1.1, -1.85, 0.3, 0.1, 0.1);
+
+  // Светильники: стёкла фар отдельными мешами, фонарь — единая полноширинная плашка
+  const hl = new Mesh(new BoxGeometry(0.15, 0.1, 0.1), glass);
+  hl.name = 'Fara_1_low_glass_0';
+  hl.position.set(-0.2, 1.3, 2.55);
   root.add(hl);
-  const tlGlass = new Mesh(new BoxGeometry(1.2, 0.1, 0.16), brakelightGlass);
-  tlGlass.name = 'TaillightGlass';
-  tlGlass.position.set(0, 0.4, 2.0);
-  root.add(tlGlass);
-  const tlHousing = new Mesh(new BoxGeometry(1.0, 0.08, 0.1), brakelightHousing);
-  tlHousing.name = 'TaillightHousing';
-  tlHousing.position.set(0, 0.4, 1.95);
-  root.add(tlHousing);
-  const signalMesh = new Mesh(new BoxGeometry(0.3, 0.05, 0.05), signal);
-  signalMesh.name = 'SignalStrip';
-  signalMesh.position.set(0.7, 0.4, 1.9);
-  root.add(signalMesh);
+  const hl2 = new Mesh(new BoxGeometry(0.15, 0.1, 0.1), kuzov1);
+  hl2.name = 'Fara_2_low_Kuzov1_0';
+  hl2.position.set(0.2, 1.3, 2.5);
+  root.add(hl2);
+  const lamp = new Mesh(new BoxGeometry(2.6, 0.12, 0.3), kuzov1);
+  lamp.name = 'Fara_lamp_low_Kuzov1_0';
+  lamp.position.set(0, 1.3, 2.55);
+  root.add(lamp);
+  const fog = new Mesh(new BoxGeometry(2.0, 0.25, 0.25), kuzov1);
+  fog.name = 'Protivotumanki_low_Kuzov1_0';
+  fog.position.set(0, 0.35, 2.6);
+  root.add(fog);
+  const tail = new Mesh(new BoxGeometry(2.4, 0.18, 0.1), kuzov1);
+  tail.name = 'Fonar_low_Kuzov1_0';
+  tail.position.set(0, 1.3, -2.45);
+  root.add(tail);
+  const signal = new Mesh(new BoxGeometry(2.6, 0.1, 0.06), kuzov1);
+  signal.name = 'Povorotnik_low_Kuzov1_0';
+  signal.position.set(0, 1.3, 1.9);
+  root.add(signal);
 
-  for (const [name, x, z] of [
-    ['wheel001', 0.7, 1.2],
-    ['wheel002', -0.7, 1.2],
-    ['wheel', 0.7, -1.2],
-    ['wheel003', -0.7, -1.2],
-  ] as const) {
-    const group = new Group();
-    group.name = name;
-    group.position.set(x, 0.27, z);
-    root.add(group);
-    group.add(new Mesh(new BoxGeometry(0.2, 0.5, 0.5), tire));
-    group.add(new Mesh(new BoxGeometry(0.12, 0.35, 0.35), disk));
-  }
+  // Лобовое стекло (материал glass — НЕ светильник)
+  const windshield = new Mesh(new BoxGeometry(1.6, 0.3, 1.6), glass);
+  windshield.name = 'Glass_low_glass_0';
+  windshield.position.set(0, 1.7, 0.9);
+  root.add(windshield);
+
+  // Колёса — combined-меши шин и дисков на все 4 колеса (как в реальном GLB)
+  const wheelSpots: Array<[number, number, number]> = [
+    [0.9, 0.43, 1.7],
+    [-0.9, 0.43, 1.7],
+    [0.9, 0.43, -1.5],
+    [-0.9, 0.43, -1.5],
+  ];
+  const tireGeo = wheelSpots.map(([x, y, z]) => new BoxGeometry(0.4, 0.9, 0.9).translate(x, y, z));
+  const rimGeo = wheelSpots.map(([x, y, z]) => new BoxGeometry(0.22, 0.6, 0.6).translate(x, y, z));
+  const tireMesh = new Mesh(mergeGeometries(tireGeo)!, kuzov1);
+  tireMesh.name = 'Rezina_low_Kuzov1_0';
+  root.add(tireMesh);
+  const rimMesh = new Mesh(mergeGeometries(rimGeo)!, kuzov1);
+  rimMesh.name = 'Disk_low_Kuzov1_0';
+  root.add(rimMesh);
 
   return root;
 };
@@ -187,7 +220,7 @@ const buildPickupStub = (): Group => {
   return root;
 };
 
-/** Juke: compact individual wheels + one combined layer to hide */
+/** Juke: как в реальном GLB — стекло фар (+Z) и задних фонарей (−Z) слито в один меш glass6 */
 const buildJukeStub = (): Group => {
   const root = new Group();
   const bodyMat = new MeshStandardMaterial({ name: 'body1', color: '#cc2200' });
@@ -197,17 +230,29 @@ const buildJukeStub = (): Group => {
   const headlight = new MeshStandardMaterial({ name: 'glass6', color: '#aa9900' });
 
   root.add(new Mesh(new BoxGeometry(1.6, 1.0, 3.8), bodyMat));
-  const signalMesh = new Mesh(new BoxGeometry(1.4, 0.05, 0.05), signal);
-  signalMesh.name = 'SignalStrip';
-  root.add(signalMesh);
+
+  // Sketchfab materialmerger: передний кластер (фары) и задний (стекло фонарей) —
+  // одни меш glass6, посередине зазор (у реального GLB кластеры аналогичны)
+  const frontLens = new BoxGeometry(1.4, 0.12, 0.14);
+  frontLens.translate(0, 0.45, 1.85);
+  const rearLens = new BoxGeometry(1.4, 0.12, 0.14);
+  rearLens.translate(0, 0.45, -1.8);
+  const glassGeo = mergeGeometries([frontLens, rearLens]);
+  const glass = new Mesh(glassGeo ?? new BoxGeometry(0.1, 0.1, 0.1), headlight);
+  glass.name = 'MergedLightGlass';
+  root.add(glass);
+
+  // Красная плашка задних фонарей — отдельным мешем material_15
   const bl = new Mesh(new BoxGeometry(1.0, 0.08, 0.1), brakelight);
   bl.name = 'TaillightGlass';
   bl.position.set(0, 0.4, -1.8);
   root.add(bl);
-  const hl = new Mesh(new BoxGeometry(1.2, 0.12, 0.1), headlight);
-  hl.name = 'HeadlightGlass';
-  hl.position.set(0, 0.45, 1.85);
-  root.add(hl);
+
+  // Янтарная полоса DRL/поворотника в переднем бампере (как на реальном Juke)
+  const drl = new Mesh(new BoxGeometry(1.4, 0.05, 0.05), signal);
+  drl.name = 'SignalStrip';
+  drl.position.set(0, 0.35, 1.5);
+  root.add(drl);
 
   for (const [x, z] of [
     [0.7, 1.1],
@@ -310,25 +355,42 @@ describe('normalizeVehicleGltf', () => {
     expect(root.getObjectByName('WheelRearL')).toBeTruthy();
     expect(root.getObjectByName('WheelRearR')).toBeTruthy();
 
-    expect(materialNamesOn(root, 'BodyPaint')).toContain('kuzov');
-    expect(materialNamesOn(root, 'HeadlightGlass')).toContain('Headlight');
-    expect(materialNamesOn(root, 'TaillightGlass')).toContain('Brakelight');
-    expect(materialNamesOn(root, 'TaillightHousing')).toContain('Brakelight');
-    expect(materialNamesOn(root, 'SignalStrip')).toContain('Signallight');
-    expect(materialNamesUnder(root, 'WheelFrontL')).toContain('chernot');
+    // Светильники Logan живут в атласе Kuzov1 — сплитим их по имени меша
+    expect(materialNamesOn(root, 'Fara_1_low_glass_0')).toContain('Headlight');
+    expect(materialNamesOn(root, 'Fara_lamp_low_Kuzov1_0')).toContain('Headlight');
+    expect(materialNamesOn(root, 'Fonar_low_Kuzov1_0')).toContain('Brakelight');
+    expect(materialNamesOn(root, 'Povorotnik_low_Kuzov1_0')).toContain('Signallight');
 
-    const hlMat = (root.getObjectByName('HeadlightGlass') as Mesh).material as MeshStandardMaterial;
+    // Панель кузова красится в синий и отвязывается от атласа
+    const bodyMat = (root.getObjectByName('Kuzov_low_Kuzov1_0') as Mesh).material as MeshStandardMaterial;
+    expect(bodyMat.color.getHex()).toBe(SEDAN_BODY_COLOR);
+    expect(bodyMat.map).toBeNull();
+    expect(bodyMat.name).not.toBe('Kuzov1');
+
+    // То, что краситься не должно (шины/диски на пивотах), остаётся в атласе
+    let tireMat: MeshStandardMaterial | null = null;
+    root.getObjectByName('WheelFrontL')!.traverse((o) => {
+      if (!tireMat && (o as Mesh).isMesh) {
+        tireMat = (o as Mesh).material as MeshStandardMaterial;
+      }
+    });
+    expect(tireMat!.name).toBe('Kuzov1');
+    expect(tireMat!.color.getHex()).not.toBe(SEDAN_BODY_COLOR);
+    expect(tireMat!.map).not.toBeNull();
+
+    // Стёкла/корпуса света получают пониженный metalness (emissive читается ночью)
+    const hlMat = (root.getObjectByName('Fara_1_low_glass_0') as Mesh).material as MeshStandardMaterial;
     expect(hlMat.metalness).toBeLessThanOrEqual(0.2);
-    const blMat = (root.getObjectByName('TaillightGlass') as Mesh).material as MeshStandardMaterial;
+    const blMat = (root.getObjectByName('Fonar_low_Kuzov1_0') as Mesh).material as MeshStandardMaterial;
     expect(blMat.metalness).toBeLessThanOrEqual(0.2);
 
-    // Нос смотрит в +Z (контракт гонки), даже если GLB был развёрнут
+    // Нос смотрит в +Z (контракт гонки)
     root.updateMatrixWorld(true);
     const hlZ = new Box3()
-      .setFromObject(root.getObjectByName('HeadlightGlass')!)
+      .setFromObject(root.getObjectByName('Fara_lamp_low_Kuzov1_0')!)
       .getCenter(new Vector3()).z;
     const blZ = new Box3()
-      .setFromObject(root.getObjectByName('TaillightGlass')!)
+      .setFromObject(root.getObjectByName('Fonar_low_Kuzov1_0')!)
       .getCenter(new Vector3()).z;
     expect(hlZ).toBeGreaterThan(blZ);
   });
@@ -351,7 +413,7 @@ describe('normalizeVehicleGltf', () => {
     );
   });
 
-  it('maps juke compact wheels and hides combined layers', () => {
+  it('maps juke compact wheels, hides combined layers and splits merged glass6', () => {
     const root = buildJukeStub();
     normalizeVehicleGltf(root, 'juke');
 
@@ -360,10 +422,30 @@ describe('normalizeVehicleGltf', () => {
     expect(root.getObjectByName('WheelRearL')).toBeTruthy();
     expect(root.getObjectByName('WheelRearR')).toBeTruthy();
     expect(root.getObjectByName('CombinedWheelLayer')?.visible).toBe(false);
-    expect(materialNamesOn(root, 'SignalStrip')).toContain('Signallight');
+    expect(materialNamesOn(root, 'SignalStrip')).toContain('Headlight');
     expect(materialNamesOn(root, 'TaillightGlass')).toContain('Brakelight');
-    expect(materialNamesOn(root, 'HeadlightGlass')).toContain('Headlight');
     expect(materialNamesUnder(root, 'WheelFrontL')).toContain('wheel1');
+
+    // Слитый meш glass6 разрезан: перед → Headlight, зад → Brakelight
+    expect(root.getObjectByName('MergedLightGlass')).toBeFalsy();
+    const frontGlass = root.getObjectByName('MergedLightGlass_Headlight');
+    const rearGlass = root.getObjectByName('MergedLightGlass_Brakelight');
+    expect(frontGlass).toBeTruthy();
+    expect(rearGlass).toBeTruthy();
+    expect(materialNamesOn(root, 'MergedLightGlass_Headlight')).toContain('Headlight');
+    expect(materialNamesOn(root, 'MergedLightGlass_Brakelight')).toContain('Brakelight');
+
+    // Нос в +Z: передний (фары) и задний (стекло фонарей) кластеры по своим бортам
+    root.updateMatrixWorld(true);
+    const frontZ = new Box3()
+      .setFromObject(frontGlass as Mesh)
+      .getCenter(new Vector3()).z;
+    const rearZ = new Box3()
+      .setFromObject(rearGlass as Mesh)
+      .getCenter(new Vector3()).z;
+    expect(frontZ).toBeGreaterThan(0);
+    expect(rearZ).toBeLessThan(0);
+    expect(frontZ).toBeGreaterThan(rearZ);
   });
 
   it('maps scirocco wheel.smd groups and light materials', () => {
@@ -382,7 +464,7 @@ describe('normalizeVehicleGltf', () => {
 
   it('keeps sedan axle span stable after normalize', () => {
     const root = buildSedanStub();
-    const wbBefore = 1.2 - -1.2;
+    const wbBefore = 1.7 - -1.5;
 
     normalizeVehicleGltf(root, 'sedan');
     root.updateMatrixWorld(true);

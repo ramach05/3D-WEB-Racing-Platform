@@ -456,7 +456,7 @@ const usePreparedVehicleVisuals = (
     headlightsOnRef.current = headlightsOn;
     fitScaleRef.current = prepared.fit.scale;
     wheelRadiusRef.current = prepared.wheelRadius;
-    // Седан/пикап оставляем в authored-цветах GLB
+    // Пикап оставляем в authored-цветах GLB; Logan красится синим в normalize
     if (vehicleId === 'hatchback') {
       applyCarSkin(prepared.cloned, carSkin);
     }

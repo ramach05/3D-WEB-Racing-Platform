@@ -16,7 +16,7 @@ import type { TVehicleFit } from '@/widgets/race-canvas/vehicle/vehicle-fit';
  * Bust useMemo clone cache when normalize logic changes (HMR).
  * Bump when shipping visual fixes for garage bodies.
  */
-export const VEHICLE_VARIANT_REV = 27;
+export const VEHICLE_VARIANT_REV = 29;
 
 const WHEEL_PIVOT_NAMES = ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] as const;
 type TWheelPivotName = (typeof WHEEL_PIVOT_NAMES)[number];
@@ -24,7 +24,28 @@ type TWheelPivotName = (typeof WHEEL_PIVOT_NAMES)[number];
 const PICKUP_WHEEL_NODE_NAMES = ['polySurface1', 'polySurface8441'] as const;
 const PICKUP_CALIPER_NODE_NAMES = ['polySurface9497', 'polySurface9559'] as const;
 
-const LOGAN_WHEEL_NODE_NAMES = ['wheel', 'wheel001', 'wheel002', 'wheel003'] as const;
+/** Logan (Sketchfab «Renault Logan 2004»): базовый синий цвет кузова */
+export const SEDAN_BODY_COLOR = 0x1660c8;
+
+/** Панели кузова Logan, которые красим в синий (не бамперы/пластик/шины/свет) */
+const SEDAN_BODY_PANEL_PATTERN =
+  /^(Kuzov_low|Kuzov_Bak_low|Kapot_low|Dver_1_low|Dver_2_low|Bagajnik_low)_/i;
+
+/**
+ * Logan: светильники делят общий атлас-материал Kuzov1 с кузовом,
+ * поэтому сплим-клоним их по имени меша на контрактные имена.
+ */
+const SEDAN_LIGHT_RULES = [
+  { pattern: /^Fara_1_low_/i, materialName: 'Headlight' },
+  { pattern: /^Fara_2_low_/i, materialName: 'Headlight' },
+  { pattern: /^Fara_lamp_low_/i, materialName: 'Headlight' },
+  { pattern: /^Protivotumanki_low_/i, materialName: 'Headlight' },
+  { pattern: /^Fonar_low_/i, materialName: 'Brakelight' },
+  { pattern: /^Povorotnik_low_/i, materialName: 'Signallight' },
+] as const;
+
+/** Logan: combined-меши колёс (все 4 колеса в одном меше) */
+const SEDAN_WHEEL_MESH_NAMES = ['Rezina_low_Kuzov1_0', 'Disk_low_Kuzov1_0'] as const;
 
 const JUKE_WHEEL_MATERIAL_NAMES = new Set(['wheel1', 'wheel2', 'wheel3']);
 /** Combined juke wheel layers span ~full track width — hide them when using compact wheels */
@@ -106,6 +127,61 @@ const quadrantName = (x: number, z: number, midX: number, midZ: number): TWheelP
 };
 
 /**
+ * Строит новый Mesh из выбранных треугольников исходного меша (переиндексация атрибутов).
+ * Геометрия остаётся в local space исходного меша, transform копируется 1-в-1.
+ */
+const sliceMeshTriangles = (mesh: Mesh, triIndices: number[], suffix: string): Mesh | null => {
+  if (triIndices.length === 0) {
+    return null;
+  }
+  const geometry = mesh.geometry;
+  const remapped = new Map<number, number>();
+  const newIndices: number[] = [];
+  const attrArrays: Record<string, number[]> = {};
+  for (const attrName of Object.keys(geometry.attributes)) {
+    attrArrays[attrName] = [];
+  }
+
+  for (const oldIndex of triIndices) {
+    let next = remapped.get(oldIndex);
+    if (next === undefined) {
+      next = remapped.size;
+      remapped.set(oldIndex, next);
+      for (const attrName of Object.keys(geometry.attributes)) {
+        const attribute = geometry.getAttribute(attrName);
+        const itemSize = attribute.itemSize;
+        const dest = attrArrays[attrName]!;
+        for (let c = 0; c < itemSize; c += 1) {
+          dest.push(attribute.getComponent(oldIndex, c));
+        }
+      }
+    }
+    newIndices.push(next);
+  }
+
+  const sliced = new BufferGeometry();
+  for (const attrName of Object.keys(attrArrays)) {
+    const attribute = geometry.getAttribute(attrName);
+    sliced.setAttribute(
+      attrName,
+      new BufferAttribute(new Float32Array(attrArrays[attrName]!), attribute.itemSize),
+    );
+  }
+  sliced.setIndex(newIndices);
+  sliced.computeBoundingBox();
+  sliced.computeBoundingSphere();
+
+  const part = new Mesh(sliced, mesh.material);
+  part.name = `${mesh.name || 'wheel'}_${suffix}`;
+  part.position.copy(mesh.position);
+  part.quaternion.copy(mesh.quaternion);
+  part.scale.copy(mesh.scale);
+  part.castShadow = mesh.castShadow;
+  part.receiveShadow = mesh.receiveShadow;
+  return part;
+};
+
+/**
  * Режет один меш «все 4 колеса» на до 4 мешей по квадрантам XZ (по центроиду треугольника).
  * Геометрия остаётся в local space исходного меша.
  */
@@ -151,50 +227,10 @@ const splitMeshByXzQuadrants = (
       continue;
     }
 
-    const remapped = new Map<number, number>();
-    const newIndices: number[] = [];
-    const attrArrays: Record<string, number[]> = {};
-    for (const attrName of Object.keys(geometry.attributes)) {
-      attrArrays[attrName] = [];
+    const part = sliceMeshTriangles(mesh, triIndices, name);
+    if (part) {
+      result[name] = part;
     }
-
-    for (const oldIndex of triIndices) {
-      let next = remapped.get(oldIndex);
-      if (next === undefined) {
-        next = remapped.size;
-        remapped.set(oldIndex, next);
-        for (const attrName of Object.keys(geometry.attributes)) {
-          const attribute = geometry.getAttribute(attrName);
-          const itemSize = attribute.itemSize;
-          const dest = attrArrays[attrName]!;
-          for (let c = 0; c < itemSize; c += 1) {
-            dest.push(attribute.getComponent(oldIndex, c));
-          }
-        }
-      }
-      newIndices.push(next);
-    }
-
-    const sliced = new BufferGeometry();
-    for (const attrName of Object.keys(attrArrays)) {
-      const attribute = geometry.getAttribute(attrName);
-      sliced.setAttribute(
-        attrName,
-        new BufferAttribute(new Float32Array(attrArrays[attrName]!), attribute.itemSize),
-      );
-    }
-    sliced.setIndex(newIndices);
-    sliced.computeBoundingBox();
-    sliced.computeBoundingSphere();
-
-    const part = new Mesh(sliced, mesh.material);
-    part.name = `${mesh.name || 'wheel'}_${name}`;
-    part.position.copy(mesh.position);
-    part.quaternion.copy(mesh.quaternion);
-    part.scale.copy(mesh.scale);
-    part.castShadow = mesh.castShadow;
-    part.receiveShadow = mesh.receiveShadow;
-    result[name] = part;
   }
 
   return result;
@@ -373,30 +409,85 @@ const ensureNoseTowardPlusZ = (root: Object3D): void => {
   root.updateMatrixWorld(true);
 };
 
-/** Logan: 4 отдельные группы wheel* */
+/** Logan: клонит материалы световых мешей на контрактные имена Headlight/... */
+const splitSedanMeshesByLightRule = (root: Object3D): void => {
+  root.traverse((object) => {
+    if (!isMesh(object)) {
+      return;
+    }
+    const rule = SEDAN_LIGHT_RULES.find((item) => item.pattern.test(object.name));
+    if (!rule) {
+      return;
+    }
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    const renamed = materials.map((material): Material => {
+      if (!isStandardMaterial(material)) {
+        return material;
+      }
+      const clone = material.clone();
+      clone.name = rule.materialName;
+      return clone;
+    });
+    const next = Array.isArray(object.material) ? renamed : renamed[0];
+    if (next) {
+      object.material = next;
+    }
+  });
+};
+
+/** Logan: красит панели кузова в синий, отвязав их от атласа-текстуры */
+const paintSedanBodyBlue = (root: Object3D): void => {
+  root.traverse((object) => {
+    if (!isMesh(object)) {
+      return;
+    }
+    if (!SEDAN_BODY_PANEL_PATTERN.test(object.name)) {
+      return;
+    }
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    const painted = materials.map((material): Material => {
+      if (!isStandardMaterial(material)) {
+        return material;
+      }
+      const clone = material.clone();
+      clone.name = 'SedanBodyPaint';
+      clone.color.setHex(SEDAN_BODY_COLOR);
+      clone.map = null;
+      clone.needsUpdate = true;
+      return clone;
+    });
+    const next = Array.isArray(object.material) ? painted : painted[0];
+    if (next) {
+      object.material = next;
+    }
+  });
+};
+
+/**
+ * Logan (Sketchfab «Renault Logan 2004»): один атлас-материал Kuzov1 на кузов,
+ * светильники — отдельные меши по имени. Картируем их на контракт, красим
+ * панели в синий, combined-колёса (Rezina/Disk) режем на 4 пивота как у пикапа.
+ */
 const normalizeSedan = (root: Object3D) => {
-  renameMaterials(root, 'fari', 'Headlight');
-  // sto1 — корпус, material_6 — красное стекло с authored emissive
-  renameMaterials(root, 'sto1', 'Brakelight');
-  renameMaterials(root, 'material_6', 'Brakelight');
-  renameMaterials(root, 'material_9', 'Signallight');
+  splitSedanMeshesByLightRule(root);
   prepareEmissiveLightMaterials(root);
-  // Logan authored носом в −Z — выравниваем под контракт гонки (+Z)
+  paintSedanBodyBlue(root);
+  // Logan authored носом в −Z? Выравниваем под контракт гонки (+Z), если нужно
   ensureNoseTowardPlusZ(root);
 
   root.updateMatrixWorld(true);
   const bodyBox = tmpBox.setFromObject(root);
   const mid = bodyBox.getCenter(tmpCenter);
 
-  const assemblies: Object3D[] = [];
-  for (const name of LOGAN_WHEEL_NODE_NAMES) {
+  const sourceMeshes: Mesh[] = [];
+  for (const name of SEDAN_WHEEL_MESH_NAMES) {
     const node = root.getObjectByName(name);
     if (node) {
-      assemblies.push(node);
+      sourceMeshes.push(...collectMeshesUnder(node));
     }
   }
 
-  buildWheelPivotsFromAssemblies(root, assemblies, mid.x, mid.z);
+  buildWheelPivotsFromCombinedMeshes(root, sourceMeshes, mid.x, mid.z);
   ensureMissingWheelPivots(root);
 };
 
@@ -422,13 +513,155 @@ const normalizePickup = (root: Object3D) => {
   ensureMissingWheelPivots(root);
 };
 
+/** Juke (Sketchfab «материалмержен»): стекло фар и задних фонарей — один меш glass6 */
+const JUKE_GLASS6_MATERIAL = 'glass6';
+/** Если кластеры света в мировом Z разнесены меньше этой дистанции — не режем */
+const JUKE_GLASS_SPLIT_MIN_GAP = 0.4;
+
+/** Мировые Z центроидов треугольников меша (для кластеризации носа/кормы) */
+const triangleWorldCentroidZs = (mesh: Mesh): number[] => {
+  const geometry = mesh.geometry;
+  const position = geometry.getAttribute('position');
+  if (!position) {
+    return [];
+  }
+  mesh.updateMatrixWorld(true);
+  const index = geometry.getIndex();
+  const triCount = index ? index.count / 3 : position.count / 3;
+  const zs: number[] = [];
+  for (let tri = 0; tri < triCount; tri += 1) {
+    const i0 = index ? index.getX(tri * 3) : tri * 3;
+    const i1 = index ? index.getX(tri * 3 + 1) : tri * 3 + 1;
+    const i2 = index ? index.getX(tri * 3 + 2) : tri * 3 + 2;
+    tmpA.fromBufferAttribute(position, i0).applyMatrix4(mesh.matrixWorld);
+    tmpB.fromBufferAttribute(position, i1).applyMatrix4(mesh.matrixWorld);
+    tmpC.fromBufferAttribute(position, i2).applyMatrix4(mesh.matrixWorld);
+    zs.push((tmpA.z + tmpB.z + tmpC.z) / 3);
+  }
+  return zs;
+};
+
+/** Середина наибольшего зазора между отсортированными мировыми Z (граница кластеров) */
+const largestGapBoundary = (sorted: number[], minGap: number): number | null => {
+  let boundary = 0;
+  let gap = -1;
+  for (let i = 1; i < sorted.length; i += 1) {
+    const prev = sorted[i - 1];
+    const curr = sorted[i];
+    if (prev === undefined || curr === undefined) {
+      continue;
+    }
+    const d = curr - prev;
+    if (d > gap) {
+      gap = d;
+      boundary = (curr + prev) / 2;
+    }
+  }
+  return gap >= minGap ? boundary : null;
+};
+
+/** Возвращает две части меша: low (world z < splitZ) и high (world z >= splitZ) */
+const splitMeshByWorldZ = (
+  mesh: Mesh,
+  splitZ: number,
+): { low: Mesh | null; high: Mesh | null } => {
+  const geometry = mesh.geometry;
+  const position = geometry.getAttribute('position');
+  if (!position) {
+    return { low: null, high: null };
+  }
+  mesh.updateMatrixWorld(true);
+  const index = geometry.getIndex();
+  const triCount = index ? index.count / 3 : position.count / 3;
+  const low: number[] = [];
+  const high: number[] = [];
+  for (let tri = 0; tri < triCount; tri += 1) {
+    const i0 = index ? index.getX(tri * 3) : tri * 3;
+    const i1 = index ? index.getX(tri * 3 + 1) : tri * 3 + 1;
+    const i2 = index ? index.getX(tri * 3 + 2) : tri * 3 + 2;
+    tmpA.fromBufferAttribute(position, i0).applyMatrix4(mesh.matrixWorld);
+    tmpB.fromBufferAttribute(position, i1).applyMatrix4(mesh.matrixWorld);
+    tmpC.fromBufferAttribute(position, i2).applyMatrix4(mesh.matrixWorld);
+    const cz = (tmpA.z + tmpB.z + tmpC.z) / 3;
+    if (cz < splitZ) {
+      low.push(i0, i1, i2);
+    } else {
+      high.push(i0, i1, i2);
+    }
+  }
+  return {
+    low: sliceMeshTriangles(mesh, low, 'Rear'),
+    high: sliceMeshTriangles(mesh, high, 'Front'),
+  };
+};
+
+/** Клонирует материал(ы) меша под роль Headlight/Brakelight */
+const relabelMeshMaterial = (mesh: Mesh, role: string): void => {
+  const relabel = (material: Material): Material => {
+    if (!isStandardMaterial(material)) {
+      return material;
+    }
+    const clone = material.clone();
+    clone.name = role;
+    return clone;
+  };
+  if (Array.isArray(mesh.material)) {
+    mesh.material = mesh.material.map(relabel);
+    return;
+  }
+  mesh.material = relabel(mesh.material);
+};
+
+/**
+ * Juke: материал glass6 — один слитый меш, где и стекло фар (нос, +Z),
+ * и стекло задних фонарей (корма, −Z). Режем по наибольшему мировому Z-зазору:
+ * перед → Headlight, зад → Brakelight, чтобы задние фонари не светили жёлтым
+ * (как фары), а горели красным вместе с material_15.
+ */
+const splitJukeGlass6 = (root: Object3D): void => {
+  root.updateMatrixWorld(true);
+  root.traverse((object) => {
+    if (!isMesh(object)) {
+      return;
+    }
+    if (!meshMaterialNames(object).includes(JUKE_GLASS6_MATERIAL)) {
+      return;
+    }
+    const parent = object.parent;
+    if (!parent) {
+      return;
+    }
+    const boundary = largestGapBoundary(
+      triangleWorldCentroidZs(object).sort((a, b) => a - b),
+      JUKE_GLASS_SPLIT_MIN_GAP,
+    );
+    if (boundary === null) {
+      return; // один кластер — оставляем как есть (фолбэк прежнего поведения)
+    }
+    const { low, high } = splitMeshByWorldZ(object, boundary);
+    if (high) {
+      high.name = `${object.name}_Headlight`;
+      relabelMeshMaterial(high, 'Headlight');
+      parent.add(high);
+    }
+    if (low) {
+      low.name = `${object.name}_Brakelight`;
+      relabelMeshMaterial(low, 'Brakelight');
+      parent.add(low);
+    }
+    object.removeFromParent();
+  });
+};
+
 /** Juke: компактные Object_* с материалом wheel*; combined-слои прячем */
 const normalizeJuke = (root: Object3D) => {
-  renameMaterials(root, 'orange', 'Signallight');
+  // Стекло фар и задних фонарей слито в один меш glass6 — режем по Z-зазору
+  splitJukeGlass6(root);
   // material_15 — красные задние стёкла (Object_54..56)
   renameMaterials(root, 'material_15', 'Brakelight');
-  // glass6 — тонированное стекло передних фар
-  renameMaterials(root, 'glass6', 'Headlight');
+  // orange — передняя янтарная полоса DRL (Object_52): тёплый свет фар,
+  // а не красный — красный свет вперёд нереалистичен
+  renameMaterials(root, 'orange', 'Headlight');
   prepareEmissiveLightMaterials(root);
   root.updateMatrixWorld(true);
   const bodyBox = tmpBox.setFromObject(root);
