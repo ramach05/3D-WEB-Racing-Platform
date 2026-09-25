@@ -7,9 +7,6 @@ export const PICKUP_GLTF_PATH = '/models/vehicle/ram.glb';
 export const JUKE_GLTF_PATH = '/models/vehicle/juke.glb';
 export const SCIROCCO_GLTF_PATH = '/models/vehicle/scirocco.glb';
 
-/** @deprecated Используйте путь из getVehicle(id).gltfPath */
-export const VEHICLE_GLTF_PATH = HATCHBACK_GLTF_PATH;
-
 /** Кузов по умолчанию — Киберпанк (hatchback) */
 export const DEFAULT_VEHICLE_ID: TVehicleId = 'hatchback';
 

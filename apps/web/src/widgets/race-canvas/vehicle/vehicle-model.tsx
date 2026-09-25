@@ -15,12 +15,7 @@ import {
 } from 'three';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { TCarSkin } from '@/entities/track';
-import {
-  getVehicle,
-  HATCHBACK_GLTF_PATH,
-  VEHICLES,
-  type TVehicleId,
-} from '@/entities/vehicle';
+import { getVehicle, HATCHBACK_GLTF_PATH, VEHICLES, type TVehicleId } from '@/entities/vehicle';
 import { vehiclePalette } from '@/shared/config';
 import {
   normalizeVehicleGltf,
@@ -43,9 +38,6 @@ import {
   computeSteerAxisLocal,
   computeToeYawCorrection,
 } from '@/widgets/race-canvas/vehicle/vehicle-wheel-rig';
-
-/** @deprecated Путь хэтчбека; для конкретного кузова — getVehicle(id).gltfPath */
-export const VEHICLE_GLTF_PATH = HATCHBACK_GLTF_PATH;
 
 /** Прогревает все GLB гаража (tracks / race / garage) */
 export const preloadVehicleModel = () => {
@@ -184,7 +176,10 @@ const buildWheelRig = (wheel: Object3D, isFront: boolean): TWheelRig | null => {
   // attach сохраняет world matrix на момент сборки
   spinPivot.attach(wheel);
 
-  tmpAxleWorld.copy(WHEEL_AXLE_LOCAL).applyQuaternion(wheel.getWorldQuaternion(tmpQuat)).normalize();
+  tmpAxleWorld
+    .copy(WHEEL_AXLE_LOCAL)
+    .applyQuaternion(wheel.getWorldQuaternion(tmpQuat))
+    .normalize();
   const yawCorr = computeToeYawCorrection(tmpAxleWorld);
   if (Math.abs(yawCorr) > 1e-5) {
     alignPivot.quaternion.setFromAxisAngle(steerAxisLocal, yawCorr);
@@ -456,7 +451,7 @@ const usePreparedVehicleVisuals = (
     headlightsOnRef.current = headlightsOn;
     fitScaleRef.current = prepared.fit.scale;
     wheelRadiusRef.current = prepared.wheelRadius;
-    // Пикап оставляем в authored-цветах GLB; Logan красится синим в normalize
+    // Кузова красятся в normalize: пикап — бордовый, Logan — синий
     if (vehicleId === 'hatchback') {
       applyCarSkin(prepared.cloned, carSkin);
     }
@@ -471,7 +466,12 @@ const usePreparedVehicleVisuals = (
     }
     const clampedDt = Math.min(dt, 1 / 20);
     const targetSteer = drive.steer * MAX_STEER_ANGLE;
-    steerAngleRef.current = MathUtils.damp(steerAngleRef.current, targetSteer, STEER_DAMP, clampedDt);
+    steerAngleRef.current = MathUtils.damp(
+      steerAngleRef.current,
+      targetSteer,
+      STEER_DAMP,
+      clampedDt,
+    );
 
     const wheelRadius = wheelRadiusRef.current * fitScaleRef.current;
     spinAngleRef.current += (drive.forwardSpeed / Math.max(wheelRadius, 0.05)) * clampedDt;

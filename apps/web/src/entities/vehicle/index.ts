@@ -7,7 +7,6 @@ export {
   PICKUP_GLTF_PATH,
   SCIROCCO_GLTF_PATH,
   SEDAN_GLTF_PATH,
-  VEHICLE_GLTF_PATH,
   VEHICLES,
 } from './catalog';
 export type { TVehicleBodyKind, TVehicleDef, TVehicleId } from './types';

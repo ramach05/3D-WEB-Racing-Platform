@@ -16,7 +16,7 @@ import type { TVehicleFit } from '@/widgets/race-canvas/vehicle/vehicle-fit';
  * Bust useMemo clone cache when normalize logic changes (HMR).
  * Bump when shipping visual fixes for garage bodies.
  */
-export const VEHICLE_VARIANT_REV = 30;
+export const VEHICLE_VARIANT_REV = 31;
 
 const WHEEL_PIVOT_NAMES = ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] as const;
 type TWheelPivotName = (typeof WHEEL_PIVOT_NAMES)[number];
@@ -491,11 +491,41 @@ const normalizeSedan = (root: Object3D) => {
   ensureMissingWheelPivots(root);
 };
 
+/** Пикап: бордовый кузов вместо authored-синего из GLB, не сливается с Logan */
+export const PICKUP_BODY_COLOR = 0x71121f;
+
+/**
+ * Клонируем paint-материал (как у седана), чтобы не закрасить оригинал
+ * GLB-сцены; roughness — глянец автолака вместо authored-матового 0.96,
+ * metalness не трогаем: без envMap металл в сцене чернеет.
+ */
+const paintPickupBodyBurgundy = (root: Object3D): void => {
+  root.traverse((object) => {
+    if (!isMesh(object)) {
+      return;
+    }
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    const painted = materials.map((material): Material => {
+      if (!isStandardMaterial(material) || material.name !== 'RAM_1500TRX_2021Paint_Material') {
+        return material;
+      }
+      const clone = material.clone();
+      clone.name = 'PickupBodyPaint';
+      clone.color.setHex(PICKUP_BODY_COLOR);
+      clone.roughness = 0.32;
+      clone.needsUpdate = true;
+      return clone;
+    });
+    object.material = painted.length === 1 ? painted[0]! : painted;
+  });
+};
+
 const normalizePickup = (root: Object3D) => {
   renameMaterials(root, 'RAM_1500TRX_2021LightA_Material', 'Headlight');
   renameMaterials(root, 'RED_GLASS', 'Brakelight');
   renameMaterials(root, 'ORANGE_GLASS', 'Signallight');
   prepareEmissiveLightMaterials(root);
+  paintPickupBodyBurgundy(root);
   root.updateMatrixWorld(true);
   const bodyBox = tmpBox.setFromObject(root);
   const mid = bodyBox.getCenter(tmpCenter);
@@ -561,10 +591,7 @@ const largestGapBoundary = (sorted: number[], minGap: number): number | null => 
 };
 
 /** Возвращает две части меша: low (world z < splitZ) и high (world z >= splitZ) */
-const splitMeshByWorldZ = (
-  mesh: Mesh,
-  splitZ: number,
-): { low: Mesh | null; high: Mesh | null } => {
+const splitMeshByWorldZ = (mesh: Mesh, splitZ: number): { low: Mesh | null; high: Mesh | null } => {
   const geometry = mesh.geometry;
   const position = geometry.getAttribute('position');
   if (!position) {

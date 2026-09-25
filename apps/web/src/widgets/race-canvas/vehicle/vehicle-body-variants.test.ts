@@ -9,6 +9,7 @@ import {
   type Object3D,
 } from 'three';
 import {
+  PICKUP_BODY_COLOR,
   SEDAN_BODY_COLOR,
   measureHeadlightLampPositions,
   normalizeVehicleGltf,
@@ -66,7 +67,15 @@ const buildSedanStub = (): Group => {
     new Mesh(new BoxGeometry(3.2, 0.4, 4.6), new MeshStandardMaterial({ name: 'Podveska_Salon' })),
   );
 
-  const panel = (name: string, x: number, y: number, z: number, w: number, h: number, d: number) => {
+  const panel = (
+    name: string,
+    x: number,
+    y: number,
+    z: number,
+    w: number,
+    h: number,
+    d: number,
+  ) => {
     const mesh = new Mesh(new BoxGeometry(w, h, d), kuzov1);
     mesh.name = name;
     mesh.position.set(x, y, z);
@@ -368,7 +377,8 @@ describe('normalizeVehicleGltf', () => {
     expect(materialNamesOn(root, 'Povorotnik_low_Kuzov1_0')).toContain('Signallight');
 
     // Панель кузова красится в синий и отвязывается от атласа
-    const bodyMat = (root.getObjectByName('Kuzov_low_Kuzov1_0') as Mesh).material as MeshStandardMaterial;
+    const bodyMat = (root.getObjectByName('Kuzov_low_Kuzov1_0') as Mesh)
+      .material as MeshStandardMaterial;
     expect(bodyMat.color.getHex()).toBe(SEDAN_BODY_COLOR);
     expect(bodyMat.map).toBeNull();
     expect(bodyMat.name).not.toBe('Kuzov1');
@@ -393,9 +403,11 @@ describe('normalizeVehicleGltf', () => {
     expect(tireMat!.map).not.toBeNull();
 
     // Стёкла/корпуса света получают пониженный metalness (emissive читается ночью)
-    const hlMat = (root.getObjectByName('Fara_1_low_glass_0') as Mesh).material as MeshStandardMaterial;
+    const hlMat = (root.getObjectByName('Fara_1_low_glass_0') as Mesh)
+      .material as MeshStandardMaterial;
     expect(hlMat.metalness).toBeLessThanOrEqual(0.2);
-    const blMat = (root.getObjectByName('Fonar_low_Kuzov1_0') as Mesh).material as MeshStandardMaterial;
+    const blMat = (root.getObjectByName('Fonar_low_Kuzov1_0') as Mesh)
+      .material as MeshStandardMaterial;
     expect(blMat.metalness).toBeLessThanOrEqual(0.2);
 
     // Нос смотрит в +Z (контракт гонки)
@@ -418,7 +430,11 @@ describe('normalizeVehicleGltf', () => {
     expect(root.getObjectByName('WheelRearL')).toBeTruthy();
     expect(root.getObjectByName('WheelRearR')).toBeTruthy();
 
-    expect(materialNamesOn(root, 'PaintBody')).toContain('RAM_1500TRX_2021Paint_Material');
+    // Кузов перекрашен в бордовый (в GLB authored-синий) и получил глянец автолака
+    const paintMat = (root.getObjectByName('PaintBody') as Mesh).material as MeshStandardMaterial;
+    expect(paintMat.name).toBe('PickupBodyPaint');
+    expect(paintMat.color.getHex()).toBe(PICKUP_BODY_COLOR);
+    expect(paintMat.roughness).toBeLessThan(0.5);
     expect(materialNamesOn(root, 'LightGeo')).toContain('Headlight');
     expect(materialNamesOn(root, 'RedGlass')).toContain('Brakelight');
     expect(materialNamesOn(root, 'OrangeGlass')).toContain('Signallight');
@@ -451,12 +467,8 @@ describe('normalizeVehicleGltf', () => {
 
     // Нос в +Z: передний (фары) и задний (стекло фонарей) кластеры по своим бортам
     root.updateMatrixWorld(true);
-    const frontZ = new Box3()
-      .setFromObject(frontGlass as Mesh)
-      .getCenter(new Vector3()).z;
-    const rearZ = new Box3()
-      .setFromObject(rearGlass as Mesh)
-      .getCenter(new Vector3()).z;
+    const frontZ = new Box3().setFromObject(frontGlass as Mesh).getCenter(new Vector3()).z;
+    const rearZ = new Box3().setFromObject(rearGlass as Mesh).getCenter(new Vector3()).z;
     expect(frontZ).toBeGreaterThan(0);
     expect(rearZ).toBeLessThan(0);
     expect(frontZ).toBeGreaterThan(rearZ);
