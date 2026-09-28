@@ -30,13 +30,16 @@ const installCanvas2dMock = (): void => {
     if (type !== '2d') {
       return null;
     }
-    const ctx = {
-      createImageData: (width: number, height: number): ImageData => ({
-        width,
-        height,
-        data: new Uint8ClampedArray(width * height * 4),
-        colorSpace: 'srgb',
-      }),
+    const ctx: Partial<CanvasRenderingContext2D> = {
+      createImageData: (sw: number | ImageData, sh?: number): ImageData => {
+        const src = typeof sw === 'number' ? { width: sw, height: sh ?? sw } : sw;
+        return {
+          width: src.width,
+          height: src.height,
+          data: new Uint8ClampedArray(src.width * src.height * 4),
+          colorSpace: 'srgb',
+        };
+      },
       putImageData: vi.fn(),
     };
     return ctx as CanvasRenderingContext2D;
