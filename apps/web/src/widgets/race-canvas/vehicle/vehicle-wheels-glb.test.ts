@@ -1,6 +1,14 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Box3, Group, Quaternion, Vector3, type Object3D, type SkinnedMesh } from 'three';
+import {
+  Box3,
+  Group,
+  Matrix4,
+  Quaternion,
+  Vector3,
+  type Object3D,
+  type SkinnedMesh,
+} from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -505,6 +513,63 @@ describe('real glb wheel integration', () => {
       expect(Math.abs(delta), `scirocco/${name}: rear wheel stays straight`).toBeLessThan(0.5);
     }
   }, 30000);
+
+  it('scirocco (Sport): RENDERED (skinned) front-wheel toe follows the steer pivot', async () => {
+    // Регрессия на «видимое» руление: узлы-пивоты могут крутиться, а реально отрендеренная
+    // шина (SkinnedMesh у Scirocco) должна следовoвать за ними. measureWheelAxle этого не
+    // ловит (игнорирует skin) — поэтому замеряем по skinning-проходу three.js (renderedToeDeg).
+    const gltf = await load('scirocco.glb');
+    const root = cloneSkinned(gltf.scene) as Group;
+    normalizeVehicleGltf(root, 'scirocco');
+    root.updateMatrixWorld(true);
+
+    const MAX_STEER = 0.56;
+    type TRig = { steerPivot: Group; steerAxisLocal: Vector3 };
+    const rigs: Record<string, TRig> = {};
+    for (const name of WHEEL_NAMES) {
+      const wheel = root.getObjectByName(name);
+      expect(wheel, `wheel ${name} exists`).toBeTruthy();
+      if (!wheel) {
+        continue;
+      }
+      const anchor = wheel.parent;
+      expect(anchor, `parent ${name}`).toBeTruthy();
+      if (!anchor) {
+        continue;
+      }
+      expect(attachRigPivots(wheel)).toBe(true);
+      const steerPivot = root.getObjectByName(`${name}_steer`) as Group;
+      expect(steerPivot, `${name}_steer exists`).toBeTruthy();
+      rigs[name] = {
+        steerPivot,
+        steerAxisLocal: computeSteerAxisLocal(anchor.getWorldQuaternion(new Quaternion())),
+      };
+    }
+    root.updateMatrixWorld(true);
+
+    const before: Record<string, number> = {};
+    for (const name of WHEEL_NAMES) {
+      before[name] = renderedToeDeg(root.getObjectByName(name)!);
+    }
+
+    // Рулим только передними пивотами (isFront) — как applyWheelAnimation.
+    for (const name of FRONT_WHEEL_NAMES) {
+      const rig = rigs[name]!;
+      rig.steerPivot.quaternion.setFromAxisAngle(rig.steerAxisLocal, MAX_STEER);
+    }
+    root.updateMatrixWorld(true);
+
+    for (const name of FRONT_WHEEL_NAMES) {
+      const delta = bearingDelta(before[name]!, renderedToeDeg(root.getObjectByName(name)!));
+      expect(Math.abs(delta), `scirocco/${name}: rendered skinned toe steers`).toBeGreaterThan(15);
+    }
+    for (const name of REAR_WHEEL_NAMES) {
+      const delta = bearingDelta(before[name]!, renderedToeDeg(root.getObjectByName(name)!));
+      expect(Math.abs(delta), `scirocco/${name}: rendered skinned toe stays straight`).toBeLessThan(
+        1,
+      );
+    }
+  }, 30000);
 });
 
 
@@ -576,6 +641,68 @@ const attachRigPivots = (wheel: Object3D): boolean => {
 
   spinPivot.attach(wheel);
   return true;
+};
+
+/**
+ * Точка геометрии SkinnedMesh после полного skinning-прохода three.js в мировых
+ * координатах: worldSkinned = matrixWorld * (Σ w_i * boneInverses_i * boneMatrixWorld_i * v).
+ * Это именно то, что видит GPU — поэтому замер toe по этим точкам отражает ВИДИМОЕ
+ * положение шины, а не только мировой трансформ узла (measureWheelAxle игнорирует skin).
+ *
+ * Для non-skinned колеса (нет скелета) — fallback на обычные мировые точки.
+ */
+const renderedTirePoints = (wheel: Object3D): Vector3[] => {
+  let found: SkinnedMesh | null = null;
+  wheel.traverse((o) => {
+    if (found === null && isSkinned(o)) {
+      found = o;
+    }
+  });
+  const sk = found as SkinnedMesh | null;
+  if (sk === null) {
+    return samplePts(wheel, false);
+  }
+  sk.updateWorldMatrix(true, true);
+  const pos = sk.geometry.getAttribute('position');
+  const si = sk.geometry.getAttribute('skinIndex');
+  const sw = sk.geometry.getAttribute('skinWeight');
+  const bones = sk.skeleton.bones;
+  const invs = sk.skeleton.boneInverses;
+  const boneM = new Matrix4();
+  const tmp = new Vector3();
+  const acc = new Vector3();
+  const out: Vector3[] = [];
+  const stride = Math.max(1, Math.floor(pos.count / 150));
+  for (let i = 0; i < pos.count; i += stride) {
+    acc.set(0, 0, 0);
+    for (let k = 0; k < 4; k += 1) {
+      const id = si.getX(i * 4 + k);
+      if (id === undefined || id === null) {
+        continue;
+      }
+      const w = sw.getX(i * 4 + k);
+      if (!w) {
+        continue;
+      }
+      const inv = invs[id];
+      const b = bones[id];
+      if (!inv || !b) {
+        continue;
+      }
+      boneM.multiplyMatrices(inv, b.matrixWorld);
+      tmp.fromBufferAttribute(pos, i).applyMatrix4(boneM);
+      acc.addScaledVector(tmp, w);
+    }
+    out.push(new Vector3().copy(acc).applyMatrix4(sk.matrixWorld));
+  }
+  return out;
+};
+
+/** Видимый toe (азимут оси «тонкости» в XZ) по реально отрендеренной геометрии, град. */
+const renderedToeDeg = (wheel: Object3D): number => {
+  const pts = renderedTirePoints(wheel);
+  const c = centerOf(pts);
+  return minWidthDeg(pts, c.x, c.z).deg;
 };
 
 
