@@ -16,7 +16,7 @@ import type { TVehicleFit } from '@/widgets/race-canvas/vehicle/vehicle-fit';
  * Bust useMemo clone cache when normalize logic changes (HMR).
  * Bump when shipping visual fixes for garage bodies.
  */
-export const VEHICLE_VARIANT_REV = 31;
+export const VEHICLE_VARIANT_REV = 32;
 
 const WHEEL_PIVOT_NAMES = ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] as const;
 type TWheelPivotName = (typeof WHEEL_PIVOT_NAMES)[number];

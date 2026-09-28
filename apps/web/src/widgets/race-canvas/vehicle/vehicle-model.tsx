@@ -35,8 +35,10 @@ import {
 } from '@/widgets/race-canvas/vehicle/vehicle-rear-lights';
 import {
   computeAckermannScale,
+  computeAxleLocal,
   computeSteerAxisLocal,
   computeToeYawCorrection,
+  measureWheelAxle,
 } from '@/widgets/race-canvas/vehicle/vehicle-wheel-rig';
 
 /** Прогревает все GLB гаража (tracks / race / garage) */
@@ -63,9 +65,6 @@ const tmpBox = new Box3();
 const tmpCenter = new Vector3();
 const tmpColor = new Color();
 const tmpQuat = new Quaternion();
-const tmpAxleWorld = new Vector3();
-/** Ось шины в локальном пространстве колеса (тонкое измерение геометрии) */
-const WHEEL_AXLE_LOCAL = new Vector3(1, 0, 0);
 
 type TWheelRig = {
   /** Pivot руления вокруг мировой вертикали (в осях родителя) */
@@ -176,17 +175,21 @@ const buildWheelRig = (wheel: Object3D, isFront: boolean): TWheelRig | null => {
   // attach сохраняет world matrix на момент сборки
   spinPivot.attach(wheel);
 
-  tmpAxleWorld
-    .copy(WHEEL_AXLE_LOCAL)
-    .applyQuaternion(wheel.getWorldQuaternion(tmpQuat))
-    .normalize();
-  const yawCorr = computeToeYawCorrection(tmpAxleWorld);
+  // Ось шины мерим по геометрии: у моделей с identity-нодами узел колёс ничем не
+  // повёрнут, а toe запечён в вершины — из wheel.getWorldQuaternion() его не достать.
+  const wheelAxleWorld = measureWheelAxle(wheel);
+  const yawCorr = computeToeYawCorrection(wheelAxleWorld);
   if (Math.abs(yawCorr) > 1e-5) {
     alignPivot.quaternion.setFromAxisAngle(steerAxisLocal, yawCorr);
   }
 
-  // Ось шины в пространстве spinPivot после attach (align крутит родителя, не wheel.local)
-  const axleLocal = WHEEL_AXLE_LOCAL.clone().applyQuaternion(wheel.quaternion).normalize();
+  // Ось шины в локальных осях пивота вращения. measureWheelAxle возвращает направление с
+  // x ≥ 0 (обе стороны крутятся общим spinAngle вперёд), но в мировом пространстве.
+  // Вращение spinPivot.quaternion выполняется в локальном фрейме пивота (= фрейм
+  // родителя), поэтому мировую ось нужно привести в этот фрейм — иначе у моделей под
+  // повёрнутым родителем (BodyUnderside у CarConcept, −90° по X) колесо крутится вокруг
+  // «чужой» оси (хаотичное вращение). У корневых пивотов (sedan/pickup) конверсия тождественна.
+  const axleLocal = computeAxleLocal(wheelAxleWorld, parent.getWorldQuaternion(tmpQuat));
   // Левое колесо на +X
   const sideSign = tmpCenter.x >= 0 ? 1 : -1;
 
