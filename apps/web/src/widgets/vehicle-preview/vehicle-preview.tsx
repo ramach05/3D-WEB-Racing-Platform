@@ -10,6 +10,7 @@ import {
   VehicleModel,
 } from '@/widgets/race-canvas';
 
+/** Пустой drive — стартовое значение ref'а (каждый превью мутирует СВОЮ копию). */
 const IDLE_DRIVE: TVehicleDriveVisual = {
   forwardSpeed: 0,
   steer: 0,
@@ -25,6 +26,17 @@ const PREVIEW_CLEAR = '#ebe7f2';
 
 /** Скорость лёгкого вращения превью (рад/с) */
 const PREVIEW_SPIN = 0.35;
+
+/**
+ * Демо-руление превью: передние колёса качаются влево-вправо через продакшн-риг
+ * (steer → steerPivot), как в заезде. Без этого превью всегда кормит steer=0, и
+ * колёса («steer and spin garage wheels from measured axle») не поворачиваются.
+ */
+const PREVIEW_STEER_SWING = 0.55;
+/** Плавный размах руля (рад/с): полный влево-вправо ≈ 2π / 0.65 ≈ 9.7 с */
+const PREVIEW_STEER_SPEED = 0.65;
+/** Небольшая продольная скорость (м/с), чтобы колёса медленно вращались */
+const PREVIEW_SPIN_SPEED = 1.1;
 
 /**
  * Стартовый ракурс ~¾ + 180° только для превью гаража (на гонку не влияет).
@@ -51,13 +63,23 @@ const PreviewCameraAim = () => {
 /** Сцена: свет уровня дневной трассы + тот же VehicleModel */
 const PreviewScene = ({ vehicleId }: TPreviewSceneProps) => {
   const turntableRef = useRef<Group>(null);
-  const driveVisualRef = useRef<TVehicleDriveVisual>(IDLE_DRIVE);
+  const timeRef = useRef(0);
+  // Своя копия на превью: useFrame мутирует .current, общий IDLE_DRIVE нельзя делить между карточками.
+  const driveVisualRef = useRef<TVehicleDriveVisual>({ ...IDLE_DRIVE });
 
   useFrame((_, dt) => {
     if (!turntableRef.current) {
       return;
     }
+    timeRef.current += dt;
     turntableRef.current.rotation.y += dt * PREVIEW_SPIN;
+
+    // Демо-руление: front-колёса качаются влево-вправо (steer → steerPivot) и все
+    // колёса медленно вращаются (spin от forwardSpeed) — через тот же продакшн-путь,
+    // что в заезде. Так «steer and spin garage wheels» виден в самих превью гаража.
+    driveVisualRef.current.steer =
+      Math.sin(timeRef.current * PREVIEW_STEER_SPEED) * PREVIEW_STEER_SWING;
+    driveVisualRef.current.forwardSpeed = PREVIEW_SPIN_SPEED;
   });
 
   return (
