@@ -1,18 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  Box3,
-  Group,
-  Matrix4,
-  Quaternion,
-  Vector3,
-  type Object3D,
-  type SkinnedMesh,
-} from 'three';
+import { Box3, Group, Matrix4, Quaternion, Vector3, type Object3D, type SkinnedMesh } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { normalizeVehicleGltf } from './vehicle-body-variants';
+import { VEHICLE_TARGET_LENGTH } from './vehicle-fit';
 import {
   computeAxleLocal,
   computeSteerAxisLocal,
@@ -86,8 +79,7 @@ const load = async (fileName: string) => {
   return new Promise<{ scene: Group }>((res, rej) => loader.parse(data, '', res, rej));
 };
 
-const isSkinned = (o: Object3D): o is SkinnedMesh =>
-  (o as SkinnedMesh).isSkinnedMesh === true;
+const isSkinned = (o: Object3D): o is SkinnedMesh => (o as SkinnedMesh).isSkinnedMesh === true;
 
 /** Выборка мировых точек геометрии: обычный matrixWorld или с учётом bindMatrix (rest-поза SkinnedMesh). */
 const samplePts = (wheel: Object3D, useBind: boolean): Vector3[] => {
@@ -243,9 +235,7 @@ const wheelDiag = (root: Group, name: string): TWheelDiag => {
   const mRaw = minWidthDeg(ptsRaw, cRaw.x, cRaw.z);
   const mBind = minWidthDeg(ptsBind, cBind.x, cBind.z);
   info.ptsCount = ptsRaw.length;
-  info.sweep = [0, 30, 60, 90].map(
-    (d) => +widthAt(ptsRaw, cRaw.x, cRaw.z, d).toFixed(3),
-  );
+  info.sweep = [0, 30, 60, 90].map((d) => +widthAt(ptsRaw, cRaw.x, cRaw.z, d).toFixed(3));
   info.rawDeg = mRaw.deg;
   info.rawThin = mRaw.thinRatio.toFixed(2);
   info.bindDeg = mBind.deg;
@@ -258,11 +248,12 @@ const wheelDiag = (root: Group, name: string): TWheelDiag => {
   let cursor: Object3D | null = w.parent;
   while (cursor && chain.length < 5) {
     const q = cursor.getWorldQuaternion(new Quaternion());
-    const nonIdentity =
-      Math.abs(q.x) > 1e-3 || Math.abs(q.y) > 1e-3 || Math.abs(q.z) > 1e-3;
+    const nonIdentity = Math.abs(q.x) > 1e-3 || Math.abs(q.y) > 1e-3 || Math.abs(q.z) > 1e-3;
     chain.push(
       `${cursor.name}${
-        nonIdentity ? ` q(${q.x.toFixed(2)},${q.y.toFixed(2)},${q.z.toFixed(2)},${q.w.toFixed(2)})` : ''
+        nonIdentity
+          ? ` q(${q.x.toFixed(2)},${q.y.toFixed(2)},${q.z.toFixed(2)},${q.w.toFixed(2)})`
+          : ''
       }`,
     );
     cursor = cursor.parent;
@@ -291,6 +282,8 @@ describe('real glb wheel integration', () => {
     ['scirocco', 'scirocco.glb'],
     ['juke', 'juke.glb'],
     ['hatchback', 'car-concept.glb'],
+    ['sedan', 'logan.glb'],
+    ['pickup', 'ram.glb'],
   ] as const;
 
   // setup.ts включает MSW с onUnhandledRequest: 'error'. Текстуры грузятся через
@@ -357,6 +350,45 @@ describe('real glb wheel integration', () => {
       }
     }, 30000);
 
+    it(`${vehicleId}: measured wheel radius scales to a realistic value after fit`, async () => {
+      const gltf = await load(file);
+      const root = cloneSkinned(gltf.scene) as Group;
+      normalizeVehicleGltf(root, vehicleId);
+      root.updateMatrixWorld(true);
+
+      // fit.scale = целевая длина / длина AABB кузова — как в prepareVehicleRoot.
+      const bodySize = new Box3().setFromObject(root).getSize(new Vector3());
+      const fitScale = VEHICLE_TARGET_LENGTH / Math.max(bodySize.z, 1e-6);
+
+      // Реплика measureWheelRadius (vehicle-model.tsx): радиус БЕЗ клампа 0.12 в модельных
+      // единицах. Старый кламп ломал мини-масштабированные модели: у ram.glb (вся машина
+      // ~0.06, диаметр колеса ~0.009) он давал 0.12 × fitScale(≈55) = ~6.6 м — spin в ~24
+      // раза медленнее. Безопасный нижний предел ставится на МИРОВОМ радиусе в spin-расчёте.
+      const wheel = root.getObjectByName('WheelFrontL') ?? root.getObjectByName('WheelRearL');
+      expect(wheel, 'wheel pivot exists').toBeTruthy();
+      if (!wheel) {
+        return;
+      }
+      const size = new Box3().setFromObject(wheel).getSize(new Vector3());
+      const modelRadius = Math.min(size.y, size.z) * 0.5;
+      const effectiveRadius = modelRadius * fitScale;
+
+      if (DEBUG) {
+        console.log(
+          `${vehicleId}: wheelRadius(model)=${modelRadius.toFixed(4)} fitScale=${fitScale.toFixed(2)} ` +
+            `effective=${effectiveRadius.toFixed(3)} m`,
+        );
+      }
+
+      // Физичный радиус колеса после фита: ~15–45 см. Пикап до фикса давал 6.6 м.
+      expect(effectiveRadius, `${vehicleId}: effective wheel radius realistic`).toBeGreaterThan(
+        0.12,
+      );
+      expect(effectiveRadius, `${vehicleId}: effective wheel radius not blown up`).toBeLessThan(
+        0.45,
+      );
+    }, 30000);
+
     it(`${vehicleId}: rig projection zeroes toe, spins on axle, steers on world up`, async () => {
       const gltf = await load(file);
       const root = cloneSkinned(gltf.scene) as Group;
@@ -398,10 +430,7 @@ describe('real glb wheel integration', () => {
       const rootPre = cloneSkinned(gltf.scene) as Group;
       normalizeVehicleGltf(rootPre, vehicleId);
       rootPre.updateMatrixWorld(true);
-      const pre = new Map<
-        string,
-        { axle: Vector3; bearing: number; center: Vector3 }
-      >();
+      const pre = new Map<string, { axle: Vector3; bearing: number; center: Vector3 }>();
       for (const name of WHEEL_NAMES) {
         const w = rootPre.getObjectByName(name)!;
         const axle = measureWheelAxle(w);
@@ -570,8 +599,89 @@ describe('real glb wheel integration', () => {
       );
     }
   }, 30000);
-});
 
+  it('scirocco (Sport): RENDERED (skinned) wheel geometry spins about the measured axle', async () => {
+    // Регрессия на «видимое» вращение: руление покрыто RENDERED-тестом выше, а спин —
+    // только математически (spinWorldDot ≈ 1). Здесь крутим именно spinPivot и смотрим,
+    // что отрендеренные через skinning точки геометрии реально уехали вокруг оси шины:
+    // точки сдвинулись (spin виден), а центр XZ на месте (это вращение вокруг оси,
+    // а не сдвиг/руление). Если бы spin «вхолостую» крутил пивот, не влияя на SkinnedMesh,
+    // maxMove был бы ≈ 0 — и тест упал бы.
+    const gltf = await load('scirocco.glb');
+    const root = cloneSkinned(gltf.scene) as Group;
+    normalizeVehicleGltf(root, 'scirocco');
+    root.updateMatrixWorld(true);
+
+    const axes: Record<string, Vector3> = {};
+    for (const name of WHEEL_NAMES) {
+      const wheel = root.getObjectByName(name);
+      expect(wheel, `wheel ${name} exists`).toBeTruthy();
+      if (!wheel) {
+        continue;
+      }
+      const anchor = wheel.parent;
+      expect(anchor, `parent ${name}`).toBeTruthy();
+      if (!anchor) {
+        continue;
+      }
+      expect(attachRigPivots(wheel)).toBe(true);
+      // Ось spinPivot — в локальном фрейме пивота (= фрейм родителя), как в buildWheelRig
+      axes[name] = computeAxleLocal(
+        measureWheelAxle(wheel),
+        anchor.getWorldQuaternion(new Quaternion()),
+      );
+    }
+    root.updateMatrixWorld(true);
+
+    const before: Record<string, Vector3[]> = {};
+    for (const name of WHEEL_NAMES) {
+      const wheel = root.getObjectByName(name);
+      if (wheel) {
+        before[name] = renderedTirePoints(wheel);
+      }
+    }
+
+    const SPIN = Math.PI / 2;
+    for (const name of WHEEL_NAMES) {
+      const spinPivot = root.getObjectByName(`${name}_spin`) as Group | undefined;
+      expect(spinPivot, `${name}_spin exists`).toBeTruthy();
+      if (!spinPivot) {
+        continue;
+      }
+      spinPivot.quaternion.setFromAxisAngle(axes[name]!, SPIN);
+    }
+    root.updateMatrixWorld(true);
+
+    for (const name of WHEEL_NAMES) {
+      const wheel = root.getObjectByName(name);
+      if (!wheel) {
+        continue;
+      }
+      const after = renderedTirePoints(wheel);
+      const ref = before[name]!;
+      expect(after.length, `${name}: same sampled point count`).toBe(ref.length);
+
+      const cBefore = centerOf(ref);
+      const cAfter = centerOf(after);
+      const centerShift = Math.hypot(cAfter.x - cBefore.x, cAfter.z - cBefore.z);
+      let maxMove = 0;
+      for (let i = 0; i < ref.length; i += 1) {
+        const d = ref[i]!.distanceTo(after[i]!);
+        if (d > maxMove) {
+          maxMove = d;
+        }
+      }
+      expect(
+        centerShift,
+        `${name}: spin runs about the wheel centre, not as drift/steer`,
+      ).toBeLessThan(0.12);
+      expect(
+        maxMove,
+        `${name}: rendered skinned geometry actually spins about the axle`,
+      ).toBeGreaterThan(0.1);
+    }
+  }, 30000);
+});
 
 /** Воспроизводит математику buildWheelRig без мутаций дерева: возвращает эффекты в мировых осях. */
 const projectWheelRig = (wheel: Object3D) => {
@@ -704,6 +814,3 @@ const renderedToeDeg = (wheel: Object3D): number => {
   const c = centerOf(pts);
   return minWidthDeg(pts, c.x, c.z).deg;
 };
-
-
-

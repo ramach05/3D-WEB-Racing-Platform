@@ -379,7 +379,11 @@ const measureWheelRadius = (root: Object3D): number => {
   tmpBox.setFromObject(wheel);
   const size = tmpBox.getSize(tmpCenter);
   const diameter = Math.min(size.y, size.z);
-  return Math.max(diameter * 0.5, 0.12);
+  // Не клампим в модельных единицах: для мини-масштабированных моделей (ram.glb —
+  // вся машина ~0.06, диаметр колеса ~0.009) старый кламп 0.12 после × fitScale (~55)
+  // давал эффективный радиус ~6.6 м → spin в ~24 раза медленнее. Нижний предел на
+  // МИРОВОМ радиусе (wheelRadius × fitScale) ставит spin-расчёт: Math.max(…, 0.05).
+  return Math.max(diameter * 0.5, 1e-4);
 };
 
 /** Клонирует кузов, нормализует имена, собирает wheel-rig и fit */

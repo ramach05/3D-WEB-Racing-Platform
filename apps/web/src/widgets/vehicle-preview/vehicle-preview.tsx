@@ -4,11 +4,7 @@ import type { Group } from 'three';
 import type { TVehicleId } from '@/entities/vehicle';
 import { carSkins } from '@/shared/config';
 import { cx } from '@/shared/lib';
-import {
-  preloadVehicleModel,
-  type TVehicleDriveVisual,
-  VehicleModel,
-} from '@/widgets/race-canvas';
+import { preloadVehicleModel, type TVehicleDriveVisual, VehicleModel } from '@/widgets/race-canvas';
 
 /** Пустой drive — стартовое значение ref'а (каждый превью мутирует СВОЮ копию). */
 const IDLE_DRIVE: TVehicleDriveVisual = {
