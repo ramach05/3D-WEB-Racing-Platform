@@ -187,8 +187,12 @@ export type TVehiclePalette = {
   glass: TCssColor;
   /** Стоп-сигналы */
   brake: TCssColor;
+  /** Тёмно-красный поликарбонат линзы стопов (выкл.) */
+  brakeGlass: TCssColor;
   /** Emissive стоп-сигналов */
   brakeEmissive: TCssColor;
+  /** Тёмно-янтарная линза поворотников */
+  signalGlass: TCssColor;
   /** Emissive фонарей заднего хода */
   reverseEmissive: TCssColor;
   /** Корпус фары */

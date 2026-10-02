@@ -176,7 +176,11 @@ export const vehiclePalette = {
   headlight: '#fff8e0',
   glass: '#88ccff',
   brake: '#ff3333',
+  /** Тёмно-красный поликарбонат линзы (выкл.) — не smoked-black и не «краска» */
+  brakeGlass: '#24080a',
   brakeEmissive: '#ff0a0a',
+  /** Тёмно-янтарная линза поворотника */
+  signalGlass: '#3d200a',
   reverseEmissive: '#f2f5ff',
   headlamp: '#ffffcc',
   headlampEmissive: '#ffffaa',

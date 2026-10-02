@@ -1,5 +1,5 @@
-/** Emissive задних огней в покое / при торможении / при заднем ходе */
-export const REAR_LIGHT_EMISSIVE_IDLE = 0.4;
+/** Лёгкий подсвет линзы днём в покое — глубина поликарбоната, не «включённые» габариты */
+export const REAR_LIGHT_EMISSIVE_IDLE = 0.28;
 /** Габариты на ночной трассе (headlightsOn) — читаемее idle */
 export const REAR_LIGHT_EMISSIVE_NIGHT_IDLE = 1.6;
 export const REAR_LIGHT_EMISSIVE_BRAKE = 5.5;

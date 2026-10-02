@@ -83,6 +83,10 @@ export const sampleWheelWorldPoints = (
     if (!isMeshObject(object) || budget <= 0) {
       return;
     }
+    // Procedural Juke TireFill — ось уже выровнена; не должна затирать authored toe
+    if (object.name.endsWith('_TireFill') || !object.visible) {
+      return;
+    }
     const position = object.geometry.getAttribute('position');
     if (!position) {
       return;

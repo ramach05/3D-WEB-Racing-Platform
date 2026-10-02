@@ -18,16 +18,17 @@ import type { TCarSkin } from '@/entities/track';
 import { getVehicle, HATCHBACK_GLTF_PATH, VEHICLES, type TVehicleId } from '@/entities/vehicle';
 import { vehiclePalette } from '@/shared/config';
 import {
+  attachJukeProceduralTires,
   normalizeVehicleGltf,
   resolveHeadlightLampPositions,
   VEHICLE_VARIANT_REV,
   type THeadlightLamps,
 } from '@/widgets/race-canvas/vehicle/vehicle-body-variants';
 import {
-  VEHICLE_TARGET_LENGTH,
   computeVehicleFit,
   type TVehicleFit,
 } from '@/widgets/race-canvas/vehicle/vehicle-fit';
+import { VehicleModelFallback } from '@/widgets/race-canvas/vehicle/vehicle-model-fallback';
 import {
   rearLightEmissiveIntensity,
   resolveRearLightMode,
@@ -55,7 +56,8 @@ const STEER_DAMP = 14;
 /** Fallback радиус колеса до fit — для spin от forwardSpeed */
 const MODEL_WHEEL_RADIUS = 0.42;
 const HEADLIGHT_EMISSIVE_ON = 1.8;
-const HEADLIGHT_EMISSIVE_OFF = 0.05;
+/** Днём фары полностью выкл. (без тёплого «подсвеченного» стекла) */
+const HEADLIGHT_EMISSIVE_OFF = 0;
 
 const FRONT_WHEEL_NAMES = ['WheelFrontL', 'WheelFrontR'] as const;
 const REAR_WHEEL_NAMES = ['WheelRearL', 'WheelRearR'] as const;
@@ -249,7 +251,6 @@ const setCastShadow = (root: Object3D, castShadow: boolean) => {
 
 /** Настраивает emissive фар по ночному режиму */
 const setHeadlightEmissive = (root: Object3D, headlightsOn: boolean) => {
-  const intensity = headlightsOn ? HEADLIGHT_EMISSIVE_ON : HEADLIGHT_EMISSIVE_OFF;
   root.traverse((object) => {
     if (!isMesh(object)) {
       return;
@@ -262,13 +263,21 @@ const setHeadlightEmissive = (root: Object3D, headlightsOn: boolean) => {
       if (material.name !== 'Headlight') {
         continue;
       }
-      material.emissive.set(vehiclePalette.headlampEmissive);
-      material.emissiveIntensity = intensity;
+      if (headlightsOn) {
+        material.emissive.set(vehiclePalette.headlampEmissive);
+        material.emissiveIntensity = HEADLIGHT_EMISSIVE_ON;
+      } else {
+        material.emissive.set('#000000');
+        material.emissiveIntensity = HEADLIGHT_EMISSIVE_OFF;
+      }
     }
   });
 };
 
-/** Собирает материалы стопов один раз после клонирования */
+/**
+ * Собирает материалы стопов один раз после клонирования.
+ * Только Brakelight — Signallight (поворотники/янтарь) не участвует в brake/reverse.
+ */
 const collectBrakeMaterials = (root: Object3D): MeshStandardMaterial[] => {
   const result: MeshStandardMaterial[] = [];
   root.traverse((object) => {
@@ -280,10 +289,19 @@ const collectBrakeMaterials = (root: Object3D): MeshStandardMaterial[] => {
       if (!isStandardMaterial(material)) {
         continue;
       }
-      if (material.name !== 'Brakelight' && material.name !== 'Signallight') {
+      if (material.name !== 'Brakelight') {
         continue;
       }
+      // Поликарбонат линзы: тёмный красный + глянец (не атлас / не «краска»)
+      material.color.set(vehiclePalette.brakeGlass);
+      material.map = null;
+      material.metalness = 0.12;
+      material.roughness = 0.2;
+      material.envMapIntensity = 1.35;
       material.emissive.set(vehiclePalette.brakeEmissive);
+      material.emissiveMap = null;
+      material.emissiveIntensity = 0;
+      material.needsUpdate = true;
       result.push(material);
     }
   });
@@ -423,6 +441,11 @@ const prepareVehicleRoot = (
     }
   }
 
+  // Juke: procedural TireFill после align — ось без toe, толстый тор
+  if (vehicleId === 'juke') {
+    attachJukeProceduralTires(cloned);
+  }
+
   const fit = measureFit(cloned);
   return {
     cloned,
@@ -529,16 +552,6 @@ const GltfVehicleModelInner = ({
     </group>
   );
 };
-
-/** Fallback тех же габаритов, пока грузится GLB */
-const VehicleModelFallback = ({ carSkin }: { carSkin: TCarSkin }) => (
-  <group>
-    <mesh position={[0, 0.35, 0.1]} castShadow receiveShadow>
-      <boxGeometry args={[VEHICLE_TARGET_LENGTH * 0.48, 0.28, VEHICLE_TARGET_LENGTH * 0.88]} />
-      <meshStandardMaterial color={carSkin.body} metalness={0.35} roughness={0.45} />
-    </mesh>
-  </group>
-);
 
 /** Кузов: отдельный GLB на каждый vehicleId */
 export const VehicleModel = (props: TVehicleModelProps) => (

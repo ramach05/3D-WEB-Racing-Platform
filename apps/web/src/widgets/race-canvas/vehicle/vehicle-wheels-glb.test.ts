@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Box3, Group, Matrix4, Quaternion, Vector3, type Object3D, type SkinnedMesh } from 'three';
+import { Box3, Group, Quaternion, Vector3, type Mesh, type Object3D, type SkinnedMesh } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { normalizeVehicleGltf } from './vehicle-body-variants';
-import { VEHICLE_TARGET_LENGTH } from './vehicle-fit';
+import { attachJukeProceduralTires, measureHeadlightLampPositions, normalizeVehicleGltf } from './vehicle-body-variants';
+import { computeVehicleFit, VEHICLE_TARGET_LENGTH } from './vehicle-fit';
 import {
   computeAxleLocal,
   computeSteerAxisLocal,
@@ -478,6 +478,212 @@ describe('real glb wheel integration', () => {
     }, 30000);
   }
 
+  it('juke: Torus TireFill on pivots (authored Matte hidden)', async () => {
+    const gltf = await load('juke.glb');
+    const root = cloneSkinned(gltf.scene) as Group;
+    normalizeVehicleGltf(root, 'juke');
+    attachJukeProceduralTires(root);
+    root.updateMatrixWorld(true);
+
+    for (const name of WHEEL_NAMES) {
+      const pivot = root.getObjectByName(name);
+      expect(pivot, name).toBeTruthy();
+      let hasRim = false;
+      let hasTireFill = false;
+      let hasChromeRim = false;
+      pivot!.traverse((object) => {
+        if (!(object as { isMesh?: boolean }).isMesh || !object.visible) {
+          return;
+        }
+        const mesh = object as Mesh;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        if (mats.some((m) => m.name === 'wheel1')) {
+          hasRim = true;
+        }
+        if (object.name.endsWith('_TireFill') && mats.some((m) => m.name === 'Matte__FF2')) {
+          hasTireFill = true;
+        }
+        if (mats.some((m) => m.name === 'wheel2' || m.name === 'wheel3')) {
+          hasChromeRim = true;
+        }
+      });
+      expect(hasRim, `${name} has metallic rim`).toBe(true);
+      expect(hasTireFill, `${name} has Torus TireFill`).toBe(true);
+      expect(hasChromeRim, `${name} has chrome/accent rim layer`).toBe(true);
+      const size = new Box3().setFromObject(pivot!).getSize(new Vector3());
+      expect(size.y, `${name} tire height`).toBeGreaterThan(0.45);
+      expect(size.z, `${name} tire depth`).toBeGreaterThan(0.45);
+      // С toe спереди bbox шире диаметра; порог лишь отсекает «весь кузов»
+      expect(size.x, `${name} stays a wheel`).toBeLessThan(1.25);
+      expect(size.z, `${name} stays a wheel`).toBeLessThan(1.25);
+    }
+
+    let floatingTire = 0;
+    root.traverse((object) => {
+      if (!(object as { isMesh?: boolean }).isMesh || !object.visible) {
+        return;
+      }
+      const mesh = object as Mesh;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      if (!mats.some((m) => m.name === 'Matte__FF2')) {
+        return;
+      }
+      const box = new Box3().setFromObject(mesh);
+      const size = box.getSize(new Vector3());
+      if (size.y < 0.35 || size.y > 0.8) {
+        return;
+      }
+      let under = false;
+      let p: Object3D | null = object;
+      while (p) {
+        if ((WHEEL_NAMES as readonly string[]).includes(p.name)) {
+          under = true;
+          break;
+        }
+        p = p.parent;
+      }
+      if (!under) {
+        floatingTire += 1;
+      }
+    });
+    expect(floatingTire, 'no visible Matte tires outside pivots').toBe(0);
+  }, 30000);
+
+  it('juke: DIAG wheel mesh inventory', async () => {
+    const gltf = await load('juke.glb');
+    const root = cloneSkinned(gltf.scene) as Group;
+    normalizeVehicleGltf(root, 'juke');
+    attachJukeProceduralTires(root);
+    root.updateMatrixWorld(true);
+    const box = new Box3();
+    const size = new Vector3();
+    const center = new Vector3();
+    for (const name of WHEEL_NAMES) {
+      const pivot = root.getObjectByName(name)!;
+      box.setFromObject(pivot);
+      box.getSize(size);
+      box.getCenter(center);
+      console.warn(
+        `${name} pivot size=${size.x.toFixed(3)},${size.y.toFixed(3)},${size.z.toFixed(3)} c=${center.x.toFixed(2)},${center.y.toFixed(2)},${center.z.toFixed(2)}`,
+      );
+      pivot.traverse((object) => {
+        if (!(object as Mesh).isMesh) {
+          return;
+        }
+        const mesh = object as Mesh;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        box.setFromObject(mesh);
+        box.getSize(size);
+        box.getCenter(center);
+        console.warn(
+          `  ${mesh.visible ? 'V' : 'H'} ${mesh.name || '(unnamed)'} mats=${mats.map((m) => `${m.name}#${'color' in m ? (m as { color: { getHexString: () => string } }).color.getHexString() : '?'}`).join(',')} size=${size.x.toFixed(3)},${size.y.toFixed(3)},${size.z.toFixed(3)} c=${center.x.toFixed(2)},${center.y.toFixed(2)},${center.z.toFixed(2)}`,
+        );
+      });
+    }
+    const leftover: string[] = [];
+    root.traverse((object) => {
+      if (!(object as Mesh).isMesh || !object.visible) {
+        return;
+      }
+      const mesh = object as Mesh;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      const names = mats.map((m) => m.name);
+      if (!names.some((n) => n.startsWith('wheel') || n === 'Matte__FF2')) {
+        return;
+      }
+      let under = false;
+      let p: Object3D | null = object;
+      while (p) {
+        if ((WHEEL_NAMES as readonly string[]).includes(p.name)) {
+          under = true;
+          break;
+        }
+        p = p.parent;
+      }
+      if (!under) {
+        box.setFromObject(mesh);
+        box.getSize(size);
+        leftover.push(
+          `${mesh.name} mats=${names.join(',')} vis size=${size.x.toFixed(3)},${size.y.toFixed(3)},${size.z.toFixed(3)}`,
+        );
+      }
+    });
+    console.warn('leftover wheel-like', leftover);
+    expect(true).toBe(true);
+  }, 30000);
+
+  it('juke: front chrome disc/accent is concentric with the wheel axle (no protrusion past rim)', async () => {
+    const gltf = await load('juke.glb');
+    const root = cloneSkinned(gltf.scene) as Group;
+    normalizeVehicleGltf(root, 'juke');
+    root.updateMatrixWorld(true);
+
+    const origin = new Vector3();
+    const tmp = new Vector3();
+    const line = new Vector3();
+
+    /** Максимальная радиальная удалённость вершин мешей с указанными материалами от оси (o, a). */
+    const maxRadial = (
+      pivot: Object3D,
+      o: Vector3,
+      a: Vector3,
+      matNames: string[],
+    ): number => {
+      let rMax = 0;
+      pivot.traverse((object) => {
+        if (!(object as Mesh).isMesh || !object.visible) {
+          return;
+        }
+        const mesh = object as Mesh;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        if (!mats.some((m) => matNames.includes(m.name))) {
+          return;
+        }
+        const pos = mesh.geometry.getAttribute('position');
+        if (!pos) {
+          return;
+        }
+        for (let i = 0; i < pos.count; i += 1) {
+          tmp.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+          line.copy(tmp).sub(o);
+          line.addScaledVector(a, -line.dot(a));
+          const r = line.length();
+          if (r > rMax) {
+            rMax = r;
+          }
+        }
+      });
+      return rMax;
+    };
+
+    for (const name of WHEEL_NAMES) {
+      const pivot = root.getObjectByName(name);
+      expect(pivot, name).toBeTruthy();
+      if (!pivot) {
+        continue;
+      }
+      pivot.updateMatrixWorld(true);
+      const axle = measureWheelAxle(pivot);
+      pivot.getWorldPosition(origin);
+      const rimR = maxRadial(pivot, origin, axle, ['wheel1']);
+      // wheel2 = хром (передний «тормозной диск»), wheel3 = красная скоба
+      const accentR = maxRadial(pivot, origin, axle, ['wheel2', 'wheel3']);
+      const delta = accentR - rimR;
+      if (DEBUG) {
+        console.warn(
+          `${name}: rimR=${rimR.toFixed(3)} accentR=${accentR.toFixed(3)} diff=${delta.toFixed(3)}`,
+        );
+      }
+      if ((FRONT_WHEEL_NAMES as readonly string[]).includes(name)) {
+        // Диск не должен выпирать за наружный радиус обода (эксцентриситет ~0.04).
+        expect(
+          delta,
+          `${name}: chrome disc within rim radius (accentR ${accentR.toFixed(3)} vs rimR ${rimR.toFixed(3)})`,
+        ).toBeLessThanOrEqual(0.02);
+      }
+    }
+  }, 30000);
+
   it('scirocco (Sport): front wheels steer about world up, rear wheels stay straight', async () => {
     const gltf = await load('scirocco.glb');
     const root = cloneSkinned(gltf.scene) as Group;
@@ -543,10 +749,31 @@ describe('real glb wheel integration', () => {
     }
   }, 30000);
 
-  it('scirocco (Sport): RENDERED (skinned) front-wheel toe follows the steer pivot', async () => {
-    // Регрессия на «видимое» руление: узлы-пивоты могут крутиться, а реально отрендеренная
-    // шина (SkinnedMesh у Scirocco) должна следовoвать за ними. measureWheelAxle этого не
-    // ловит (игнорирует skin) — поэтому замеряем по skinning-проходу three.js (renderedToeDeg).
+  it('scirocco (Sport): wheel SkinnedMeshes are baked to Mesh after normalize', async () => {
+    const gltf = await load('scirocco.glb');
+    const root = cloneSkinned(gltf.scene) as Group;
+    normalizeVehicleGltf(root, 'scirocco');
+    root.updateMatrixWorld(true);
+
+    for (const name of WHEEL_NAMES) {
+      const wheel = root.getObjectByName(name);
+      expect(wheel, `wheel ${name} exists`).toBeTruthy();
+      let skinned = 0;
+      let meshes = 0;
+      wheel!.traverse((o) => {
+        if (isSkinned(o)) {
+          skinned += 1;
+        } else if ((o as { isMesh?: boolean }).isMesh === true) {
+          meshes += 1;
+        }
+      });
+      expect(skinned, `${name}: no SkinnedMesh after bake`).toBe(0);
+      expect(meshes, `${name}: has baked Mesh`).toBeGreaterThan(0);
+    }
+  }, 30000);
+
+  it('scirocco (Sport): rendered front-wheel toe follows the steer pivot', async () => {
+    // Видимое руление по мировым точкам геометрии (после bake — обычный Mesh).
     const gltf = await load('scirocco.glb');
     const root = cloneSkinned(gltf.scene) as Group;
     normalizeVehicleGltf(root, 'scirocco');
@@ -581,7 +808,6 @@ describe('real glb wheel integration', () => {
       before[name] = renderedToeDeg(root.getObjectByName(name)!);
     }
 
-    // Рулим только передними пивотами (isFront) — как applyWheelAnimation.
     for (const name of FRONT_WHEEL_NAMES) {
       const rig = rigs[name]!;
       rig.steerPivot.quaternion.setFromAxisAngle(rig.steerAxisLocal, MAX_STEER);
@@ -590,23 +816,16 @@ describe('real glb wheel integration', () => {
 
     for (const name of FRONT_WHEEL_NAMES) {
       const delta = bearingDelta(before[name]!, renderedToeDeg(root.getObjectByName(name)!));
-      expect(Math.abs(delta), `scirocco/${name}: rendered skinned toe steers`).toBeGreaterThan(15);
+      expect(Math.abs(delta), `scirocco/${name}: rendered toe steers`).toBeGreaterThan(15);
     }
     for (const name of REAR_WHEEL_NAMES) {
       const delta = bearingDelta(before[name]!, renderedToeDeg(root.getObjectByName(name)!));
-      expect(Math.abs(delta), `scirocco/${name}: rendered skinned toe stays straight`).toBeLessThan(
-        1,
-      );
+      expect(Math.abs(delta), `scirocco/${name}: rendered toe stays straight`).toBeLessThan(1);
     }
   }, 30000);
 
-  it('scirocco (Sport): RENDERED (skinned) wheel geometry spins about the measured axle', async () => {
-    // Регрессия на «видимое» вращение: руление покрыто RENDERED-тестом выше, а спин —
-    // только математически (spinWorldDot ≈ 1). Здесь крутим именно spinPivot и смотрим,
-    // что отрендеренные через skinning точки геометрии реально уехали вокруг оси шины:
-    // точки сдвинулись (spin виден), а центр XZ на месте (это вращение вокруг оси,
-    // а не сдвиг/руление). Если бы spin «вхолостую» крутил пивот, не влияя на SkinnedMesh,
-    // maxMove был бы ≈ 0 — и тест упал бы.
+  it('scirocco (Sport): rendered wheel geometry spins about the measured axle', async () => {
+    // После bone-world bake колёса — обычный Mesh: spin вокруг центра и оси шины.
     const gltf = await load('scirocco.glb');
     const root = cloneSkinned(gltf.scene) as Group;
     normalizeVehicleGltf(root, 'scirocco');
@@ -625,7 +844,6 @@ describe('real glb wheel integration', () => {
         continue;
       }
       expect(attachRigPivots(wheel)).toBe(true);
-      // Ось spinPivot — в локальном фрейме пивота (= фрейм родителя), как в buildWheelRig
       axes[name] = computeAxleLocal(
         measureWheelAxle(wheel),
         anchor.getWorldQuaternion(new Quaternion()),
@@ -637,7 +855,7 @@ describe('real glb wheel integration', () => {
     for (const name of WHEEL_NAMES) {
       const wheel = root.getObjectByName(name);
       if (wheel) {
-        before[name] = renderedTirePoints(wheel);
+        before[name] = samplePts(wheel, false);
       }
     }
 
@@ -657,7 +875,7 @@ describe('real glb wheel integration', () => {
       if (!wheel) {
         continue;
       }
-      const after = renderedTirePoints(wheel);
+      const after = samplePts(wheel, false);
       const ref = before[name]!;
       expect(after.length, `${name}: same sampled point count`).toBe(ref.length);
 
@@ -675,11 +893,32 @@ describe('real glb wheel integration', () => {
         centerShift,
         `${name}: spin runs about the wheel centre, not as drift/steer`,
       ).toBeLessThan(0.12);
-      expect(
-        maxMove,
-        `${name}: rendered skinned geometry actually spins about the axle`,
-      ).toBeGreaterThan(0.1);
+      expect(maxMove, `${name}: rendered geometry actually spins about the axle`).toBeGreaterThan(
+        0.1,
+      );
     }
+  }, 30000);
+
+  it('pickup: headlight lamps sit near the grille after fit (not ±1.7 m)', async () => {
+    const gltf = await load('ram.glb');
+    const root = cloneSkinned(gltf.scene) as Group;
+    normalizeVehicleGltf(root, 'pickup');
+    root.updateMatrixWorld(true);
+    const box = new Box3().setFromObject(root);
+    const size = box.getSize(new Vector3());
+    const center = box.getCenter(new Vector3());
+    const fit = computeVehicleFit({
+      size: { x: size.x, y: size.y, z: size.z },
+      min: { x: box.min.x, y: box.min.y, z: box.min.z },
+      center: { x: center.x, y: center.y, z: center.z },
+    });
+    const lamps = measureHeadlightLampPositions(root, fit);
+    expect(lamps).not.toBeNull();
+    expect(lamps!.left[0]).toBeLessThan(0);
+    expect(lamps!.right[0]).toBeGreaterThan(0);
+    const halfSpan = (lamps!.right[0] - lamps!.left[0]) / 2;
+    expect(halfSpan).toBeGreaterThan(0.25);
+    expect(halfSpan).toBeLessThan(0.7);
   }, 30000);
 });
 
@@ -721,8 +960,7 @@ const projectWheelRig = (wheel: Object3D) => {
 /**
  * Воспроизводит продакшн-цепочку buildWheelRig (steer → align → spin → attach)
  * БЕЗ применения align-квитерниона: только сборка пивотов и spinPivot.attach(wheel),
- * как в vehicle-model.tsx. Используется для проверки, что attach не сдвигает
- * rest-позу колеса (в т.ч. SkinnedMesh у Scirocco).
+ * как в vehicle-model.tsx. Используется для проверки, что attach не сдвигает rest-позу.
  */
 const attachRigPivots = (wheel: Object3D): boolean => {
   const parent = wheel.parent;
@@ -753,64 +991,9 @@ const attachRigPivots = (wheel: Object3D): boolean => {
   return true;
 };
 
-/**
- * Точка геометрии SkinnedMesh после полного skinning-прохода three.js в мировых
- * координатах: worldSkinned = matrixWorld * (Σ w_i * boneInverses_i * boneMatrixWorld_i * v).
- * Это именно то, что видит GPU — поэтому замер toe по этим точкам отражает ВИДИМОЕ
- * положение шины, а не только мировой трансформ узла (measureWheelAxle игнорирует skin).
- *
- * Для non-skinned колеса (нет скелета) — fallback на обычные мировые точки.
- */
-const renderedTirePoints = (wheel: Object3D): Vector3[] => {
-  let found: SkinnedMesh | null = null;
-  wheel.traverse((o) => {
-    if (found === null && isSkinned(o)) {
-      found = o;
-    }
-  });
-  const sk = found as SkinnedMesh | null;
-  if (sk === null) {
-    return samplePts(wheel, false);
-  }
-  sk.updateWorldMatrix(true, true);
-  const pos = sk.geometry.getAttribute('position');
-  const si = sk.geometry.getAttribute('skinIndex');
-  const sw = sk.geometry.getAttribute('skinWeight');
-  const bones = sk.skeleton.bones;
-  const invs = sk.skeleton.boneInverses;
-  const boneM = new Matrix4();
-  const tmp = new Vector3();
-  const acc = new Vector3();
-  const out: Vector3[] = [];
-  const stride = Math.max(1, Math.floor(pos.count / 150));
-  for (let i = 0; i < pos.count; i += stride) {
-    acc.set(0, 0, 0);
-    for (let k = 0; k < 4; k += 1) {
-      const id = si.getX(i * 4 + k);
-      if (id === undefined || id === null) {
-        continue;
-      }
-      const w = sw.getX(i * 4 + k);
-      if (!w) {
-        continue;
-      }
-      const inv = invs[id];
-      const b = bones[id];
-      if (!inv || !b) {
-        continue;
-      }
-      boneM.multiplyMatrices(inv, b.matrixWorld);
-      tmp.fromBufferAttribute(pos, i).applyMatrix4(boneM);
-      acc.addScaledVector(tmp, w);
-    }
-    out.push(new Vector3().copy(acc).applyMatrix4(sk.matrixWorld));
-  }
-  return out;
-};
-
-/** Видимый toe (азимут оси «тонкости» в XZ) по реально отрендеренной геометрии, град. */
+/** Видимый toe (азимут оси «тонкости» в XZ) по мировым точкам геометрии, град. */
 const renderedToeDeg = (wheel: Object3D): number => {
-  const pts = renderedTirePoints(wheel);
+  const pts = samplePts(wheel, false);
   const c = centerOf(pts);
   return minWidthDeg(pts, c.x, c.z).deg;
 };

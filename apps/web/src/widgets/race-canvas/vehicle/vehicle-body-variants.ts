@@ -2,21 +2,32 @@ import {
   Box3,
   BufferAttribute,
   BufferGeometry,
+  DoubleSide,
   Group,
+  Matrix4,
   Mesh,
+  MeshStandardMaterial,
+  CylinderGeometry,
+  TorusGeometry,
   Vector3,
+  Vector4,
+  type SkinnedMesh,
   type Material,
   type Object3D,
-  type MeshStandardMaterial,
 } from 'three';
 import type { TVehicleId } from '@/entities/vehicle';
+import { vehiclePalette } from '@/shared/config';
 import type { TVehicleFit } from '@/widgets/race-canvas/vehicle/vehicle-fit';
+import {
+  measureWheelAxle,
+  sampleWheelWorldPoints,
+} from '@/widgets/race-canvas/vehicle/vehicle-wheel-rig';
 
 /**
  * Bust useMemo clone cache when normalize logic changes (HMR).
  * Bump when shipping visual fixes for garage bodies.
  */
-export const VEHICLE_VARIANT_REV = 32;
+export const VEHICLE_VARIANT_REV = 71;
 
 const WHEEL_PIVOT_NAMES = ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] as const;
 type TWheelPivotName = (typeof WHEEL_PIVOT_NAMES)[number];
@@ -50,6 +61,15 @@ const SEDAN_WHEEL_MESH_NAMES = ['Rezina_low_Kuzov1_0', 'Disk_low_Kuzov1_0'] as c
 const JUKE_WHEEL_MATERIAL_NAMES = new Set(['wheel1', 'wheel2', 'wheel3']);
 /** Combined juke wheel layers span ~full track width — hide them when using compact wheels */
 const JUKE_COMBINED_WHEEL_XZ_SPAN = 1.2;
+/**
+ * Sketchfab: чёрная резина Matte__FF2 лежит отдельно от металлических дисков wheel1.
+ * Без привязки к пивоту резина не крутится → «два колеса»; без неё остаются голые диски.
+ */
+const JUKE_TIRE_MATERIAL = 'Matte__FF2';
+/** Высота покрышки/диска тормоза (м) */
+const JUKE_TIRE_Y_MIN = 0.35;
+const JUKE_TIRE_Y_MAX = 0.8;
+
 
 const SCIROCCO_WHEEL_MATERIAL_NAMES = new Set(['wheel.001', 'tire', 'rotor1', 'rotor0']);
 
@@ -59,11 +79,122 @@ const tmpSize = new Vector3();
 const tmpA = new Vector3();
 const tmpB = new Vector3();
 const tmpC = new Vector3();
+const tmpBakePos = new Vector3();
+const tmpBakeAcc = new Vector3();
+const tmpBakeBone = new Vector3();
+const tmpBakeMat = new Matrix4();
+const tmpParentInv = new Matrix4();
+const tmpSkinIndex = new Vector4();
+const tmpSkinWeight = new Vector4();
 
 const isMesh = (object: Object3D): object is Mesh => (object as Mesh).isMesh === true;
 
+const isSkinnedMesh = (object: Object3D): object is SkinnedMesh =>
+  (object as SkinnedMesh).isSkinnedMesh === true;
+
 const isStandardMaterial = (material: Material): material is MeshStandardMaterial =>
   (material as MeshStandardMaterial).isMeshStandardMaterial === true;
+
+/**
+ * Мировая позиция вершины SkinnedMesh как при AttachedBindMode:
+ * Σ (bone.matrixWorld · boneInverse · bindMatrix · v) · weight.
+ * Не зависит от bindMode/matrixWorld меша — только кости + bindMatrix.
+ */
+const skinnedVertexWorld = (skinned: SkinnedMesh, index: number, target: Vector3): Vector3 => {
+  const { geometry, skeleton, bindMatrix } = skinned;
+  const position = geometry.getAttribute('position');
+  const skinIndex = geometry.getAttribute('skinIndex');
+  const skinWeight = geometry.getAttribute('skinWeight');
+  tmpBakePos.fromBufferAttribute(position, index).applyMatrix4(bindMatrix);
+  tmpBakeAcc.set(0, 0, 0);
+  if (!skinIndex || !skinWeight) {
+    return target.copy(tmpBakePos);
+  }
+  tmpSkinIndex.fromBufferAttribute(skinIndex as BufferAttribute, index);
+  tmpSkinWeight.fromBufferAttribute(skinWeight as BufferAttribute, index);
+  for (let k = 0; k < 4; k += 1) {
+    const weight = tmpSkinWeight.getComponent(k);
+    if (weight === 0) {
+      continue;
+    }
+    const boneIndex = tmpSkinIndex.getComponent(k);
+    const bone = skeleton.bones[boneIndex];
+    const boneInverse = skeleton.boneInverses[boneIndex];
+    if (!bone || !boneInverse) {
+      continue;
+    }
+    tmpBakeMat.multiplyMatrices(bone.matrixWorld, boneInverse);
+    tmpBakeBone.copy(tmpBakePos).applyMatrix4(tmpBakeMat);
+    tmpBakeAcc.addScaledVector(tmpBakeBone, weight);
+  }
+  return target.copy(tmpBakeAcc);
+};
+
+/**
+ * Запекает wheel-SkinnedMesh в обычный Mesh в видимой (bone-skinned) позе.
+ * Иначе measureWheelAxle/spin крутят сырую bind-геометрию мимо реальной оси шины.
+ */
+const bakeSkinnedWheelMesh = (skinned: SkinnedMesh): Mesh | null => {
+  const parent = skinned.parent;
+  if (!parent) {
+    return null;
+  }
+
+  const geometry = skinned.geometry.clone();
+  const position = geometry.getAttribute('position');
+  tmpParentInv.copy(parent.matrixWorld).invert();
+
+  for (let i = 0; i < position.count; i += 1) {
+    skinnedVertexWorld(skinned, i, tmpBakePos);
+    tmpBakePos.applyMatrix4(tmpParentInv);
+    position.setXYZ(i, tmpBakePos.x, tmpBakePos.y, tmpBakePos.z);
+  }
+  position.needsUpdate = true;
+  geometry.deleteAttribute('skinIndex');
+  geometry.deleteAttribute('skinWeight');
+  // clone() копирует stale boundingBox из bind-позы — иначе пивоты/spin уезжают
+  geometry.boundingBox = null;
+  geometry.boundingSphere = null;
+  geometry.computeBoundingBox();
+  geometry.computeVertexNormals();
+
+  const mesh = new Mesh(geometry, skinned.material);
+  mesh.name = skinned.name;
+  mesh.castShadow = skinned.castShadow;
+  mesh.receiveShadow = skinned.receiveShadow;
+  mesh.visible = skinned.visible;
+  mesh.position.set(0, 0, 0);
+  mesh.quaternion.identity();
+  mesh.scale.set(1, 1, 1);
+
+  const index = parent.children.indexOf(skinned);
+  parent.remove(skinned);
+  parent.add(mesh);
+  if (index >= 0) {
+    parent.children.splice(parent.children.indexOf(mesh), 1);
+    parent.children.splice(index, 0, mesh);
+    mesh.parent = parent;
+  }
+  return mesh;
+};
+
+/** Scirocco: запекает tire/rim/rotor SkinnedMesh до сборки пивотов. */
+const bakeSciroccoWheelSkinnedMeshes = (root: Object3D): void => {
+  root.updateMatrixWorld(true);
+  const toBake: SkinnedMesh[] = [];
+  root.traverse((object) => {
+    if (!isSkinnedMesh(object)) {
+      return;
+    }
+    if (meshMaterialNames(object).some((name) => SCIROCCO_WHEEL_MATERIAL_NAMES.has(name))) {
+      toBake.push(object);
+    }
+  });
+  for (const skinned of toBake) {
+    bakeSkinnedWheelMesh(skinned);
+  }
+  root.updateMatrixWorld(true);
+};
 
 /** Переименовывает материалы по точному имени (все вхождения в дереве) */
 const renameMaterials = (root: Object3D, from: string, to: string) => {
@@ -83,6 +214,7 @@ const renameMaterials = (root: Object3D, from: string, to: string) => {
 /**
  * Authored light-материалы часто metalness≈1 — ночью зеркалят тьму.
  * Снижаем metalness у Headlight / Brakelight / Signallight, чтобы emissive читался.
+ * Brakelight/Signallight — глянцевый поликарбонат линзы; Headlight — выкл. по умолчанию.
  */
 const prepareEmissiveLightMaterials = (root: Object3D): void => {
   root.traverse((object) => {
@@ -101,8 +233,33 @@ const prepareEmissiveLightMaterials = (root: Object3D): void => {
       ) {
         continue;
       }
-      material.metalness = Math.min(material.metalness, 0.2);
-      material.roughness = Math.max(material.roughness, 0.35);
+      if (material.name === 'Brakelight') {
+        // Глянцевая линза: низкий roughness даёт блики вместо плоской «краски»
+        material.color.set(vehiclePalette.brakeGlass);
+        material.map = null;
+        material.metalness = 0.12;
+        material.roughness = 0.2;
+        material.envMapIntensity = 1.35;
+        material.emissive.set(vehiclePalette.brakeEmissive);
+        material.emissiveMap = null;
+        material.emissiveIntensity = 0;
+        material.needsUpdate = true;
+      } else if (material.name === 'Signallight') {
+        material.color.set(vehiclePalette.signalGlass);
+        material.map = null;
+        material.metalness = 0.12;
+        material.roughness = 0.22;
+        material.envMapIntensity = 1.25;
+        material.emissive.set('#000000');
+        material.emissiveIntensity = 0;
+        material.needsUpdate = true;
+      } else {
+        material.metalness = Math.min(material.metalness, 0.2);
+        material.roughness = Math.max(material.roughness, 0.35);
+        material.emissive.set('#000000');
+        material.emissiveIntensity = 0;
+        material.needsUpdate = true;
+      }
     }
   });
 };
@@ -426,6 +583,8 @@ const splitSedanMeshesByLightRule = (root: Object3D): void => {
       }
       const clone = material.clone();
       clone.name = rule.materialName;
+      // Атлас Kuzov1 затемняет линзы — цвет задаёт prepareEmissiveLightMaterials
+      clone.map = null;
       return clone;
     });
     const next = Array.isArray(object.material) ? renamed : renamed[0];
@@ -680,7 +839,227 @@ const splitJukeGlass6 = (root: Object3D): void => {
   });
 };
 
-/** Juke: компактные Object_* с материалом wheel*; combined-слои прячем */
+/**
+ * Authored Matte__FF2 — полые оболочки: прячем. Объём — attachJukeProceduralTires
+ * после buildWheelRig (ось уже без toe; толстый tube, не «лента»).
+ */
+const hideJukeAuthoredTires = (root: Object3D): void => {
+  root.traverse((object) => {
+    if (!isMesh(object)) {
+      return;
+    }
+    if (!meshMaterialNames(object).includes(JUKE_TIRE_MATERIAL)) {
+      return;
+    }
+    tmpBox.setFromObject(object);
+    tmpBox.getSize(tmpSize);
+    if (tmpSize.y < JUKE_TIRE_Y_MIN || tmpSize.y > JUKE_TIRE_Y_MAX) {
+      return;
+    }
+    object.visible = false;
+  });
+};
+
+/**
+ * Тор-покрышка по оси диска. Диаметр — от size.y (toe не раздувает Y);
+ * ширина (2·tube) — истинный осевой размах точек геометрии вдоль оси
+ * (проекция AABB раздувается toe передних колёс ~20°);
+ * наружный радиус тора = rimR, чтобы резина не выпирала за колесо GLB.
+ * Вызывать после buildWheelRig.
+ */
+export const attachJukeProceduralTires = (root: Object3D): void => {
+  root.updateMatrixWorld(true);
+  const pivots = {} as Partial<Record<TWheelPivotName, Group>>;
+  for (const name of WHEEL_PIVOT_NAMES) {
+    const pivot = root.getObjectByName(name);
+    if (pivot && (pivot as Group).isGroup === true) {
+      if (pivot.getObjectByName(`${name}_TireFill`)) {
+        continue;
+      }
+      pivots[name] = pivot as Group;
+    }
+  }
+  if (Object.keys(pivots).length === 0) {
+    return;
+  }
+
+  const tireMat = new MeshStandardMaterial({
+    name: JUKE_TIRE_MATERIAL,
+    color: 0x111111,
+    metalness: 0,
+    roughness: 0.82,
+    side: DoubleSide,
+  });
+  // В GLB Juke нет ротора — сквозь разрежённые спицы виден белый фендер кузова
+  // (читается как «белый диск»). Компенсируем его матовым ТЁМНЫМ диском-фоновкой:
+  // metalness 0 (не бликует белым под ярким светом превью), радиус доходит до
+  // хромового кольца (wheel2, r≈0.202), чтобы закрыть ВСЕ щели между спицами.
+  const discMat = new MeshStandardMaterial({
+    name: 'jukeBrakeDisc',
+    color: 0x26262a,
+    metalness: 0,
+    roughness: 0.9,
+    side: DoubleSide,
+  });
+
+  for (const name of WHEEL_PIVOT_NAMES) {
+    const pivot = pivots[name];
+    if (!pivot) {
+      continue;
+    }
+
+    pivot.updateMatrixWorld(true);
+    tmpBox.makeEmpty();
+    let hasRim = false;
+    pivot.traverse((object) => {
+      if (!isMesh(object) || !object.visible) {
+        return;
+      }
+      if (object.name.endsWith('_TireFill')) {
+        return;
+      }
+      const names = meshMaterialNames(object);
+      if (!names.some((n) => JUKE_WHEEL_MATERIAL_NAMES.has(n))) {
+        return;
+      }
+      tmpBox.expandByObject(object);
+      hasRim = true;
+    });
+    if (!hasRim || tmpBox.isEmpty()) {
+      continue;
+    }
+
+    tmpBox.getSize(tmpSize);
+    const rimCenterWorld = tmpBox.getCenter(tmpCenter).clone();
+    // Y ≈ диаметр; xz на передних до/без align раздут toe
+    const rimR = Math.max(tmpSize.y * 0.5, 0.22);
+    const axleWorld = measureWheelAxle(pivot);
+    // Истинная ширина вдоль оси: проекция реальных точек геометрии на ось.
+    // Мировой AABB передних колёс раздут toe (~20°): 0.534·sin20° даёт ~0.18 лишних,
+    // проекция AABB выходила ~0.59 вместо фактических 0.25.
+    let rawWidth = Number.NaN;
+    const sampled = sampleWheelWorldPoints(pivot);
+    if (sampled.length >= 8) {
+      let minA = Number.POSITIVE_INFINITY;
+      let maxA = Number.NEGATIVE_INFINITY;
+      for (const pt of sampled) {
+        const a =
+          (pt.x - rimCenterWorld.x) * axleWorld.x +
+          (pt.y - rimCenterWorld.y) * axleWorld.y +
+          (pt.z - rimCenterWorld.z) * axleWorld.z;
+        if (a < minA) {
+          minA = a;
+        }
+        if (a > maxA) {
+          maxA = a;
+        }
+      }
+      rawWidth = maxA - minA;
+    }
+    if (!Number.isFinite(rawWidth) || rawWidth < 1e-3) {
+      // Fallback: проекция AABB (для задних без toe она точна)
+      rawWidth =
+        Math.abs(tmpSize.x * axleWorld.x) +
+        Math.abs(tmpSize.y * axleWorld.y) +
+        Math.abs(tmpSize.z * axleWorld.z);
+    }
+    // Реальная толщина диска Juke ~0.25 м
+    const rimWidth = Math.min(Math.max(rawWidth, 0.22), 0.28);
+    // Силуэт тора = силуэт колеса GLB: наружный радиус = rimR (не выпирает),
+    // ширина = 2·tube ≈ rimWidth. Раньше major = rimR·0.9 + tube давал наружный
+    // радиус ~0.37 при радиусе колеса 0.268 — резина торчала на ~10 см.
+    const tube = Math.min(rimWidth * 0.5, rimR * 0.48);
+    const major = Math.max(rimR - tube, 0.05);
+
+    const fill = new Mesh(new TorusGeometry(major, tube, 16, 36), tireMat);
+    fill.name = `${name}_TireFill`;
+
+    tmpParentInv.copy(pivot.matrixWorld).invert();
+    tmpA.copy(axleWorld).transformDirection(tmpParentInv).normalize();
+    if (tmpA.lengthSq() < 1e-8) {
+      tmpA.set(1, 0, 0);
+    }
+    // Torus: дыра вдоль Z → ось шины
+    fill.quaternion.setFromUnitVectors(tmpB.set(0, 0, 1), tmpA);
+    pivot.worldToLocal(rimCenterWorld);
+    fill.position.copy(rimCenterWorld);
+    fill.castShadow = true;
+    fill.receiveShadow = true;
+    fill.renderOrder = 0;
+    pivot.add(fill);
+
+    // Тормозной диск-фоновка за спицами: скрывает белый фендер, крутится с колесом.
+    // tmpA после fill.quaternion — локальная ось шины; tmpB переиспользуем (Y цилиндра → ось).
+    // Радиус = до хромового кольца (wheel2 r≈0.202 = rimR·0.77), закрывая все щели
+    // спиц; чуть залезает под кольцо → не выпирает за силуэт обода.
+    const discR = Math.min(rimR * 0.77, 0.21);
+    const disc = new Mesh(new CylinderGeometry(discR, discR, 0.024, 32), discMat);
+    disc.name = `${name}_BrakeDisc`;
+    if (tmpA.lengthSq() > 1e-8) {
+      disc.quaternion.setFromUnitVectors(tmpB.set(0, 1, 0), tmpA);
+    }
+    disc.position.copy(rimCenterWorld);
+    disc.castShadow = true;
+    pivot.add(disc);
+
+    pivot.traverse((object) => {
+      if (!isMesh(object) || object === fill) {
+        return;
+      }
+      const names = meshMaterialNames(object);
+      if (names.some((n) => n === 'wheel1' || n === 'wheel2' || n === 'wheel3')) {
+        object.renderOrder = 1;
+      }
+    });
+  }
+};
+
+/**
+ * Режет combined wheel2/wheel3 (хром/акценты диска) на пивоты — иначе прячем весь слой
+ * и остаётся один «голый» wheel1 без обода.
+ */
+const attachJukeCombinedRimLayers = (
+  root: Object3D,
+  midX: number,
+  midZ: number,
+  sourceMeshes: Mesh[],
+): void => {
+  if (sourceMeshes.length === 0) {
+    return;
+  }
+  root.updateMatrixWorld(true);
+  const pivots = {} as Record<TWheelPivotName, Group>;
+  for (const name of WHEEL_PIVOT_NAMES) {
+    const pivot = root.getObjectByName(name);
+    if (pivot && (pivot as Group).isGroup === true) {
+      pivots[name] = pivot as Group;
+    }
+  }
+
+  for (const mesh of sourceMeshes) {
+    const parts = splitMeshByXzQuadrants(mesh, midX, midZ);
+    const parent = mesh.parent;
+    for (const name of WHEEL_PIVOT_NAMES) {
+      const part = parts[name];
+      const pivot = pivots[name];
+      if (!part || !parent || !pivot) {
+        continue;
+      }
+      parent.add(part);
+      part.updateMatrixWorld(true);
+      tmpBox.setFromObject(part);
+      tmpBox.getSize(tmpSize);
+      if (tmpSize.x >= 0.9 || tmpSize.z >= 1.2) {
+        part.removeFromParent();
+        continue;
+      }
+      pivot.attach(part);
+    }
+    mesh.removeFromParent();
+  }
+};
+
+/** Juke: компактные диски wheel* + резина Matte__FF2 + ломти combined-обода на пивотах */
 const normalizeJuke = (root: Object3D) => {
   // Стекло фар и задних фонарей слито в один меш glass6 — режем по Z-зазору
   splitJukeGlass6(root);
@@ -692,9 +1071,12 @@ const normalizeJuke = (root: Object3D) => {
   prepareEmissiveLightMaterials(root);
   root.updateMatrixWorld(true);
   const bodyBox = tmpBox.setFromObject(root);
-  const mid = bodyBox.getCenter(tmpCenter);
+  // Копия: tmpCenter дальше затирается в worldCenterOf / buildWheelPivots
+  const midX = bodyBox.getCenter(tmpCenter).x;
+  const midZ = tmpCenter.z;
 
   const compact: Mesh[] = [];
+  const combinedRims: Mesh[] = [];
   root.traverse((object) => {
     if (!isMesh(object)) {
       return;
@@ -706,14 +1088,22 @@ const normalizeJuke = (root: Object3D) => {
     tmpBox.setFromObject(object);
     tmpBox.getSize(tmpSize);
     if (tmpSize.x >= JUKE_COMBINED_WHEEL_XZ_SPAN || tmpSize.z >= JUKE_COMBINED_WHEEL_XZ_SPAN) {
-      object.visible = false;
+      // wheel1-combined часто дублирует компактные диски — прячем;
+      // wheel2/wheel3 — хром/акцент обода, режем на пивоты ниже
+      if (names.includes('wheel2') || names.includes('wheel3')) {
+        combinedRims.push(object);
+      } else {
+        object.visible = false;
+      }
       return;
     }
     compact.push(object);
   });
 
-  buildWheelPivotsFromAssemblies(root, compact, mid.x, mid.z);
+  buildWheelPivotsFromAssemblies(root, compact, midX, midZ);
   ensureMissingWheelPivots(root);
+  hideJukeAuthoredTires(root);
+  attachJukeCombinedRimLayers(root, midX, midZ, combinedRims);
 };
 
 /** Scirocco: меши tire/wheel/rotor по квадрантам */
@@ -725,6 +1115,8 @@ const normalizeScirocco = (root: Object3D) => {
   renameMaterials(root, 'brakelightlit.001', 'Brakelight');
   renameMaterials(root, 'brakelightglasslit', 'Brakelight');
   prepareEmissiveLightMaterials(root);
+  // Сначала bake skinned → Mesh в видимой позе (ось/центр для spin), потом пивоты
+  bakeSciroccoWheelSkinnedMeshes(root);
   root.updateMatrixWorld(true);
   const bodyBox = tmpBox.setFromObject(root);
   const mid = bodyBox.getCenter(tmpCenter);
@@ -879,7 +1271,9 @@ export const measureHeadlightLampPositions = (
 
   const minX = Math.min(...pool.map((sample) => sample.minX));
   const maxX = Math.max(...pool.map((sample) => sample.maxX));
-  const span = Math.max(maxX - minX, 0.2);
+  // Без метрного floor: cm-scale GLB (ram.glb) имеет ширину стекла ~0.025 —
+  // floor 0.2 раздувал span, лампы перескакивали центр и уезжали на ±1.7 м.
+  const span = Math.max(maxX - minX, 1e-4);
   const y = averageAxis(pool, 'y');
   const z = Math.max(...pool.map((sample) => sample.maxZ));
   return {
@@ -898,8 +1292,8 @@ export const headlightLocalPositions = (vehicleId: TVehicleId): THeadlightLamps 
   }
   if (vehicleId === 'pickup') {
     return {
-      left: [-0.85, 0.95, 2.35],
-      right: [0.85, 0.95, 2.35],
+      left: [-0.4, 0.95, 2.35],
+      right: [0.4, 0.95, 2.35],
     };
   }
   if (vehicleId === 'juke') {

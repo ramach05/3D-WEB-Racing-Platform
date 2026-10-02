@@ -1,16 +1,22 @@
 import {
+  Bone,
   Box3,
   BoxGeometry,
+  Float32BufferAttribute,
   Group,
   Mesh,
   MeshStandardMaterial,
+  Skeleton,
+  SkinnedMesh,
   Texture,
+  Uint16BufferAttribute,
   Vector3,
   type Object3D,
 } from 'three';
 import {
   PICKUP_BODY_COLOR,
   SEDAN_BODY_COLOR,
+  attachJukeProceduralTires,
   measureHeadlightLampPositions,
   normalizeVehicleGltf,
 } from './vehicle-body-variants';
@@ -240,6 +246,7 @@ const buildJukeStub = (): Group => {
   const root = new Group();
   const bodyMat = new MeshStandardMaterial({ name: 'body1', color: '#cc2200' });
   const wheelMat = new MeshStandardMaterial({ name: 'wheel1', color: '#111111' });
+  const ghostMat = new MeshStandardMaterial({ name: 'Matte__FF2', color: '#111111' });
   const signal = new MeshStandardMaterial({ name: 'orange', color: '#ff8800' });
   const brakelight = new MeshStandardMaterial({ name: 'material_15', color: '#cc0000' });
   const headlight = new MeshStandardMaterial({ name: 'glass6', color: '#aa9900' });
@@ -278,6 +285,11 @@ const buildJukeStub = (): Group => {
     const wheel = new Mesh(new BoxGeometry(0.25, 0.5, 0.5), wheelMat);
     wheel.position.set(x, 0.25, z);
     root.add(wheel);
+    // Призрак Matte__FF2 в той же арке (как Object_8/16/19/27 в juke.glb)
+    const ghost = new Mesh(new BoxGeometry(0.26, 0.64, 0.62), ghostMat);
+    ghost.name = `GhostWheel_${x}_${z}`;
+    ghost.position.set(x, 0.25, z);
+    root.add(ghost);
   }
 
   const combined = new Mesh(new BoxGeometry(1.8, 0.3, 2.8), wheelMat.clone());
@@ -319,6 +331,57 @@ const buildSciroccoStub = (): Group => {
     root.add(group);
     group.add(new Mesh(new BoxGeometry(0.2, 0.45, 0.45), tire));
     group.add(new Mesh(new BoxGeometry(0.12, 0.35, 0.35), rim));
+  }
+
+  return root;
+};
+
+/** Минимальный SkinnedMesh-шина (как в реальном scirocco.glb — без wheel.smd*). */
+const makeSkinnedTire = (material: MeshStandardMaterial, x: number, z: number): SkinnedMesh => {
+  const geometry = new BoxGeometry(0.2, 0.45, 0.45);
+  const count = geometry.getAttribute('position').count;
+  const skinIndices: number[] = [];
+  const skinWeights: number[] = [];
+  for (let i = 0; i < count; i += 1) {
+    skinIndices.push(0, 0, 0, 0);
+    skinWeights.push(1, 0, 0, 0);
+  }
+  geometry.setAttribute('skinIndex', new Uint16BufferAttribute(skinIndices, 4));
+  geometry.setAttribute('skinWeight', new Float32BufferAttribute(skinWeights, 4));
+
+  const bone = new Bone();
+  const skeleton = new Skeleton([bone]);
+  const mesh = new SkinnedMesh(geometry, material);
+  mesh.position.set(x, 0.2, z);
+  mesh.add(bone);
+  mesh.bind(skeleton);
+  return mesh;
+};
+
+/**
+ * Scirocco как в прод-GLB: колёса — SkinnedMesh по материалам tire/wheel,
+ * без групп wheel.smd* (fallback-ветка normalizeScirocco).
+ */
+const buildSciroccoSkinnedStub = (): Group => {
+  const root = new Group();
+  const paint = new MeshStandardMaterial({ name: 'skin_0.001', color: '#334455' });
+  const headlight = new MeshStandardMaterial({ name: 'headlight.001', color: '#fff8e0' });
+  const brakelight = new MeshStandardMaterial({ name: 'brakelight.001', color: '#ff0000' });
+  const tire = new MeshStandardMaterial({ name: 'tire', color: '#111111' });
+  const rim = new MeshStandardMaterial({ name: 'wheel.001', color: '#888888' });
+
+  root.add(new Mesh(new BoxGeometry(1.7, 1.0, 3.6), paint));
+  root.add(new Mesh(new BoxGeometry(1.2, 0.1, 0.12), headlight));
+  root.add(new Mesh(new BoxGeometry(1.0, 0.1, 0.12), brakelight));
+
+  for (const [x, z] of [
+    [0.65, 1.0],
+    [-0.65, 1.0],
+    [0.65, -1.15],
+    [-0.65, -1.15],
+  ] as const) {
+    root.add(makeSkinnedTire(tire, x, z));
+    root.add(makeSkinnedTire(rim, x, z));
   }
 
   return root;
@@ -406,9 +469,20 @@ describe('normalizeVehicleGltf', () => {
     const hlMat = (root.getObjectByName('Fara_1_low_glass_0') as Mesh)
       .material as MeshStandardMaterial;
     expect(hlMat.metalness).toBeLessThanOrEqual(0.2);
+    expect(hlMat.emissiveIntensity).toBe(0);
     const blMat = (root.getObjectByName('Fonar_low_Kuzov1_0') as Mesh)
       .material as MeshStandardMaterial;
     expect(blMat.metalness).toBeLessThanOrEqual(0.2);
+    expect(blMat.color.getHexString()).toBe('24080a');
+    expect(blMat.map).toBeNull();
+    expect(blMat.roughness).toBeLessThanOrEqual(0.25);
+    expect(blMat.emissiveIntensity).toBe(0);
+    const signalMat = (root.getObjectByName('Povorotnik_low_Kuzov1_0') as Mesh)
+      .material as MeshStandardMaterial;
+    expect(signalMat.color.getHexString()).toBe('3d200a');
+    expect(signalMat.map).toBeNull();
+    expect(signalMat.roughness).toBeLessThanOrEqual(0.25);
+    expect(signalMat.emissiveIntensity).toBe(0);
 
     // Нос смотрит в +Z (контракт гонки)
     root.updateMatrixWorld(true);
@@ -438,6 +512,21 @@ describe('normalizeVehicleGltf', () => {
     expect(materialNamesOn(root, 'LightGeo')).toContain('Headlight');
     expect(materialNamesOn(root, 'RedGlass')).toContain('Brakelight');
     expect(materialNamesOn(root, 'OrangeGlass')).toContain('Signallight');
+
+    const brakeMat = (root.getObjectByName('RedGlass') as Mesh).material as MeshStandardMaterial;
+    expect(brakeMat.color.getHexString()).toBe('24080a');
+    expect(brakeMat.map).toBeNull();
+    expect(brakeMat.roughness).toBeLessThanOrEqual(0.25);
+    expect(brakeMat.emissive.getHexString()).toBe('ff0a0a');
+    expect(brakeMat.emissiveIntensity).toBe(0);
+
+    const signalMat = (root.getObjectByName('OrangeGlass') as Mesh)
+      .material as MeshStandardMaterial;
+    expect(signalMat.color.getHexString()).toBe('3d200a');
+    expect(signalMat.map).toBeNull();
+    expect(signalMat.emissiveIntensity).toBe(0);
+    expect(signalMat.emissive.getHexString()).toBe('000000');
+
     expect(materialNamesUnder(root, 'WheelFrontL')).toContain(
       'RAM_1500TRX_2021_Wheel1A_3D_3DWheel2A_Material',
     );
@@ -446,6 +535,7 @@ describe('normalizeVehicleGltf', () => {
   it('maps juke compact wheels, hides combined layers and splits merged glass6', () => {
     const root = buildJukeStub();
     normalizeVehicleGltf(root, 'juke');
+    attachJukeProceduralTires(root);
 
     expect(root.getObjectByName('WheelFrontL')).toBeTruthy();
     expect(root.getObjectByName('WheelFrontR')).toBeTruthy();
@@ -455,6 +545,43 @@ describe('normalizeVehicleGltf', () => {
     expect(materialNamesOn(root, 'SignalStrip')).toContain('Headlight');
     expect(materialNamesOn(root, 'TaillightGlass')).toContain('Brakelight');
     expect(materialNamesUnder(root, 'WheelFrontL')).toContain('wheel1');
+
+    // Torus TireFill (authored Matte полая — прячется)
+    for (const name of ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] as const) {
+      expect(materialNamesUnder(root, name)).toContain('Matte__FF2');
+      expect(root.getObjectByName(`${name}_TireFill`), `${name}_TireFill`).toBeTruthy();
+    }
+
+    // Вне пивотов не должно быть видимой резины (иначе снова «два колеса»)
+    let matteOutsideVisible = 0;
+    root.traverse((object) => {
+      if (!(object as Mesh).isMesh || !object.visible) {
+        return;
+      }
+      const mesh = object as Mesh;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      if (!mats.some((m) => m.name === 'Matte__FF2')) {
+        return;
+      }
+      let under = false;
+      let p: Object3D | null = object;
+      while (p) {
+        if (
+          p.name === 'WheelFrontL' ||
+          p.name === 'WheelFrontR' ||
+          p.name === 'WheelRearL' ||
+          p.name === 'WheelRearR'
+        ) {
+          under = true;
+          break;
+        }
+        p = p.parent;
+      }
+      if (!under) {
+        matteOutsideVisible += 1;
+      }
+    });
+    expect(matteOutsideVisible, 'no free-floating visible Matte tires').toBe(0);
 
     // Слитый meш glass6 разрезан: перед → Headlight, зад → Brakelight
     expect(root.getObjectByName('MergedLightGlass')).toBeFalsy();
@@ -485,6 +612,36 @@ describe('normalizeVehicleGltf', () => {
     expect(materialNamesOn(root, 'BodyPaint')).toContain('skin_0.001');
     expect(materialNamesOn(root, 'HeadlightGlass')).toContain('Headlight');
     expect(materialNamesOn(root, 'TaillightGlass')).toContain('Brakelight');
+    expect(materialNamesUnder(root, 'WheelFrontL')).toContain('tire');
+  });
+
+  it('bakes scirocco SkinnedMesh wheels into Mesh under pivots', () => {
+    const root = buildSciroccoSkinnedStub();
+    let skinnedBefore = 0;
+    root.traverse((object) => {
+      if ((object as SkinnedMesh).isSkinnedMesh === true) {
+        skinnedBefore += 1;
+      }
+    });
+    expect(skinnedBefore).toBeGreaterThanOrEqual(4);
+
+    normalizeVehicleGltf(root, 'scirocco');
+
+    for (const name of ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] as const) {
+      const pivot = root.getObjectByName(name);
+      expect(pivot, name).toBeTruthy();
+      let skinnedUnder = 0;
+      let meshUnder = 0;
+      pivot!.traverse((object) => {
+        if ((object as SkinnedMesh).isSkinnedMesh === true) {
+          skinnedUnder += 1;
+        } else if ((object as Mesh).isMesh === true) {
+          meshUnder += 1;
+        }
+      });
+      expect(skinnedUnder, `${name}: no SkinnedMesh after bake`).toBe(0);
+      expect(meshUnder, `${name}: has baked Mesh`).toBeGreaterThan(0);
+    }
     expect(materialNamesUnder(root, 'WheelFrontL')).toContain('tire');
   });
 
@@ -548,5 +705,35 @@ describe('measureHeadlightLampPositions', () => {
     expect(lamps).not.toBeNull();
     expect(lamps!.left[0]).toBeLessThan(-0.2);
     expect(lamps!.right[0]).toBeGreaterThan(0.2);
+  });
+
+  it('keeps cm-scale combined headlight lamps inside the body after fit', () => {
+    // Как ram.glb: корень ×0.01, одно широкое стекло Headlight — без метрного
+    // floor span лампы не должны перескакивать центр и уезжать на ±1.7 м.
+    const root = new Group();
+    root.scale.setScalar(0.01);
+    const body = new Mesh(
+      new BoxGeometry(2.5, 1.2, 5.9),
+      new MeshStandardMaterial({ name: 'body', color: '#71121f' }),
+    );
+    root.add(body);
+    const hl = new Mesh(
+      new BoxGeometry(2.5, 0.3, 0.15),
+      new MeshStandardMaterial({ name: 'Headlight', color: '#fff8e0' }),
+    );
+    hl.position.set(0, 0.5, 2.7);
+    root.add(hl);
+    root.updateMatrixWorld(true);
+
+    const fit = fitFromRoot(root);
+    expect(fit.scale).toBeGreaterThan(40);
+    const lamps = measureHeadlightLampPositions(root, fit);
+    expect(lamps).not.toBeNull();
+    expect(lamps!.left[0]).toBeLessThan(0);
+    expect(lamps!.right[0]).toBeGreaterThan(0);
+    const halfSpan = (lamps!.right[0] - lamps!.left[0]) / 2;
+    expect(halfSpan).toBeGreaterThan(0.2);
+    expect(halfSpan).toBeLessThan(0.7);
+    expect(Math.abs(lamps!.left[0] + lamps!.right[0])).toBeLessThan(0.05);
   });
 });
