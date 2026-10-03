@@ -17,7 +17,7 @@ export const playwrightConfig = defineConfig({
       command:
         'pnpm --filter @racing/shared build && pnpm --filter @racing/api build && pnpm --filter @racing/api exec prisma migrate deploy && pnpm --filter @racing/api exec prisma db seed && pnpm --filter @racing/api start',
       cwd: repoRoot,
-      url: 'http://localhost:3000/health',
+      url: 'http://localhost:3100/health',
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
     },
