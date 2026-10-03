@@ -22,7 +22,8 @@ describe('HomePage', () => {
 
     expect(screen.queryByRole('link', { name: /вход|log in/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /регистрация|sign up/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /старт|press start/i })).toBeInTheDocument();
+    // RU-локализация CTA — «ЖМИ START» (латиница), EN — «PRESS START»
+    expect(screen.getByRole('link', { name: /старт|start/i })).toBeInTheDocument();
   });
 
   it('shows auth links for guests', () => {

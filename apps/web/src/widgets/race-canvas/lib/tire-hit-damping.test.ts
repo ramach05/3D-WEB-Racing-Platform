@@ -34,11 +34,12 @@ describe('tireHitDamping', () => {
   it('recovers toward one over time', () => {
     registerTireHit(0.5);
 
-    const during = tickTireHitDamping(0.2);
+    // HIT_RECOVERY_PER_SEC = 3: за 0.1 с возврат 0.5 → 0.8
+    const during = tickTireHitDamping(0.1);
     const after = tickTireHitDamping(0);
 
     expect(during).toBe(0.5);
-    expect(after).toBeCloseTo(0.94, 5);
+    expect(after).toBeCloseTo(0.8, 5);
   });
 
   it('does not exceed one after full recovery', () => {
