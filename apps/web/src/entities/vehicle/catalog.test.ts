@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_VEHICLE_ID,
   getVehicle,
+  getVehicleFitTargetLength,
   isVehicleId,
   JUKE_GLTF_PATH,
   PICKUP_GLTF_PATH,
   SCIROCCO_GLTF_PATH,
   SEDAN_GLTF_PATH,
+  VEHICLE_UNITS_PER_METER,
   VEHICLES,
 } from './catalog';
 
@@ -15,10 +17,10 @@ describe('vehicle catalog', () => {
     expect(VEHICLES).toHaveLength(5);
     expect(VEHICLES.map((vehicle) => vehicle.id)).toEqual([
       'hatchback',
-      'sedan',
       'pickup',
-      'juke',
       'scirocco',
+      'sedan',
+      'juke',
     ]);
   });
 
@@ -37,6 +39,22 @@ describe('vehicle catalog', () => {
     expect(PICKUP_GLTF_PATH).toMatch(/ram\.glb$/);
     const paths = new Set(VEHICLES.map((vehicle) => vehicle.gltfPath));
     expect(paths.size).toBe(5);
+  });
+
+  it('fits every body to real-world class scale', () => {
+    for (const vehicle of VEHICLES) {
+      expect(vehicle.realLengthMeters, `${vehicle.id}: real length set`).toBeGreaterThan(0);
+    }
+    const target = (id: string) => getVehicleFitTargetLength(id)!;
+    // Якорь шкалы: Ram TRX 5.71 м → 3.8 ед. мира
+    expect(target('pickup')).toBeCloseTo(3.8, 5);
+    expect(VEHICLE_UNITS_PER_METER).toBeCloseTo(3.8 / 5.71, 10);
+    // Реальная иерархия классов: TRX > Logan > Scirocco > hatch > Juke
+    expect(target('pickup')).toBeGreaterThan(target('sedan'));
+    expect(target('sedan')).toBeGreaterThan(target('scirocco'));
+    expect(target('scirocco')).toBeGreaterThan(target('hatchback'));
+    expect(target('hatchback')).toBeGreaterThan(target('juke'));
+    expect(target('nope')).toBeUndefined();
   });
 
   it('validates vehicle ids', () => {

@@ -15,10 +15,17 @@ import {
 } from 'three';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { TCarSkin } from '@/entities/track';
-import { getVehicle, HATCHBACK_GLTF_PATH, VEHICLES, type TVehicleId } from '@/entities/vehicle';
+import {
+  getVehicle,
+  getVehicleFitTargetLength,
+  HATCHBACK_GLTF_PATH,
+  VEHICLES,
+  type TVehicleId,
+} from '@/entities/vehicle';
 import { vehiclePalette } from '@/shared/config';
 import {
   attachJukeProceduralTires,
+  attachJukeTiresToRimPose,
   normalizeVehicleGltf,
   resolveHeadlightLampPositions,
   VEHICLE_VARIANT_REV,
@@ -366,7 +373,7 @@ const applyWheelAnimation = (
 };
 
 /** Считает fit по видимым мешам клона (спрятанный GLB-кузов не влияет на кадр) */
-const measureFit = (root: Object3D): TVehicleFit => {
+const measureFit = (root: Object3D, targetLength?: number): TVehicleFit => {
   root.updateMatrixWorld(true);
   tmpBox.makeEmpty();
   root.traverse((object) => {
@@ -380,11 +387,14 @@ const measureFit = (root: Object3D): TVehicleFit => {
   }
   const size = tmpBox.getSize(new Vector3());
   const center = tmpBox.getCenter(new Vector3());
-  return computeVehicleFit({
-    size: { x: size.x, y: size.y, z: size.z },
-    min: { x: tmpBox.min.x, y: tmpBox.min.y, z: tmpBox.min.z },
-    center: { x: center.x, y: center.y, z: center.z },
-  });
+  return computeVehicleFit(
+    {
+      size: { x: size.x, y: size.y, z: size.z },
+      min: { x: tmpBox.min.x, y: tmpBox.min.y, z: tmpBox.min.z },
+      center: { x: center.x, y: center.y, z: center.z },
+    },
+    targetLength,
+  );
 };
 
 /** Оценка радиуса колеса по bbox (половина меньшей стороны в плоскости YZ) */
@@ -410,6 +420,8 @@ const prepareVehicleRoot = (
   vehicleId: TVehicleId,
   hideBranding: boolean,
 ): TPreparedVehicle => {
+  // eslint-disable-next-line no-console -- ревизия нормализации: видно в консоли, какой код исполняет вкладка
+  console.debug('[vehicle-normalize]', vehicleId, 'rev', VEHICLE_VARIANT_REV);
   const cloned = cloneSkinned(source) as Group;
   cloned.traverse((object) => {
     if (isMesh(object)) {
@@ -420,6 +432,13 @@ const prepareVehicleRoot = (
     hideBrandingNodes(cloned);
   }
   normalizeVehicleGltf(cloned, vehicleId);
+
+  // Juke: резина на пивоты ДО rig — authored-поза резины согласована с baked-toe
+  // дисков, и align/steer/spin крутят диск с покрышкой единым узлом. Затем тор-fallback.
+  if (vehicleId === 'juke') {
+    attachJukeTiresToRimPose(cloned);
+    attachJukeProceduralTires(cloned);
+  }
 
   const rigs: TWheelRig[] = [];
   for (const name of FRONT_WHEEL_NAMES) {
@@ -441,12 +460,7 @@ const prepareVehicleRoot = (
     }
   }
 
-  // Juke: procedural TireFill после align — ось без toe, толстый тор
-  if (vehicleId === 'juke') {
-    attachJukeProceduralTires(cloned);
-  }
-
-  const fit = measureFit(cloned);
+  const fit = measureFit(cloned, getVehicleFitTargetLength(vehicleId));
   return {
     cloned,
     rigs,

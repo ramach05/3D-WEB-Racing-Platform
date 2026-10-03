@@ -17,6 +17,7 @@ import {
   PICKUP_BODY_COLOR,
   SEDAN_BODY_COLOR,
   attachJukeProceduralTires,
+  attachJukeTiresToRimPose,
   measureHeadlightLampPositions,
   normalizeVehicleGltf,
 } from './vehicle-body-variants';
@@ -292,6 +293,26 @@ const buildJukeStub = (): Group => {
     root.add(ghost);
   }
 
+  // Слитый шелл покрышек meshmerger'а (как Object_2/4/5 в juke.glb): 4 булки у колес
+  // + «мост» по центру кузова — треугольники моста на пивоты вешать нельзя
+  const shellBlobs = (
+    [
+      [0.7, 1.1],
+      [-0.7, 1.1],
+      [0.7, -1.1],
+      [-0.7, -1.1],
+    ] as const
+  ).map(([x, z]) => {
+    const blob = new BoxGeometry(0.26, 0.62, 0.62);
+    blob.translate(x, 0.25, z);
+    return blob;
+  });
+  const shellBridge = new BoxGeometry(0.06, 0.06, 1.4);
+  const shellGeo = mergeGeometries([...shellBlobs, shellBridge]);
+  const shell = new Mesh(shellGeo ?? new BoxGeometry(0.1, 0.1, 0.1), ghostMat);
+  shell.name = 'MergedTireShell';
+  root.add(shell);
+
   const combined = new Mesh(new BoxGeometry(1.8, 0.3, 2.8), wheelMat.clone());
   combined.name = 'CombinedWheelLayer';
   combined.position.set(0, 0.25, 0);
@@ -535,6 +556,7 @@ describe('normalizeVehicleGltf', () => {
   it('maps juke compact wheels, hides combined layers and splits merged glass6', () => {
     const root = buildJukeStub();
     normalizeVehicleGltf(root, 'juke');
+    attachJukeTiresToRimPose(root);
     attachJukeProceduralTires(root);
 
     expect(root.getObjectByName('WheelFrontL')).toBeTruthy();
@@ -546,10 +568,28 @@ describe('normalizeVehicleGltf', () => {
     expect(materialNamesOn(root, 'TaillightGlass')).toContain('Brakelight');
     expect(materialNamesUnder(root, 'WheelFrontL')).toContain('wheel1');
 
-    // Torus TireFill (authored Matte полая — прячется)
+    // Авторская резина Matte__FF2 пристегнута к пивоту — тор-заглушка не нужна
     for (const name of ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] as const) {
       expect(materialNamesUnder(root, name)).toContain('Matte__FF2');
-      expect(root.getObjectByName(`${name}_TireFill`), `${name}_TireFill`).toBeTruthy();
+      expect(root.getObjectByName(`${name}_TireFill`), `${name}_TireFill`).toBeFalsy();
+    }
+
+    // Слитый шелл разрезан по колесам: оригинала нет, на пивотах компактные куски
+    expect(root.getObjectByName('MergedTireShell'), 'merged shell removed').toBeFalsy();
+    for (const name of ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] as const) {
+      const pivot = root.getObjectByName(name) as Group;
+      const pieces: Mesh[] = [];
+      pivot.traverse((object) => {
+        if ((object as Mesh).isMesh && object.name.endsWith('_TireShell')) {
+          pieces.push(object as Mesh);
+        }
+      });
+      expect(pieces.length, `${name} has sliced shell piece`).toBeGreaterThanOrEqual(1);
+      for (const piece of pieces) {
+        const pieceSize = new Box3().setFromObject(piece).getSize(new Vector3());
+        expect(pieceSize.x, `${name} shell piece is wheel-size`).toBeLessThan(0.7);
+        expect(pieceSize.z, `${name} shell piece is wheel-size`).toBeLessThan(0.7);
+      }
     }
 
     // Вне пивотов не должно быть видимой резины (иначе снова «два колеса»)

@@ -27,7 +27,7 @@ import {
  * Bust useMemo clone cache when normalize logic changes (HMR).
  * Bump when shipping visual fixes for garage bodies.
  */
-export const VEHICLE_VARIANT_REV = 71;
+export const VEHICLE_VARIANT_REV = 76;
 
 const WHEEL_PIVOT_NAMES = ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] as const;
 type TWheelPivotName = (typeof WHEEL_PIVOT_NAMES)[number];
@@ -840,12 +840,16 @@ const splitJukeGlass6 = (root: Object3D): void => {
 };
 
 /**
- * Authored Matte__FF2 — полые оболочки: прячем. Объём — attachJukeProceduralTires
- * после buildWheelRig (ось уже без toe; толстый tube, не «лента»).
+ * Authored Matte__FF2 — слитые поперек оси «протекторы» meshmerger'а: лохматые
+ * слэбы 0.44–0.58 м (втрое шире колеса), их локусмы при рулении торчат
+ * лопастями за габарит шины — прячем. Длинные вдоль базы шеллы (z ≥ 1.2 м) —
+ * не днище: в juke.glb это резина всех 4 колес в одном меше, их режет на куски
+ * и вешает на пивоты attachJukeTiresToRimPose.
  */
-const hideJukeAuthoredTires = (root: Object3D): void => {
+const hideJukeTreadSlabs = (root: Object3D): void => {
+  root.updateMatrixWorld(true);
   root.traverse((object) => {
-    if (!isMesh(object)) {
+    if (!isMesh(object) || !object.visible) {
       return;
     }
     if (!meshMaterialNames(object).includes(JUKE_TIRE_MATERIAL)) {
@@ -856,8 +860,257 @@ const hideJukeAuthoredTires = (root: Object3D): void => {
     if (tmpSize.y < JUKE_TIRE_Y_MIN || tmpSize.y > JUKE_TIRE_Y_MAX) {
       return;
     }
-    object.visible = false;
+    if (tmpSize.z >= JUKE_COMBINED_WHEEL_XZ_SPAN) {
+      return;
+    }
+    if (tmpSize.x >= JUKE_COMBINED_WHEEL_XZ_SPAN) {
+      object.visible = false;
+    }
   });
+};
+
+const JUKE_WORLD_UP = new Vector3(0, 1, 0);
+const tmpJukeWorld = new Matrix4();
+const tmpJukeRot = new Matrix4();
+const tmpJukeLocal = new Matrix4();
+
+/** Поворот объекта в мире вокруг мировой точки point (ось axis через нее). */
+const rotateAroundWorldPoint = (
+  object: Object3D,
+  axis: Vector3,
+  angle: number,
+  point: Vector3,
+): void => {
+  object.updateWorldMatrix(true, false);
+  tmpJukeWorld.makeTranslation(point.x, point.y, point.z);
+  tmpJukeLocal.makeTranslation(-point.x, -point.y, -point.z);
+  tmpJukeRot.makeRotationAxis(axis, angle);
+  tmpJukeWorld.multiply(tmpJukeRot).multiply(tmpJukeLocal).multiply(object.matrixWorld);
+  if (object.parent) {
+    tmpJukeRot.copy(object.parent.matrixWorld).invert();
+    tmpJukeLocal.copy(tmpJukeRot).multiply(tmpJukeWorld);
+  } else {
+    tmpJukeLocal.copy(tmpJukeWorld);
+  }
+  tmpJukeLocal.decompose(object.position, object.quaternion, object.scale);
+};
+
+/** Радиус околоколесного куска шелла: вершины дальше от центра колеса — часть «моста». */
+const JUKE_TIRE_SHELL_PROXIMITY = 0.55;
+
+/**
+ * Раскладывает треугольники слитого шелла покрышки по колесам: треугольник
+ * попадает в корзину w, только если все 3 его мировых вершины вблизи центра
+ * колеса w. «Мосты» meshmerger'а между колесами отбрасываются — на пивоте они
+ * дали бы лопасти, торчащие за габарит шины. Формат корзин — плоские тройки
+ * индексов вершин, как ожидает sliceMeshTriangles.
+ */
+const bucketShellTrianglesByWheel = (
+  mesh: Mesh,
+  centers: readonly Vector3[],
+  proximity: number,
+): number[][] => {
+  const geometry = mesh.geometry;
+  const position = geometry.getAttribute('position');
+  if (!position) {
+    return centers.map(() => []);
+  }
+  mesh.updateMatrixWorld(true);
+  const index = geometry.getIndex();
+  const triCount = index ? index.count / 3 : position.count / 3;
+  const buckets: number[][] = centers.map(() => []);
+  const proximitySq = proximity * proximity;
+  const isNear = (vertexIndex: number, center: Vector3): boolean => {
+    tmpA.fromBufferAttribute(position, vertexIndex).applyMatrix4(mesh.matrixWorld);
+    return tmpA.distanceToSquared(center) <= proximitySq;
+  };
+  for (let tri = 0; tri < triCount; tri += 1) {
+    const i0 = index ? index.getX(tri * 3) : tri * 3;
+    const i1 = index ? index.getX(tri * 3 + 1) : tri * 3 + 1;
+    const i2 = index ? index.getX(tri * 3 + 2) : tri * 3 + 2;
+    for (let w = 0; w < centers.length; w += 1) {
+      const center = centers[w] as Vector3;
+      if (isNear(i0, center) && isNear(i1, center) && isNear(i2, center)) {
+        (buckets[w] as number[]).push(i0, i1, i2);
+        break;
+      }
+    }
+  }
+  return buckets;
+};
+
+/**
+ * Шины Matte__FF2 на пивоты — ДО buildWheelRig (см. prepareVehicleRoot):
+ * authored-поза резины согласована с baked-toe дисков (~20°) на заводе, поэтому
+ * достаточно attach без доворотов — align/steer/spin крутят диск и резину единым
+ * узлом. Для компактных боковин оставляем defensive delta: доворот до bearing
+ * диска, измеренного в ТОМ ЖЕ фрейме (до align он 0; вызов после rig не ломается).
+ * Слитые meshmerger-шеллы режем на околоколесные куски: у осколков скан bearing
+ * ненадежен, поэтому они сохраняют authored-позу 1-в-1 относительно диска.
+ */
+export const attachJukeTiresToRimPose = (root: Object3D): void => {
+  root.updateMatrixWorld(true);
+  const pivotGroups = {} as Partial<Record<TWheelPivotName, Group>>;
+  for (const name of WHEEL_PIVOT_NAMES) {
+    const pivot = root.getObjectByName(name);
+    if (
+      pivot
+      && (pivot as Group).isGroup === true
+      && !pivotHasAuthoredTire(pivot as Group)
+    ) {
+      pivotGroups[name] = pivot as Group;
+    }
+  }
+  const pivots = Object.values(pivotGroups) as Group[];
+  if (pivots.length === 0) {
+    return;
+  }
+
+  const rimBearing = new Map<Group, number>();
+  for (const pivot of pivots) {
+    const axle = measureWheelAxle(pivot);
+    rimBearing.set(pivot, Math.atan2(axle.z, axle.x));
+  }
+
+  const pivotCenters = pivots.map((pivot) => {
+    tmpBox.setFromObject(pivot);
+    return tmpBox.getCenter(tmpCenter).clone();
+  });
+
+  const tires: Mesh[] = [];
+  root.traverse((object) => {
+    if (!isMesh(object) || !object.visible) {
+      return;
+    }
+    if (!meshMaterialNames(object).includes(JUKE_TIRE_MATERIAL)) {
+      return;
+    }
+    if (object.name.endsWith('_TireFill')) {
+      return;
+    }
+    tmpBox.setFromObject(object);
+    tmpBox.getSize(tmpSize);
+    if (tmpSize.y < JUKE_TIRE_Y_MIN || tmpSize.y > JUKE_TIRE_Y_MAX) {
+      return;
+    }
+    if (tmpSize.x >= JUKE_COMBINED_WHEEL_XZ_SPAN || tmpSize.z >= JUKE_COMBINED_WHEEL_XZ_SPAN) {
+      return;
+    }
+    let node: Object3D | null = object.parent;
+    while (node) {
+      if ((WHEEL_PIVOT_NAMES as readonly string[]).includes(node.name)) {
+        return;
+      }
+      node = node.parent;
+    }
+    tires.push(object);
+  });
+
+  for (const tire of tires) {
+    tmpBox.setFromObject(tire);
+    const center = tmpBox.getCenter(tmpCenter).clone();
+    let bestPivot = pivots[0] as Group;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < pivots.length; i += 1) {
+      const d = center.distanceToSquared(pivotCenters[i] as Vector3);
+      if (d < bestDist) {
+        bestDist = d;
+        bestPivot = pivots[i] as Group;
+      }
+    }
+    // Поворот вокруг Y на θ меняет bearing b в b−θ ⇒ θ = bT − bR.
+    const tireAxle = measureWheelAxle(tire);
+    const delta = Math.atan2(tireAxle.z, tireAxle.x) - (rimBearing.get(bestPivot) ?? 0);
+    if (Math.abs(delta) > 1e-4) {
+      rotateAroundWorldPoint(tire, JUKE_WORLD_UP, delta, center);
+      tire.updateWorldMatrix(true, false);
+    }
+    bestPivot.attach(tire);
+  }
+
+  // Слитые meshmerger'ом шеллы покрышек: один меш на несколько колес (bbox ≥ 1.2 м)
+  // не проходит компактный фильтр выше, а hideJukeTreadSlabs его не прячет (z ≥ 1.2
+  // считался «днищем»). Итог — статичная «покрышка» с запеченным toe передних колес
+  // поверх рулящего диска. Режем такой шелл на околоколесные куски и вешаем каждый
+  // на свой пивот в bearing диска; оригинал удаляем (мосты между колесами отбрасаны).
+  const shells: Mesh[] = [];
+  root.traverse((object) => {
+    if (!isMesh(object) || !object.visible) {
+      return;
+    }
+    if (!meshMaterialNames(object).includes(JUKE_TIRE_MATERIAL)) {
+      return;
+    }
+    if (object.name.endsWith('_TireFill')) {
+      return;
+    }
+    tmpBox.setFromObject(object);
+    tmpBox.getSize(tmpSize);
+    if (tmpSize.y < JUKE_TIRE_Y_MIN || tmpSize.y > JUKE_TIRE_Y_MAX) {
+      return;
+    }
+    if (tmpSize.x < JUKE_COMBINED_WHEEL_XZ_SPAN && tmpSize.z < JUKE_COMBINED_WHEEL_XZ_SPAN) {
+      return;
+    }
+    let node: Object3D | null = object.parent;
+    while (node) {
+      if ((WHEEL_PIVOT_NAMES as readonly string[]).includes(node.name)) {
+        return;
+      }
+      node = node.parent;
+    }
+    shells.push(object);
+  });
+
+  for (const shell of shells) {
+    const parent = shell.parent;
+    if (!parent) {
+      shell.visible = false;
+      continue;
+    }
+    const buckets = bucketShellTrianglesByWheel(shell, pivotCenters, JUKE_TIRE_SHELL_PROXIMITY);
+    let slicedAny = false;
+    for (let w = 0; w < pivots.length; w += 1) {
+      const pivot = pivots[w] as Group;
+      const triIndices = buckets[w] as number[];
+      if (triIndices.length === 0) {
+        continue;
+      }
+      const part = sliceMeshTriangles(shell, triIndices, 'TireShell');
+      if (!part) {
+        continue;
+      }
+      // Authored-поза куска уже согласована с диском (общий baked-toe шелла и
+      // дисков) — attach без доворота; скан bearing по осколку недостоверен.
+      parent.add(part);
+      part.updateMatrixWorld(true);
+      pivot.attach(part);
+      slicedAny = true;
+    }
+    if (slicedAny) {
+      shell.removeFromParent();
+    } else {
+      shell.visible = false;
+    }
+  }
+  root.updateMatrixWorld(true);
+};
+
+/** Есть ли под пивотом прицепленная авторская покрышка (тогда тор-заглушка не нужен) */
+const pivotHasAuthoredTire = (pivot: Group): boolean => {
+  let found = false;
+  pivot.traverse((object) => {
+    if (found || !isMesh(object) || !object.visible) {
+      return;
+    }
+    if (object.name.endsWith('_TireFill')) {
+      return;
+    }
+    if (meshMaterialNames(object).includes(JUKE_TIRE_MATERIAL)) {
+      found = true;
+    }
+  });
+  return found;
 };
 
 /**
@@ -865,6 +1118,7 @@ const hideJukeAuthoredTires = (root: Object3D): void => {
  * ширина (2·tube) — истинный осевой размах точек геометрии вдоль оси
  * (проекция AABB раздувается toe передних колёс ~20°);
  * наружный радиус тора = rimR, чтобы резина не выпирала за колесо GLB.
+ * Fallback: ставится только на пивоты без авторской покрышки (attachJukeAuthoredTires).
  * Вызывать после buildWheelRig.
  */
 export const attachJukeProceduralTires = (root: Object3D): void => {
@@ -971,22 +1225,27 @@ export const attachJukeProceduralTires = (root: Object3D): void => {
     const tube = Math.min(rimWidth * 0.5, rimR * 0.48);
     const major = Math.max(rimR - tube, 0.05);
 
-    const fill = new Mesh(new TorusGeometry(major, tube, 16, 36), tireMat);
-    fill.name = `${name}_TireFill`;
-
     tmpParentInv.copy(pivot.matrixWorld).invert();
     tmpA.copy(axleWorld).transformDirection(tmpParentInv).normalize();
     if (tmpA.lengthSq() < 1e-8) {
       tmpA.set(1, 0, 0);
     }
-    // Torus: дыра вдоль Z → ось шины
-    fill.quaternion.setFromUnitVectors(tmpB.set(0, 0, 1), tmpA);
     pivot.worldToLocal(rimCenterWorld);
-    fill.position.copy(rimCenterWorld);
-    fill.castShadow = true;
-    fill.receiveShadow = true;
-    fill.renderOrder = 0;
-    pivot.add(fill);
+
+    // Тор — только fallback: если авторская покрышка уже на пивоте, резина не нужна
+    const fill = pivotHasAuthoredTire(pivot)
+      ? null
+      : new Mesh(new TorusGeometry(major, tube, 16, 36), tireMat);
+    if (fill) {
+      fill.name = `${name}_TireFill`;
+      // Torus: дыра вдоль Z → ось шины
+      fill.quaternion.setFromUnitVectors(tmpB.set(0, 0, 1), tmpA);
+      fill.position.copy(rimCenterWorld);
+      fill.castShadow = true;
+      fill.receiveShadow = true;
+      fill.renderOrder = 0;
+      pivot.add(fill);
+    }
 
     // Тормозной диск-фоновка за спицами: скрывает белый фендер, крутится с колесом.
     // tmpA после fill.quaternion — локальная ось шины; tmpB переиспользуем (Y цилиндра → ось).
@@ -1102,7 +1361,7 @@ const normalizeJuke = (root: Object3D) => {
 
   buildWheelPivotsFromAssemblies(root, compact, midX, midZ);
   ensureMissingWheelPivots(root);
-  hideJukeAuthoredTires(root);
+  hideJukeTreadSlabs(root);
   attachJukeCombinedRimLayers(root, midX, midZ, combinedRims);
 };
 

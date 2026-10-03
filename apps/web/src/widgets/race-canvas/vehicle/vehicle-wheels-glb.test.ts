@@ -4,7 +4,13 @@ import { Box3, Group, Quaternion, Vector3, type Mesh, type Object3D, type Skinne
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { attachJukeProceduralTires, measureHeadlightLampPositions, normalizeVehicleGltf } from './vehicle-body-variants';
+import { getVehicleFitTargetLength } from '@/entities/vehicle';
+import {
+  attachJukeProceduralTires,
+  attachJukeTiresToRimPose,
+  measureHeadlightLampPositions,
+  normalizeVehicleGltf,
+} from './vehicle-body-variants';
 import { computeVehicleFit, VEHICLE_TARGET_LENGTH } from './vehicle-fit';
 import {
   computeAxleLocal,
@@ -478,10 +484,11 @@ describe('real glb wheel integration', () => {
     }, 30000);
   }
 
-  it('juke: Torus TireFill on pivots (authored Matte hidden)', async () => {
+  it('juke: authored Matte tires attached to pivots (torus only as fallback)', async () => {
     const gltf = await load('juke.glb');
     const root = cloneSkinned(gltf.scene) as Group;
     normalizeVehicleGltf(root, 'juke');
+    attachJukeTiresToRimPose(root);
     attachJukeProceduralTires(root);
     root.updateMatrixWorld(true);
 
@@ -489,8 +496,10 @@ describe('real glb wheel integration', () => {
       const pivot = root.getObjectByName(name);
       expect(pivot, name).toBeTruthy();
       let hasRim = false;
+      let authoredTireCount = 0;
       let hasTireFill = false;
       let hasChromeRim = false;
+      const tireMeshes: Mesh[] = [];
       pivot!.traverse((object) => {
         if (!(object as { isMesh?: boolean }).isMesh || !object.visible) {
           return;
@@ -500,15 +509,41 @@ describe('real glb wheel integration', () => {
         if (mats.some((m) => m.name === 'wheel1')) {
           hasRim = true;
         }
-        if (object.name.endsWith('_TireFill') && mats.some((m) => m.name === 'Matte__FF2')) {
+        if (object.name.endsWith('_TireFill')) {
           hasTireFill = true;
+        }
+        if (mats.some((m) => m.name === 'Matte__FF2') && !object.name.endsWith('_TireFill')) {
+          const tireSize = new Box3().setFromObject(mesh).getSize(new Vector3());
+          // Покрышка не шире колеса: лохматые meshmerger-слэбы (x≈0.58) здесь быть не должно
+          expect(tireSize.x, `${name}/${mesh.name} tire not a slab`).toBeLessThan(0.52);
+          tireMeshes.push(mesh);
+          authoredTireCount += 1;
         }
         if (mats.some((m) => m.name === 'wheel2' || m.name === 'wheel3')) {
           hasChromeRim = true;
         }
       });
       expect(hasRim, `${name} has metallic rim`).toBe(true);
-      expect(hasTireFill, `${name} has Torus TireFill`).toBe(true);
+      // 2 компактные боковины + куски слитых шеллов, нарезанные по колесам
+      expect(authoredTireCount, `${name} authored tire shells on pivot`).toBeGreaterThanOrEqual(2);
+      // Синхронность: bearing оси каждой шины == bearing оси диска (без доворота
+      // разница = baked-toe ~20°: «покрышка всегда повернута в сторону»).
+      // Осколки слитых шеллов (_TireShell) сохраняют authored-позу относительно
+      // диска; скан bearing по осколку недостоверен — их проверяет floatingTire ниже
+      const pivotAxle = measureWheelAxle(pivot!);
+      const pivotBearing = bearingDeg(pivotAxle.x, pivotAxle.z);
+      for (const tireMesh of tireMeshes) {
+        if (tireMesh.name.endsWith('_TireShell')) {
+          continue;
+        }
+        const tireAxle = measureWheelAxle(tireMesh);
+        const delta = bearingDeg(tireAxle.x, tireAxle.z) - pivotBearing;
+        expect(
+          Math.abs(delta),
+          `${name}/${tireMesh.name} tire synced with rim (delta ${delta.toFixed(1)}°)`,
+        ).toBeLessThan(6);
+      }
+      expect(hasTireFill, `${name} has no torus fallback when tire exists`).toBe(false);
       expect(hasChromeRim, `${name} has chrome/accent rim layer`).toBe(true);
       const size = new Box3().setFromObject(pivot!).getSize(new Vector3());
       expect(size.y, `${name} tire height`).toBeGreaterThan(0.45);
@@ -549,10 +584,52 @@ describe('real glb wheel integration', () => {
     expect(floatingTire, 'no visible Matte tires outside pivots').toBe(0);
   }, 30000);
 
+  it('juke: rubber steers with the rim through the production rig order', async () => {
+    const gltf = await load('juke.glb');
+    const root = cloneSkinned(gltf.scene) as Group;
+    normalizeVehicleGltf(root, 'juke');
+    // Порядок prepareVehicleRoot: резина на пивоты ДО rig (align крутит узел целиком)
+    attachJukeTiresToRimPose(root);
+    attachJukeProceduralTires(root);
+    for (const name of WHEEL_NAMES) {
+      expect(attachRigPivots(root.getObjectByName(name) as Object3D)).toBe(true);
+    }
+    root.updateMatrixWorld(true);
+
+    const MAX_STEER_DEG = 32;
+    for (const name of WHEEL_NAMES) {
+      const pivot = root.getObjectByName(name) as Object3D;
+      const steerPivot = root.getObjectByName(`${name}_steer`) as Group;
+      const alignPivot = root.getObjectByName(`${name}_align`) as Group;
+
+      // buildWheelRig: align-квитернион по axle всего узла (диск+резина, один фрейм)
+      const axle = measureWheelAxle(pivot);
+      alignPivot.quaternion.setFromAxisAngle(new Vector3(0, 1, 0), computeToeYawCorrection(axle));
+      root.updateMatrixWorld(true);
+      const restToe = renderedToeDeg(pivot);
+      expect(Math.abs(restToe), `${name}: whole wheel (rim+rubber) straight at rest`).toBeLessThan(
+        2.5,
+      );
+
+      if (!(FRONT_WHEEL_NAMES as readonly string[]).includes(name)) {
+        continue;
+      }
+      // applyWheelAnimation: steerPivot вокруг world-up — узел с резиной косит целиком
+      steerPivot.quaternion.setFromAxisAngle(new Vector3(0, 1, 0), (MAX_STEER_DEG * Math.PI) / 180);
+      root.updateMatrixWorld(true);
+      const steeredToe = Math.abs(renderedToeDeg(pivot));
+      expect(
+        Math.abs(steeredToe - MAX_STEER_DEG),
+        `${name}: rubber follows the rim through steer (${steeredToe.toFixed(1)}°)`,
+      ).toBeLessThan(6);
+    }
+  }, 30000);
+
   it('juke: DIAG wheel mesh inventory', async () => {
     const gltf = await load('juke.glb');
     const root = cloneSkinned(gltf.scene) as Group;
     normalizeVehicleGltf(root, 'juke');
+    attachJukeTiresToRimPose(root);
     attachJukeProceduralTires(root);
     root.updateMatrixWorld(true);
     const box = new Box3();
@@ -920,6 +997,37 @@ describe('real glb wheel integration', () => {
     expect(halfSpan).toBeGreaterThan(0.25);
     expect(halfSpan).toBeLessThan(0.7);
   }, 30000);
+
+  it('all bodies fit to real-world class proportions (realLengthMeters)', async () => {
+    const fittedLengths = new Map<string, number>();
+    for (const [vehicleId, file] of cases) {
+      const gltf = await load(file);
+      const root = cloneSkinned(gltf.scene) as Group;
+      normalizeVehicleGltf(root, vehicleId);
+      root.updateMatrixWorld(true);
+      const size = new Box3().setFromObject(root).getSize(new Vector3());
+      // target из каталога (реальная длина × шкала мира), default как в measureFit
+      const target = getVehicleFitTargetLength(vehicleId) ?? VEHICLE_TARGET_LENGTH;
+      const length = size.z * (target / Math.max(size.z, 1e-6));
+      fittedLengths.set(vehicleId, length);
+      expect(length, `${vehicleId}: fitted length equals target`).toBeCloseTo(target, 5);
+    }
+    const at = (id: string) => fittedLengths.get(id)!;
+    // Реальная иерархия классов: TRX (5.71 м) крупнее всех, Juke (4.14) — самый компактный
+    for (const [vehicleId, length] of fittedLengths) {
+      if (vehicleId !== 'pickup') {
+        expect(at('pickup'), `pickup longer than ${vehicleId}`).toBeGreaterThan(length);
+      }
+    }
+    expect(at('sedan'), 'Logan 4.35 > Juke 4.14').toBeGreaterThan(at('juke'));
+    expect(at('sedan'), 'Logan 4.35 > hatch 4.2').toBeGreaterThan(at('hatchback'));
+    expect(at('scirocco'), 'Scirocco 4.26 > Juke 4.14').toBeGreaterThan(at('juke'));
+    // Никто не уехал далеко от прежнего мирового масштаба (3.3): трасса под него
+    for (const [vehicleId, length] of fittedLengths) {
+      expect(length, `${vehicleId}: near track scale`).toBeGreaterThan(2.5);
+      expect(length, `${vehicleId}: near track scale`).toBeLessThan(4.0);
+    }
+  }, 60000);
 });
 
 /** Воспроизводит математику buildWheelRig без мутаций дерева: возвращает эффекты в мировых осях. */

@@ -6,4 +6,6 @@ export type TVehicleDef = {
   id: TVehicleId;
   bodyKind: TVehicleBodyKind;
   gltfPath: string;
+  /** Реальная длина кузова, м (паспортная) — из нее считается целевая длина fit */
+  realLengthMeters?: number;
 };

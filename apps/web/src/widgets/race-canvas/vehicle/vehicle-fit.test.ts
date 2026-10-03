@@ -28,6 +28,12 @@ describe('computeVehicleFit', () => {
     expect(fit.offset.z).toBeCloseTo(-CAR_CONCEPT_BOUNDS.center.z * fit.scale, 5);
   });
 
+  it('honors an explicit per-class target length', () => {
+    const fit = computeVehicleFit(CAR_CONCEPT_BOUNDS, 3.8);
+    expect(fittedLength(CAR_CONCEPT_BOUNDS, fit)).toBeCloseTo(3.8, 5);
+    expect(fit.scale).toBeCloseTo(3.8 / CAR_CONCEPT_BOUNDS.size.z, 5);
+  });
+
   it('keeps fitted width near the capsule footprint', () => {
     const fit = computeVehicleFit(CAR_CONCEPT_BOUNDS);
     const width = fittedWidth(CAR_CONCEPT_BOUNDS, fit);
