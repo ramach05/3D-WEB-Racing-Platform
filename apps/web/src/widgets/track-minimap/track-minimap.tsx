@@ -1,39 +1,34 @@
+import type { ReactNode } from 'react';
 import type { TTrackConfig } from '@/entities/track';
 import { scenePalette } from '@/shared/config';
+import {
+  createMinimapProjection,
+  MINIMAP_VIEW_HEIGHT,
+  MINIMAP_VIEW_WIDTH,
+} from './minimap-projection';
 
 type TTrackMinimapProps = {
   /** Конфиг трассы для отрисовки плана */
   config: TTrackConfig;
   /** CSS-класс корневого SVG */
   className?: string;
+  /** Дополнительная SVG-начинка поверх плана (например, маркер машины) */
+  children?: ReactNode;
 };
 
 /** SVG-план трассы видом сверху */
-export const TrackMinimap = ({ config, className }: TTrackMinimapProps) => {
+export const TrackMinimap = ({ config, className, children }: TTrackMinimapProps) => {
   const points = config.centerline;
   if (points.length < 2) {
     return null;
   }
 
-  const xs = points.map((point) => point.x);
-  const zs = points.map((point) => point.z);
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const minZ = Math.min(...zs);
-  const maxZ = Math.max(...zs);
-  const padding = config.roadWidth + 8;
-  const viewMinX = minX - padding;
-  const viewMaxX = maxX + padding;
-  const viewMinZ = minZ - padding;
-  const viewMaxZ = maxZ + padding;
-  const width = viewMaxX - viewMinX;
-  const height = viewMaxZ - viewMinZ;
+  const projection = createMinimapProjection(config);
 
   /** Мировые XZ → координаты viewBox SVG */
   const toSvg = (x: number, z: number): string => {
-    const sx = ((x - viewMinX) / width) * 200;
-    const sy = ((z - viewMinZ) / height) * 120;
-    return `${sx.toFixed(1)},${sy.toFixed(1)}`;
+    const p = projection.project(x, z);
+    return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
   };
 
   const centerPath = points.map((point) => toSvg(point.x, point.z)).join(' L ');
@@ -61,7 +56,6 @@ export const TrackMinimap = ({ config, className }: TTrackMinimapProps) => {
   const outerPath = `M ${outerPoints.join(' L ')} Z`;
   const innerPath = `M ${innerPoints.join(' L ')} Z`;
 
-  const spawnSvg = toSvg(config.spawnPosition[0], config.spawnPosition[2]).split(',');
   const line = config.startFinishLine;
   const lineCenter = toSvg(line.position[0], line.position[2]).split(',');
   const forwardX = Math.sin(line.rotationY);
@@ -80,13 +74,17 @@ export const TrackMinimap = ({ config, className }: TTrackMinimapProps) => {
 
   return (
     <svg
-      viewBox="0 0 200 120"
+      viewBox={`0 0 ${MINIMAP_VIEW_WIDTH} ${MINIMAP_VIEW_HEIGHT}`}
       role="img"
       aria-hidden
       className={className}
       style={{ imageRendering: 'pixelated' }}
     >
-      <rect width="200" height="120" fill={config.palette.minimapBg} />
+      <rect
+        width={MINIMAP_VIEW_WIDTH}
+        height={MINIMAP_VIEW_HEIGHT}
+        fill={config.palette.minimapBg}
+      />
       <path d={outerPath} fill={config.palette.minimapWall} opacity={0.55} />
       <path d={innerPath} fill={config.palette.minimapBg} />
       <path
@@ -120,8 +118,8 @@ export const TrackMinimap = ({ config, className }: TTrackMinimapProps) => {
         fill={config.palette.accent}
         opacity={0.9}
       />
-      <circle cx={spawnSvg[0]} cy={spawnSvg[1]} r={4} fill={config.palette.accent} />
       <circle cx={lineCenter[0]} cy={lineCenter[1]} r={2.5} fill={scenePalette.white} />
+      {children}
     </svg>
   );
 };

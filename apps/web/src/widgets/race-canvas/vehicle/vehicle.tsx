@@ -24,6 +24,7 @@ import {
   integrateDriveForward,
   integrateSteerYaw,
   passedCheckpointZone,
+  setVehiclePose,
   tickRace,
   VEHICLE_MAX_SPEED,
   VEHICLE_REVERSE_MAX,
@@ -58,7 +59,10 @@ import {
   sampleTrackSurfaceKind,
   type TTrackSurfaceKind,
 } from '@/widgets/race-canvas/lib/track-surface';
-import { headlightLocalPositions, type THeadlightLamps } from '@/widgets/race-canvas/vehicle/vehicle-body-variants';
+import {
+  headlightLocalPositions,
+  type THeadlightLamps,
+} from '@/widgets/race-canvas/vehicle/vehicle-body-variants';
 import {
   VehicleModel,
   type TVehicleDriveVisual,
@@ -432,6 +436,7 @@ export const Vehicle = ({
     tickRace(speed * 3.6);
 
     const translation = body.translation();
+    setVehiclePose(translation.x, translation.z, Math.atan2(tmpForward.x, tmpForward.z));
     let wheelGrounded = false;
     for (const offset of WHEEL_LOCAL) {
       tmpOrigin.set(offset[0], offset[1], offset[2]).applyQuaternion(tmpQuat);
@@ -500,13 +505,7 @@ export const Vehicle = ({
       const wx = tmpOrigin.x + translation.x;
       const wz = tmpOrigin.z + translation.z;
       const prevWheel = prevZoneWheelPos.current[i];
-      const onOil = isWheelOnAnyZone(
-        prevWheel?.x ?? null,
-        prevWheel?.z ?? null,
-        wx,
-        wz,
-        oilSlicks,
-      );
+      const onOil = isWheelOnAnyZone(prevWheel?.x ?? null, prevWheel?.z ?? null, wx, wz, oilSlicks);
       wheelOnOil[i] = onOil;
       if (onOil) {
         wheelsOnOil += 1;
@@ -633,8 +632,7 @@ export const Vehicle = ({
         lastSkidPos.current[i] = { x: wx, z: wz };
       }
 
-      const smoking =
-        skid.smoking || (oilSkidActive > SKID_SMOKE_THRESHOLD && wheelsOnOil > 0);
+      const smoking = skid.smoking || (oilSkidActive > SKID_SMOKE_THRESHOLD && wheelsOnOil > 0);
       if (!anySkid && offroadFx <= 0) {
         smokeTimer.current = 0;
         dirtSmokeTimer.current = 0;

@@ -50,3 +50,4 @@ export {
   passedFinishLineForward,
 } from './checkpoint-rules';
 export { useRaceHud } from './hooks';
+export { getVehiclePose, setVehiclePose, type TVehiclePose } from './vehicle-pose';
