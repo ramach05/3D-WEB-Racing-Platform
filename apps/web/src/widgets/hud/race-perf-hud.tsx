@@ -1,18 +1,29 @@
+import type { CSSProperties } from 'react';
 import { useRacePerf } from '@/features/race-perf';
 
-/** Текстовый FPS-оверлей в левом верхнем углу */
+/** Фикс. слот под число: метки не сдвигаются при смене количества цифр */
+const slot = (widthCh: number): CSSProperties => ({
+  display: 'inline-block',
+  minWidth: `${widthCh}ch`,
+  textAlign: 'right',
+});
+
+/** Текстовый FPS-оверлей. Фикс. ширина панели и слотов — данные не «прыгают». */
 export const RacePerfHud = () => {
   const perf = useRacePerf();
 
-  const memLabel = perf.memMb == null ? '—' : `${perf.memMb} MB`;
-
   return (
-    <div className="pointer-events-none absolute top-2 left-2 z-10 max-w-[calc(100%-1rem)] md:top-4 md:left-4">
-      <div className="sega-panel !bg-black/75 px-3 py-2 text-xs text-[var(--sega-yellow)]">
-        <p className="truncate">
-          FPS: {perf.fps} · CPU: {perf.cpuPercent}% · MEM: {memLabel}
-        </p>
-      </div>
+    <div className="sega-race-hud sega-panel sega-panel--overlay w-auto px-4 py-3 text-sm text-[var(--sega-yellow)]">
+      <p className="whitespace-nowrap">
+        FPS: <span style={slot(3)}>{perf.fps}</span>
+        {/* CPU/MEM не влезает в узкий мобильный оверлей — только с md */}
+        <span className="hidden md:inline">
+          {' '}
+          · CPU: <span style={slot(3)}>{perf.cpuPercent}</span>% · MEM:{' '}
+          <span style={slot(4)}>{perf.memMb == null ? '—' : perf.memMb}</span>
+          {perf.memMb == null ? '' : ' MB'}
+        </span>
+      </p>
     </div>
   );
 };

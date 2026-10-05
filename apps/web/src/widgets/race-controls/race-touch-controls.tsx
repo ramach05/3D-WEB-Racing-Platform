@@ -17,6 +17,10 @@ type TRaceTouchControlsProps = {
   onCycleCamera: () => void;
   /** Текст под кнопками (например guest hint) */
   footer?: ReactNode;
+  /** Звук выключен (для состояния кнопки) */
+  muted?: boolean;
+  /** Переключение звука; без неё кнопка не рендерится */
+  onToggleMute?: () => void;
 };
 
 type TAxisButtonProps = {
@@ -78,6 +82,8 @@ export const RaceTouchControls = ({
   onTogglePause,
   onCycleCamera,
   footer,
+  muted = false,
+  onToggleMute,
 }: TRaceTouchControlsProps) => {
   const { t } = useTranslation();
 
@@ -88,11 +94,7 @@ export const RaceTouchControls = ({
   }, []);
 
   return (
-    <div
-      className="sega-touch-pad"
-      role="group"
-      aria-label={t('race.controlsTitle')}
-    >
+    <div className="sega-touch-pad" role="group" aria-label={t('race.controlsTitle')}>
       <div className="sega-touch-pad__actions">
         <button
           type="button"
@@ -118,6 +120,19 @@ export const RaceTouchControls = ({
         >
           <span aria-hidden>CAM</span>
         </button>
+        {onToggleMute ? (
+          <button
+            type="button"
+            className="sega-touch-btn sega-touch-btn--sm"
+            aria-label={muted ? t('race.musicOff') : t('race.musicOn')}
+            aria-pressed={!muted}
+            onClick={onToggleMute}
+          >
+            <span aria-hidden className={muted ? 'text-white/40 line-through' : undefined}>
+              {'\u266A'}
+            </span>
+          </button>
+        ) : null}
       </div>
       <div className="sega-touch-pad__row">
         <div className="sega-touch-pad__cluster">

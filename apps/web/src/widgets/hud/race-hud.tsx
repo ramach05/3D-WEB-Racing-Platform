@@ -111,8 +111,8 @@ export const RaceHud = ({ trackName, bestMs = null }: TRaceHudProps) => {
 
   return (
     <div
-      className="sega-race-hud sega-panel bg-black/70 px-4 py-3 text-sm text-[var(--sega-yellow)]"
-      style={{ minWidth: `${panelMinCh}ch`, maxWidth: '100%' }}
+      className="sega-race-hud sega-panel sega-panel--overlay px-4 py-3 text-sm text-[var(--sega-yellow)]"
+      style={{ minWidth: `min(${panelMinCh}ch, 100%)`, maxWidth: '100%' }}
     >
       <p className="sega-race-hud__row">
         <span className="sega-race-hud__label" style={{ minWidth: `${labelSlotCh}ch` }}>

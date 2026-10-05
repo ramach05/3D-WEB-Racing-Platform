@@ -17,7 +17,7 @@ import {
   useRaceHud,
 } from '@/features/race-session';
 import { Button, PageShell, SegaLoader, StatusText } from '@/shared/ui';
-import { RaceHud, RacePerfHud } from '@/widgets/hud';
+import { RaceHud, RaceMinimap, RacePerfHud } from '@/widgets/hud';
 import {
   cycleCameraMode,
   preloadVehicleModel,
@@ -114,7 +114,7 @@ export const RacePage = () => {
   useRaceDrivingSfx({
     enabled: Boolean(config) && hud.status === 'racing',
     paused: hud.status === 'paused',
-    muted: musicMuted,
+    muted: false,
   });
 
   /** Рестарт заезда: сброс сессии, canvas и toast */
@@ -137,6 +137,11 @@ export const RacePage = () => {
       toastTimerRef.current = null;
     }, 2000);
   }, [config, trackId]);
+
+  /** Переключение фоновой музыки (эффекты всегда слышны) */
+  const toggleMute = useCallback(() => {
+    setMusicMuted((value) => !value);
+  }, []);
 
   /** Выход в меню трасс: сброс сессии, чтобы музыка/статус не протекали */
   const exitToTracks = useCallback(() => {
@@ -305,26 +310,43 @@ export const RacePage = () => {
           onFinished={onFinished}
         />
       </div>
-      <div className="absolute top-2 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-col items-end gap-2 md:top-4 md:right-4">
-        <div className="pointer-events-none max-w-full">
+      <div className="absolute top-2 right-2 z-10 flex w-[9.5rem] max-w-[calc(100%-1rem)] flex-col items-end gap-2 md:top-4 md:right-4 lg:w-[13rem]">
+        <div className="pointer-events-none w-full">
           <RaceHud trackName={track.name} bestMs={trackBestMs} />
         </div>
+        <div className="pointer-events-none w-[5.5rem] self-end sm:w-[6.5rem] lg:w-full">
+          <RaceMinimap config={config} />
+        </div>
+      </div>
+      <div className="pointer-events-none absolute top-2 left-2 z-10 flex max-w-[calc(100%-1rem)] flex-col items-start gap-2 md:top-4 md:left-4">
+        <RacePerfHud />
         <Button
           variant="ghost"
           size="sm"
-          className="sega-panel bg-black/70 text-[var(--sega-yellow)]"
+          className="pointer-events-auto sega-panel !hidden h-8 w-8 items-center justify-center !px-0 !bg-black/70 md:!inline-flex"
+          aria-label={musicMuted ? t('race.musicOff') : t('race.musicOn')}
           aria-pressed={!musicMuted}
-          onClick={() => setMusicMuted((value) => !value)}
+          onClick={toggleMute}
         >
-          {musicMuted ? t('race.soundOff') : t('race.soundOn')}
+          <span
+            aria-hidden
+            className={
+              musicMuted
+                ? 'text-lg leading-none text-white/50 line-through'
+                : 'text-lg leading-none text-[var(--sega-yellow)]'
+            }
+          >
+            {'\u266A'}
+          </span>
         </Button>
       </div>
-      <RacePerfHud />
       <RaceControls cameraMode={cameraMode} />
       <RaceTouchControls
         onRestart={restart}
         onTogglePause={togglePause}
         onCycleCamera={cycleCameraMode}
+        muted={musicMuted}
+        onToggleMute={toggleMute}
         footer={!user && hud.status !== 'finished' ? t('race.guestHint') : undefined}
       />
       <RaceCountdownOverlay />

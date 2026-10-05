@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/features/race-perf', () => ({
@@ -13,10 +13,11 @@ import { RacePerfHud } from './race-perf-hud';
 
 describe('RacePerfHud', () => {
   it('shows fps cpu and memory', () => {
-    render(<RacePerfHud />);
+    const { container } = render(<RacePerfHud />);
+    const line = container.querySelector('p')?.textContent ?? '';
 
-    expect(screen.getByText(/FPS: 60/)).toBeInTheDocument();
-    expect(screen.getByText(/CPU: 12%/)).toBeInTheDocument();
-    expect(screen.getByText(/MEM: 128 MB/)).toBeInTheDocument();
+    expect(line).toContain('FPS: 60');
+    expect(line).toContain('CPU: 12%');
+    expect(line).toContain('MEM: 128 MB');
   });
 });

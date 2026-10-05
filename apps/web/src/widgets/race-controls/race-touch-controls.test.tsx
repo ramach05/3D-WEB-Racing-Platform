@@ -10,11 +10,7 @@ describe('RaceTouchControls', () => {
 
   it('renders steer, throttle, brake, handbrake, pause, restart and camera buttons', () => {
     render(
-      <RaceTouchControls
-        onRestart={vi.fn()}
-        onTogglePause={vi.fn()}
-        onCycleCamera={vi.fn()}
-      />,
+      <RaceTouchControls onRestart={vi.fn()} onTogglePause={vi.fn()} onCycleCamera={vi.fn()} />,
     );
 
     expect(screen.getByRole('button', { name: /газ|throttle/i })).toBeInTheDocument();
@@ -29,11 +25,7 @@ describe('RaceTouchControls', () => {
 
   it('sets throttle on pointerdown and clears on pointerup', () => {
     render(
-      <RaceTouchControls
-        onRestart={vi.fn()}
-        onTogglePause={vi.fn()}
-        onCycleCamera={vi.fn()}
-      />,
+      <RaceTouchControls onRestart={vi.fn()} onTogglePause={vi.fn()} onCycleCamera={vi.fn()} />,
     );
     const throttle = screen.getByRole('button', { name: /газ|throttle/i });
 
@@ -46,11 +38,7 @@ describe('RaceTouchControls', () => {
 
   it('sets handbrake on pointerdown and clears on pointerup', () => {
     render(
-      <RaceTouchControls
-        onRestart={vi.fn()}
-        onTogglePause={vi.fn()}
-        onCycleCamera={vi.fn()}
-      />,
+      <RaceTouchControls onRestart={vi.fn()} onTogglePause={vi.fn()} onCycleCamera={vi.fn()} />,
     );
     const handbrake = screen.getByRole('button', { name: /ручник|handbrake/i });
 
@@ -93,5 +81,46 @@ describe('RaceTouchControls', () => {
     );
 
     expect(screen.getByText('Guest hint')).toBeInTheDocument();
+  });
+
+  it('hides the mute button when onToggleMute is not passed', () => {
+    render(
+      <RaceTouchControls onRestart={vi.fn()} onTogglePause={vi.fn()} onCycleCamera={vi.fn()} />,
+    );
+
+    expect(screen.queryByRole('button', { name: /музыку?|music/i })).not.toBeInTheDocument();
+  });
+
+  it('renders the mute button in the action bar and calls onToggleMute', () => {
+    const onToggleMute = vi.fn();
+    const { rerender } = render(
+      <RaceTouchControls
+        onRestart={vi.fn()}
+        onTogglePause={vi.fn()}
+        onCycleCamera={vi.fn()}
+        muted={false}
+        onToggleMute={onToggleMute}
+      />,
+    );
+
+    const mute = screen.getByRole('button', { name: /музыку?|music/i });
+    expect(mute).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(mute);
+    expect(onToggleMute).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <RaceTouchControls
+        onRestart={vi.fn()}
+        onTogglePause={vi.fn()}
+        onCycleCamera={vi.fn()}
+        muted
+        onToggleMute={onToggleMute}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /музыку?|music/i })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
   });
 });

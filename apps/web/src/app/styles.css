@@ -90,6 +90,18 @@ button:disabled,
     4px 4px 0 0 var(--sega-magenta);
 }
 
+/**
+ * Оверлеи поверх 3D-сцены (HUD/миникарта/FPS на странице заезда).
+ * Полупрозрачный фон вместо плотной --surface, чтобы панель не перекрывала трассу.
+ * Объявлено после .sega-panel — та же специфичность, выигрывает по порядку.
+ */
+.sega-panel--overlay {
+  background: rgb(0 0 0 / 0.65);
+  box-shadow:
+    0 0 0 2px rgb(0 0 0 / 0.55),
+    4px 4px 0 0 var(--sega-magenta);
+}
+
 .sega-loader {
   display: flex;
   flex-direction: column;
@@ -964,9 +976,13 @@ button:disabled,
     padding: 0.45rem 0.75rem;
   }
 
+}
+
+/* Компактный HUD держим до lg: на окнах ~800–1000px он иначе съедает треть экрана */
+@media (max-width: 1023px) {
   .sega-race-hud {
-    padding: 0.55rem 0.75rem;
-    font-size: 0.75rem;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.7rem;
   }
 }
 
