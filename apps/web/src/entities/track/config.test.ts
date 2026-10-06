@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { coastalOvalTrack, getAllTrackConfigs, nightCityTrack } from './config';
+import { coastalOvalTrack, getAllTrackConfigs, nightCityTrack, stormEightTrack } from './config';
 import type { TLoopPoint } from './config.types';
 import { isInsideCheckpoint } from './oriented-box';
+import {
+  ROW_DEPTH,
+  SECTION_PITCH,
+  SECTION_WIDTH,
+  STAIR_WIDTH,
+  TRIBUNE_MARGIN,
+  TRIBUNE_ROWS,
+  WALL_OFFSET,
+  tribuneSideSign,
+} from './tribune-layout';
 
 /** Максимальный разрыв между соседними точками centerline (включая замыкание). */
 const maxCenterlineGap = (centerline: TLoopPoint[]): number => {
@@ -131,6 +141,41 @@ describe('track config geometry', () => {
     }
   });
 
+  it('puts grandstands to the LEFT of the car at start and clear of the track', () => {
+    for (const config of getAllTrackConfigs()) {
+      const line = config.startFinishLine;
+      const rotY = line.rotationY;
+      // Направление заезда противоположно касательной centerline (race-direction.ts)
+      const forwardX = -Math.sin(rotY);
+      const forwardZ = -Math.cos(rotY);
+      // Левая сторона машины = up × forward
+      const leftX = forwardZ;
+      const leftZ = -forwardX;
+
+      const zone = config.treeExclusionZones[0]!;
+      const toZoneX = zone.position[0] - line.position[0];
+      const toZoneZ = zone.position[2] - line.position[2];
+      expect(toZoneX * leftX + toZoneZ * leftZ).toBeGreaterThan(0);
+
+      // Ни одна точка трассы не попадает в пятно трибуны (локаль финишной линии)
+      const sign = tribuneSideSign(config.startTribuneSide);
+      const innerX = sign * (config.roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);
+      const backX = innerX + sign * TRIBUNE_ROWS * ROW_DEPTH;
+      const minX = Math.min(innerX, backX);
+      const maxX = Math.max(innerX, backX);
+      const spanZ = SECTION_PITCH + SECTION_WIDTH / 2 + STAIR_WIDTH;
+
+      for (const p of config.centerline) {
+        const dx = p.x - line.position[0];
+        const dz = p.z - line.position[2];
+        const localX = dx * Math.cos(rotY) - dz * Math.sin(rotY);
+        const localZ = dx * Math.sin(rotY) + dz * Math.cos(rotY);
+        const inside = localX > minX && localX < maxX && Math.abs(localZ) < spanZ;
+        expect(inside).toBe(false);
+      }
+    }
+  });
+
   it('places obstacles on both tracks', () => {
     expect(coastalOvalTrack.obstacles.length).toBeGreaterThan(0);
     expect(nightCityTrack.obstacles.length).toBeGreaterThan(0);
@@ -223,5 +268,50 @@ describe('track config geometry', () => {
         }
       }
     }
+  });
+
+  it('raises the storm-eight deck only at the crossing bridge', () => {
+    const pts = stormEightTrack.centerline;
+    const maxYAt = (from: number, to: number) => {
+      let m = 0;
+      pts.forEach((p, i) => {
+        const frac = i / pts.length;
+        if (frac >= from && frac < to) {
+          m = Math.max(m, p.y ?? 0);
+        }
+      });
+      return m;
+    };
+    // Мост на втором посещении узла (~0.625) поднят
+    expect(maxYAt(0.6, 0.66)).toBeGreaterThan(3.5);
+    // Единственная возвышенная зона: ровно один восход над 0.5 м по замкнутому кольцу
+    const raised = pts.map((p) => (p.y ?? 0) > 0.5);
+    let rises = 0;
+    for (let i = 0; i < raised.length; i += 1) {
+      if (raised[i] && !raised[(i - 1 + raised.length) % raised.length]) {
+        rises += 1;
+      }
+    }
+    expect(rises).toBe(1);
+  });
+
+  it('supports the storm-eight bridge deck with piers outside the road', () => {
+    const piers = stormEightTrack.piers ?? [];
+    // Мост ~50 м при шаге 6 м: минимум несколько пар пилонов
+    expect(piers.length).toBeGreaterThanOrEqual(6);
+    const halfRoad = stormEightTrack.roadWidth / 2;
+    for (const pier of piers) {
+      // Высота от земли до низа деки
+      expect(pier.size[1]).toBeGreaterThan(0.5);
+      // Пилон снаружи дороги (ближайшая точка centerline не ближе половины дороги)
+      let nearest = Infinity;
+      for (const p of stormEightTrack.centerline) {
+        nearest = Math.min(nearest, Math.hypot(p.x - pier.position[0], p.z - pier.position[2]));
+      }
+      expect(nearest).toBeGreaterThan(halfRoad);
+    }
+    // Плоские трассы без эстакады — без опор
+    expect(coastalOvalTrack.piers ?? []).toHaveLength(0);
+    expect(nightCityTrack.piers ?? []).toHaveLength(0);
   });
 });

@@ -34,6 +34,7 @@ const edgeNormal = (ax: number, az: number, bx: number, bz: number): TEdgeNormal
 /**
  * Узкая лента поребрика вдоль одного края асфальта.
  * `sideSign` +1 — левый край (внешняя нормаль), −1 — правый.
+ * Поддерживает per-point Y для elevated секций.
  */
 export const buildKerbRibbonGeometry = (
   centerline: readonly TLoopPoint[],
@@ -50,7 +51,7 @@ export const buildKerbRibbonGeometry = (
   const halfW = roadWidth / 2;
   const outerLat = halfW;
   const innerLat = halfW - kerbWidth;
-  const yTop = KERB_TOP_Y;
+  const baseYTop = KERB_TOP_Y;
   const yBot = KERB_TOP_Y - KERB_THICKNESS;
 
   const stationCount = n + 1;
@@ -129,11 +130,13 @@ export const buildKerbRibbonGeometry = (
   const vScale = pathLength > 0 ? 1 / KERB_STRIPE_LENGTH : 0;
   for (let i = 0; i < stationCount; i += 1) {
     const v = distances[i]! * vScale;
+    const yOff = centerline[i] ? (centerline[i]!.y ?? 0) : 0;
+    const yTop = baseYTop + yOff;
     // u: 0 у внутреннего края, 1 у внешнего
     setVertex(i, 0, outerX[i]!, yTop, outerZ[i]!, 1, v);
     setVertex(i, 1, innerX[i]!, yTop, innerZ[i]!, 0, v);
-    setVertex(i, 2, outerX[i]!, yBot, outerZ[i]!, 1, v);
-    setVertex(i, 3, innerX[i]!, yBot, innerZ[i]!, 0, v);
+    setVertex(i, 2, outerX[i]!, yBot + yOff, outerZ[i]!, 1, v);
+    setVertex(i, 3, innerX[i]!, yBot + yOff, innerZ[i]!, 0, v);
   }
 
   const indices = new Uint32Array(n * 8 * 3);

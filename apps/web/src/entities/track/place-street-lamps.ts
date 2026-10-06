@@ -2,7 +2,7 @@ import { isInsideCheckpoint } from './oriented-box';
 import type { TLoopPoint, TOrientedBox, TTrackConfig } from './config.types';
 import type { TPlacedStreetLamp, TPlaceStreetLampsOptions } from './place-street-lamps.types';
 
-const WALL_THICKNESS = 0.5;
+const WALL_THICKNESS = 0.25;
 /** Отступ столба за внешней гранью стены */
 const WALL_OUTSET = 1.2;
 /**

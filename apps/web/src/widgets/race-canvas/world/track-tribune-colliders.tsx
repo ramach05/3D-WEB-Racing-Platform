@@ -21,6 +21,7 @@ import {
   canopyUndersideY,
   rowTopY,
   tribuneRowCenterX,
+  tribuneSideSign,
 } from '@/entities/track';
 import { WORLD_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
 
@@ -180,7 +181,7 @@ const TribuneSectionColliders = ({
  * Визуал остаётся в TrackTribunes вне Physics.
  */
 export const TrackTribuneColliders = ({ line, roadWidth, side }: TTrackTribuneCollidersProps) => {
-  const sideSign = side === 'left' ? 1 : -1;
+  const sideSign = tribuneSideSign(side);
   const tribuneInnerX = sideSign * (roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);
 
   return (

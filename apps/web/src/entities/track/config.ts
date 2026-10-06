@@ -1,11 +1,16 @@
 import type { TTrackSlug } from '@racing/shared';
-import { TRACK_SLUG_COASTAL_OVAL, TRACK_SLUG_NIGHT_CITY } from '@racing/shared';
+import {
+  TRACK_SLUG_COASTAL_OVAL,
+  TRACK_SLUG_NIGHT_CITY,
+  TRACK_SLUG_STORM_EIGHT,
+} from '@racing/shared';
 import { carSkins, trackPalettes } from '@/shared/config';
 import type {
   TBuildLoopOptions,
   TLoopPoint,
   TObstacleKind,
   TOrientedBox,
+  TTimeOfDay,
   TTrackConfig,
   TTrackObstacle,
   TVec3,
@@ -50,6 +55,13 @@ const placeAlongPolyline = (
   return { x: first.x, z: first.z, dx, dz };
 };
 
+/**
+ * Напуск, на который соседние сегменты стены перекрываются в узлах, чтобы на
+ * поворотах не было щелей. Фиксированная величина (не привязана к толщине),
+ * иначе утончение стены укорачивает короткие сегменты на плотных трассах.
+ */
+const WALL_SEGMENT_OVERLAP = 0.8;
+
 /** Строит замкнутую трассу по точкам центральной линии */
 const buildLoopTrack = ({
   slug,
@@ -60,13 +72,31 @@ const buildLoopTrack = ({
   audioTheme,
   spawnOffsetMeters,
   startTribuneSide,
+  wallExclusionWindows = [],
+  centerlineY,
+  weather,
 }: TBuildLoopOptions): TTrackConfig => {
   const pointCount = points.length;
   const walls: TOrientedBox[] = [];
-  const wallHeight = 1.35;
-  const wallThickness = 0.5;
+  const wallHeight = 0.85;
+  const wallThickness = 0.25;
+
+  const inExclusion = (ratio: number): boolean => {
+    for (const [ws, we] of wallExclusionWindows) {
+      if (ratio >= ws && ratio <= we) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  /** Высота полотна на точке (центрлайн y; верх асфальта = y + ROAD_TOP_Y в рищ-риббоне) */
+  const deckY = (i: number): number => points[i]?.y ?? 0;
 
   for (let i = 0; i < pointCount; i += 1) {
+    if (inExclusion(i / pointCount)) {
+      continue;
+    }
     const a = points[i];
     const b = points[(i + 1) % pointCount];
     if (!a || !b) {
@@ -82,23 +112,28 @@ const buildLoopTrack = ({
     const mx = (a.x + b.x) / 2;
     const mz = (a.z + b.z) / 2;
     const offset = roadWidth / 2 + wallThickness / 2 - 0.08;
-    const segmentOverlap = len + wallThickness * 1.6;
+    const segmentOverlap = len + WALL_SEGMENT_OVERLAP;
+    /** Стена стоит на полотне: центр по высоте = средняя высота сегмента + половина стены */
+    const wallCenterY = (deckY(i) + deckY((i + 1) % pointCount)) / 2 + wallHeight / 2;
 
     const nx = -dz / len;
     const nz = dx / len;
     walls.push({
-      position: [mx + nx * offset, wallHeight / 2, mz + nz * offset],
+      position: [mx + nx * offset, wallCenterY, mz + nz * offset],
       size: [wallThickness, wallHeight, segmentOverlap],
       rotationY,
     });
     walls.push({
-      position: [mx - nx * offset, wallHeight / 2, mz - nz * offset],
+      position: [mx - nx * offset, wallCenterY, mz - nz * offset],
       size: [wallThickness, wallHeight, segmentOverlap],
       rotationY,
     });
   }
 
   for (let i = 0; i < pointCount; i += 1) {
+    if (inExclusion(i / pointCount)) {
+      continue;
+    }
     const prev = points[(i - 1 + pointCount) % pointCount];
     const curr = points[i];
     const next = points[(i + 1) % pointCount];
@@ -121,10 +156,11 @@ const buildLoopTrack = ({
     const capOffset = roadWidth / 2 + wallThickness / 2 - 0.08;
     const capSize = wallThickness * 1.5;
     for (const sign of [1, -1] as const) {
+      const capY = deckY(i) + wallHeight / 2;
       walls.push({
         position: [
           curr.x + (bisX / bisLen) * capOffset * sign,
-          wallHeight / 2,
+          capY,
           curr.z + (bisZ / bisLen) * capOffset * sign,
         ],
         size: [capSize, wallHeight, capSize],
@@ -166,10 +202,28 @@ const buildLoopTrack = ({
 
   /** Фиксированные метры от финиша — одинаково на любой плотности точек. */
   const spawnPose = placeAlongPolyline(points, spawnOffsetMeters);
+  /** Спавн на полотне: +0.85 от высоты ближайшей точки centerline */
+  let spawnDeckY = 0;
+  let spawnBest = Infinity;
+  for (let i = 0; i < pointCount; i += 1) {
+    const p = points[i];
+    if (!p) {
+      continue;
+    }
+    const d = (p.x - spawnPose.x) ** 2 + (p.z - spawnPose.z) ** 2;
+    if (d < spawnBest) {
+      spawnBest = d;
+      spawnDeckY = p.y ?? 0;
+    }
+  }
+
+  /** timeOfDay: night только если явно night или если timeOfDay == night */
+  const derivedTimeOfDay: TTimeOfDay =
+    audioTheme === 'night' ? 'night' : 'day';
 
   return {
     slug,
-    spawnPosition: [spawnPose.x, 0.85, spawnPose.z],
+    spawnPosition: [spawnPose.x, spawnDeckY + 0.85, spawnPose.z],
     // Направление заезда ≠ рост индекса centerline — см. race-direction.ts
     spawnRotationY: yawFacingRaceDirection(spawnPose.dx, spawnPose.dz),
     startFinishLine,
@@ -182,7 +236,7 @@ const buildLoopTrack = ({
     palette,
     carSkin,
     audioTheme,
-    timeOfDay: audioTheme === 'night' ? 'night' : 'day',
+    timeOfDay: derivedTimeOfDay,
     startTribuneSide,
     treeExclusionZones: [
       buildTribuneTreeExclusionZone({
@@ -191,6 +245,9 @@ const buildLoopTrack = ({
         side: startTribuneSide,
       }),
     ],
+    centerlineY,
+    wallExclusionWindows,
+    weather,
   };
 };
 
@@ -427,6 +484,188 @@ const buildEllipsePoints = (radiusX: number, radiusZ: number, count: number): TL
   return points;
 };
 
+/**
+ * Замкнутая полилиния → равномерная выборка по длине дуги (XZ), N точек.
+ * Нужно, чтобы шаг центра и изломы heading были равномерны (тесты config + тайлинг).
+ */
+const resampleClosedByArcLength = (dense: TLoopPoint[], count: number): TLoopPoint[] => {
+  const n = dense.length;
+  const cum: number[] = new Array(n + 1).fill(0);
+  for (let i = 0; i < n; i += 1) {
+    const a = dense[i]!;
+    const b = dense[(i + 1) % n]!;
+    cum[i + 1] = cum[i]! + Math.hypot(b.x - a.x, b.z - a.z);
+  }
+  const total = cum[n]!;
+  const out: TLoopPoint[] = [];
+  let seg = 0;
+  for (let k = 0; k < count; k += 1) {
+    const target = (k / count) * total;
+    while (seg < n - 1 && cum[seg + 1]! < target) {
+      seg += 1;
+    }
+    const a = dense[seg]!;
+    const b = dense[(seg + 1) % n]!;
+    const segLen = cum[seg + 1]! - cum[seg]!;
+    const t = segLen > 1e-6 ? (target - cum[seg]!) / segLen : 0;
+    out.push({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t });
+  }
+  return out;
+};
+
+/** Гаусс по замкнутому индексу: расстояние в индексах с учетом замыкания */
+const gaussianAt = (i: number, center: number, count: number, sigmaIdx: number): number => {
+  let d = Math.abs(i - center);
+  d = Math.min(d, count - d);
+  return Math.exp(-(d * d) / (2 * sigmaIdx * sigmaIdx));
+};
+
+/**
+ * Storm Eight: крупная восьмерка (лемниската Жероно) с ЭСТАКАДОЙ в центре
+ * пересечения — единственный подъем на трассе.
+ *
+ * Ветки пересекаются под 90°, окно перекрытия вдоль дуги маленькое, поэтому:
+ *  - одно из посещений узла поднимается гауссом (мост) — ленты расходятся по Y;
+ *  - второе посещение остается внизу (проезд под мостом).
+ * Высоты — в метрах над плоскостью (верх асфальта = y + ROAD_TOP_Y в рищ-риббоне).
+ */
+const buildFigureEightPoints = (count: number): TLoopPoint[] => {
+  const scale = 50;
+  const phase = Math.PI / 4;
+
+  // 1) плотная выборка лемнискаты
+  const dense: TLoopPoint[] = [];
+  const denseCount = count * 12;
+  for (let i = 0; i < denseCount; i += 1) {
+    const shiftedT = ((i / denseCount) * Math.PI * 2 + phase) % (Math.PI * 2);
+    const x = scale * Math.cos(shiftedT);
+    const z = -scale * Math.sin(shiftedT) * Math.cos(shiftedT);
+    dense.push({ x, z });
+  }
+
+  // 2) равномерная выборка по дуге
+  const pts = resampleClosedByArcLength(dense, count);
+
+  // 3) индексы двух посещений узла (максимум близости к (0,0))
+  const prox = pts.map((p) => p.x * p.x + p.z * p.z);
+  const minProx = Math.min(...prox);
+  const nearNode = prox.map((v) => v < minProx * 1.25 + 0.5);
+  let node1 = -1;
+  let node2 = -1;
+  for (let i = 0; i < count; i += 1) {
+    if (!nearNode[i]) {
+      continue;
+    }
+    if (node1 === -1) {
+      node1 = i;
+    } else if (i > node1 && (node2 === -1 || i > node2)) {
+      node2 = i;
+    }
+  }
+  // Страховка: если узлы не нашли — берем теоретические доли 0.125 / 0.625
+  if (node1 === -1 || node2 === -1) {
+    node1 = Math.round(0.125 * count);
+    node2 = Math.round(0.625 * count);
+  }
+
+  /**
+   * Мост: пологий (уклон ~8–9°), чтобы машина заезжала сама. При 90° пересечении
+   * ветки расходятся ~1:1, поэтому для расхождения лент шириной 10 м достаточно
+   * ядра ±5–6 м над узлом; 4 м высоты дают зазор под проезд нижнего прохода.
+   */
+  const bridgeHeight = 4;
+  const bridgeSigma = count * 0.05; // ~15 м по дуге: пологий подъем/съезд
+
+  for (let i = 0; i < count; i += 1) {
+    // Мост поднимает ВТОРОЕ посещение узла; первое остается внизу
+    const bridge = gaussianAt(i, node2, count, bridgeSigma) * bridgeHeight;
+    pts[i] = { x: pts[i]!.x, z: pts[i]!.z, y: bridge };
+  }
+  return pts;
+};
+
+/**
+ * Визуальные опоры (пилоны) под поднятым полотном. Ставятся только под
+ * ДЛИННЫЕ подъемы (эстакада-мост): короткие горбы — это земляные насыпи,
+ * опоры под ними выглядели бы ошибкой.
+ */
+const buildDeckPiers = (points: readonly TLoopPoint[], roadWidth: number): TOrientedBox[] => {
+  const n = points.length;
+  if (n < 4) {
+    return [];
+  }
+  const minY = 0.9; // ниже — опоры не нужны
+  const minSpanMeters = 20; // короче — насыпь, не мост
+  const stepMeters = 6;
+  const lateral = roadWidth / 2 + 0.8; // снаружи стен
+
+  const segLen = (i: number): number => {
+    const a = points[i]!;
+    const b = points[(i + 1) % n]!;
+    return Math.hypot(b.x - a.x, b.z - a.z);
+  };
+  const above = points.map((p) => (p.y ?? 0) > minY);
+
+  const piers: TOrientedBox[] = [];
+  for (let start = 0; start < n; start += 1) {
+    if (!above[start] || above[(start - 1 + n) % n]) {
+      continue;
+    }
+    let span = 0;
+    let end = start;
+    while (above[(end + 1) % n] && (end + 1) % n !== start) {
+      span += segLen(end);
+      end = (end + 1) % n;
+    }
+    if (span < minSpanMeters) {
+      continue;
+    }
+    let dist = 0;
+    let nextStation = 0;
+    let i = start;
+    for (;;) {
+      if (dist >= nextStation) {
+        nextStation += stepMeters;
+        const p = points[i]!;
+        const prev = points[(i - 1 + n) % n]!;
+        const next = points[(i + 1) % n]!;
+        const dx = next.x - prev.x;
+        const dz = next.z - prev.z;
+        const len = Math.hypot(dx, dz) || 1;
+        const nx = -dz / len;
+        const nz = dx / len;
+        // низ деки = y + ROAD_TOP_Y - ROAD_THICKNESS = y - 0.1; верх пилона с нахлестом
+        const h = Math.max((p.y ?? 0) - 0.05, 0.3);
+        for (const sign of [1, -1] as const) {
+          const px = p.x + nx * lateral * sign;
+          const pz = p.z + nz * lateral * sign;
+          // У устьев моста нормаль совпадает с направлением нижней ветки:
+          // отбраковываем пилоны, залезающие на чужое полотно
+          let nearest = Infinity;
+          for (const q of points) {
+            nearest = Math.min(nearest, Math.hypot(q.x - px, q.z - pz));
+          }
+          if (nearest < roadWidth / 2 + 0.5) {
+            continue;
+          }
+          piers.push({
+            position: [px, h / 2, pz],
+            size: [0.7, h, 0.7],
+            rotationY: Math.atan2(dx, dz),
+          });
+        }
+      }
+      if (i === end) {
+        break;
+      }
+      dist += segLen(i);
+      i = (i + 1) % n;
+    }
+  }
+  return piers;
+};
+
+
 type TPathSegment =
   | {
       kind: 'line';
@@ -592,14 +831,70 @@ export const nightCityTrack: TTrackConfig = {
   oilSlicks: buildNightCityOilSlicks(nightCityPoints),
 };
 
+// ---------------------------------------------------------------------------
+// Storm Eight — большая восьмерка с эстакадой в центре пересечения, дождь
+// ---------------------------------------------------------------------------
+const STORM_EIGHT_POINTS = buildFigureEightPoints(240);
+const STORM_EIGHT_ROAD_WIDTH = 10;
+
+const stormEightCenterlineY = STORM_EIGHT_POINTS.map((p) => p.y ?? 0);
+
+/**
+ * Препятствия только на плоских участках: избегаем узла-под мостом (≈0.125)
+ * и эстакады (≈0.625) — там полотно поднято.
+ */
+const STORM_EIGHT_OBSTACLES = (points: TLoopPoint[], roadWidth: number): TTrackObstacle[] => {
+  const triple = [0.7, 1.85, 3.0] as const;
+  const tires: TObstacleKind[] = ['tireStack', 'tireStack', 'tireStack'];
+  const barrels: TObstacleKind[] = ['fuelBarrel', 'fuelBarrel', 'fuelBarrel'];
+
+  return buildObstaclesFromBanks(points, roadWidth, [
+    { ratio: 0.05, side: -1, kinds: tires, rowInsets: triple },
+    { ratio: 0.2, side: 1, kinds: barrels, rowInsets: triple },
+    { ratio: 0.28, side: -1, kinds: ['fuelBarrel', 'tireStack', 'tireStack'], rowInsets: triple },
+    { ratio: 0.52, side: -1, kinds: tires, rowInsets: triple },
+    { ratio: 0.68, side: 1, kinds: barrels, rowInsets: triple },
+    { ratio: 0.94, side: 1, kinds: tires, rowInsets: triple },
+  ]);
+};
+
+const stormEightOilSlicks = (points: TLoopPoint[]): TOrientedBox[] => [
+  placeOilSlickAlongCenterline(points, 0.22, 1.2),
+  placeOilSlickAlongCenterline(points, 0.55, -1.0),
+  placeOilSlickAlongCenterline(points, 0.72, 0.9),
+];
+
+export const stormEightTrack: TTrackConfig = {
+  ...buildLoopTrack({
+    slug: TRACK_SLUG_STORM_EIGHT,
+    points: STORM_EIGHT_POINTS,
+    roadWidth: STORM_EIGHT_ROAD_WIDTH,
+    palette: trackPalettes.storm,
+    carSkin: carSkins.storm,
+    audioTheme: 'rock',
+    spawnOffsetMeters: 5,
+    startTribuneSide: 'left',
+    centerlineY: stormEightCenterlineY,
+    weather: 'rain',
+  }),
+  obstacles: STORM_EIGHT_OBSTACLES(STORM_EIGHT_POINTS, STORM_EIGHT_ROAD_WIDTH),
+  oilSlicks: stormEightOilSlicks(STORM_EIGHT_POINTS),
+  piers: buildDeckPiers(STORM_EIGHT_POINTS, STORM_EIGHT_ROAD_WIDTH),
+};
+
 const TRACKS_BY_SLUG: Record<TTrackSlug, TTrackConfig> = {
   [TRACK_SLUG_COASTAL_OVAL]: coastalOvalTrack,
   [TRACK_SLUG_NIGHT_CITY]: nightCityTrack,
+  [TRACK_SLUG_STORM_EIGHT]: stormEightTrack,
 };
 
 /** Конфиг трассы по slug с API */
 export const getTrackConfig = (slug: string): TTrackConfig | null => {
-  if (slug === TRACK_SLUG_COASTAL_OVAL || slug === TRACK_SLUG_NIGHT_CITY) {
+  if (
+    slug === TRACK_SLUG_COASTAL_OVAL ||
+    slug === TRACK_SLUG_NIGHT_CITY ||
+    slug === TRACK_SLUG_STORM_EIGHT
+  ) {
     return TRACKS_BY_SLUG[slug] ?? null;
   }
   return null;
@@ -607,5 +902,5 @@ export const getTrackConfig = (slug: string): TTrackConfig | null => {
 
 /** Все локальные конфиги трасс */
 export const getAllTrackConfigs = (): TTrackConfig[] => {
-  return [coastalOvalTrack, nightCityTrack];
+  return [coastalOvalTrack, nightCityTrack, stormEightTrack];
 };

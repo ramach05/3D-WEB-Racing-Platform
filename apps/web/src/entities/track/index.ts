@@ -70,6 +70,7 @@ export {
   rowTopY,
   tribuneOuterEndSign,
   tribuneRowCenterX,
+  tribuneSideSign,
 } from './tribune-layout';
 export type {
   TTribuneCanopyPost,

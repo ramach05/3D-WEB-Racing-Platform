@@ -2,7 +2,11 @@ import { type RefObject, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { RapierRigidBody } from '@react-three/rapier';
 import type { TTrackConfig } from '@/entities/track';
-import { accumulateLapTravel, getTrackProgress, isRaceLapCooldownCleared } from '@/entities/track';
+import {
+  accumulateLapTravel,
+  getTrackProgress,
+  isRaceLapCooldownCleared,
+} from '@/entities/track';
 import {
   canRegisterLapCrossing,
   getRaceHudSnapshot,
@@ -25,6 +29,7 @@ type TCheckpointDetectorProps = {
 /**
  * Детектор кругов в направлении заезда (см. `race-direction.ts`):
  * travel по убывающему ratio + финиш только `lz + → −`.
+ * continuityWindow: для figure-8 — предотвращает зачет полета/прыжка как progress.
  */
 export const CheckpointDetector = ({
   config,
@@ -37,6 +42,7 @@ export const CheckpointDetector = ({
   const lastRatioRef = useRef<number | null>(null);
   const lapCooldownRef = useRef(true);
   const resetNonceRef = useRef(resetNonce);
+  const continuityWindowRef = useRef<number | null>(null);
 
   useFrame(() => {
     if (resetNonceRef.current !== resetNonce) {
@@ -45,6 +51,7 @@ export const CheckpointDetector = ({
       lapTravelRef.current = 0;
       lastRatioRef.current = null;
       lapCooldownRef.current = true;
+      continuityWindowRef.current = null;
     }
 
     const body = bodyRef.current;
@@ -60,7 +67,20 @@ export const CheckpointDetector = ({
     const prevPos = prevPosRef.current;
     const { ratio } = getTrackProgress(x, z, config.centerline);
 
-    const travel = accumulateLapTravel(lapTravelRef.current, lastRatioRef.current, ratio);
+    let adjustedRatio = ratio;
+    const cw = continuityWindowRef.current;
+    if (cw !== null && cw !== ratio) {
+      const jump = Math.abs(ratio - cw);
+      if (jump < 0.15) {
+        adjustedRatio = cw;
+      } else {
+        continuityWindowRef.current = ratio;
+      }
+    } else if (cw === null) {
+      continuityWindowRef.current = ratio;
+    }
+
+    const travel = accumulateLapTravel(lapTravelRef.current, lastRatioRef.current, adjustedRatio);
     lapTravelRef.current = travel.lapTravel;
     lastRatioRef.current = travel.lastRatio;
     const progress = lapTravelRef.current;
@@ -89,6 +109,7 @@ export const CheckpointDetector = ({
 
     const finished = registerLapComplete();
     prevPosRef.current = null;
+    continuityWindowRef.current = null;
 
     if (finished) {
       onFinished();

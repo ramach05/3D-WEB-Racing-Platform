@@ -1,6 +1,8 @@
 import type { TTrackSlug } from '@racing/shared';
 import type { TCarSkinColors, TTrackPaletteColors } from '@/shared/config';
 
+export type TTrackWeather = 'clear' | 'rain';
+
 export type TVec3 = readonly [number, number, number];
 
 export type TOrientedBox = {
@@ -24,6 +26,8 @@ export type TLoopPoint = {
   x: number;
   /** Z на плоскости трассы */
   z: number;
+  /** Высота над плоскостью трассы (опционально; если нет — y=0) */
+  y?: number;
 };
 
 /** Палитра материалов трассы — значения из shared/config trackPalettes */
@@ -32,11 +36,11 @@ export type TTrackPalette = TTrackPaletteColors;
 /** Окраска машины — значения из shared/config carSkins */
 export type TCarSkin = TCarSkinColors;
 
-export type TTrackAudioTheme = 'coastal' | 'night';
+export type TTrackAudioTheme = 'coastal' | 'night' | 'rock';
 
 export type TTimeOfDay = 'day' | 'night';
 
-/** Сторона трибун относительно направления движения (left = внешняя сторона трассы) */
+/** Сторона трибун относительно направления заезда (left = левая от машины; заезд против centerline) */
 export type TStartTribuneSide = 'left' | 'right';
 
 export type TTrackConfig = {
@@ -75,6 +79,16 @@ export type TTrackConfig = {
   startTribuneSide: TStartTribuneSide;
   /** Зоны, где деревья нельзя размещать (трибуны и т.п.) */
   treeExclusionZones: TOrientedBox[];
+  /** Высота каждой точки centerline (опционально); если нет — y=0 */
+  centerlineY?: number[];
+  /** Ширины дороги по точкам centerline (опционально); если нет — roadWidth */
+  roadWidths?: number[];
+  /** Окно исключения стен: [ratioStart, ratioEnd] — сегменты между этими ratio не рисуют стены */
+  wallExclusionWindows?: [number, number][];
+  /** Опоры elevated-полотна (визуальные пилоны под мостом) */
+  piers?: TOrientedBox[];
+  /** Погода на трассе */
+  weather?: TTrackWeather;
 };
 
 export type TBuildLoopOptions = {
@@ -94,4 +108,10 @@ export type TBuildLoopOptions = {
   spawnOffsetMeters: number;
   /** Сторона трибун */
   startTribuneSide: TStartTribuneSide;
+  /** Окно исключения стен: [ratioStart, ratioEnd] */
+  wallExclusionWindows?: [number, number][];
+  /** Высота каждой точки centerline (опционально) */
+  centerlineY?: number[];
+  /** Погода на трассе */
+  weather?: TTrackWeather;
 };

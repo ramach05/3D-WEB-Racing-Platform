@@ -35,9 +35,52 @@ export const sampleTrackSurfaceKind = (
   z: number,
   centerline: TLoopPoint[],
   roadWidth: number,
+  roadWidths?: readonly number[],
 ): TTrackSurfaceKind => {
-  const half = roadWidth / 2;
   const dist = Math.sqrt(distanceToCenterlineSq(x, z, centerline));
+  let half: number;
+  if (roadWidths && roadWidths.length > 0) {
+    let best = Infinity;
+    let bestIdx = 0;
+    const n = centerline.length;
+    for (let i = 0; i < n; i += 1) {
+      const a = centerline[i];
+      const b = centerline[(i + 1) % n];
+      if (!a || !b) continue;
+      const dx = b.x - a.x;
+      const dz = b.z - a.z;
+      const lenSq = dx * dx + dz * dz;
+      const t = lenSq === 0 ? 0 : Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / lenSq));
+      const px = a.x + dx * t;
+      const pz = a.z + dz * t;
+      const dSq = (x - px) ** 2 + (z - pz) ** 2;
+      if (dSq < best) {
+        best = dSq;
+        bestIdx = i;
+      }
+    }
+    const frac = bestIdx / n;
+    let prev: { idx: number; w: number } | null = null;
+    let next: { idx: number; w: number } | null = null;
+    const rwN = roadWidths.length;
+    for (let j = 0; j < rwN; j += 1) {
+      const jFrac = j / rwN;
+      if (jFrac <= frac) prev = { idx: j, w: roadWidths[j]! };
+      else {
+        next = { idx: j, w: roadWidths[j]! };
+        break;
+      }
+    }
+    if (prev && next) {
+      const range = next.idx - prev.idx;
+      const t2 = range > 0 ? (bestIdx - prev.idx) / range : 0;
+      half = (prev.w + (next.w - prev.w) * t2) / 2;
+    } else {
+      half = prev ? prev.w / 2 : roadWidth / 2;
+    }
+  } else {
+    half = roadWidth / 2;
+  }
   if (dist > half) {
     return 'offroad';
   }

@@ -30,10 +30,12 @@ const edgeNormal = (ax: number, az: number, bx: number, bz: number): TEdgeNormal
 /**
  * Непрерывная лента асфальта по замкнутому centerline.
  * Одна поверхность вместо overlapping box-сегментов — без z-fighting.
+ * Поддерживает per-point Y (elevated sections) и per-point roadWidth.
  */
 export const buildRoadRibbonGeometry = (
   centerline: readonly TLoopPoint[],
   roadWidth: number,
+  roadWidths?: readonly number[],
 ): TRoadRibbonResult => {
   const n = centerline.length;
   const empty = new BufferGeometry();
@@ -41,9 +43,31 @@ export const buildRoadRibbonGeometry = (
     return { geometry: empty, pathLength: 0 };
   }
 
-  const halfW = roadWidth / 2;
   const yTop = ROAD_TOP_Y;
   const yBot = ROAD_TOP_Y - ROAD_THICKNESS;
+
+  const interpolatedWidths = roadWidths
+    ? centerline.map((_, i) => {
+        const frac = i / n;
+        let prev: { idx: number; w: number } | null = null;
+        let next: { idx: number; w: number } | null = null;
+        for (let j = 0; j < roadWidths.length; j += 1) {
+          const jFrac = j / roadWidths.length;
+          if (jFrac <= frac) prev = { idx: j, w: roadWidths[j]! };
+          else {
+            next = { idx: j, w: roadWidths[j]! };
+            break;
+          }
+        }
+        if (prev && next) {
+          const range = next.idx - prev.idx;
+          const t = range > 0 ? (i - prev.idx) / range : 0;
+          return prev.w + (next.w - prev.w) * t;
+        }
+        if (prev) return prev.w;
+        return roadWidth;
+      })
+    : centerline.map(() => roadWidth);
 
   const stationCount = n + 1;
   const leftX = new Float64Array(stationCount);
@@ -72,7 +96,8 @@ export const buildRoadRibbonGeometry = (
       mz /= mLen;
     }
     const cosHalf = mx * n1.nx + mz * n1.nz;
-    const miter = halfW / Math.max(Math.abs(cosHalf), 0.2);
+    const iw = interpolatedWidths[i]!;
+    const miter = (iw / 2) / Math.max(Math.abs(cosHalf), 0.2);
 
     leftX[i] = curr.x + mx * miter;
     leftZ[i] = curr.z + mz * miter;
@@ -121,10 +146,11 @@ export const buildRoadRibbonGeometry = (
   const vScale = pathLength > 0 ? 1 / pathLength : 0;
   for (let i = 0; i < stationCount; i += 1) {
     const v = distances[i]! * vScale;
-    setVertex(i, 0, leftX[i]!, yTop, leftZ[i]!, 0, v);
-    setVertex(i, 1, rightX[i]!, yTop, rightZ[i]!, 1, v);
-    setVertex(i, 2, leftX[i]!, yBot, leftZ[i]!, 0, v);
-    setVertex(i, 3, rightX[i]!, yBot, rightZ[i]!, 1, v);
+    const yOff = centerline[i] ? (centerline[i]!.y ?? 0) : 0;
+    setVertex(i, 0, leftX[i]!, yTop + yOff, leftZ[i]!, 0, v);
+    setVertex(i, 1, rightX[i]!, yTop + yOff, rightZ[i]!, 1, v);
+    setVertex(i, 2, leftX[i]!, yBot + yOff, leftZ[i]!, 0, v);
+    setVertex(i, 3, rightX[i]!, yBot + yOff, rightZ[i]!, 1, v);
   }
 
   /** На сегмент: top + bottom + left + right = 8 треугольников */

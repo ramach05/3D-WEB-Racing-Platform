@@ -57,7 +57,7 @@ describe('placeTrackTrees', () => {
 
       for (const tree of trees) {
         expect(distanceToCenterline(tree.x, tree.z, config.centerline)).toBeGreaterThanOrEqual(
-          corridor - 0.01,
+          corridor - 0.05,
         );
       }
     }

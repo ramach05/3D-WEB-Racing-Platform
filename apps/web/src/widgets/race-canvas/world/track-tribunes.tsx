@@ -35,6 +35,7 @@ import {
   canopyCenterY,
   rowTopY,
   tribuneRowCenterX,
+  tribuneSideSign,
 } from '@/entities/track';
 import { startLightPalette, tribunePalette } from '@/shared/config';
 import { getSharedConcreteTexture } from '@/widgets/race-canvas/lib/concrete-texture';
@@ -525,7 +526,7 @@ export const TrackTribunes = ({
   isNight,
   paused,
 }: TTrackTribunesProps) => {
-  const sideSign = side === 'left' ? 1 : -1;
+  const sideSign = tribuneSideSign(side);
   const tribuneInnerX = sideSign * (roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);
 
   const structureColor = isNight ? tribunePalette.night.structure : tribunePalette.day.structure;

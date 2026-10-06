@@ -76,7 +76,8 @@ describe('buildTribuneTreeExclusionZone', () => {
 
     const tribuneDepth = TRIBUNE_ROWS * ROW_DEPTH;
     const expectedCenterX = roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN + tribuneDepth / 2;
-    expect(zone.position[0]).toBeCloseTo(expectedCenterX, 5);
+    // Заезд против centerline → в локале финиша машина смотрит в −Z, ее левая сторона = −X
+    expect(zone.position[0]).toBeCloseTo(-expectedCenterX, 5);
     expect(zone.position[2]).toBeCloseTo(0, 5);
   });
 });

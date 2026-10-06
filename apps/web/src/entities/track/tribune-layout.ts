@@ -68,6 +68,14 @@ export const canopyCenterY = () => rowTopY(TRIBUNE_ROWS - 1) + CANOPY_CENTER_Y_O
 /** Нижняя грань навеса */
 export const canopyUndersideY = () => canopyCenterY() - CANOPY_THICKNESS / 2;
 
+/**
+ * Знак стороны в локале финишной линии. Визуал и коллайдеры трибун повернуты на
+ * `startFinishLine.rotationY` = yaw вдоль РОСТА индекса centerline, а заезд идет
+ * против него (race-direction.ts). Значит машина на старте смотрит в локальный −Z,
+ * ее левая сторона — локальный −X. Отсюда `left` → −1.
+ */
+export const tribuneSideSign = (side: TStartTribuneSide): number => (side === 'left' ? -1 : 1);
+
 type TBuildTribuneExclusionOptions = {
   /** Линия старт/финиш — якорь ориентации */
   startFinishLine: TOrientedBox;
@@ -83,7 +91,7 @@ export const buildTribuneTreeExclusionZone = ({
   roadWidth,
   side,
 }: TBuildTribuneExclusionOptions): TOrientedBox => {
-  const sideSign = side === 'left' ? 1 : -1;
+  const sideSign = tribuneSideSign(side);
   const tribuneInnerLocalX = sideSign * (roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);
   const tribuneDepth = TRIBUNE_ROWS * ROW_DEPTH;
   const centerLocalX = tribuneInnerLocalX + sideSign * (tribuneDepth / 2);

@@ -10,7 +10,7 @@ import {
 import { placeStreetLamps } from './place-street-lamps';
 import type { TPlacedStreetLamp } from './place-street-lamps.types';
 
-const WALL_THICKNESS = 0.5;
+const WALL_THICKNESS = 0.25;
 /** Отступ каркаса за внешней гранью стены (щит крупнее фонаря) */
 const WALL_OUTSET = 3.2;
 /** Не ставить щиты слишком близко к гантри / старту */

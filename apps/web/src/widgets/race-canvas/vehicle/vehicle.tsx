@@ -109,6 +109,8 @@ type TVehicleProps = {
   centerline: TLoopPoint[];
   /** Ширина дороги */
   roadWidth: number;
+  /** Ширины дороги по точкам (опционально) */
+  roadWidths?: number[];
 };
 
 type TVehicleHeadlightsProps = {
@@ -367,6 +369,7 @@ export const Vehicle = ({
   oilSlicks,
   centerline,
   roadWidth,
+  roadWidths,
 }: TVehicleProps) => {
   const { world, rapier } = useRapier();
   const lastNonce = useRef(resetNonce);
@@ -438,6 +441,7 @@ export const Vehicle = ({
     const translation = body.translation();
     setVehiclePose(translation.x, translation.z, Math.atan2(tmpForward.x, tmpForward.z));
     let wheelGrounded = false;
+    let rampContact = false;
     for (const offset of WHEEL_LOCAL) {
       tmpOrigin.set(offset[0], offset[1], offset[2]).applyQuaternion(tmpQuat);
       tmpOrigin.x += translation.x;
@@ -447,10 +451,12 @@ export const Vehicle = ({
         { x: tmpOrigin.x, y: tmpOrigin.y, z: tmpOrigin.z },
         { x: 0, y: -1, z: 0 },
       );
-      const hit = world.castRay(ray, 0.65, true, undefined, undefined, undefined, body);
+      const hit = world.castRayAndGetNormal(ray, 0.65, true, undefined, undefined, undefined, body);
       if (hit) {
         wheelGrounded = true;
-        break;
+        if (hit.normal.y < 0.97) {
+          rampContact = true;
+        }
       }
     }
     const grounded = wheelGrounded || translation.y < 2.5;
@@ -491,6 +497,10 @@ export const Vehicle = ({
         handbrake: input.handbrake,
         grounded: false,
       });
+      const visual = visualRef.current;
+      if (visual) {
+        visual.rotation.x = body.rotation().x;
+      }
       return;
     }
 
@@ -510,7 +520,7 @@ export const Vehicle = ({
       if (onOil) {
         wheelsOnOil += 1;
       }
-      wheelKinds[i] = sampleTrackSurfaceKind(wx, wz, centerline, roadWidth);
+      wheelKinds[i] = sampleTrackSurfaceKind(wx, wz, centerline, roadWidth, roadWidths);
       microSum += sampleAsphaltMicroGrip(wx, wz);
       prevZoneWheelPos.current[i] = { x: wx, z: wz };
     }
@@ -702,8 +712,9 @@ export const Vehicle = ({
     const desiredHz = Math.hypot(tmpDesired.x, tmpDesired.z);
     const slid = slideAlongWalls(world, rapier, body, tmpDesired);
     const slidHz = Math.hypot(slid.x, slid.z);
-    // На земле не даём коллизиям (шины) подбрасывать машину вверх
-    body.setLinvel({ x: slid.x, y: Math.min(linvel.y, 0), z: slid.z }, true);
+    // На земле не даем коллизиям (шины) подбрасывать машину вверх,
+    // но на подъеме/мосту разрешаем вертикальную скорость — машина заезжает на полотно.
+    body.setLinvel({ x: slid.x, y: grounded && !rampContact ? Math.min(linvel.y, 0) : linvel.y, z: slid.z }, true);
 
     const steerStrength = computeSteerStrength(forwardSpeed, input.handbrake);
     const angvel = body.angvel();
@@ -745,7 +756,7 @@ export const Vehicle = ({
         mass={88}
         linearDamping={0.16}
         angularDamping={1.0}
-        enabledRotations={[false, true, false]}
+        enabledRotations={[true, true, false]}
         ccd
         canSleep={false}
         friction={0.1}

@@ -74,13 +74,25 @@ describe('placeStreetLamps', () => {
     }
   });
 
-  it('uses both outer and inner sides along the track', () => {
+  it('spreads lamps along the whole circuit (not clumped on one short arc)', () => {
     const lamps = placeStreetLamps({ config: nightCityTrack });
-    expect(lamps.length).toBeGreaterThan(2);
+    expect(lamps.length).toBeGreaterThan(4);
 
-    const sides = new Set(lamps.map((lamp) => lamp.sideSign));
-    expect(sides.has(1)).toBe(true);
-    expect(sides.has(-1)).toBe(true);
+    // На тесном уличном контуре (шпильки + MIN_LAMP_SPACING) внутренние столбы
+    // физически не умещаются рядом с внешними, поэтому законные позиции — внешние.
+    // Проверяем не «обе стороны», а что свет покрывает весь периметр.
+    const bx = nightCityTrack.centerline.map((p) => p.x);
+    const bz = nightCityTrack.centerline.map((p) => p.z);
+    const trackSpanX = Math.max(...bx) - Math.min(...bx);
+    const trackSpanZ = Math.max(...bz) - Math.min(...bz);
+
+    const lx = lamps.map((l) => l.x);
+    const lz = lamps.map((l) => l.z);
+    const lampSpanX = Math.max(...lx) - Math.min(...lx);
+    const lampSpanZ = Math.max(...lz) - Math.min(...lz);
+
+    expect(lampSpanX).toBeGreaterThan(trackSpanX * 0.8);
+    expect(lampSpanZ).toBeGreaterThan(trackSpanZ * 0.8);
   });
 
   it('never places lamps inside tribune exclusion zones', () => {

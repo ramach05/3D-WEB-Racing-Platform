@@ -2,7 +2,7 @@ import type { TLoopPoint, TOrientedBox } from './config.types';
 import { isInsideCheckpoint } from './oriented-box';
 import type { TPlaceTrackTreesOptions, TPlacedTree, TTreeKind } from './place-trees.types';
 
-const WALL_THICKNESS = 0.5;
+const WALL_THICKNESS = 0.25;
 const RUNOFF_CLEARANCE = 6;
 const MIN_WALL_OFFSET = 8;
 const MAX_WALL_OFFSET = 40;
