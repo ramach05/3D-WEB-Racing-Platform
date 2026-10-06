@@ -22,6 +22,7 @@ import {
   cycleCameraMode,
   preloadVehicleModel,
   RaceCanvas,
+  RaceRainOverlay,
   resetCameraMode,
   resetCameraShake,
   resetSkidMarks,
@@ -115,6 +116,7 @@ export const RacePage = () => {
     enabled: Boolean(config) && hud.status === 'racing',
     paused: hud.status === 'paused',
     muted: false,
+    rainEnabled: config?.weather === 'rain',
   });
 
   /** Рестарт заезда: сброс сессии, canvas и toast */
@@ -309,6 +311,7 @@ export const RacePage = () => {
           resetNonce={resetNonce}
           onFinished={onFinished}
         />
+        {config.weather === 'rain' && hud.status === 'racing' ? <RaceRainOverlay /> : null}
       </div>
       <div className="absolute top-2 right-2 z-10 flex w-[9.5rem] max-w-[calc(100%-1rem)] flex-col items-end gap-2 md:top-4 md:right-4 lg:w-[13rem]">
         <div className="pointer-events-none w-full">

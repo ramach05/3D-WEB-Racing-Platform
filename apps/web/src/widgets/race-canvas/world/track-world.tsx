@@ -1,5 +1,10 @@
 import { useEffect, useMemo } from 'react';
-import { CuboidCollider, HeightfieldCollider, RigidBody } from '@react-three/rapier';
+import {
+  CuboidCollider,
+  HeightfieldCollider,
+  RigidBody,
+  TrimeshCollider,
+} from '@react-three/rapier';
 import { DoubleSide, MeshStandardMaterial } from 'three';
 import type { TTrackConfig } from '@/entities/track';
 import {
@@ -28,13 +33,9 @@ type TTrackWorldProps = {
 };
 
 type TRoadSurfaceProps = {
-  /** Точки центральной линии */
   centerline: TTrackConfig['centerline'];
-  /** Ширина дороги */
   roadWidth: number;
-  /** Цвет дороги из палитры */
   roadColor: string;
-  /** Базовая roughness материала */
   roadRoughness: number;
 };
 
@@ -88,6 +89,37 @@ const RoadSurface = ({ centerline, roadWidth, roadColor, roadRoughness }: TRoadS
   );
 };
 
+/** Trimesh-коллайдер дороги: следует за Y centerline (подъемы, мост) */
+const RoadColliders = ({ centerline, roadWidth }: { centerline: TTrackConfig['centerline']; roadWidth: number }) => {
+  const ribbon = useMemo(
+    () => buildRoadRibbonGeometry(centerline, roadWidth),
+    [centerline, roadWidth],
+  );
+
+  const args = useMemo(() => {
+    const pos = ribbon.geometry.attributes.position?.array as Float32Array | undefined;
+    const idx = ribbon.geometry.index?.array as Uint32Array | undefined;
+    if (!pos || !idx || pos.length === 0 || idx.length === 0) {
+      return null;
+    }
+    return [pos, idx] as const;
+  }, [ribbon]);
+
+  useEffect(() => () => ribbon.geometry.dispose(), [ribbon]);
+
+  if (args === null) {
+    return null;
+  }
+
+  const [verts, indices] = args;
+
+  return (
+    <RigidBody type="fixed" colliders={false} collisionGroups={WORLD_GROUPS}>
+      <TrimeshCollider args={[verts, indices]} friction={1} restitution={0} />
+    </RigidBody>
+  );
+};
+
 /** Дорога (визуал), единый пол и стены с низким трением */
 export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
   const { palette } = config;
@@ -122,6 +154,17 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
     return material;
   }, [palette.wall, palette.accent, concreteMap, wallEmissiveIntensity, wallRoughness]);
 
+  const pierMaterial = useMemo(() => {
+    const material = new MeshStandardMaterial({
+      color: palette.wall,
+      map: concreteMap,
+      roughness: 0.95,
+      metalness: 0,
+      shadowSide: DoubleSide,
+    });
+    return material;
+  }, [palette.wall, concreteMap]);
+
   const terrainGeometry = useMemo(
     () =>
       buildTerrainGeometry({
@@ -148,17 +191,19 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
       groundSource.dispose();
       groundMap.dispose();
       wallMaterial.dispose();
+      pierMaterial.dispose();
       terrainGeometry.dispose();
     },
-    [groundSource, groundMap, wallMaterial, terrainGeometry],
+    [groundSource, groundMap, wallMaterial, pierMaterial, terrainGeometry],
   );
 
   return (
     <group>
       <RigidBody type="fixed" colliders={false} friction={0.9} collisionGroups={WORLD_GROUPS}>
+        {/* Упущенный пол: top ≈ -0.05, под дорогой (road top 0.1) — ловит падения */}
         <CuboidCollider
           args={[500, 0.15, 500]}
-          position={[0, -0.05, 0]}
+          position={[0, -0.2, 0]}
           collisionGroups={WORLD_GROUPS}
         />
         <HeightfieldCollider
@@ -177,6 +222,8 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
           />
         </mesh>
       </RigidBody>
+
+      <RoadColliders centerline={config.centerline} roadWidth={config.roadWidth} />
 
       <RoadSurface
         centerline={config.centerline}
@@ -206,11 +253,34 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
           <mesh
             castShadow={false}
             receiveShadow
-            position={[0, -0.12, 0]}
+            position={[0, -0.075, 0]}
             material={wallMaterial}
             dispose={null}
           >
-            <boxGeometry args={[wall.size[0], wall.size[1] + 0.24, wall.size[2]]} />
+            <boxGeometry args={[wall.size[0], wall.size[1] + 0.15, wall.size[2]]} />
+          </mesh>
+        </RigidBody>
+      ))}
+
+      {config.piers?.map((pier, index) => (
+        <RigidBody
+          key={`pier-${index}`}
+          type="fixed"
+          colliders={false}
+          position={pier.position}
+          rotation={[0, pier.rotationY, 0]}
+          restitution={0}
+          friction={0.6}
+          collisionGroups={WORLD_GROUPS}
+        >
+          <CuboidCollider
+            args={[pier.size[0] / 2, pier.size[1] / 2, pier.size[2] / 2]}
+            friction={0.6}
+            restitution={0}
+            collisionGroups={WORLD_GROUPS}
+          />
+          <mesh castShadow receiveShadow material={pierMaterial} dispose={null}>
+            <boxGeometry args={[pier.size[0], pier.size[1], pier.size[2]]} />
           </mesh>
         </RigidBody>
       ))}

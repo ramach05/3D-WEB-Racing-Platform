@@ -26,6 +26,8 @@ type TUseRaceDrivingSfxOptions = {
   paused: boolean;
   /** Общий mute с музыкой */
   muted: boolean;
+  /** Слой дождя активен (погода трассы === 'rain') */
+  rainEnabled: boolean;
 };
 
 /** Запускает чиптюн на странице заезда */
@@ -73,7 +75,12 @@ export const useRaceAudio = ({ theme, paused, enabled, muted }: TUseRaceAudioOpt
 };
 
 /** Запускает driving SFX и крутит rAF-обновление snapshot */
-export const useRaceDrivingSfx = ({ enabled, paused, muted }: TUseRaceDrivingSfxOptions): void => {
+export const useRaceDrivingSfx = ({
+  enabled,
+  paused,
+  muted,
+  rainEnabled,
+}: TUseRaceDrivingSfxOptions): void => {
   const engineRef = useRef<DrivingSfxEngine | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -81,6 +88,7 @@ export const useRaceDrivingSfx = ({ enabled, paused, muted }: TUseRaceDrivingSfx
   const applyTransport = useEffectEvent((engine: DrivingSfxEngine) => {
     engine.setPaused(paused);
     engine.setMuted(muted);
+    engine.setRainEnabled(rainEnabled);
   });
 
   // Создаёт SFX-движок и rAF-цикл; на cleanup — stop + reset bus.
@@ -130,4 +138,12 @@ export const useRaceDrivingSfx = ({ enabled, paused, muted }: TUseRaceDrivingSfx
       engine.setMuted(muted);
     }
   }, [muted]);
+
+  // Пробрасывает флаг дождя (погода трассы) в активный SFX-движок.
+  useEffect(() => {
+    const engine = engineRef.current;
+    if (engine) {
+      engine.setRainEnabled(rainEnabled);
+    }
+  }, [rainEnabled]);
 };

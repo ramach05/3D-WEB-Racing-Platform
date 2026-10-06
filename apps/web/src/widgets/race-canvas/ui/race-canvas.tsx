@@ -16,6 +16,7 @@ import { CheckpointDetector } from '@/widgets/race-canvas/model/checkpoint-detec
 import { Vehicle } from '@/widgets/race-canvas/vehicle/vehicle';
 import { HorizonMoon } from '@/widgets/race-canvas/world/horizon-moon';
 import { HorizonSun } from '@/widgets/race-canvas/world/horizon-sun';
+import { RainSystem } from '@/widgets/race-canvas/world/rain-system';
 import { SkidMarks } from '@/widgets/race-canvas/world/skid-marks';
 import { TrackBillboardColliders } from '@/widgets/race-canvas/world/track-billboard-colliders';
 import { TrackBillboards } from '@/widgets/race-canvas/world/track-billboards';
@@ -234,17 +235,24 @@ const RaceSceneInner = ({
   visualRef,
 }: TRaceSceneInnerProps) => {
   const isNight = config.timeOfDay === 'night';
+  const isRain = config.weather === 'rain';
+  const forcedLights = isNight || isRain;
   const vehicleId = readSelectedVehicle();
+
+  const fogDist = isNight ? 80 : isRain ? 120 : 300;
+  const fogFar = isNight ? 220 : isRain ? 280 : 560;
+  const hemiIntensity = isNight ? 0.58 : isRain ? 0.85 : 1.28;
+  const dirIntensity = isNight ? 0.85 : isRain ? 1.8 : 3.6;
 
   return (
     <>
       <color attach="background" args={[config.palette.sky]} />
-      <fog attach="fog" args={[config.palette.fog, isNight ? 80 : 300, isNight ? 220 : 560]} />
-      <hemisphereLight args={[config.palette.sky, config.palette.ground, isNight ? 0.58 : 1.28]} />
+      <fog attach="fog" args={[config.palette.fog, fogDist, fogFar]} />
+      <hemisphereLight args={[config.palette.sky, config.palette.ground, hemiIntensity]} />
       <PrimaryDirectionalLight
         isNight={isNight}
         bodyRef={bodyRef}
-        intensity={isNight ? 0.85 : 3.6}
+        intensity={dirIntensity}
         color={isNight ? scenePalette.sunNight : scenePalette.sunDay}
       />
       <CelestialBody config={config} />
@@ -256,12 +264,13 @@ const RaceSceneInner = ({
       ) : (
         <Sky
           sunPosition={SKY_SUN_POSITION}
-          turbidity={0.3}
-          rayleigh={1.1}
-          mieCoefficient={0.0035}
+          turbidity={isRain ? 8 : 0.3}
+          rayleigh={isRain ? 2 : 1.1}
+          mieCoefficient={isRain ? 0.015 : 0.0035}
           mieDirectionalG={0.82}
         />
       )}
+      {isRain && <RainSystem paused={physicsPaused} />}
       <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} updatePriority={-1} paused={physicsPaused}>
         <TrackWorld config={config} resetNonce={resetNonce} />
         <TrackTreeColliders config={config} />
@@ -281,10 +290,11 @@ const RaceSceneInner = ({
           visualRef={visualRef}
           vehicleId={vehicleId}
           carSkin={config.carSkin}
-          headlightsOn={isNight}
+          headlightsOn={forcedLights}
           oilSlicks={config.oilSlicks}
           centerline={config.centerline}
           roadWidth={config.roadWidth}
+          roadWidths={config.roadWidths}
         />
       </Physics>
       <SkidMarks />

@@ -1,4 +1,5 @@
 export { RaceCanvas } from './ui/race-canvas';
+export { RaceRainOverlay } from './ui/race-rain-overlay';
 export {
   preloadVehicleModel,
   VehicleModel,

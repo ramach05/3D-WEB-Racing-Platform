@@ -245,9 +245,93 @@ const FINISH_LEAD: TNote[] = [
 
 const FINISH_LOOP: TNote[] = [...FINISH_BASS, ...FINISH_LEAD, ...FINISH_DRUMS];
 
+// ---------------------------------------------------------------------------
+// Storm (Rock 'n' Roll) — boogie bass + sawtooth riff (~132 BPM)
+// доля ~0.455 с, петля 5.47 с (12 долей)
+// E2=82 B2=123 | A2=110 E3=165 | B2=123 F#3=185 | E3=165 B3=247
+// ---------------------------------------------------------------------------
+const R_BEAT = 0.455;
+const R_EIGHTH = R_BEAT / 2;
+const R_LOOP = 5.46;
+
+const STORM_DRUMS: TNote[] = (() => {
+  const hits: TNote[] = [];
+  for (let beat = 0; beat < 12; beat += 1) {
+    const t = beat * R_BEAT;
+    // kick on 1,3 snare on 2,4
+    if (beat % 2 === 0) {
+      hits.push(noise(t, 0.07, 0.44, 130));
+    } else {
+      hits.push(noise(t, 0.06, 0.38, 180));
+    }
+    // closed hat on 8ths
+    hits.push(noise(t + R_EIGHTH, 0.025, 0.18, 6000));
+    // open hat on 4
+    if (beat % 4 === 3) {
+      hits.push(noise(t, 0.08, 0.14, 8000));
+    }
+  }
+  return hits;
+})();
+
+const STORM_BASS: TNote[] = [
+  ...power(82, 123, 0, R_BEAT * 1.8, 'square', 0.22),
+  ...power(82, 123, R_BEAT * 2, R_BEAT * 1.8, 'square', 0.22),
+  ...power(110, 165, R_BEAT * 4, R_BEAT * 1.8, 'square', 0.22),
+  ...power(110, 165, R_BEAT * 6, R_BEAT * 1.8, 'square', 0.22),
+  ...power(123, 185, R_BEAT * 8, R_BEAT * 1.8, 'square', 0.22),
+  ...power(123, 185, R_BEAT * 10, R_BEAT * 1.8, 'square', 0.22),
+  ...power(165, 247, R_BEAT * 0, R_BEAT * 1.8, 'triangle', 0.2),
+  ...power(165, 247, R_BEAT * 2, R_BEAT * 1.8, 'triangle', 0.2),
+  ...power(165, 247, R_BEAT * 4, R_BEAT * 1.8, 'triangle', 0.2),
+  ...power(165, 247, R_BEAT * 6, R_BEAT * 1.8, 'triangle', 0.2),
+  ...power(165, 247, R_BEAT * 8, R_BEAT * 1.8, 'triangle', 0.2),
+  ...power(165, 247, R_BEAT * 10, R_BEAT * 1.8, 'triangle', 0.2),
+];
+
+const STORM_RIFF: TNote[] = [
+  tone(165, 0.08, R_EIGHTH * 0.8, 'sawtooth', 0.32),
+  tone(196, 0.08 + R_EIGHTH, R_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(220, 0.08 + R_EIGHTH * 2, R_EIGHTH * 0.8, 'sawtooth', 0.34),
+  tone(196, 0.08 + R_EIGHTH * 3, R_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(165, 0.08 + R_EIGHTH * 4, R_EIGHTH * 0.8, 'sawtooth', 0.32),
+  tone(147, 0.08 + R_EIGHTH * 5, R_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(131, 0.08 + R_EIGHTH * 6, R_EIGHTH * 0.8, 'sawtooth', 0.28),
+  tone(147, 0.08 + R_EIGHTH * 7, R_EIGHTH * 0.8, 'sawtooth', 0.3),
+  // second phrase
+  tone(165, R_BEAT * 2.08, R_EIGHTH * 0.8, 'sawtooth', 0.32),
+  tone(196, R_BEAT * 2.08 + R_EIGHTH, R_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(247, R_BEAT * 2.08 + R_EIGHTH * 2, R_BEAT * 0.9, 'sawtooth', 0.36),
+  tone(220, R_BEAT * 2.08 + R_EIGHTH * 3, R_EIGHTH * 0.8, 'sawtooth', 0.32),
+  tone(196, R_BEAT * 2.08 + R_EIGHTH * 4, R_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(165, R_BEAT * 2.08 + R_EIGHTH * 5, R_EIGHTH * 0.8, 'sawtooth', 0.28),
+  tone(147, R_BEAT * 2.08 + R_EIGHTH * 6, R_BEAT * 0.7, 'sawtooth', 0.3),
+  tone(165, R_BEAT * 2.08 + R_EIGHTH * 7, R_EIGHTH * 0.8, 'sawtooth', 0.32),
+  // bridge
+  tone(123, R_BEAT * 4.08, R_EIGHTH * 0.8, 'sawtooth', 0.32),
+  tone(147, R_BEAT * 4.08 + R_EIGHTH, R_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(165, R_BEAT * 4.08 + R_EIGHTH * 2, R_EIGHTH * 0.8, 'sawtooth', 0.34),
+  tone(185, R_BEAT * 4.08 + R_EIGHTH * 3, R_EIGHTH * 0.8, 'sawtooth', 0.32),
+  tone(165, R_BEAT * 4.08 + R_EIGHTH * 4, R_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(147, R_BEAT * 4.08 + R_EIGHTH * 5, R_EIGHTH * 0.8, 'sawtooth', 0.28),
+  tone(131, R_BEAT * 4.08 + R_EIGHTH * 6, R_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(123, R_BEAT * 4.08 + R_EIGHTH * 7, R_EIGHTH * 0.8, 'sawtooth', 0.32),
+  // fill
+  tone(165, R_BEAT * 6.08, R_EIGHTH * 0.5, 'square', 0.36),
+  tone(196, R_BEAT * 6.08 + R_EIGHTH, R_EIGHTH * 0.5, 'square', 0.36),
+  tone(220, R_BEAT * 6.08 + R_EIGHTH * 2, R_EIGHTH * 0.5, 'square', 0.36),
+  tone(247, R_BEAT * 6.08 + R_EIGHTH * 3, R_EIGHTH * 0.5, 'square', 0.36),
+  tone(262, R_BEAT * 6.08 + R_EIGHTH * 4, R_EIGHTH * 0.5, 'square', 0.36),
+  tone(294, R_BEAT * 6.08 + R_EIGHTH * 5, R_EIGHTH * 0.5, 'square', 0.36),
+  tone(330, R_BEAT * 6.08 + R_EIGHTH * 6, R_BEAT * 0.6, 'sawtooth', 0.42),
+];
+
+const STORM_LOOP: TNote[] = [...STORM_BASS, ...STORM_RIFF, ...STORM_DRUMS];
+
 const LOOPS: Record<TRaceMusicTheme, { notes: TNote[]; loopSec: number }> = {
   coastal: { notes: COASTAL_LOOP, loopSec: C_LOOP },
   night: { notes: NIGHT_LOOP, loopSec: N_LOOP },
+  rock: { notes: STORM_LOOP, loopSec: R_LOOP },
   finish: { notes: FINISH_LOOP, loopSec: F_LOOP },
 };
 
