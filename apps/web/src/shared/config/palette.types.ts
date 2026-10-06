@@ -89,7 +89,7 @@ export type TTrackPaletteColors = {
 };
 
 export type TTrackPaletteToken = keyof TTrackPaletteColors;
-export type TTrackPaletteId = 'coastal' | 'night';
+export type TTrackPaletteId = 'coastal' | 'night' | 'storm';
 
 export type TTrackPalettes = Record<TTrackPaletteId, TTrackPaletteColors>;
 

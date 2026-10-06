@@ -1,6 +1,10 @@
 import 'dotenv/config';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
-import { TRACK_SLUG_COASTAL_OVAL, TRACK_SLUG_NIGHT_CITY } from '@racing/shared';
+import {
+  TRACK_SLUG_COASTAL_OVAL,
+  TRACK_SLUG_NIGHT_CITY,
+  TRACK_SLUG_STORM_EIGHT,
+} from '@racing/shared';
 import * as bcrypt from 'bcrypt';
 import { PrismaClient } from '../src/generated/prisma/client';
 
@@ -49,6 +53,26 @@ const NIGHT_TIMES_MS = [
   61_900, // test_user
 ] as const;
 
+/** Лучшие времена на Storm Eight */
+const STORM_TIMES_MS = [
+  33_200, // drift_king
+  33_780, // chrome_dash
+  34_150, // neon_fox
+  35_020, // rival_racer
+  36_400, // turbo_mia
+  52_800, // test_user
+] as const;
+
+/** Даты для Storm Eight */
+const STORM_DATES = [
+  '2026-02-10T14:30:00.000Z', // drift_king
+  '2026-03-18T16:20:00.000Z', // chrome_dash
+  '2026-04-22T11:45:00.000Z', // neon_fox
+  '2026-05-30T09:10:00.000Z', // rival_racer
+  '2026-07-14T18:35:00.000Z', // turbo_mia
+  '2026-09-01T12:00:00.000Z', // test_user
+] as const;
+
 /** Фиксированные даты демо-заездов (январь–август 2026) */
 const COASTAL_DATES = [
   '2026-01-14T11:20:00.000Z', // rival_racer
@@ -87,6 +111,12 @@ const seed = async (): Promise<void> => {
     where: { slug: TRACK_SLUG_NIGHT_CITY },
     update: { name: 'Night City', isAvailable: true },
     create: { slug: TRACK_SLUG_NIGHT_CITY, name: 'Night City', isAvailable: true },
+  });
+
+  const stormEight = await prisma.track.upsert({
+    where: { slug: TRACK_SLUG_STORM_EIGHT },
+    update: { name: 'Storm Eight', isAvailable: true },
+    create: { slug: TRACK_SLUG_STORM_EIGHT, name: 'Storm Eight', isAvailable: true },
   });
 
   const testUser = await prisma.user.upsert({
@@ -143,6 +173,15 @@ const seed = async (): Promise<void> => {
     'test_user',
   ] as const;
 
+  const stormRacers = [
+    'drift_king',
+    'chrome_dash',
+    'neon_fox',
+    'rival_racer',
+    'turbo_mia',
+    'test_user',
+  ] as const;
+
   await prisma.raceResult.createMany({
     data: [
       ...coastalRacers.map((nickname, index) => ({
@@ -156,6 +195,12 @@ const seed = async (): Promise<void> => {
         trackId: nightCity.id,
         timeMs: NIGHT_TIMES_MS[index],
         createdAt: new Date(NIGHT_DATES[index]),
+      })),
+      ...stormRacers.map((nickname, index) => ({
+        userId: userIdOf(nickname),
+        trackId: stormEight.id,
+        timeMs: STORM_TIMES_MS[index],
+        createdAt: new Date(STORM_DATES[index]),
       })),
     ],
   });

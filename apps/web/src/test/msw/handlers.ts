@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import { TRACK_SLUG_COASTAL_OVAL } from '@racing/shared';
+import { TRACK_SLUG_COASTAL_OVAL, TRACK_SLUG_STORM_EIGHT } from '@racing/shared';
 import { getApiBaseUrl } from '@/shared/config';
 
 const api = getApiBaseUrl();
@@ -15,6 +15,12 @@ export const mockTracks = [
     id: 'track-1',
     slug: TRACK_SLUG_COASTAL_OVAL,
     name: 'Coastal Oval',
+    isAvailable: true,
+  },
+  {
+    id: 'track-3',
+    slug: TRACK_SLUG_STORM_EIGHT,
+    name: 'Storm Eight',
     isAvailable: true,
   },
 ];

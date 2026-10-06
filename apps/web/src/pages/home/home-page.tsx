@@ -6,6 +6,12 @@ import { PageShell } from '@/shared/ui';
 import { TrackMinimap } from '@/widgets/track-minimap';
 import { RaceMarquee } from './race-marquee';
 
+const TRACK_NAME_MAP: Record<string, string> = {
+  'coastal-oval': 'home.coastal',
+  'night-city': 'home.nightCity',
+  'storm-eight': 'home.stormEight',
+};
+
 /** Лендинг в стиле SEGA title screen */
 export const HomePage = () => {
   const { t } = useTranslation();
@@ -52,14 +58,14 @@ export const HomePage = () => {
               key={config.slug}
               to="/tracks"
               className="sega-panel sega-card-link flex items-center gap-3 p-2 no-underline"
-              aria-label={config.slug === 'coastal-oval' ? t('home.coastal') : t('home.nightCity')}
+              aria-label={t(TRACK_NAME_MAP[config.slug] ?? '')}
             >
               <TrackMinimap
                 config={config}
                 className="h-14 w-[5.5rem] shrink-0 border-2 border-[var(--border)]"
               />
               <h3 className="text-sm text-[var(--sega-yellow)]">
-                {config.slug === 'coastal-oval' ? t('home.coastal') : t('home.nightCity')}
+                {t(TRACK_NAME_MAP[config.slug] ?? '')}
               </h3>
             </Link>
           ))}

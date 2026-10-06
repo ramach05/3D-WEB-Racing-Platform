@@ -81,12 +81,24 @@ export const trackPalettes = {
     minimapWall: '#ff2bd6',
     minimapBg: '#1c1234',
   },
+  storm: {
+    sky: '#7a8490',
+    fog: '#a0a8b0',
+    ground: '#6b6050',
+    road: '#5a5e66',
+    wall: '#9a948c',
+    accent: '#8899aa',
+    minimapRoad: '#6a6e76',
+    minimapWall: '#8899aa',
+    minimapBg: '#7a8490',
+  },
 } as const satisfies TTrackPalettes;
 
 /** Окраска машины по трассе (shape совместим с TCarSkin) */
 export const carSkins = {
   coastal: { body: '#ffe600', cabin: '#1a1208', wheel: '#222222' },
   night: { body: '#00e5ff', cabin: '#120018', wheel: '#ff2bd6' },
+  storm: { body: '#6b7b8d', cabin: '#1a1c20', wheel: '#3a3c42' },
 } as const satisfies TCarSkins;
 
 export const treePalette = {

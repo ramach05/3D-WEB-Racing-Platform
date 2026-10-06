@@ -42,6 +42,7 @@ export const ruMessages = {
     ],
     coastal: 'Coastal Oval',
     nightCity: 'Night City',
+    stormEight: 'Storm Eight',
   },
   tracks: {
     title: 'Трассы',
@@ -56,6 +57,8 @@ export const ruMessages = {
         'Солнце жжёт асфальт, солёный ветер бьёт в лобовое, а стопки шин ждут ошибку на каждом вираже. Один идеальный овал — и рекорд твой.',
       'night-city':
         'Неон режет тьму, трибуны гудят, а стадион не прощает слабости. Здесь ночь не спит — и твой круг тоже.',
+      'storm-eight':
+        'Серое небо давит, дождь скользит по мокрому асфальту, а трамплин на пересечении делит смелых на тех, кто долетел и кто вернулся на рестарт.',
     },
   },
   garage: {
@@ -240,6 +243,7 @@ export const enMessages = {
     ],
     coastal: 'Coastal Oval',
     nightCity: 'Night City',
+    stormEight: 'Storm Eight',
   },
   tracks: {
     title: 'Tracks',
@@ -254,6 +258,8 @@ export const enMessages = {
         'Sun-scorched asphalt, salt wind in your face, tire stacks waiting for one wrong line. Nail the oval — claim the record.',
       'night-city':
         'Neon cuts the dark, the stands roar, and the stadium forgives nothing. Night never sleeps — neither does your lap.',
+      'storm-eight':
+        'Overcast sky, rain on wet asphalt — the ramp at the crossing separates the brave from the ones who reload.',
     },
   },
   garage: {
