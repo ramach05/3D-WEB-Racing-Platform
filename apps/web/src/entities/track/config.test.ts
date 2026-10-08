@@ -141,7 +141,7 @@ describe('track config geometry', () => {
     }
   });
 
-  it('puts grandstands to the LEFT of the car at start and clear of the track', () => {
+  it('puts grandstands on the configured side of the car at start and clear of the track', () => {
     for (const config of getAllTrackConfigs()) {
       const line = config.startFinishLine;
       const rotY = line.rotationY;
@@ -155,7 +155,8 @@ describe('track config geometry', () => {
       const zone = config.treeExclusionZones[0]!;
       const toZoneX = zone.position[0] - line.position[0];
       const toZoneZ = zone.position[2] - line.position[2];
-      expect(toZoneX * leftX + toZoneZ * leftZ).toBeGreaterThan(0);
+      const sideExpect = config.startTribuneSide === 'left' ? 1 : -1;
+      expect(sideExpect * (toZoneX * leftX + toZoneZ * leftZ)).toBeGreaterThan(0);
 
       // Ни одна точка трассы не попадает в пятно трибуны (локаль финишной линии)
       const sign = tribuneSideSign(config.startTribuneSide);
@@ -295,20 +296,45 @@ describe('track config geometry', () => {
     expect(rises).toBe(1);
   });
 
-  it('supports the storm-eight bridge deck with piers outside the road', () => {
+  it('supports the storm-eight bridge deck with piers under the road', () => {
     const piers = stormEightTrack.piers ?? [];
-    // Мост ~50 м при шаге 6 м: минимум несколько пар пилонов
+    // Мост ~50 м при шаге 6 м: минимум несколько колонн + ростверки
     expect(piers.length).toBeGreaterThanOrEqual(6);
     const halfRoad = stormEightTrack.roadWidth / 2;
+    const columns = piers.filter((p) => p.size[0] <= stormEightTrack.roadWidth);
+    const caps = piers.filter((p) => p.size[0] > stormEightTrack.roadWidth);
+    // Есть и колонны, и поперечные ростверки под декой
+    expect(columns.length).toBeGreaterThanOrEqual(4);
+    expect(caps.length).toBeGreaterThanOrEqual(2);
+
     for (const pier of piers) {
-      // Высота от земли до низа деки
-      expect(pier.size[1]).toBeGreaterThan(0.5);
-      // Пилон снаружи дороги (ближайшая точка centerline не ближе половины дороги)
+      // Опора ПОД полотном, а не рядом: ближайшая точка centerline не дальше половины дороги
       let nearest = Infinity;
       for (const p of stormEightTrack.centerline) {
         nearest = Math.min(nearest, Math.hypot(p.x - pier.position[0], p.z - pier.position[2]));
       }
-      expect(nearest).toBeGreaterThan(halfRoad);
+      expect(nearest).toBeLessThanOrEqual(halfRoad);
+    }
+    for (const col of columns) {
+      // Колонна от земли до низа деки
+      expect(col.size[1]).toBeGreaterThan(0.5);
+      // Колонна держит именно деку: поднятая точка моста прямо над ней
+      const underDeck = stormEightTrack.centerline.some(
+        (p) => (p.y ?? 0) > 0.9 && Math.hypot(p.x - col.position[0], p.z - col.position[2]) <= halfRoad,
+      );
+      expect(underDeck).toBe(true);
+      // Колонна не стоит на нижней проезжей части (под мостом)
+      let nearestLow = Infinity;
+      for (const p of stormEightTrack.centerline) {
+        if ((p.y ?? 0) < 0.5) {
+          nearestLow = Math.min(nearestLow, Math.hypot(p.x - col.position[0], p.z - col.position[2]));
+        }
+      }
+      expect(nearestLow).toBeGreaterThan(halfRoad);
+    }
+    // Ростверк лежит под низом деки, а не на уровне асфальта
+    for (const cap of caps) {
+      expect(cap.position[1]).toBeLessThan(3.9);
     }
     // Плоские трассы без эстакады — без опор
     expect(coastalOvalTrack.piers ?? []).toHaveLength(0);

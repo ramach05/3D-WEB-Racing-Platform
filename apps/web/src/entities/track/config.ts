@@ -276,16 +276,19 @@ const placeAlongCenterline = (
   const len = Math.hypot(dx, dz) || 1;
   const nx = -dz / len;
   const nz = dx / len;
+  // y centerline учитывает эстакады (Storm Eight); на плоских трассах y=0
   return {
-    position: [current.x + nx * lateral, size[1] / 2, current.z + nz * lateral],
+    position: [current.x + nx * lateral, (current.y ?? 0) + size[1] / 2, current.z + nz * lateral],
     size,
     rotationY: Math.atan2(dx, dz),
     kind,
   };
 };
 
-const TIRE_STACK_SIZE: TVec3 = [1.05, 1.2, 1.05];
-const FUEL_BARREL_SIZE: TVec3 = [0.85, 1.35, 0.85];
+/** Стопка из трех грузовых покрышек ⌀1.2 м, лежащих плашмя */
+const TIRE_STACK_SIZE: TVec3 = [1.2, 1.05, 1.2];
+/** Стандартная евробочка ⌀0.6 × 0.9 м */
+const FUEL_BARREL_SIZE: TVec3 = [0.62, 0.9, 0.62];
 
 const obstacleSizeFor = (kind: TObstacleKind): TVec3 =>
   kind === 'fuelBarrel' ? FUEL_BARREL_SIZE : TIRE_STACK_SIZE;
@@ -585,9 +588,17 @@ const buildFigureEightPoints = (count: number): TLoopPoint[] => {
 };
 
 /**
- * Визуальные опоры (пилоны) под поднятым полотном. Ставятся только под
- * ДЛИННЫЕ подъемы (эстакада-мост): короткие горбы — это земляные насыпи,
- * опоры под ними выглядели бы ошибкой.
+ * Опоры под поднятым полотном (эстакада-мост). Ставятся только под ДЛИННЫЕ
+ * подъемы: короткие горбы — земляные насыпи, опоры под ними выглядели бы
+ * ошибкой.
+ *
+ * Реалистичная схема путепровода: пара колонн прямо ПОД кромками плиты +
+ * поперечный ростверк, упирающийся в низ деки (колонны держат ростверк,
+ * ростверк держит полотно). Колонны стоят под полотном, а не рядом с ним.
+ *
+ * Исключение — зона пересечения: там под мостом проходит нижняя ветка, и
+ * колонна встала бы на чужую проезжую часть. Такие станции остаются без
+ * опор — это чистый пролёт над путепроводом (как у реальных развязок).
  */
 const buildDeckPiers = (points: readonly TLoopPoint[], roadWidth: number): TOrientedBox[] => {
   const n = points.length;
@@ -597,7 +608,13 @@ const buildDeckPiers = (points: readonly TLoopPoint[], roadWidth: number): TOrie
   const minY = 0.9; // ниже — опоры не нужны
   const minSpanMeters = 20; // короче — насыпь, не мост
   const stepMeters = 6;
-  const lateral = roadWidth / 2 + 0.8; // снаружи стен
+  // Колонны под кромками плиты: внутри стен, точно под декой
+  const lateral = roadWidth / 2 - 0.9;
+  const columnWidth = 0.8;
+  const capHeight = 0.5; // ростверк
+  const capDepth = 1.1; // вдоль полотна
+  const baseY = -0.15; // база колонны уходит в грунт
+  const deckSoffit = (y: number): number => y - 0.1; // низ деки = y + ROAD_TOP_Y - ROAD_THICKNESS
 
   const segLen = (i: number): number => {
     const a = points[i]!;
@@ -620,6 +637,22 @@ const buildDeckPiers = (points: readonly TLoopPoint[], roadWidth: number): TOrie
     if (span < minSpanMeters) {
       continue;
     }
+    // Индексы, принадлежащие этому подъему вместе с устьями: при проверке
+    // на «чужую нижнюю дорогу» игнорируем собственные точки подъема
+    const own = new Set<number>();
+    const mouthBuffer = 8;
+    for (let k = 0; k <= end - start; k += 1) {
+      own.add((start + k) % n);
+    }
+    for (let k = 1; k <= mouthBuffer; k += 1) {
+      own.add((start - k + n) % n);
+      own.add((end + k) % n);
+    }
+    // Низкие точки вне подъема — это нижняя дорога под мостом
+    const foreign = points
+      .map((p, idx) => ({ p, idx }))
+      .filter(({ p, idx }) => (p.y ?? 0) < minY && !own.has(idx));
+
     let dist = 0;
     let nextStation = 0;
     let i = start;
@@ -634,24 +667,40 @@ const buildDeckPiers = (points: readonly TLoopPoint[], roadWidth: number): TOrie
         const len = Math.hypot(dx, dz) || 1;
         const nx = -dz / len;
         const nz = dx / len;
-        // низ деки = y + ROAD_TOP_Y - ROAD_THICKNESS = y - 0.1; верх пилона с нахлестом
-        const h = Math.max((p.y ?? 0) - 0.05, 0.3);
+        const rotationY = Math.atan2(dx, dz);
+        const soffit = deckSoffit(p.y ?? 0);
+        const top = soffit + 0.15; // колонна входит в низ деки с нахлестом
+        const h = Math.max(top - baseY, 0.3);
+        const centerY = (top + baseY) / 2;
+
+        const columns: Array<[number, number]> = [];
         for (const sign of [1, -1] as const) {
           const px = p.x + nx * lateral * sign;
           const pz = p.z + nz * lateral * sign;
-          // У устьев моста нормаль совпадает с направлением нижней ветки:
-          // отбраковываем пилоны, залезающие на чужое полотно
-          let nearest = Infinity;
-          for (const q of points) {
-            nearest = Math.min(nearest, Math.hypot(q.x - px, q.z - pz));
+          // Колонна недопустима, если встает на нижнюю проезжую часть
+          let blocked = false;
+          for (const { p: q } of foreign) {
+            if (Math.hypot(q.x - px, q.z - pz) < roadWidth / 2 + 0.5) {
+              blocked = true;
+              break;
+            }
           }
-          if (nearest < roadWidth / 2 + 0.5) {
+          if (blocked) {
             continue;
           }
+          columns.push([px, pz]);
           piers.push({
-            position: [px, h / 2, pz],
-            size: [0.7, h, 0.7],
-            rotationY: Math.atan2(dx, dz),
+            position: [px, centerY, pz],
+            size: [columnWidth, h, columnWidth],
+            rotationY,
+          });
+        }
+        // Ростверк держим только там, где есть опора; чистый пролёт не вешаем
+        if (columns.length > 0) {
+          piers.push({
+            position: [p.x, soffit - capHeight / 2 + 0.08, p.z],
+            size: [roadWidth + 0.6, capHeight, capDepth],
+            rotationY,
           });
         }
       }
@@ -806,7 +855,7 @@ export const coastalOvalTrack: TTrackConfig = {
     carSkin: carSkins.coastal,
     audioTheme: 'coastal',
     spawnOffsetMeters: 5,
-    startTribuneSide: 'left',
+    startTribuneSide: 'right',
   }),
   obstacles: buildCoastalOvalObstacles(coastalOvalPoints, coastalOvalRoadWidth),
   oilSlicks: buildCoastalOvalOilSlicks(coastalOvalPoints),
@@ -840,8 +889,8 @@ const STORM_EIGHT_ROAD_WIDTH = 10;
 const stormEightCenterlineY = STORM_EIGHT_POINTS.map((p) => p.y ?? 0);
 
 /**
- * Препятствия только на плоских участках: избегаем узла-под мостом (≈0.125)
- * и эстакады (≈0.625) — там полотно поднято.
+ * Ряды на плоских участках + бочки на шляпке эстакады (плато ≈0.617–0.667,
+ * y ~4 м). Под мостом (≈0.125) препятствий нет.
  */
 const STORM_EIGHT_OBSTACLES = (points: TLoopPoint[], roadWidth: number): TTrackObstacle[] => {
   const triple = [0.7, 1.85, 3.0] as const;
@@ -855,6 +904,8 @@ const STORM_EIGHT_OBSTACLES = (points: TLoopPoint[], roadWidth: number): TTrackO
     { ratio: 0.52, side: -1, kinds: tires, rowInsets: triple },
     { ratio: 0.68, side: 1, kinds: barrels, rowInsets: triple },
     { ratio: 0.94, side: 1, kinds: tires, rowInsets: triple },
+    // Бочки на плоской шляпке моста
+    { ratio: 0.625, side: 1, kinds: barrels, rowInsets: triple },
   ]);
 };
 

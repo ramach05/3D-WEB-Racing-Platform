@@ -13,18 +13,24 @@ type TTrackObstaclesProps = {
   resetNonce: number;
 };
 
-const TIRE_RADIUS = 0.38;
-const TIRE_TUBE = 0.14;
+/**
+ * Грузовая трассовая покрышка (усредненная 315/80R22.5):
+ * внешний диаметр ~1.2 м, сечение ~0.32 м, посадочное отверстие ~0.56 м (рим 22.5")
+ */
+const TIRE_RADIUS = 0.44;
+const TIRE_TUBE = 0.16;
 /** Узкая светлая полоса на внешнем борту (чуть крупнее основного тора) */
-const TIRE_SIDEWALL_RADIUS = TIRE_RADIUS + 0.02;
-const TIRE_SIDEWALL_TUBE = 0.05;
+const TIRE_SIDEWALL_RADIUS = TIRE_RADIUS + 0.025;
+const TIRE_SIDEWALL_TUBE = 0.06;
 const TIRE_STACK_MASS = 12;
 const TIRE_MASS = TIRE_STACK_MASS / 3;
 const TIRE_TIER_COUNT = 3;
-const TIRE_TIER_SPACING = 0.38;
-const TIRE_BASE_Y = -0.4;
+/** Шаг ярусов = ширина лежащей плашмя шины (2 × tube) с легким контактным сжатием */
+const TIRE_TIER_SPACING = 0.35;
+/** Центр нижней шины от центра стопки (stack height 1.05, нижняя шина лежит на земле) */
+const TIRE_BASE_Y = 0.16 - 1.05 / 2;
 /** Половина габаритов коллайдера одной шины (аппроксимация тора) */
-const TIRE_COLLIDER_HALF: TVec3 = [0.52, 0.14, 0.52];
+const TIRE_COLLIDER_HALF: TVec3 = [0.6, 0.17, 0.6];
 const BARREL_MASS = 16;
 const TIRE_HIT_FACTOR = 0.8;
 const TIRE_IMPULSE_SCALE = 0.2;
@@ -58,24 +64,27 @@ const TireVisual = () => (
   </group>
 );
 
-/** Визуал топливной бочки */
+/**
+ * Визуал топливной бочки — стандартная евробочка: ⌀0.6 × 0.9 м,
+ * обкатные обручи у верхнего и нижнего днищ
+ */
 const FuelBarrelVisual = () => (
   <group>
     <mesh castShadow receiveShadow position={[0, 0, 0]}>
-      <cylinderGeometry args={[0.38, 0.4, 1.2, 14]} />
+      <cylinderGeometry args={[0.29, 0.29, 0.9, 16]} />
       <meshStandardMaterial color={BARREL_BODY} roughness={0.55} metalness={0.45} />
     </mesh>
     {/* Обручи и крышка без cast — корпус даёт читаемый силуэт */}
-    <mesh position={[0, 0.12, 0]}>
-      <cylinderGeometry args={[0.405, 0.405, 0.12, 14]} />
+    <mesh position={[0, 0.27, 0]}>
+      <cylinderGeometry args={[0.305, 0.305, 0.09, 16]} />
       <meshStandardMaterial color={BARREL_BAND} roughness={0.7} metalness={0.2} />
     </mesh>
-    <mesh position={[0, -0.28, 0]}>
-      <cylinderGeometry args={[0.405, 0.405, 0.1, 14]} />
+    <mesh position={[0, -0.27, 0]}>
+      <cylinderGeometry args={[0.305, 0.305, 0.09, 16]} />
       <meshStandardMaterial color={BARREL_BAND} roughness={0.7} metalness={0.2} />
     </mesh>
-    <mesh position={[0, 0.58, 0]}>
-      <cylinderGeometry args={[0.36, 0.36, 0.06, 14]} />
+    <mesh position={[0, 0.44, 0]}>
+      <cylinderGeometry args={[0.27, 0.27, 0.05, 16]} />
       <meshStandardMaterial color={BARREL_LID} roughness={0.4} metalness={0.55} />
     </mesh>
   </group>
