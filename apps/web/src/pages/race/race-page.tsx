@@ -13,6 +13,7 @@ import {
   finishRaceForTest,
   readGuestBest,
   resetRaceSession,
+  setVehiclePose,
   togglePause,
   useRaceHud,
 } from '@/features/race-session';
@@ -130,6 +131,8 @@ export const RacePage = () => {
     setResetNonce((value) => value + 1);
     resetCameraShake();
     resetRaceSession(trackId, config.checkpoints.length);
+    // Поза = спавн сразу, чтобы миникарта не держала позицию прошлого заезда.
+    setVehiclePose(config.spawnPosition[0], config.spawnPosition[2], config.spawnRotationY);
     setRestartToast(true);
     if (toastTimerRef.current !== null) {
       window.clearTimeout(toastTimerRef.current);
@@ -195,6 +198,9 @@ export const RacePage = () => {
     }
     submittedRef.current = false;
     resetRaceSession(trackId, config.checkpoints.length);
+    // Поза = спавн сразу: иначе до первого физического кадра миникарта
+    // проецирует нулевую позу и маркер «прыгает» на старт при прогрузке трассы.
+    setVehiclePose(config.spawnPosition[0], config.spawnPosition[2], config.spawnRotationY);
     resetSkidMarks();
     resetCameraMode();
     resetCameraShake();

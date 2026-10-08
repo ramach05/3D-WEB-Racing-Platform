@@ -19,18 +19,28 @@ export const RaceMinimap = ({ config, className }: TRaceMinimapProps) => {
   // и пишем transform прямо в DOM (тот же приём, что время/скорость в RaceHud).
   useEffect(() => {
     const projection = createMinimapProjection(config);
+
+    const applyPose = (x: number, z: number, yaw: number): void => {
+      const marker = markerRef.current;
+      if (!marker) {
+        return;
+      }
+      const point = projection.projectOnCenterline(x, z);
+      const yawDeg = (yaw * 180) / Math.PI;
+      marker.setAttribute(
+        'transform',
+        `translate(${point.x.toFixed(1)} ${point.y.toFixed(1)}) rotate(${(-yawDeg).toFixed(1)})`,
+      );
+    };
+
+    // Стартовый трансформ = проекция точки спавна, чтобы маркер не «прыгал»
+    // из дефолтного значения на старт до первого rAF/физического кадра.
+    applyPose(config.spawnPosition[0], config.spawnPosition[2], config.spawnRotationY);
+
     let raf = 0;
     const sync = () => {
-      const marker = markerRef.current;
-      if (marker) {
-        const pose = getVehiclePose();
-        const point = projection.projectOnCenterline(pose.x, pose.z);
-        const yawDeg = (pose.yaw * 180) / Math.PI;
-        marker.setAttribute(
-          'transform',
-          `translate(${point.x.toFixed(1)} ${point.y.toFixed(1)}) rotate(${(-yawDeg).toFixed(1)})`,
-        );
-      }
+      const pose = getVehiclePose();
+      applyPose(pose.x, pose.z, pose.yaw);
       raf = requestAnimationFrame(sync);
     };
     raf = requestAnimationFrame(sync);
