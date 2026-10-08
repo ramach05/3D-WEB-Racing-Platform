@@ -35,7 +35,11 @@ import {
   VEHICLE_REVERSE_MAX,
 } from '@/features/race-session';
 import { vehiclePalette } from '@/shared/config';
-import { VEHICLE_GROUPS, WALL_PROBE_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
+import {
+  GROUND_PROBE_GROUPS,
+  VEHICLE_GROUPS,
+  WALL_PROBE_GROUPS,
+} from '@/widgets/race-canvas/lib/collision-groups';
 import {
   applyOilThrottleFactor,
   computeOilSkidIntensity,
@@ -278,6 +282,8 @@ const WHEEL_GROUND_RAY = 2.5;
 const GROUND_PROBE_TOI = 2.8;
 /** Запас «на земли» после последней точки контакта — перекрывает краткий отрыв на гребне */
 const GROUNDED_GRACE_SECONDS = 0.15;
+/** Допуск высоты над дорогой: выше — это подброс, возвращаем тело на трассу */
+const GROUND_SNAP_TOLERANCE = 0.25;
 
 /** Поднимает точку спавна на SPAWN_DROP_HEIGHT над асфальтом */
 const elevatedSpawn = (spawnPosition: TVec3): { x: number; y: number; z: number } => ({
@@ -480,6 +486,8 @@ export const Vehicle = ({
     let wheelGrounded = false;
     let rampContact = false;
     let groundNormalCount = 0;
+    let roadYSum = 0;
+    let roadYCount = 0;
     tmpGroundNormal.set(0, 0, 0);
     for (const offset of WHEEL_LOCAL) {
       tmpOrigin.set(offset[0], offset[1], offset[2]).applyQuaternion(tmpQuat);
@@ -490,12 +498,14 @@ export const Vehicle = ({
         { x: tmpOrigin.x, y: tmpOrigin.y, z: tmpOrigin.z },
         { x: 0, y: -1, z: 0 },
       );
+      // Только мир (дорога/стены): контакт с бочкой/шиной не должен считаться опорой
+      // и отключать кламп вертикальной скорости — иначе препятствие подбрасывает машину.
       const hit = world.castRayAndGetNormal(
         ray,
         WHEEL_GROUND_RAY,
         true,
         undefined,
-        undefined,
+        GROUND_PROBE_GROUPS,
         undefined,
         body,
       );
@@ -504,6 +514,8 @@ export const Vehicle = ({
         // дальнее — машина в воздухе, почти вертикальная нормаль — стена, а не земля.
         if (hit.timeOfImpact <= GROUND_PROBE_TOI && hit.normal.y >= GROUND_NORMAL_MIN_Y) {
           wheelGrounded = true;
+          roadYSum += tmpOrigin.y - hit.timeOfImpact;
+          roadYCount += 1;
         }
         // Трамплин = реальный уклон (14–20°); нормаль стены не должна отключать
         // кламп вертикальной скорости, иначе удар в ограждение подбрасывает машину.
@@ -816,6 +828,16 @@ export const Vehicle = ({
       },
       true,
     );
+
+    // Жесткая привязка к трассе: если решатель все же подбросил кузов над дорогой
+    // (удар о бочку/шины) — вернуть на высоту покоя и погасить вертикаль.
+    if (wheelGrounded && roadYCount > 0) {
+      const restY = roadYSum / roadYCount;
+      if (translation.y > restY + GROUND_SNAP_TOLERANCE) {
+        body.setTranslation({ x: translation.x, y: restY, z: translation.z }, true);
+        body.setLinvel({ x: slid.x, y: 0, z: slid.z }, true);
+      }
+    }
 
     const steerStrength = computeSteerStrength(forwardSpeed, input.handbrake);
     const angvel = body.angvel();
