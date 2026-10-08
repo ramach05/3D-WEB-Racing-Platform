@@ -42,10 +42,7 @@ export const SEDAN_BODY_COLOR = 0x1660c8;
 const SEDAN_BODY_PANEL_PATTERN =
   /^(Kuzov_low|Kuzov_Bak_low|Kapot_low|Dver_1_low|Dver_2_low|Bagajnik_low|Bamper_(?:pered|zad)_[0-9]_low)_/i;
 
-/**
- * Logan: светильники делят общий атлас-материал Kuzov1 с кузовом,
- * поэтому сплим-клоним их по имени меша на контрактные имена.
- */
+/** Logan: светильники делят общий атлас-материал Kuzov1 с кузовом, поэтому сплим-клоним их по имени меша на контрактные имена. */
 const SEDAN_LIGHT_RULES = [
   { pattern: /^Fara_1_low_/i, materialName: 'Headlight' },
   { pattern: /^Fara_2_low_/i, materialName: 'Headlight' },
@@ -69,7 +66,6 @@ const JUKE_TIRE_MATERIAL = 'Matte__FF2';
 /** Высота покрышки/диска тормоза (м) */
 const JUKE_TIRE_Y_MIN = 0.35;
 const JUKE_TIRE_Y_MAX = 0.8;
-
 
 const SCIROCCO_WHEEL_MATERIAL_NAMES = new Set(['wheel.001', 'tire', 'rotor1', 'rotor0']);
 
@@ -953,11 +949,7 @@ export const attachJukeTiresToRimPose = (root: Object3D): void => {
   const pivotGroups = {} as Partial<Record<TWheelPivotName, Group>>;
   for (const name of WHEEL_PIVOT_NAMES) {
     const pivot = root.getObjectByName(name);
-    if (
-      pivot
-      && (pivot as Group).isGroup === true
-      && !pivotHasAuthoredTire(pivot as Group)
-    ) {
+    if (pivot && (pivot as Group).isGroup === true && !pivotHasAuthoredTire(pivot as Group)) {
       pivotGroups[name] = pivot as Group;
     }
   }
@@ -1247,10 +1239,8 @@ export const attachJukeProceduralTires = (root: Object3D): void => {
       pivot.add(fill);
     }
 
-    // Тормозной диск-фоновка за спицами: скрывает белый фендер, крутится с колесом.
-    // tmpA после fill.quaternion — локальная ось шины; tmpB переиспользуем (Y цилиндра → ось).
-    // Радиус = до хромового кольца (wheel2 r≈0.202 = rimR·0.77), закрывая все щели
-    // спиц; чуть залезает под кольцо → не выпирает за силуэт обода.
+    // Тормозной диск-фоновка за спицами: скрывает белый фендер, крутится с колесом. tmpA после fill.quaternion — локальная ось шины; tmpB переиспользуем (Y цилиндра → ось).
+    // Радиус = до хромового кольца (wheel2 r≈0.202 = rimR·0.77), закрывая все щели спиц; чуть залезает под кольцо → не выпирает за силуэт обода.
     const discR = Math.min(rimR * 0.77, 0.21);
     const disc = new Mesh(new CylinderGeometry(discR, discR, 0.024, 32), discMat);
     disc.name = `${name}_BrakeDisc`;

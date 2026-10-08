@@ -103,6 +103,9 @@ export const bindRaceInput = (handlers: TInputHandlers): (() => void) => {
       return;
     }
     if (event.code === 'KeyR') {
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+        return;
+      }
       event.preventDefault();
       handlers.onRestart();
       return;

@@ -41,6 +41,25 @@ describe('bindRaceInput', () => {
     cleanup();
   });
 
+  it('does not restart on KeyR with modifiers (Cmd/Ctrl/Shift/Alt reload)', () => {
+    const onRestart = vi.fn();
+    const cleanup = bindRaceInput({
+      onRestart,
+      onTogglePause: vi.fn(),
+      onCycleCamera: vi.fn(),
+      isRaceActive: () => true,
+    });
+
+    for (const modifier of ['metaKey', 'ctrlKey', 'shiftKey', 'altKey'] as const) {
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { code: 'KeyR', repeat: false, bubbles: true, [modifier]: true }),
+      );
+    }
+
+    expect(onRestart).not.toHaveBeenCalled();
+    cleanup();
+  });
+
   it('calls cycle camera once on KeyC', () => {
     const onCycleCamera = vi.fn();
     const cleanup = bindRaceInput({

@@ -1,7 +1,12 @@
-import { CuboidCollider, RigidBody } from '@react-three/rapier';
-import type { CollisionEnterPayload } from '@react-three/rapier';
+import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier';
+import type { CollisionEnterPayload, RapierRigidBody } from '@react-three/rapier';
 import type { TTrackObstacle, TVec3 } from '@/entities/track';
 import { mapImpactFromSpeed, pulseDriveImpact } from '@/features/race-audio';
+import {
+  BARREL_MASS,
+  clampBarrelVelocity,
+  computeBarrelBounce,
+} from '@/widgets/race-canvas/lib/barrel-impact';
 import { pulseCameraShake } from '@/widgets/race-canvas/lib/camera-shake';
 import { TIRE_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
 import { registerTireHit } from '@/widgets/race-canvas/lib/tire-hit-damping';
@@ -31,7 +36,8 @@ const TIRE_TIER_SPACING = 0.35;
 const TIRE_BASE_Y = 0.16 - 1.05 / 2;
 /** Половина габаритов коллайдера одной шины (аппроксимация тора) */
 const TIRE_COLLIDER_HALF: TVec3 = [0.6, 0.17, 0.6];
-const BARREL_MASS = 16;
+/** Скорость машины ниже этого порога удар по препятствию не считается */
+const HIT_MIN_SPEED = 0.5;
 const TIRE_HIT_FACTOR = 0.8;
 const TIRE_IMPULSE_SCALE = 0.2;
 const TIRE_TORQUE_SCALE = 0.08;
@@ -90,24 +96,31 @@ const FuelBarrelVisual = () => (
   </group>
 );
 
-type TObstacleHitOptions = {
-  /** Масса тела, которому даём импульс */
-  mass: number;
-  /** Ярус шины 0..2 — задаёт разброс; для бочек не передаём */
-  tier?: number;
+type TObstacleHit = {
+  /** Тело машины */
+  vehicleBody: RapierRigidBody;
+  /** Тело препятствия */
+  obstacleBody: RapierRigidBody;
+  /** Скорость машины в плоскости XZ, м/с */
+  speed: number;
+  /** Единичное направление движения машины */
+  dirX: number;
+  dirZ: number;
 };
 
-/** Регистрирует удар машины о препятствие и даёт импульс */
-const handleObstacleHit = (payload: CollisionEnterPayload, options: TObstacleHitOptions) => {
-  const otherName = payload.other.rigidBodyObject?.name;
-  if (otherName !== 'vehicle') {
-    return;
+/**
+ * Общая часть удара: звук, тряска и штраф скорости.
+ * null — столкновение не с машиной либо удар слишком слабый.
+ */
+const beginObstacleHit = (payload: CollisionEnterPayload): TObstacleHit | null => {
+  if (payload.other.rigidBodyObject?.name !== 'vehicle') {
+    return null;
   }
 
   const vehicleBody = payload.other.rigidBody;
   const obstacleBody = payload.target.rigidBody;
   if (!vehicleBody || !obstacleBody) {
-    return;
+    return null;
   }
 
   registerTireHit(TIRE_HIT_FACTOR);
@@ -117,45 +130,89 @@ const handleObstacleHit = (payload: CollisionEnterPayload, options: TObstacleHit
   const impact = mapImpactFromSpeed(speed);
   pulseDriveImpact(impact);
   pulseCameraShake(impact);
-  if (speed < 0.5) {
+  if (speed < HIT_MIN_SPEED) {
+    return null;
+  }
+
+  const invSpeed = 1 / speed;
+  return { vehicleBody, obstacleBody, speed, dirX: vel.x * invSpeed, dirZ: vel.z * invSpeed };
+};
+
+/** Не даем машине взлететь от реакции столкновения */
+const pinVehicleToGround = (vehicleBody: RapierRigidBody): void => {
+  const vel = vehicleBody.linvel();
+  if (vel.y > 0) {
+    vehicleBody.setLinvel({ x: vel.x, y: 0, z: vel.z }, true);
+  }
+};
+
+/** Удар по шине: разброс по ярусам, верхние подбрасываются сильнее */
+const handleTireHit = (payload: CollisionEnterPayload, tier: number): void => {
+  const hit = beginObstacleHit(payload);
+  if (!hit) {
     return;
   }
 
-  const { mass, tier } = options;
-  const invSpeed = 1 / speed;
-  const dirX = vel.x * invSpeed;
-  const dirZ = vel.z * invSpeed;
-  const impulse = mass * speed * TIRE_IMPULSE_SCALE;
+  const { obstacleBody, speed, dirX, dirZ } = hit;
+  const impulse = TIRE_MASS * speed * TIRE_IMPULSE_SCALE;
 
   let impulseX = dirX * impulse;
-  let impulseY = 0;
   let impulseZ = dirZ * impulse;
 
-  if (tier !== undefined) {
-    // Верхние шины подбрасываем сильнее; лёгкий боковой разброс по ярусу
-    const tierNorm = tier / (TIRE_TIER_COUNT - 1);
-    impulseY = impulse * TIRE_UP_IMPULSE_SCALE * (0.35 + tierNorm);
-    const side = tier % 2 === 0 ? 1 : -1;
-    const scatter = impulse * TIRE_LATERAL_SCATTER_SCALE * (0.4 + tierNorm);
-    impulseX += -dirZ * side * scatter;
-    impulseZ += dirX * side * scatter;
-  }
+  // Верхние шины подбрасываем сильнее; легкий боковой разброс по ярусу
+  const tierNorm = tier / (TIRE_TIER_COUNT - 1);
+  const impulseY = impulse * TIRE_UP_IMPULSE_SCALE * (0.35 + tierNorm);
+  const side = tier % 2 === 0 ? 1 : -1;
+  const scatter = impulse * TIRE_LATERAL_SCATTER_SCALE * (0.4 + tierNorm);
+  impulseX += -dirZ * side * scatter;
+  impulseZ += dirX * side * scatter;
 
   obstacleBody.applyImpulse({ x: impulseX, y: impulseY, z: impulseZ }, true);
   obstacleBody.applyTorqueImpulse(
     {
       x: -dirZ * impulse * TIRE_TORQUE_SCALE,
-      y: (tier !== undefined ? (tier % 2 === 0 ? 1 : -1) : 0) * impulse * TIRE_TORQUE_SCALE * 0.5,
+      y: (tier % 2 === 0 ? 1 : -1) * impulse * TIRE_TORQUE_SCALE * 0.5,
       z: dirX * impulse * TIRE_TORQUE_SCALE,
     },
     true,
   );
 
-  // Не даём машине взлететь от реакции столкновения
-  const vehicleVel = vehicleBody.linvel();
-  if (vehicleVel.y > 0) {
-    vehicleBody.setLinvel({ x: vehicleVel.x, y: 0, z: vehicleVel.z }, true);
+  pinVehicleToGround(hit.vehicleBody);
+};
+
+/**
+ * Удар по бочке: отскок считается явно (см. lib/barrel-impact). Боковая скорость
+ * уводит бочку из-под бампера, плечо импульса дает кувырок, цилиндрический коллайдер —
+ * качение. Без боковой составляющей бочка прилипает к бамперу: машина каждый кадр
+ * получает целевую скорость, то есть для решателя она нематериальна.
+ */
+const handleBarrelHit = (payload: CollisionEnterPayload, sideBias: 1 | -1): void => {
+  const hit = beginObstacleHit(payload);
+  if (!hit) {
+    return;
   }
+
+  const { obstacleBody, speed, dirX, dirZ } = hit;
+  const bounce = computeBarrelBounce({
+    carPosition: hit.vehicleBody.translation(),
+    carVelocity: { x: dirX * speed, z: dirZ * speed },
+    carSpeed: speed,
+    barrelPosition: obstacleBody.translation(),
+    sideBias,
+  });
+
+  obstacleBody.applyImpulseAtPoint(bounce.impulse, bounce.point, true);
+  obstacleBody.applyTorqueImpulse(bounce.torqueImpulse, true);
+
+  const clamped = clampBarrelVelocity(
+    obstacleBody.linvel(),
+    obstacleBody.angvel(),
+    bounce.speedCap,
+  );
+  obstacleBody.setLinvel(clamped.linvel, true);
+  obstacleBody.setAngvel(clamped.angvel, true);
+
+  pinVehicleToGround(hit.vehicleBody);
 };
 
 type TTireStackProps = {
@@ -185,7 +242,7 @@ const TireStack = ({ position, rotationY, stackIndex }: TTireStackProps) => (
         canSleep
         ccd
         collisionGroups={TIRE_GROUPS}
-        onCollisionEnter={(payload) => handleObstacleHit(payload, { mass: TIRE_MASS, tier })}
+        onCollisionEnter={(payload) => handleTireHit(payload, tier)}
       >
         <CuboidCollider
           args={[TIRE_COLLIDER_HALF[0], TIRE_COLLIDER_HALF[1], TIRE_COLLIDER_HALF[2]]}
@@ -227,18 +284,20 @@ export const TrackObstacles = ({ obstacles, resetNonce }: TTrackObstaclesProps) 
             colliders={false}
             position={obstacle.position}
             rotation={[0, obstacle.rotationY, 0]}
-            mass={BARREL_MASS}
             restitution={0}
             friction={0.85}
-            linearDamping={0.55}
-            angularDamping={0.7}
+            linearDamping={0.35}
+            angularDamping={0.6}
             canSleep
             ccd
             collisionGroups={TIRE_GROUPS}
-            onCollisionEnter={(payload) => handleObstacleHit(payload, { mass: BARREL_MASS })}
+            onCollisionEnter={(payload) => handleBarrelHit(payload, index % 2 === 0 ? 1 : -1)}
           >
-            <CuboidCollider
-              args={[obstacle.size[0] / 2, obstacle.size[1] / 2, obstacle.size[2] / 2]}
+            {/* Масса на коллайдере: на RigidBody она не применяется, а инерция
+                вращения считается из формы — иначе бочка почти невесома */}
+            <CylinderCollider
+              args={[obstacle.size[1] / 2, obstacle.size[0] / 2]}
+              mass={BARREL_MASS}
               friction={0.85}
               restitution={0}
               collisionGroups={TIRE_GROUPS}
