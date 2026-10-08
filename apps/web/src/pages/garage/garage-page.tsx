@@ -53,7 +53,7 @@ export const GaragePage = () => {
                   selected && 'border-[var(--sega-yellow)] ring-2 ring-[var(--sega-yellow)]',
                 )}
               >
-                <div className="border-2 border-[var(--border)] bg-[var(--bg)]">
+                <div className="w-full border-2 border-[var(--border)] bg-[var(--bg)]">
                   <VehiclePreview vehicleId={vehicle.id} className="aspect-[16/10] w-full" />
                 </div>
                 <h2 className="mt-3 text-lg font-medium text-[var(--sega-cyan)]">

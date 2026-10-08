@@ -17,7 +17,7 @@ export const TracksPage = () => {
   }, []);
 
   return (
-    <PageShell>
+    <PageShell className="lg:max-w-7xl">
       <h1 className="text-3xl font-semibold uppercase text-[var(--sega-yellow)]">
         {t('tracks.title')}
       </h1>
@@ -25,7 +25,7 @@ export const TracksPage = () => {
       {isError ? <StatusText>{t('tracks.error')}</StatusText> : null}
       {data && data.length === 0 ? <StatusText>{t('tracks.empty')}</StatusText> : null}
       {data && data.length > 0 ? (
-        <ul className="mt-6 grid gap-4 sm:grid-cols-2 sm:items-stretch">
+        <ul className="mt-6 grid gap-4 sm:grid-cols-2 sm:items-stretch lg:grid-cols-none lg:grid-flow-col lg:auto-cols-fr">
           {data.map((track) => {
             const config = getTrackConfig(track.slug);
             const body = (
