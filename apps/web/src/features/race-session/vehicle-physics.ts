@@ -142,3 +142,74 @@ export const integrateSteerYaw = (
   const follow = 1 - Math.exp(-VEHICLE_YAW_FOLLOW * dt);
   return currentYaw + (targetYaw - currentYaw) * follow;
 };
+
+/** Контакт с поверхностью учитывается как «дорога», только если нормаль почти вертикальна (стены — нет) */
+export const GROUND_NORMAL_MIN_Y = 0.5;
+
+/** Максимальный уклон (град), который считаем проезжей поверхностью: круче — стена/бордюр/откос */
+export const SLOPE_MAX_GRADE_DEG = 20;
+export const SLOPE_MAX_GRADE = (SLOPE_MAX_GRADE_DEG * Math.PI) / 180;
+/** Порог нормали для «годной» земли, пригодной для подъема и визуального наклона */
+export const SLOPE_CONTACT_NORMAL_MIN_Y = Math.cos(SLOPE_MAX_GRADE);
+
+/** Потолок вертикальной составляющей подъема по склону (м/с): защита от подброса на наклонной нормали */
+export const MAX_CLIMB_VY = 8;
+
+/**
+ * Вертикальная скорость (м/с), нужная чтобы скользить вдоль плоскости с нормалью
+ * (nx, ny, nz) при горизонтальной скорости (vx, vz). На равнине дает 0, на подъеме —
+ * ровно ту, что нужна чтобы кузов не вдавливало в полотно. Зажата по величине, чтобы
+ * крутая нормаль (съезд/откос/бордюр) на высокой скорости не выстрелила машину вверх.
+ */
+export const computeGroundFollowVy = (
+  nx: number,
+  ny: number,
+  nz: number,
+  vx: number,
+  vz: number,
+): number => {
+  if (ny < SLOPE_CONTACT_NORMAL_MIN_Y) {
+    return 0;
+  }
+  const vy = -(nx * vx + nz * vz) / ny;
+  const clamped = Math.max(-MAX_CLIMB_VY, Math.min(MAX_CLIMB_VY, vy));
+  return clamped === 0 ? 0 : clamped;
+};
+
+/**
+ * Целевой наклон кузова (рад, вокруг локальной X) по нормали склона, спроецированной
+ * на направление курса (fwdX, fwdZ). КЛЮЧЕВОЕ: зависит только от геометрии нормали,
+ * а не от скорости/курса — поэтому наклон не «выстреливает» на входе в поворот.
+ * Подъем вперед дает отрицательный угол (нос вверх). Зажат по максимальному уклону.
+ */
+export const computeSlopePitchFromNormal = (
+  nx: number,
+  ny: number,
+  nz: number,
+  fwdX: number,
+  fwdZ: number,
+): number => {
+  if (ny < SLOPE_CONTACT_NORMAL_MIN_Y) {
+    return 0;
+  }
+  const climb = -(nx * fwdX + nz * fwdZ) / ny;
+  const pitch = -Math.atan(climb);
+  return Math.max(-SLOPE_MAX_GRADE, Math.min(SLOPE_MAX_GRADE, pitch));
+};
+
+/** Постоянная времени сглаживания визуального угла (с) */
+export const ANGLE_SMOOTH_TAU = 0.12;
+/** Потолок скорости доворота визуального угла (рад/с) */
+export const ANGLE_SMOOTH_MAX_RATE = 3;
+
+/**
+ * Новое значение визуального угла (рад) при сходимости к target за dt: экспоненциально
+ * (FPS-независимо) с потолком шага — без перерегулирования при резкой смене цели
+ * (гребень эстакады, съезд на бордюр).
+ */
+export const smoothAngleToward = (current: number, target: number, dt: number): number => {
+  const follow = 1 - Math.exp(-dt / ANGLE_SMOOTH_TAU);
+  const step = (target - current) * follow;
+  const maxStep = ANGLE_SMOOTH_MAX_RATE * dt;
+  return current + Math.max(-maxStep, Math.min(maxStep, step));
+};

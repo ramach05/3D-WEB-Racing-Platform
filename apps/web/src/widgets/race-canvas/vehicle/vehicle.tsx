@@ -17,14 +17,19 @@ import {
 import { pulseCameraShake } from '@/widgets/race-canvas/lib/camera-shake';
 import {
   beginCountdown,
+  computeGroundFollowVy,
+  computeSlopePitchFromNormal,
   computeSteerStrength,
   dampLateralVelocity,
   getDriveInput,
   getRaceHudSnapshot,
+  GROUND_NORMAL_MIN_Y,
   integrateDriveForward,
   integrateSteerYaw,
   passedCheckpointZone,
   setVehiclePose,
+  smoothAngleToward,
+  SLOPE_CONTACT_NORMAL_MIN_Y,
   tickRace,
   VEHICLE_MAX_SPEED,
   VEHICLE_REVERSE_MAX,
@@ -260,6 +265,20 @@ const SPAWN_DROP_HEIGHT = 3.2;
 /** После касания ждём почти нулевую вертикальную скорость */
 const LAND_SETTLE_VY = 1.2;
 
+/**
+ * Длина луча-зонда под колесом. Достает до земли с запасом ~1.5м (капсула + корпус ≈ 1.8м над треком).
+ * Оставляем достаточно коротким, чтобы не цеплять далекие стены.
+ */
+const WHEEL_GROUND_RAY = 2.5;
+/**
+ * Попадание считается контактом колеса с дорогой только если оно ближе этого порога (м).
+ * Капсула на высоте ~1.8м над треком → расстояние до земли ≈ 1.5-2.0м.
+ * TOI > 2.5м — это стена/откос, а не дорога.
+ */
+const GROUND_PROBE_TOI = 2.8;
+/** Запас «на земли» после последней точки контакта — перекрывает краткий отрыв на гребне */
+const GROUNDED_GRACE_SECONDS = 0.15;
+
 /** Поднимает точку спавна на SPAWN_DROP_HEIGHT над асфальтом */
 const elevatedSpawn = (spawnPosition: TVec3): { x: number; y: number; z: number } => ({
   x: spawnPosition[0],
@@ -275,6 +294,7 @@ const tmpOrigin = new Vector3();
 const tmpDesired = new Vector3();
 const tmpNormal = new Vector3();
 const tmpSlide = new Vector3();
+const tmpGroundNormal = new Vector3();
 
 /** Скользит вдоль стены: убирает составляющую скорости по нормали стены */
 const slideAlongWalls = (
@@ -374,6 +394,9 @@ export const Vehicle = ({
   const { world, rapier } = useRapier();
   const lastNonce = useRef(resetNonce);
   const awaitingLand = useRef(true);
+  const groundedGrace = useRef(0);
+  const lastGroundNormal = useRef({ x: 0, y: 1, z: 0 });
+  const visPitch = useRef(0);
   const lastSkidPos = useRef<(TSkidWheelPos | null)[]>([null, null, null, null]);
   const smokeTimer = useRef(0);
   const dirtSmokeTimer = useRef(0);
@@ -395,6 +418,17 @@ export const Vehicle = ({
     dirtSmokeTimer.current = 0;
   };
 
+  // Визуальный attitude кузова: наклон по склону + тряска керба. Крена в повороте нет —
+  // наклон корпуса на повороте выглядел нереалистично. Пишется только в дочернюю
+  // визуальную группу — физическое тело остается плоским (вращения только вокруг Y).
+  const applyVisualAttitude = (pitchTarget: number, kerbShakePitch: number, dt: number) => {
+    visPitch.current = smoothAngleToward(visPitch.current, pitchTarget, dt);
+    const visual = visualRef.current;
+    if (visual) {
+      visual.rotation.x = visPitch.current + kerbShakePitch;
+    }
+  };
+
   // Arcade-физика: рестарт, ввод, grip и скольжение вдоль стен.
   useFrame((_, dt) => {
     const body = bodyRef.current;
@@ -414,10 +448,13 @@ export const Vehicle = ({
       kerbShakeCooldown.current = 0;
       driveVisualRef.current.kerbRumble = 0;
       clearSkidTrail();
+      visPitch.current = 0;
+      groundedGrace.current = 0;
       const visual = visualRef.current;
       if (visual) {
         visual.position.y = 0;
         visual.rotation.x = 0;
+        visual.rotation.z = 0;
       }
       body.setTranslation(elevatedSpawn(spawnPosition), true);
       body.setRotation(
@@ -442,6 +479,8 @@ export const Vehicle = ({
     setVehiclePose(translation.x, translation.z, Math.atan2(tmpForward.x, tmpForward.z));
     let wheelGrounded = false;
     let rampContact = false;
+    let groundNormalCount = 0;
+    tmpGroundNormal.set(0, 0, 0);
     for (const offset of WHEEL_LOCAL) {
       tmpOrigin.set(offset[0], offset[1], offset[2]).applyQuaternion(tmpQuat);
       tmpOrigin.x += translation.x;
@@ -451,15 +490,60 @@ export const Vehicle = ({
         { x: tmpOrigin.x, y: tmpOrigin.y, z: tmpOrigin.z },
         { x: 0, y: -1, z: 0 },
       );
-      const hit = world.castRayAndGetNormal(ray, 0.65, true, undefined, undefined, undefined, body);
+      const hit = world.castRayAndGetNormal(
+        ray,
+        WHEEL_GROUND_RAY,
+        true,
+        undefined,
+        undefined,
+        undefined,
+        body,
+      );
       if (hit) {
-        wheelGrounded = true;
-        if (hit.normal.y < 0.97) {
+        // Близкое попадание почти на горизонтальную поверхность = реальный контакт;
+        // дальнее — машина в воздухе, почти вертикальная нормаль — стена, а не земля.
+        if (hit.timeOfImpact <= GROUND_PROBE_TOI && hit.normal.y >= GROUND_NORMAL_MIN_Y) {
+          wheelGrounded = true;
+        }
+        // Трамплин = реальный уклон (14–20°); нормаль стены не должна отключать
+        // кламп вертикальной скорости, иначе удар в ограждение подбрасывает машину.
+        if (hit.normal.y < 0.97 && hit.normal.y >= SLOPE_CONTACT_NORMAL_MIN_Y) {
           rampContact = true;
+        }
+        if (hit.normal.y >= SLOPE_CONTACT_NORMAL_MIN_Y) {
+          tmpGroundNormal.x += hit.normal.x;
+          tmpGroundNormal.y += hit.normal.y;
+          tmpGroundNormal.z += hit.normal.z;
+          groundNormalCount += 1;
         }
       }
     }
-    const grounded = wheelGrounded || translation.y < 2.5;
+    if (groundNormalCount > 0) {
+      tmpGroundNormal.multiplyScalar(1 / groundNormalCount);
+      if (tmpGroundNormal.lengthSq() > 1e-6) {
+        tmpGroundNormal.normalize();
+      } else {
+        tmpGroundNormal.set(0, 1, 0);
+      }
+      lastGroundNormal.current = {
+        x: tmpGroundNormal.x,
+        y: tmpGroundNormal.y,
+        z: tmpGroundNormal.z,
+      };
+      groundedGrace.current = GROUNDED_GRACE_SECONDS;
+    } else {
+      groundedGrace.current = Math.max(0, groundedGrace.current - Math.min(dt, 1 / 30));
+      if (groundedGrace.current > 0) {
+        tmpGroundNormal.set(
+          lastGroundNormal.current.x,
+          lastGroundNormal.current.y,
+          lastGroundNormal.current.z,
+        );
+      } else {
+        tmpGroundNormal.set(0, 1, 0);
+      }
+    }
+    const grounded = wheelGrounded || groundedGrace.current > 0 || translation.y < 2.5;
 
     const hud = getRaceHudSnapshot();
     const input = getDriveInput();
@@ -488,6 +572,12 @@ export const Vehicle = ({
     if (!grounded) {
       clearSkidTrail();
       driveVisualRef.current.kerbRumble = 0;
+      const visual = visualRef.current;
+      if (visual) {
+        visual.position.y = 0;
+      }
+      // В воздухе — кузов плавно возвращается к ровному (наклон → 0).
+      applyVisualAttitude(0, 0, clampedDt);
       tickDriveSfxSample({
         ...IDLE_DRIVE_SFX_SAMPLE,
         active: true,
@@ -497,10 +587,6 @@ export const Vehicle = ({
         handbrake: input.handbrake,
         grounded: false,
       });
-      const visual = visualRef.current;
-      if (visual) {
-        visual.rotation.x = body.rotation().x;
-      }
       return;
     }
 
@@ -545,6 +631,8 @@ export const Vehicle = ({
     }
     prevWheelsOnOil.current = wheelsOnOil;
 
+    let kerbShakePitch = 0;
+    const visual = visualRef.current;
     if (kerbRumble > 0) {
       kerbPhase.current += clampedDt * (6 + speed * 0.35);
       kerbShakeCooldown.current = Math.max(0, kerbShakeCooldown.current - clampedDt);
@@ -552,19 +640,17 @@ export const Vehicle = ({
         pulseCameraShake(0.08 + kerbRumble * 0.22);
         kerbShakeCooldown.current = 0.09 - kerbRumble * 0.035;
       }
-      const visual = visualRef.current;
+      const amp = 0.018 + kerbRumble * 0.022;
       if (visual) {
-        const amp = 0.018 + kerbRumble * 0.022;
         visual.position.y = Math.sin(kerbPhase.current * 18) * amp;
-        visual.rotation.x = Math.sin(kerbPhase.current * 23) * amp * 0.55;
       }
+      // Наклон тряски добавится к визуальному наклону склона в applyVisualAttitude.
+      kerbShakePitch = Math.sin(kerbPhase.current * 23) * amp * 0.55;
     } else {
       kerbPhase.current = 0;
       kerbShakeCooldown.current = 0;
-      const visual = visualRef.current;
       if (visual) {
         visual.position.y = 0;
-        visual.rotation.x = 0;
       }
     }
 
@@ -712,16 +798,45 @@ export const Vehicle = ({
     const desiredHz = Math.hypot(tmpDesired.x, tmpDesired.z);
     const slid = slideAlongWalls(world, rapier, body, tmpDesired);
     const slidHz = Math.hypot(slid.x, slid.z);
-    // На земле не даем коллизиям (шины) подбрасывать машину вверх,
-    // но на подъеме/мосту разрешаем вертикальную скорость — машина заезжает на полотно.
-    body.setLinvel({ x: slid.x, y: grounded && !rampContact ? Math.min(linvel.y, 0) : linvel.y, z: slid.z }, true);
+    // На земле не даем коллизиям подбрасывать машину вверх, но позволяем заезжать
+    // на подъем: vy = желаемое скольжение по плоскости (зажато), только при реальном
+    // контакте и вне трамплина. В grace/воздухе vy не трогаем — естественная дуга.
+    const followVy = computeGroundFollowVy(
+      tmpGroundNormal.x,
+      tmpGroundNormal.y,
+      tmpGroundNormal.z,
+      slid.x,
+      slid.z,
+    );
+    body.setLinvel(
+      {
+        x: slid.x,
+        y: wheelGrounded && !rampContact ? Math.max(followVy, Math.min(linvel.y, 0)) : linvel.y,
+        z: slid.z,
+      },
+      true,
+    );
 
     const steerStrength = computeSteerStrength(forwardSpeed, input.handbrake);
     const angvel = body.angvel();
     const steerSign = Math.sign(forwardSpeed || input.throttle - input.brake || 1);
     let nextYaw = integrateSteerYaw(angvel.y, input.steer, steerStrength, steerSign, clampedDt);
     nextYaw += computeOilYawKick(oilStrength, input.steer, forwardSpeed, lateral);
+    // Кузов физически плоский: вращение и угловая скорость строго вокруг Y —
+    // наклон корпуса только визуальный (по склону), крена в повороте нет.
     body.setAngvel({ x: 0, y: nextYaw, z: 0 }, true);
+
+    // Визуальный attitude: наклон по нормали склона, без крена в повороте.
+    const pitchTarget = wheelGrounded
+      ? computeSlopePitchFromNormal(
+          tmpGroundNormal.x,
+          tmpGroundNormal.y,
+          tmpGroundNormal.z,
+          tmpForward.x,
+          tmpForward.z,
+        )
+      : 0;
+    applyVisualAttitude(pitchTarget, kerbShakePitch, clampedDt);
 
     tickDriveSfxSample({
       active: true,
@@ -756,7 +871,7 @@ export const Vehicle = ({
         mass={88}
         linearDamping={0.16}
         angularDamping={1.0}
-        enabledRotations={[true, true, false]}
+        enabledRotations={[false, true, false]}
         ccd
         canSleep={false}
         friction={0.1}

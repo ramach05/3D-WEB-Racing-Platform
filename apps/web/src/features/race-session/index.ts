@@ -35,6 +35,11 @@ export {
   dampLateralVelocity,
   integrateDriveForward,
   integrateSteerYaw,
+  GROUND_NORMAL_MIN_Y,
+  SLOPE_CONTACT_NORMAL_MIN_Y,
+  computeGroundFollowVy,
+  computeSlopePitchFromNormal,
+  smoothAngleToward,
 } from './vehicle-physics';
 export {
   MIN_LAP_PROGRESS,

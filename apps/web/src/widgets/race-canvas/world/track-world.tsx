@@ -25,6 +25,13 @@ import {
 import { TRACK_TERRAIN, terrainSeedForSlug } from '@/widgets/race-canvas/lib/terrain-height';
 import { TrackObstacles } from './track-obstacles';
 
+/**
+ * Невидимое продолжение коллайдера стены вверх над видимым ограждением (0.85 м).
+ * Центр капсулы машины ≈ 0.9 м — без продолжения солвер выкатывает капсулу на низкую
+ * стену, и машина в повороте перелетает через ограждение.
+ */
+const WALL_COLLIDER_EXTENSION = 1.5;
+
 type TTrackWorldProps = {
   /** Конфиг трассы: стены, препятствия, centerline */
   config: TTrackConfig;
@@ -90,7 +97,13 @@ const RoadSurface = ({ centerline, roadWidth, roadColor, roadRoughness }: TRoadS
 };
 
 /** Trimesh-коллайдер дороги: следует за Y centerline (подъемы, мост) */
-const RoadColliders = ({ centerline, roadWidth }: { centerline: TTrackConfig['centerline']; roadWidth: number }) => {
+const RoadColliders = ({
+  centerline,
+  roadWidth,
+}: {
+  centerline: TTrackConfig['centerline'];
+  roadWidth: number;
+}) => {
   const ribbon = useMemo(
     () => buildRoadRibbonGeometry(centerline, roadWidth),
     [centerline, roadWidth],
@@ -243,8 +256,14 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
           friction={0}
           collisionGroups={WORLD_GROUPS}
         >
+          {/* Коллайдер выше визуала: невидимое продолжение не дает капсуле заехать на стену */}
           <CuboidCollider
-            args={[wall.size[0] / 2, wall.size[1] / 2, wall.size[2] / 2]}
+            args={[
+              wall.size[0] / 2,
+              wall.size[1] / 2 + WALL_COLLIDER_EXTENSION / 2,
+              wall.size[2] / 2,
+            ]}
+            position={[0, WALL_COLLIDER_EXTENSION / 2, 0]}
             friction={0}
             restitution={0}
             collisionGroups={WORLD_GROUPS}
