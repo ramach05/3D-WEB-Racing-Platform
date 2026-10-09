@@ -274,6 +274,8 @@ export type TScenePalette = {
   sunDay: TCssColor;
   /** Цвет ночного света */
   sunNight: TCssColor;
+  /** Холодный свет невидимого солнца в штормовой дождь */
+  sunRain: TCssColor;
   /** Цвет препятствий (шины) */
   obstacle: TCssColor;
   /** Следы резины на асфальте */

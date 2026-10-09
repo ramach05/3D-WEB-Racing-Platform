@@ -2,7 +2,12 @@ import { type RefObject, useLayoutEffect, useMemo, useRef, useState } from 'reac
 import { useFrame } from '@react-three/fiber';
 import type { Object3D, SpotLight } from 'three';
 import type { RapierRigidBody } from '@react-three/rapier';
-import { placeStreetLamps, type TPlacedStreetLamp, type TTrackConfig } from '@/entities/track';
+import {
+  isTrackLightingOn,
+  placeStreetLamps,
+  type TPlacedStreetLamp,
+  type TTrackConfig,
+} from '@/entities/track';
 import { startLightPalette, streetLampPalette } from '@/shared/config';
 import {
   STREET_LAMP_ACTIVE_SPOTS,
@@ -267,7 +272,7 @@ const indicesKey = (indices: readonly number[]): string => [...indices].sort((a,
  */
 export const TrackStreetLights = ({ config, bodyRef }: TTrackStreetLightsProps) => {
   const lamps = useMemo(() => placeStreetLamps({ config }), [config]);
-  const isOn = config.timeOfDay === 'night';
+  const isOn = isTrackLightingOn(config);
   const initialActive = useMemo(
     () => lamps.slice(0, STREET_LAMP_ACTIVE_SPOTS.count).map((_, i) => i),
     [lamps],

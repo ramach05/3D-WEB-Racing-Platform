@@ -1,4 +1,4 @@
-import { CanvasTexture, LinearFilter, SRGBColorSpace } from 'three';
+import { CanvasTexture, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace } from 'three';
 
 /** Размер LED-матрицы внутри круглой линзы */
 const LED_GRID = 8;
@@ -34,7 +34,7 @@ const finishTexture = (canvas: HTMLCanvasElement, srgb = true): CanvasTexture =>
   if (srgb) {
     texture.colorSpace = SRGBColorSpace;
   }
-  texture.minFilter = LinearFilter;
+  texture.minFilter = LinearMipmapLinearFilter;
   texture.magFilter = LinearFilter;
   texture.needsUpdate = true;
   return texture;

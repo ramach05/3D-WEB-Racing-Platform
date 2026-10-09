@@ -115,11 +115,23 @@ export const BILLBOARD_ACTIVE_WASH = {
  * Ночные emissive: колба всегда; лицо — только fallback без активного wash.
  */
 export const BILLBOARD_NIGHT_FACE = {
-  /** EmissiveIntensity лица у дальних щитов (без RectAreaLight) */
-  faceEmissiveFallback: 0.18,
+  /** Целевая линейная яркость лица вдалеке: одинаковая воспринимаемая яркость у всех макетов */
+  faceGlowTargetLuma: 0.14,
+  /** Клампы faceGlowIntensity: «бумажные» макеты не в лайтбокс, «чернильные» не в черноту */
+  faceGlowMin: 0.08,
+  faceGlowMax: 2.5,
   /** EmissiveIntensity колбы flood (bloom) */
   bulbEmissive: 1.4,
 } as const;
+
+/**
+ * EmissiveIntensity лица вдалеке: нормировка по средней яркости текстуры.
+ * Без нее константа одинаково «лайтбокс» для светлого for-rent и «чернота» для apex-tires.
+ */
+export const faceGlowIntensity = (avgLuminance: number): number => {
+  const raw = BILLBOARD_NIGHT_FACE.faceGlowTargetLuma / Math.max(avgLuminance, 1e-4);
+  return Math.min(Math.max(raw, BILLBOARD_NIGHT_FACE.faceGlowMin), BILLBOARD_NIGHT_FACE.faceGlowMax);
+};
 
 /** @deprecated Оставлен для совместимости тестов; лицо заливает BILLBOARD_FACE_WASH */
 export const BILLBOARD_FLOOD_SPOT = {

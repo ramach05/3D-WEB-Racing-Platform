@@ -11,6 +11,7 @@ import {
   BILLBOARD_PANEL_WIDTH,
   BILLBOARD_POST_HEIGHT,
   BILLBOARD_ROAD_TOP_Y,
+  faceGlowIntensity,
 } from './billboard';
 import { BILLBOARD_AD_COPY, getBillboardAdCopy } from './billboard-ads';
 import { BILLBOARD_AD_IDS } from '@/entities/track';
@@ -42,12 +43,18 @@ describe('billboard constants', () => {
     expect(BILLBOARD_FACE_WASH.intensity).toBeGreaterThan(1);
   });
 
-  it('keeps night wash LOD budget and soft face fallback', () => {
+  it('keeps night wash LOD budget and luminance-normalized face glow', () => {
     expect(BILLBOARD_ACTIVE_WASH.count).toBeGreaterThanOrEqual(1);
     expect(BILLBOARD_ACTIVE_WASH.count).toBeLessThanOrEqual(3);
     expect(BILLBOARD_ACTIVE_WASH.switchHysteresis).toBeGreaterThan(0);
-    expect(BILLBOARD_NIGHT_FACE.faceEmissiveFallback).toBeGreaterThan(0.1);
-    expect(BILLBOARD_NIGHT_FACE.faceEmissiveFallback).toBeLessThanOrEqual(0.25);
+    // светлый «for-rent» (~0.6): гасится, чтобы не быть лайтбоксом
+    expect(faceGlowIntensity(0.6)).toBeLessThan(0.3);
+    // темный макет (~0.05): светится сильнее
+    expect(faceGlowIntensity(0.05)).toBeGreaterThan(1);
+    expect(faceGlowIntensity(0.6)).toBeLessThan(faceGlowIntensity(0.05));
+    // клампы на крайних значениях
+    expect(faceGlowIntensity(1e-9)).toBe(BILLBOARD_NIGHT_FACE.faceGlowMax);
+    expect(faceGlowIntensity(100)).toBe(BILLBOARD_NIGHT_FACE.faceGlowMin);
     expect(BILLBOARD_NIGHT_FACE.bulbEmissive).toBeGreaterThan(1);
     expect(BILLBOARD_NIGHT_FACE.bulbEmissive).toBeLessThanOrEqual(2);
   });

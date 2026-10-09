@@ -955,3 +955,11 @@ export const getTrackConfig = (slug: string): TTrackConfig | null => {
 export const getAllTrackConfigs = (): TTrackConfig[] => {
   return [coastalOvalTrack, nightCityTrack, stormEightTrack];
 };
+
+/**
+ * Свет включен: ночью или в штормовой дождь (темное пасмурное небо).
+ * True только для Night City и Storm Eight; Coastal (ясный день) — false.
+ */
+export const isTrackLightingOn = (config: TTrackConfig): boolean =>
+  config.timeOfDay === 'night' || config.weather === 'rain';
+

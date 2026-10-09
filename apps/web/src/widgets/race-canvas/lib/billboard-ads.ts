@@ -1,4 +1,4 @@
-import { CanvasTexture, LinearFilter, SRGBColorSpace } from 'three';
+import { CanvasTexture, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace } from 'three';
 import type { TBillboardAdId } from '@/entities/track';
 import { billboardPalette, type TAppLocale } from '@/shared/config';
 
@@ -82,6 +82,32 @@ const AD_COPY: Record<TAppLocale, Record<TBillboardAdId, TBillboardAdCopy>> = {
 
 const TEXTURE_WIDTH = 1024;
 const TEXTURE_HEIGHT = 512;
+
+/** Перевод sRGB-канала 0..1 в линейную яркость */
+const srgbToLinear = (c: number): number =>
+  c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+
+/**
+ * Средняя линейная яркость canvas (выборка каждые `stride` пикселей).
+ * Нужна, чтобы ночной glow лица был одинаково читаемым у светлых и тёмных макетов.
+ */
+const avgLuminanceOf = (ctx: CanvasRenderingContext2D, stride = 16): number => {
+  const { width, height } = ctx.canvas;
+  const { data } = ctx.getImageData(0, 0, width, height);
+  let sum = 0;
+  let samples = 0;
+  for (let y = 0; y < height; y += stride) {
+    for (let x = 0; x < width; x += stride) {
+      const i = (y * width + x) * 4;
+      sum +=
+        0.2126 * srgbToLinear((data[i] ?? 0) / 255) +
+        0.7152 * srgbToLinear((data[i + 1] ?? 0) / 255) +
+        0.0722 * srgbToLinear((data[i + 2] ?? 0) / 255);
+      samples += 1;
+    }
+  }
+  return sum / samples;
+};
 
 /** Рисует пунктирный прямоугольник для for-rent */
 const strokeDashedRect = (
@@ -198,9 +224,10 @@ export const createBillboardTexture = (
 
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
-  texture.minFilter = LinearFilter;
+  texture.minFilter = LinearMipmapLinearFilter;
   texture.magFilter = LinearFilter;
   texture.anisotropy = 4;
+  texture.userData.avgLuminance = avgLuminanceOf(ctx);
   texture.needsUpdate = true;
   return texture;
 };

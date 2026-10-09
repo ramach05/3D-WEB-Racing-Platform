@@ -1,4 +1,10 @@
-import { CanvasTexture, LinearFilter, RepeatWrapping, SRGBColorSpace } from 'three';
+import {
+  CanvasTexture,
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  RepeatWrapping,
+  SRGBColorSpace,
+} from 'three';
 
 /** Горизонтальных повторов коры вокруг ствола */
 export const BARK_WRAP_U = 2.4;
@@ -110,7 +116,7 @@ export const createBarkTexture = (size = 256): CanvasTexture => {
   texture.colorSpace = SRGBColorSpace;
   texture.wrapS = RepeatWrapping;
   texture.wrapT = RepeatWrapping;
-  texture.minFilter = LinearFilter;
+  texture.minFilter = LinearMipmapLinearFilter;
   texture.magFilter = LinearFilter;
   texture.anisotropy = 4;
   texture.repeat.set(BARK_WRAP_U, BARK_WRAP_V);

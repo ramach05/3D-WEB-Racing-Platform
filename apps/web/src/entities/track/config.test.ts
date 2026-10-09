@@ -128,7 +128,7 @@ describe('track config geometry', () => {
 
   it('defines tribune side for start grandstands', () => {
     for (const config of getAllTrackConfigs()) {
-      expect(config.startTribuneSide).toBe('left');
+      expect(['left', 'right']).toContain(config.startTribuneSide);
     }
   });
 

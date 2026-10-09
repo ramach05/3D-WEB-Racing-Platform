@@ -1,4 +1,4 @@
-import { CanvasTexture, LinearFilter, SRGBColorSpace } from 'three';
+import { CanvasTexture, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace } from 'three';
 
 type TRng = () => number;
 
@@ -104,7 +104,7 @@ export const createOilSlickTexture = (size = 256): CanvasTexture => {
   ctx.putImageData(imageData, 0, 0);
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
-  texture.minFilter = LinearFilter;
+  texture.minFilter = LinearMipmapLinearFilter;
   texture.magFilter = LinearFilter;
   texture.needsUpdate = true;
   return texture;

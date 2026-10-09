@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { TRACK_SLUGS } from '@racing/shared';
 import {
   LeaderboardTableSkeleton,
   LeaderboardTabsSkeleton,
@@ -20,15 +21,31 @@ describe('SegaSkeleton', () => {
 
 describe('page skeletons', () => {
   it('TracksPageSkeleton exposes loading status', () => {
-    render(<TracksPageSkeleton />);
+    const { container } = render(<TracksPageSkeleton />);
 
     expect(screen.getByRole('status', { name: /загружаем трассы|loading tracks/i })).toBeInTheDocument();
+    expect(container.querySelectorAll('.sega-panel')).toHaveLength(TRACK_SLUGS.length);
+    // layout совпадает с реальным списком TracksPage (в т.ч. lg-колонки в ряд)
+    expect(container.querySelector('ul')).toHaveClass('lg:grid-flow-col', 'lg:auto-cols-fr');
+  });
+
+  it('TracksPageSkeleton honors count prop', () => {
+    const { container } = render(<TracksPageSkeleton count={1} />);
+
+    expect(container.querySelectorAll('.sega-panel')).toHaveLength(1);
   });
 
   it('LeaderboardTabsSkeleton exposes tracks loading status', () => {
-    render(<LeaderboardTabsSkeleton />);
+    const { container } = render(<LeaderboardTabsSkeleton />);
 
     expect(screen.getByRole('status', { name: /загружаем трассы|loading tracks/i })).toBeInTheDocument();
+    expect(container.querySelectorAll('.sega-track-tab')).toHaveLength(TRACK_SLUGS.length);
+  });
+
+  it('LeaderboardTabsSkeleton honors count prop', () => {
+    const { container } = render(<LeaderboardTabsSkeleton count={1} />);
+
+    expect(container.querySelectorAll('.sega-track-tab')).toHaveLength(1);
   });
 
   it('LeaderboardTableSkeleton exposes leaderboard loading status', () => {

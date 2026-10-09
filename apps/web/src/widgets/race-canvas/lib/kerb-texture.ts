@@ -1,4 +1,10 @@
-import { CanvasTexture, LinearFilter, RepeatWrapping, SRGBColorSpace } from 'three';
+import {
+  CanvasTexture,
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  RepeatWrapping,
+  SRGBColorSpace,
+} from 'three';
 import { kerbPalette } from '@/shared/config';
 
 /** Двухпиксельная текстура красный/белый для тайлинга вдоль V */
@@ -20,7 +26,7 @@ export const createKerbTexture = (): CanvasTexture => {
   texture.colorSpace = SRGBColorSpace;
   texture.wrapS = RepeatWrapping;
   texture.wrapT = RepeatWrapping;
-  texture.minFilter = LinearFilter;
+  texture.minFilter = LinearMipmapLinearFilter;
   texture.magFilter = LinearFilter;
   texture.anisotropy = 4;
   texture.needsUpdate = true;

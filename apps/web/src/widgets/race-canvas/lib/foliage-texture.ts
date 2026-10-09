@@ -1,4 +1,10 @@
-import { CanvasTexture, LinearFilter, RepeatWrapping, SRGBColorSpace } from 'three';
+import {
+  CanvasTexture,
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  RepeatWrapping,
+  SRGBColorSpace,
+} from 'three';
 
 /** Повторов хвои на кроне сосны */
 export const PINE_FOLIAGE_WRAP = 2.8;
@@ -109,7 +115,7 @@ export const createPineFoliageTexture = (size = 256): CanvasTexture => {
   texture.colorSpace = SRGBColorSpace;
   texture.wrapS = RepeatWrapping;
   texture.wrapT = RepeatWrapping;
-  texture.minFilter = LinearFilter;
+  texture.minFilter = LinearMipmapLinearFilter;
   texture.magFilter = LinearFilter;
   texture.anisotropy = 4;
   texture.repeat.set(PINE_FOLIAGE_WRAP, PINE_FOLIAGE_WRAP);
@@ -162,7 +168,7 @@ export const createBroadleafFoliageTexture = (size = 256): CanvasTexture => {
   texture.colorSpace = SRGBColorSpace;
   texture.wrapS = RepeatWrapping;
   texture.wrapT = RepeatWrapping;
-  texture.minFilter = LinearFilter;
+  texture.minFilter = LinearMipmapLinearFilter;
   texture.magFilter = LinearFilter;
   texture.anisotropy = 4;
   texture.repeat.set(BROADLEAF_FOLIAGE_WRAP, BROADLEAF_FOLIAGE_WRAP);

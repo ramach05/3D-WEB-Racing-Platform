@@ -1,4 +1,4 @@
-import { CanvasTexture, LinearFilter, SRGBColorSpace } from 'three';
+import { CanvasTexture, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace } from 'three';
 
 /** Разрешение soft-puff текстуры дыма (степень двойки) */
 const SMOKE_PUFF_SIZE = 64;
@@ -33,7 +33,7 @@ export const createSmokePuffTexture = (): CanvasTexture => {
 
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
-  texture.minFilter = LinearFilter;
+  texture.minFilter = LinearMipmapLinearFilter;
   texture.magFilter = LinearFilter;
   texture.needsUpdate = true;
   return texture;

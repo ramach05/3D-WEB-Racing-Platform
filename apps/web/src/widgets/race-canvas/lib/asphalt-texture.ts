@@ -1,4 +1,11 @@
-import { CanvasTexture, LinearFilter, RepeatWrapping, SRGBColorSpace, type Texture } from 'three';
+import {
+  CanvasTexture,
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  RepeatWrapping,
+  SRGBColorSpace,
+  type Texture,
+} from 'three';
 
 /** Мировой размер одного тайла асфальта (метры) — мельче = плотнее зерно */
 export const ASPHALT_TILE_SIZE = 2.2;
@@ -62,7 +69,7 @@ const finishTexture = (canvas: HTMLCanvasElement, colorSpace = true): CanvasText
   }
   texture.wrapS = RepeatWrapping;
   texture.wrapT = RepeatWrapping;
-  texture.minFilter = LinearFilter;
+  texture.minFilter = LinearMipmapLinearFilter;
   texture.magFilter = LinearFilter;
   texture.anisotropy = 8;
   texture.needsUpdate = true;

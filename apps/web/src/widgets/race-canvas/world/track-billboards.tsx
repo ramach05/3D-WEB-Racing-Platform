@@ -5,6 +5,7 @@ import type { RapierRigidBody } from '@react-three/rapier';
 import { DoubleSide, type CanvasTexture } from 'three';
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 import {
+  isTrackLightingOn,
   placeBillboards,
   type TPlacedBillboard,
   type TTrackConfig,
@@ -26,6 +27,7 @@ import {
   BILLBOARD_POST,
   BILLBOARD_POST_HALF_SPAN,
   BILLBOARD_POST_HEIGHT,
+  faceGlowIntensity,
 } from '@/widgets/race-canvas/lib/billboard';
 import { createBillboardTexture } from '@/widgets/race-canvas/lib/billboard-ads';
 
@@ -185,6 +187,9 @@ const Billboard = ({ billboard, isNight, hasWash, texture }: TBillboardProps) =>
   const frameOuterHeight = BILLBOARD_PANEL_HEIGHT + BILLBOARD_FRAME_THICKNESS * 2;
   const frameCenterX = BILLBOARD_PANEL_FORWARD_X;
   const useFaceFallback = isNight && !hasWash;
+  /** Яркость нормирована по макету: светлый «for-rent» не выбеливается, тёмные макеты не чернеют */
+  const avgLuminance = texture.userData.avgLuminance as number | undefined;
+  const faceGlow = faceGlowIntensity(avgLuminance ?? BILLBOARD_NIGHT_FACE.faceGlowTargetLuma);
 
   return (
     <group position={[billboard.x, 0, billboard.z]} rotation={[0, billboard.rotationY, 0]}>
@@ -283,7 +288,7 @@ const Billboard = ({ billboard, isNight, hasWash, texture }: TBillboardProps) =>
           color="#e8e4dc"
           emissive={useFaceFallback ? '#ffffff' : '#000000'}
           emissiveMap={useFaceFallback ? texture : null}
-          emissiveIntensity={useFaceFallback ? BILLBOARD_NIGHT_FACE.faceEmissiveFallback : 0}
+          emissiveIntensity={useFaceFallback ? faceGlow : 0}
           metalness={0}
           roughness={0.9}
           side={DoubleSide}
@@ -361,7 +366,7 @@ export const TrackBillboards = ({ config, bodyRef }: TTrackBillboardsProps) => {
   const { i18n } = useTranslation();
   const locale: TAppLocale = i18n.language === 'en' ? 'en' : 'ru';
   const billboards = useMemo(() => placeBillboards({ config }), [config]);
-  const isNight = config.timeOfDay === 'night';
+  const isNight = isTrackLightingOn(config);
 
   const initialActive = useMemo(
     () => billboards.slice(0, BILLBOARD_ACTIVE_WASH.count).map((_, i) => i),

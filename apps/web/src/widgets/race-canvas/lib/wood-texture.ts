@@ -1,4 +1,10 @@
-import { CanvasTexture, LinearFilter, RepeatWrapping, SRGBColorSpace } from 'three';
+import {
+  CanvasTexture,
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  RepeatWrapping,
+  SRGBColorSpace,
+} from 'three';
 
 /** Мировой размер одного тайла древесины (метры) */
 export const WOOD_TILE_SIZE = 0.9;
@@ -85,7 +91,7 @@ export const createWoodTexture = (size = 256): CanvasTexture => {
   texture.colorSpace = SRGBColorSpace;
   texture.wrapS = RepeatWrapping;
   texture.wrapT = RepeatWrapping;
-  texture.minFilter = LinearFilter;
+  texture.minFilter = LinearMipmapLinearFilter;
   texture.magFilter = LinearFilter;
   texture.anisotropy = 4;
   texture.repeat.set(1 / WOOD_TILE_SIZE, 1 / WOOD_TILE_SIZE);
