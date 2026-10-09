@@ -5,7 +5,7 @@ import { clearAuthSession, readAuthSession, writeAuthSession } from '@/shared/li
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: getApiBaseUrl(),
-  credentials: 'include',
+  credentials: 'same-origin',
   prepareHeaders: (headers) => {
     const session = readAuthSession();
     if (session) {
