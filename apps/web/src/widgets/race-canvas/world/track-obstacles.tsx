@@ -36,8 +36,10 @@ const TIRE_TIER_SPACING = 0.35;
 const TIRE_BASE_Y = 0.16 - 1.05 / 2;
 /** Половина габаритов коллайдера одной шины (аппроксимация тора) */
 const TIRE_COLLIDER_HALF: TVec3 = [0.6, 0.17, 0.6];
-/** Скорость машины ниже этого порога удар по препятствию не считается */
+/** Скорость машины ниже этого порога — не удар, а касание: только «сход» препятствия с бампера */
 const HIT_MIN_SPEED = 0.5;
+/** Номинальная скорость слабого касания для импульса схода шины, м/с */
+const TIRE_TOUCH_IMPULSE_SPEED = 6;
 const TIRE_HIT_FACTOR = 0.8;
 const TIRE_IMPULSE_SCALE = 0.2;
 const TIRE_TORQUE_SCALE = 0.08;
@@ -101,7 +103,7 @@ type TObstacleHit = {
   vehicleBody: RapierRigidBody;
   /** Тело препятствия */
   obstacleBody: RapierRigidBody;
-  /** Скорость машины в плоскости XZ, м/с */
+  /** Скорость машины в плоскости XZ, м/с (при касании — номинальная для импульса схода) */
   speed: number;
   /** Единичное направление движения машины */
   dirX: number;
@@ -109,10 +111,15 @@ type TObstacleHit = {
 };
 
 /**
- * Общая часть удара: звук, тряска и штраф скорости.
- * null — столкновение не с машиной либо удар слишком слабый.
+ * Общая часть удара: звук, тряска и штраф скорости. На малой скорости — не null,
+ * а «касание»: направление «машина -> препятствие», чтобы шина/бочка сходила с бампера
+ * и не стопорила машину (импульс считается от minImpulseSpeed).
+ * null — столкновение не с машиной или вырожденное направление.
  */
-const beginObstacleHit = (payload: CollisionEnterPayload): TObstacleHit | null => {
+const beginObstacleHit = (
+  payload: CollisionEnterPayload,
+  minImpulseSpeed: number,
+): TObstacleHit | null => {
   if (payload.other.rigidBodyObject?.name !== 'vehicle') {
     return null;
   }
@@ -130,12 +137,20 @@ const beginObstacleHit = (payload: CollisionEnterPayload): TObstacleHit | null =
   const impact = mapImpactFromSpeed(speed);
   pulseDriveImpact(impact);
   pulseCameraShake(impact);
-  if (speed < HIT_MIN_SPEED) {
-    return null;
+  if (speed >= HIT_MIN_SPEED) {
+    const invSpeed = 1 / speed;
+    return { vehicleBody, obstacleBody, speed, dirX: vel.x * invSpeed, dirZ: vel.z * invSpeed };
   }
 
-  const invSpeed = 1 / speed;
-  return { vehicleBody, obstacleBody, speed, dirX: vel.x * invSpeed, dirZ: vel.z * invSpeed };
+  const carPos = vehicleBody.translation();
+  const obstaclePos = obstacleBody.translation();
+  const dirX = obstaclePos.x - carPos.x;
+  const dirZ = obstaclePos.z - carPos.z;
+  const len = Math.hypot(dirX, dirZ);
+  if (len < 1e-6) {
+    return null;
+  }
+  return { vehicleBody, obstacleBody, speed: minImpulseSpeed, dirX: dirX / len, dirZ: dirZ / len };
 };
 
 /** Не даем машине взлететь от реакции столкновения */
@@ -148,7 +163,7 @@ const pinVehicleToGround = (vehicleBody: RapierRigidBody): void => {
 
 /** Удар по шине: разброс по ярусам, верхние подбрасываются сильнее */
 const handleTireHit = (payload: CollisionEnterPayload, tier: number): void => {
-  const hit = beginObstacleHit(payload);
+  const hit = beginObstacleHit(payload, TIRE_TOUCH_IMPULSE_SPEED);
   if (!hit) {
     return;
   }
@@ -187,7 +202,7 @@ const handleTireHit = (payload: CollisionEnterPayload, tier: number): void => {
  * получает целевую скорость, то есть для решателя она нематериальна.
  */
 const handleBarrelHit = (payload: CollisionEnterPayload, sideBias: 1 | -1): void => {
-  const hit = beginObstacleHit(payload);
+  const hit = beginObstacleHit(payload, HIT_MIN_SPEED);
   if (!hit) {
     return;
   }

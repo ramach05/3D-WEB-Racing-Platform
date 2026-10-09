@@ -14,6 +14,14 @@ import {
   resetDriveSfx,
   tickDriveSfxSample,
 } from '@/features/race-audio';
+import {
+  computeRescueImpulse,
+  isRescueActive,
+  isStuckAgainstObstacle,
+  RESCUE_NOSE_OFFSET,
+  RESCUE_RADIUS,
+  updateStuckTimer,
+} from '@/widgets/race-canvas/lib/anti-stuck';
 import { pulseCameraShake } from '@/widgets/race-canvas/lib/camera-shake';
 import {
   beginCountdown,
@@ -37,6 +45,7 @@ import {
 import { vehiclePalette } from '@/shared/config';
 import {
   GROUND_PROBE_GROUPS,
+  TIRE_GROUPS,
   VEHICLE_GROUPS,
   WALL_PROBE_GROUPS,
 } from '@/widgets/race-canvas/lib/collision-groups';
@@ -410,6 +419,7 @@ export const Vehicle = ({
   const prevWheelsOnOil = useRef(0);
   const kerbPhase = useRef(0);
   const kerbShakeCooldown = useRef(0);
+  const stuckTimer = useRef(0);
   const driveVisualRef = useRef<TVehicleDriveVisual>({
     forwardSpeed: 0,
     steer: 0,
@@ -452,6 +462,7 @@ export const Vehicle = ({
       prevWheelsOnOil.current = 0;
       kerbPhase.current = 0;
       kerbShakeCooldown.current = 0;
+      stuckTimer.current = 0;
       driveVisualRef.current.kerbRumble = 0;
       clearSkidTrail();
       visPitch.current = 0;
@@ -836,6 +847,60 @@ export const Vehicle = ({
       if (translation.y > restY + GROUND_SNAP_TOLERANCE) {
         body.setTranslation({ x: translation.x, y: restY, z: translation.z }, true);
         body.setLinvel({ x: slid.x, y: 0, z: slid.z }, true);
+      }
+    }
+
+    // Анти-залипание: газ в пол, а машина стоит (шина упралась в стену/другие шины) —
+    // непрерывно выталкивать препятствия из-под носового бампера, пока не поедет.
+    stuckTimer.current = updateStuckTimer(
+      isStuckAgainstObstacle({
+        throttle: input.throttle,
+        handbrake: input.handbrake,
+        targetForward,
+        forwardSpeed,
+        grounded: wheelGrounded,
+      }),
+      clampedDt,
+      stuckTimer.current,
+    );
+    if (isRescueActive(stuckTimer.current)) {
+      const rescueBodies: RapierRigidBody[] = [];
+      const seen = new Set<number>();
+      world.intersectionsWithShape(
+        {
+          x: translation.x + tmpForward.x * RESCUE_NOSE_OFFSET,
+          y: COLLIDER_Y,
+          z: translation.z + tmpForward.z * RESCUE_NOSE_OFFSET,
+        },
+        { x: 0, y: 0, z: 0, w: 1 },
+        new rapier.Ball(RESCUE_RADIUS),
+        (collider) => {
+          const obstacle = collider.parent();
+          // шины и бочки — dynamic; статичный мир и самого себя пропускаем
+          if (obstacle && obstacle.isDynamic() && !seen.has(obstacle.handle)) {
+            seen.add(obstacle.handle);
+            rescueBodies.push(obstacle);
+          }
+          return true;
+        },
+        undefined,
+        TIRE_GROUPS,
+        undefined,
+        body,
+      );
+      for (const obstacle of rescueBodies) {
+        const point = obstacle.translation();
+        const impulse = computeRescueImpulse({
+          carPosition: { x: translation.x, z: translation.z },
+          carForward: { x: tmpForward.x, z: tmpForward.z },
+          obstaclePosition: { x: point.x, z: point.z },
+          obstacleMass: obstacle.mass(),
+          carSpeed: targetForward,
+          dt: clampedDt,
+        });
+        if (impulse) {
+          obstacle.applyImpulse(impulse, true);
+        }
       }
     }
 
