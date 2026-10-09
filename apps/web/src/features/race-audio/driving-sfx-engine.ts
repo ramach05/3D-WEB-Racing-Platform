@@ -24,13 +24,11 @@ export class DrivingSfxEngine {
   private running = false;
   private paused = false;
   private muted = false;
-  private rainEnabled = false;
   private generation = 0;
 
   private tire: TNoiseLayer | null = null;
   private scrape: TNoiseLayer | null = null;
   private gravel: TNoiseLayer | null = null;
-  private rain: TNoiseLayer | null = null;
   private kerbPhase = 0;
   private lastKerbTickAt = 0;
 
@@ -128,7 +126,6 @@ export class DrivingSfxEngine {
     this.tire = this.createNoiseLayer(ctx, this.master, 'white', 'bandpass', 1600, 6);
     this.scrape = this.createNoiseLayer(ctx, this.master, 'white', 'bandpass', 400, 2.2);
     this.gravel = this.createNoiseLayer(ctx, this.master, 'brown', 'lowpass', 700, 0.8);
-    this.rain = this.createNoiseLayer(ctx, this.master, 'white', 'bandpass', 4500, 1.5);
   };
 
   /** One-shot burst (impact / oil / kerb) */
@@ -193,11 +190,6 @@ export class DrivingSfxEngine {
     this.applyMaster();
   };
 
-  /** Включает слой дождя только для дождливой погоды трассы */
-  setRainEnabled = (rainEnabled: boolean): void => {
-    this.rainEnabled = rainEnabled;
-  };
-
   /** Обновляет слои из snapshot и one-shot событий */
   update = (sample: TDriveSfxSample, impact: number, oilSlap: number): void => {
     const ctx = this.ctx;
@@ -225,7 +217,6 @@ export class DrivingSfxEngine {
       this.setGain(this.tire?.gain ?? null, 0, now);
       this.setGain(this.scrape?.gain ?? null, 0, now);
       this.setGain(this.gravel?.gain ?? null, 0, now);
-      this.setGain(this.rain?.gain ?? null, 0, now);
       return;
     }
 
@@ -250,16 +241,6 @@ export class DrivingSfxEngine {
     if (this.gravel) {
       this.gravel.filter.frequency.setTargetAtTime(400 + gravelLevel * 500, now, 0.04);
       this.setGain(this.gravel.gain, gravelLevel * 0.22, now, 0.035);
-    }
-
-    if (this.rain) {
-      if (this.rainEnabled) {
-        const rainGain = 0.04 + sample.speedMs * 0.003;
-        this.rain.filter.frequency.setTargetAtTime(3500 + sample.speedMs * 300, now, 0.15);
-        this.setGain(this.rain.gain, rainGain, now, 0.2);
-      } else {
-        this.setGain(this.rain.gain, 0, now, 0.2);
-      }
     }
 
     if (sample.kerbRumble > 0) {
@@ -307,7 +288,6 @@ export class DrivingSfxEngine {
     this.tire = null;
     this.scrape = null;
     this.gravel = null;
-    this.rain = null;
     this.kerbPhase = 0;
     this.lastKerbTickAt = 0;
     this.whiteBuffer = null;

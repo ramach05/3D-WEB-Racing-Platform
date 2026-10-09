@@ -1,11 +1,13 @@
 import { useFrame, useThree } from '@react-three/fiber';
-import { Matrix4, Vector3 } from 'three';
+import { Matrix4, DoubleSide, Vector3 } from 'three';
 import type { InstancedMesh } from 'three';
 import { useRef } from 'react';
 
-const RAIN_COUNT = 6000;
-const RAIN_HEIGHT = 32;
-const RAIN_RADIUS = 24;
+const RAIN_COUNT = 9000;
+const RAIN_HEIGHT = 42;
+const RAIN_RADIUS = 26;
+/** Скорость падения (м/сек) — ливень */
+const RAIN_FALL_SPEED = 48;
 
 const dummy = new Matrix4();
 const offsets = new Float32Array(RAIN_COUNT);
@@ -37,20 +39,20 @@ export const RainSystem = ({ paused }: { paused: boolean }) => {
     const camZ = tmpCamPos.z;
 
     // Ветер медленно дрейфует
-    windX.current += 0.002;
-    windZ.current += 0.003;
-    const wX = Math.sin(windX.current * 0.3) * 2;
-    const wZ = Math.cos(windZ.current * 0.2) * 1.5;
+    windX.current += 0.004;
+    windZ.current += 0.005;
+    const wX = Math.sin(windX.current * 0.3) * 3.2;
+    const wZ = Math.cos(windZ.current * 0.2) * 2.4;
 
     for (let i = 0; i < RAIN_COUNT; i += 1) {
       const v = offsets[i]!;
-      const nv = v - 22 * (1 / 60);
+      const nv = v - RAIN_FALL_SPEED * (1 / 60);
       const y = nv < -2 ? v + RAIN_HEIGHT : nv;
       offsets[i] = y;
       const x = Math.sin(i * 73.7 + y * 0.08) * RAIN_RADIUS + camX + wX;
       const z = Math.cos(i * 191.3 + y * 0.04) * RAIN_RADIUS + camZ + wZ;
       dummy.setPosition(x, y - RAIN_HEIGHT / 2, z);
-      dummy.makeScale(0.012, 0.35 + y * 0.006, 0.012);
+      dummy.makeScale(0.02, 0.5 + y * 0.012, 0.02);
       mesh.setMatrixAt(i, dummy);
     }
     mesh.instanceMatrix.needsUpdate = true;
@@ -64,10 +66,11 @@ export const RainSystem = ({ paused }: { paused: boolean }) => {
     >
       <planeGeometry args={[1, 1]} />
       <meshBasicMaterial
-        color="#b0b8c4"
+        color="#c8d0dc"
         transparent
-        opacity={0.35}
+        opacity={0.5}
         depthWrite={false}
+        side={DoubleSide}
       />
     </instancedMesh>
   );

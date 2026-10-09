@@ -18,6 +18,7 @@ import { HorizonMoon } from '@/widgets/race-canvas/world/horizon-moon';
 import { HorizonSun } from '@/widgets/race-canvas/world/horizon-sun';
 import { RainSystem } from '@/widgets/race-canvas/world/rain-system';
 import { SkidMarks } from '@/widgets/race-canvas/world/skid-marks';
+import { StormSky } from '@/widgets/race-canvas/world/storm-sky';
 import { TrackBillboardColliders } from '@/widgets/race-canvas/world/track-billboard-colliders';
 import { TrackBillboards } from '@/widgets/race-canvas/world/track-billboards';
 import { TrackKerbs } from '@/widgets/race-canvas/world/track-kerbs';
@@ -31,6 +32,7 @@ import { TrackTrees } from '@/widgets/race-canvas/world/track-trees';
 import { TrackTribuneColliders } from '@/widgets/race-canvas/world/track-tribune-colliders';
 import { TrackTribunes } from '@/widgets/race-canvas/world/track-tribunes';
 import { TrackWorld } from '@/widgets/race-canvas/world/track-world';
+import { WheelSpray } from '@/widgets/race-canvas/world/wheel-spray';
 import { RaceCamera } from './race-camera';
 import { FramePerfTracker } from './frame-perf-tracker';
 import { RacePostFx } from './race-postfx';
@@ -47,6 +49,30 @@ type TRaceSceneProps = {
   resetNonce: number;
   /** Колбэк завершения гонки */
   onFinished: () => void;
+  /** Один колбэк после первого представленного кадра (для скрытия лоадера) */
+  onFirstFrame?: () => void;
+};
+
+type TFirstFrameSignalProps = {
+  /** Колбэк после первого представленного кадра */
+  onFirstFrame?: () => void;
+};
+
+/** Сигналит о первом кадре: useFrame идет до render, поэтому ждем еще два rAF после present */
+const FirstFrameSignal = ({ onFirstFrame }: TFirstFrameSignalProps) => {
+  const firedRef = useRef(false);
+
+  useFrame(() => {
+    if (firedRef.current || !onFirstFrame) {
+      return;
+    }
+    firedRef.current = true;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(onFirstFrame);
+    });
+  });
+
+  return null;
 };
 
 type TCelestialBodyProps = {
@@ -74,9 +100,16 @@ const DAY_SHADOW_HALF_EXTENT = 140;
 const DAY_SHADOW_MAP = 2048;
 /** Квадрат шага follow луны (м²) — реже двигаем shadow camera */
 const MOON_FOLLOW_STEP_SQ = 12 * 12;
+/** Дождевое «солнце в зените»: источник почти строго вверху, мягкие короткие тени */
+const RAIN_LIGHT_OFFSET: [number, number, number] = [0, 300, -22];
+const RAIN_SHADOW_HALF_EXTENT = 90;
+const RAIN_SHADOW_MAP = 2048;
 
-/** Солнце (горизонт) днём или луна ночью */
+/** Солнце (горизонт) днем или луна ночью; в штормовой дождь светила нет (солнце скрыто за облаками) */
 const CelestialBody = ({ config }: TCelestialBodyProps) => {
+  if (config.weather === 'rain') {
+    return null;
+  }
   const isNight = config.timeOfDay === 'night';
 
   if (isNight) {
@@ -89,7 +122,9 @@ const CelestialBody = ({ config }: TCelestialBodyProps) => {
 type TPrimaryDirectionalLightProps = {
   /** Ночная трасса — луна с follow-frustum */
   isNight: boolean;
-  /** Ref машины для центрирования moon shadow camera */
+  /** Штормовой дождь — невидимое солнце в зените, мягкие тени с follow-frustum */
+  isRain: boolean;
+  /** Ref машины для центрирования shadow camera */
   bodyRef: RefObject<RapierRigidBody | null>;
   /** Цвет направленного света */
   color: string;
@@ -98,12 +133,13 @@ type TPrimaryDirectionalLightProps = {
 };
 
 /**
- * Солнце (день) или луна (ночь).
+ * Солнце (день) / луна (ночь) / невидимое солнце в зените (дождь).
  * Target — sibling в сцене (не child light): иначе direction = 0 и WebGL падает.
- * Ночью light+target сдвигаются шагами ~12 м вокруг машины.
+ * Ночью и в дождь light+target сдвигаются шагами ~12 м вокруг машины.
  */
 const PrimaryDirectionalLight = ({
   isNight,
+  isRain,
   bodyRef,
   color,
   intensity,
@@ -111,6 +147,7 @@ const PrimaryDirectionalLight = ({
   const lightRef = useRef<DirectionalLight>(null);
   const targetRef = useRef<Object3D>(null);
   const followRef = useRef({ x: 0, z: 0, ready: false });
+  const follow = isNight || isRain;
 
   // Привязывает target и ortho frustum.
   useLayoutEffect(() => {
@@ -120,7 +157,11 @@ const PrimaryDirectionalLight = ({
       return;
     }
     light.target = target;
-    const half = isNight ? MOON_SHADOW_HALF_EXTENT : DAY_SHADOW_HALF_EXTENT;
+    const half = isNight
+      ? MOON_SHADOW_HALF_EXTENT
+      : isRain
+        ? RAIN_SHADOW_HALF_EXTENT
+        : DAY_SHADOW_HALF_EXTENT;
     const cam = light.shadow.camera;
     cam.near = MOON_SHADOW_NEAR;
     cam.far = MOON_SHADOW_FAR;
@@ -131,16 +172,16 @@ const PrimaryDirectionalLight = ({
     cam.updateProjectionMatrix();
     followRef.current.ready = false;
 
-    if (!isNight) {
+    if (!follow) {
       target.position.set(0, 0, 0);
       target.updateMatrixWorld();
       light.position.set(SUN_LIGHT_POSITION[0], SUN_LIGHT_POSITION[1], SUN_LIGHT_POSITION[2]);
     }
-  }, [isNight]);
+  }, [isNight, isRain, follow]);
 
-  // Ночью двигает light+target шагами ~12 м (не каждый кадр).
+  // Ночью/в дождь двигает light+target шагами ~12 м (не каждый кадр).
   useFrame(() => {
-    if (!isNight) {
+    if (!follow) {
       return;
     }
     const light = lightRef.current;
@@ -150,45 +191,52 @@ const PrimaryDirectionalLight = ({
       return;
     }
     const { x, z } = body.translation();
-    const follow = followRef.current;
-    if (follow.ready) {
-      const dx = x - follow.x;
-      const dz = z - follow.z;
+    const state = followRef.current;
+    if (state.ready) {
+      const dx = x - state.x;
+      const dz = z - state.z;
       if (dx * dx + dz * dz < MOON_FOLLOW_STEP_SQ) {
         return;
       }
     }
-    follow.x = x;
-    follow.z = z;
-    follow.ready = true;
+    state.x = x;
+    state.z = z;
+    state.ready = true;
+    const offset = isRain ? RAIN_LIGHT_OFFSET : MOON_LIGHT_OFFSET;
     target.position.set(x, 0, z);
     target.updateMatrixWorld();
-    light.position.set(x + MOON_LIGHT_OFFSET[0], MOON_LIGHT_OFFSET[1], z + MOON_LIGHT_OFFSET[2]);
+    light.position.set(x + offset[0], offset[1], z + offset[2]);
   });
 
-  const mapSize = isNight ? MOON_SHADOW_MAP : DAY_SHADOW_MAP;
-  const half = isNight ? MOON_SHADOW_HALF_EXTENT : DAY_SHADOW_HALF_EXTENT;
+  const mapSize = isNight ? MOON_SHADOW_MAP : isRain ? RAIN_SHADOW_MAP : DAY_SHADOW_MAP;
+  const half = isNight
+    ? MOON_SHADOW_HALF_EXTENT
+    : isRain
+      ? RAIN_SHADOW_HALF_EXTENT
+      : DAY_SHADOW_HALF_EXTENT;
+  const offset = isRain ? RAIN_LIGHT_OFFSET : isNight ? MOON_LIGHT_OFFSET : SUN_LIGHT_POSITION;
+  const shadowIntensity = isNight ? MOON_SHADOW_INTENSITY : isRain ? 0.7 : 1;
 
   return (
     <>
       <object3D ref={targetRef} />
       <directionalLight
         ref={lightRef}
-        position={isNight ? MOON_LIGHT_OFFSET : SUN_LIGHT_POSITION}
+        position={offset}
         intensity={intensity}
         color={color}
         castShadow
         shadow-mapSize-width={mapSize}
         shadow-mapSize-height={mapSize}
         shadow-bias={isNight ? MOON_SHADOW_BIAS : -0.0002}
-        shadow-normalBias={isNight ? MOON_SHADOW_NORMAL_BIAS : 0.04}
+        shadow-normalBias={isNight ? MOON_SHADOW_NORMAL_BIAS : isRain ? 0.06 : 0.04}
         shadow-camera-near={MOON_SHADOW_NEAR}
         shadow-camera-far={MOON_SHADOW_FAR}
         shadow-camera-left={-half}
         shadow-camera-right={half}
         shadow-camera-top={half}
         shadow-camera-bottom={-half}
-        shadow-intensity={isNight ? MOON_SHADOW_INTENSITY : 1}
+        shadow-intensity={shadowIntensity}
       />
     </>
   );
@@ -231,6 +279,7 @@ const RaceSceneInner = ({
   crowdPaused,
   resetNonce,
   onFinished,
+  onFirstFrame,
   bodyRef,
   visualRef,
 }: TRaceSceneInnerProps) => {
@@ -239,10 +288,15 @@ const RaceSceneInner = ({
   const forcedLights = isNight || isRain;
   const vehicleId = readSelectedVehicle();
 
-  const fogDist = isNight ? 80 : isRain ? 120 : 300;
-  const fogFar = isNight ? 220 : isRain ? 280 : 560;
-  const hemiIntensity = isNight ? 0.58 : isRain ? 0.85 : 1.28;
-  const dirIntensity = isNight ? 0.85 : isRain ? 1.8 : 3.6;
+  const fogDist = isNight ? 80 : isRain ? 55 : 300;
+  const fogFar = isNight ? 220 : isRain ? 215 : 560;
+  const hemiIntensity = isNight ? 0.58 : isRain ? 0.78 : 1.28;
+  const dirIntensity = isNight ? 0.85 : isRain ? 1.05 : 3.6;
+  const dirColor = isNight
+    ? scenePalette.sunNight
+    : isRain
+      ? scenePalette.sunRain
+      : scenePalette.sunDay;
 
   return (
     <>
@@ -251,9 +305,10 @@ const RaceSceneInner = ({
       <hemisphereLight args={[config.palette.sky, config.palette.ground, hemiIntensity]} />
       <PrimaryDirectionalLight
         isNight={isNight}
+        isRain={isRain}
         bodyRef={bodyRef}
         intensity={dirIntensity}
-        color={isNight ? scenePalette.sunNight : scenePalette.sunDay}
+        color={dirColor}
       />
       <CelestialBody config={config} />
       {isNight ? (
@@ -261,12 +316,14 @@ const RaceSceneInner = ({
           <Stars radius={120} depth={40} count={2500} factor={3} saturation={0} fade speed={0.4} />
           <NeonAccentLight color={config.palette.accent} />
         </>
+      ) : isRain ? (
+        <StormSky color={config.palette.sky} />
       ) : (
         <Sky
           sunPosition={SKY_SUN_POSITION}
-          turbidity={isRain ? 8 : 0.3}
-          rayleigh={isRain ? 2 : 1.1}
-          mieCoefficient={isRain ? 0.015 : 0.0035}
+          turbidity={0.3}
+          rayleigh={1.1}
+          mieCoefficient={0.0035}
           mieDirectionalG={0.82}
         />
       )}
@@ -295,23 +352,25 @@ const RaceSceneInner = ({
           centerline={config.centerline}
           roadWidth={config.roadWidth}
           roadWidths={config.roadWidths}
+          isRain={isRain}
         />
       </Physics>
       <SkidMarks />
+      <WheelSpray bodyRef={bodyRef} enabled={isRain} />
       <TrackKerbs config={config} />
       <TrackOilSlicks config={config} />
       <TrackStartFinishLine
         line={config.startFinishLine}
         roadWidth={config.roadWidth}
         palette={config.palette}
-        isNight={isNight}
+        isNight={forcedLights}
       />
       <TrackTribunes
         line={config.startFinishLine}
         roadWidth={config.roadWidth}
         palette={config.palette}
         side={config.startTribuneSide}
-        isNight={isNight}
+        isNight={forcedLights}
         paused={crowdPaused}
       />
       <TrackTrees config={config} />
@@ -329,8 +388,9 @@ const RaceSceneInner = ({
         spawnRotationY={config.spawnRotationY}
         resetNonce={resetNonce}
       />
-      <RacePostFx enabled={isNight} />
+      <RacePostFx enabled={forcedLights} />
       <FramePerfTracker />
+      <FirstFrameSignal onFirstFrame={onFirstFrame} />
     </>
   );
 };
@@ -342,6 +402,7 @@ export const RaceCanvas = ({
   crowdPaused,
   resetNonce,
   onFinished,
+  onFirstFrame,
 }: TRaceSceneProps) => {
   const bodyRef = useRef<RapierRigidBody>(null);
   const visualRef = useRef<Group>(null);
@@ -360,6 +421,7 @@ export const RaceCanvas = ({
         crowdPaused={crowdPaused}
         resetNonce={resetNonce}
         onFinished={onFinished}
+        onFirstFrame={onFirstFrame}
         bodyRef={bodyRef}
         visualRef={visualRef}
       />

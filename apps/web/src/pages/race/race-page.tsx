@@ -77,6 +77,8 @@ export const RacePage = () => {
   const [finishMeta, setFinishMeta] = useState<TFinishMeta | null>(null);
   const [showFinishOverlay, setShowFinishOverlay] = useState(false);
   const [musicMuted, setMusicMuted] = useState(false);
+  const [canvasArmed, setCanvasArmed] = useState(false);
+  const [sceneReady, setSceneReady] = useState(false);
   const sessionKey =
     trackSlug && trackId && config ? `${trackSlug}:${config.checkpoints.length}` : '';
   const [prevSessionKey, setPrevSessionKey] = useState(sessionKey);
@@ -88,12 +90,34 @@ export const RacePage = () => {
     preloadVehicleModel();
   }, []);
 
+  // Взводит mount 3D-сцены на следующий кадр после отрисовки лоадера: монтирование тяжелое и блокирует main thread.
+  useEffect(() => {
+    if (canvasArmed || !config) {
+      return;
+    }
+    let timerId = 0;
+    const rafId = requestAnimationFrame(() => {
+      timerId = window.setTimeout(() => setCanvasArmed(true), 0);
+    });
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.clearTimeout(timerId);
+    };
+  }, [canvasArmed, config]);
+
+  // Скрывает лоадер после первого представленного кадра сцены.
+  const handleFirstFrame = useCallback(() => {
+    setSceneReady(true);
+  }, []);
+
   if (sessionKey !== prevSessionKey) {
     setPrevSessionKey(sessionKey);
     if (sessionKey) {
       setFinishMeta(null);
       setShowFinishOverlay(false);
       setResetNonce((value) => value + 1);
+      setCanvasArmed(false);
+      setSceneReady(false);
     }
   }
 
@@ -117,7 +141,6 @@ export const RacePage = () => {
     enabled: Boolean(config) && hud.status === 'racing',
     paused: hud.status === 'paused',
     muted: false,
-    rainEnabled: config?.weather === 'rain',
   });
 
   /** Рестарт заезда: сброс сессии, canvas и toast */
@@ -310,102 +333,115 @@ export const RacePage = () => {
   return (
     <div className="sega-scanlines relative min-h-0 w-full flex-1 overflow-hidden bg-black">
       <div className="absolute inset-0">
-        <RaceCanvas
-          config={config}
-          physicsPaused={physicsPaused}
-          crowdPaused={hud.status === 'paused'}
-          resetNonce={resetNonce}
-          onFinished={onFinished}
-        />
-        {config.weather === 'rain' && hud.status === 'racing' ? <RaceRainOverlay /> : null}
+        {canvasArmed ? (
+          <RaceCanvas
+            config={config}
+            physicsPaused={physicsPaused}
+            crowdPaused={hud.status === 'paused'}
+            resetNonce={resetNonce}
+            onFinished={onFinished}
+            onFirstFrame={handleFirstFrame}
+          />
+        ) : null}
+        {canvasArmed && config.weather === 'rain' && hud.status !== 'finished' ? (
+          <RaceRainOverlay />
+        ) : null}
       </div>
-      <div className="absolute top-2 right-2 z-10 flex w-[9.5rem] max-w-[calc(100%-1rem)] flex-col items-end gap-2 md:top-4 md:right-4 lg:w-[13rem]">
-        <div className="pointer-events-none w-full">
-          <RaceHud trackName={track.name} bestMs={trackBestMs} />
-        </div>
-        <div className="pointer-events-none w-[5.5rem] self-end sm:w-[6.5rem] lg:w-full">
-          <RaceMinimap config={config} />
-        </div>
-      </div>
-      <div className="pointer-events-none absolute top-2 left-2 z-10 flex max-w-[calc(100%-1rem)] flex-col items-start gap-2 md:top-4 md:left-4">
-        <RacePerfHud />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="pointer-events-auto sega-panel !hidden h-8 w-8 items-center justify-center !px-0 !bg-black/70 md:!inline-flex"
-          aria-label={musicMuted ? t('race.musicOff') : t('race.musicOn')}
-          aria-pressed={!musicMuted}
-          onClick={toggleMute}
-        >
-          <span
-            aria-hidden
-            className={
-              musicMuted
-                ? 'text-lg leading-none text-white/50 line-through'
-                : 'text-lg leading-none text-[var(--sega-yellow)]'
+      {sceneReady ? (
+        <>
+          <div className="absolute top-2 right-2 z-10 flex w-[9.5rem] max-w-[calc(100%-1rem)] flex-col items-end gap-2 md:top-4 md:right-4 lg:w-[13rem]">
+            <div className="pointer-events-none w-full">
+              <RaceHud trackName={track.name} bestMs={trackBestMs} />
+            </div>
+            <div className="pointer-events-none w-[5.5rem] self-end sm:w-[6.5rem] lg:w-full">
+              <RaceMinimap config={config} />
+            </div>
+          </div>
+          <div className="pointer-events-none absolute top-2 left-2 z-10 flex max-w-[calc(100%-1rem)] flex-col items-start gap-2 md:top-4 md:left-4">
+            <RacePerfHud />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="pointer-events-auto sega-panel !hidden h-8 w-8 items-center justify-center !px-0 !bg-black/70 md:!inline-flex"
+              aria-label={musicMuted ? t('race.musicOff') : t('race.musicOn')}
+              aria-pressed={!musicMuted}
+              onClick={toggleMute}
+            >
+              <span
+                aria-hidden
+                className={
+                  musicMuted
+                    ? 'text-lg leading-none text-white/50 line-through'
+                    : 'text-lg leading-none text-[var(--sega-yellow)]'
+                }
+              >
+                {'\u266A'}
+              </span>
+            </Button>
+          </div>
+          <RaceControls cameraMode={cameraMode} />
+          <RaceTouchControls
+            onRestart={restart}
+            onTogglePause={togglePause}
+            onCycleCamera={cycleCameraMode}
+            muted={musicMuted}
+            onToggleMute={toggleMute}
+            footer={!user && hud.status !== 'finished' ? t('race.guestHint') : undefined}
+          />
+          <RaceCountdownOverlay />
+          <RaceFinishMomentOverlay
+            active={hud.status === 'finished' && !showFinishOverlay}
+            timeMs={finishMeta?.timeMs ?? hud.timeMs}
+            isNewBest={finishMeta?.isNewBest ?? false}
+          />
+          <RacePauseMenu
+            open={hud.status === 'paused'}
+            onResume={togglePause}
+            onRestart={restart}
+            onExit={exitToTracks}
+          />
+          <RaceFinishOverlay
+            open={hud.status === 'finished' && showFinishOverlay}
+            trackName={track.name}
+            timeMs={finishMeta?.timeMs ?? hud.timeMs}
+            bestMs={trackBestMs}
+            isNewBest={finishMeta?.isNewBest ?? false}
+            isGuest={!user}
+            submitState={finishMeta?.submitState ?? 'idle'}
+            userRank={
+              user?.id && leaderboard
+                ? (leaderboard.find((entry) => entry.userId === user.id)?.rank ?? null)
+                : null
             }
-          >
-            {'\u266A'}
-          </span>
-        </Button>
-      </div>
-      <RaceControls cameraMode={cameraMode} />
-      <RaceTouchControls
-        onRestart={restart}
-        onTogglePause={togglePause}
-        onCycleCamera={cycleCameraMode}
-        muted={musicMuted}
-        onToggleMute={toggleMute}
-        footer={!user && hud.status !== 'finished' ? t('race.guestHint') : undefined}
-      />
-      <RaceCountdownOverlay />
-      <RaceFinishMomentOverlay
-        active={hud.status === 'finished' && !showFinishOverlay}
-        timeMs={finishMeta?.timeMs ?? hud.timeMs}
-        isNewBest={finishMeta?.isNewBest ?? false}
-      />
-      <RacePauseMenu
-        open={hud.status === 'paused'}
-        onResume={togglePause}
-        onRestart={restart}
-        onExit={exitToTracks}
-      />
-      <RaceFinishOverlay
-        open={hud.status === 'finished' && showFinishOverlay}
-        trackName={track.name}
-        timeMs={finishMeta?.timeMs ?? hud.timeMs}
-        bestMs={trackBestMs}
-        isNewBest={finishMeta?.isNewBest ?? false}
-        isGuest={!user}
-        submitState={finishMeta?.submitState ?? 'idle'}
-        userRank={
-          user?.id && leaderboard
-            ? (leaderboard.find((entry) => entry.userId === user.id)?.rank ?? null)
-            : null
-        }
-        leaderboardSlot={
-          leaderboard && leaderboard.length > 0 ? (
-            <LeaderboardTable entries={leaderboard} highlightUserId={user?.id} maxRows={5} />
-          ) : null
-        }
-        onRestart={restart}
-        onExit={exitToTracks}
-        onOpenLeaderboard={() => navigate('/leaderboard')}
-      />
-      {restartToast ? (
-        <p
-          role="status"
-          aria-live="polite"
-          className="sega-race-toast pointer-events-none absolute left-1/2 top-24 z-20 -translate-x-1/2 sega-panel bg-black/80 px-4 py-2 text-sm text-[var(--sega-yellow)]"
-        >
-          {t('race.restarted')}
-        </p>
-      ) : null}
-      {!user && hud.status !== 'finished' ? (
-        <p className="pointer-events-none absolute bottom-4 right-4 z-10 hidden max-w-[min(100%,20rem)] text-right text-xs text-white/70 md:block">
-          {t('race.guestHint')}
-        </p>
-      ) : null}
+            leaderboardSlot={
+              leaderboard && leaderboard.length > 0 ? (
+                <LeaderboardTable entries={leaderboard} highlightUserId={user?.id} maxRows={5} />
+              ) : null
+            }
+            onRestart={restart}
+            onExit={exitToTracks}
+            onOpenLeaderboard={() => navigate('/leaderboard')}
+          />
+          {restartToast ? (
+            <p
+              role="status"
+              aria-live="polite"
+              className="sega-race-toast pointer-events-none absolute left-1/2 top-24 z-20 -translate-x-1/2 sega-panel bg-black/80 px-4 py-2 text-sm text-[var(--sega-yellow)]"
+            >
+              {t('race.restarted')}
+            </p>
+          ) : null}
+          {!user && hud.status !== 'finished' ? (
+            <p className="pointer-events-none absolute bottom-4 right-4 z-10 hidden max-w-[min(100%,20rem)] text-right text-xs text-white/70 md:block">
+              {t('race.guestHint')}
+            </p>
+          ) : null}
+        </>
+      ) : (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black">
+          <SegaLoader label={t('race.loadingScene')} />
+        </div>
+      )}
     </div>
   );
 };

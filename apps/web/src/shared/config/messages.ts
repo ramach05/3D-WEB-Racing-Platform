@@ -97,6 +97,7 @@ export const ruMessages = {
   },
   race: {
     title: 'Заезд',
+    loadingScene: 'Готовим трассу',
     comingSoon: '3D-сцена появится в следующем шаге.',
     time: 'Время',
     best: 'Лучшее',
@@ -190,7 +191,7 @@ export const ruMessages = {
     en: 'English',
   },
   common: {
-    loading: 'LOADING',
+    loading: 'ЗАГРУЗКА',
   },
   a11y: {
     skip: 'К содержимому',
@@ -296,6 +297,7 @@ export const enMessages = {
   },
   race: {
     title: 'Race',
+    loadingScene: 'Building the track…',
     comingSoon: 'The 3D scene lands in the next step.',
     time: 'Time',
     best: 'Best',

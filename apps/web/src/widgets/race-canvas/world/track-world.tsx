@@ -44,10 +44,17 @@ type TRoadSurfaceProps = {
   roadWidth: number;
   roadColor: string;
   roadRoughness: number;
+  roadMetalness: number;
 };
 
 /** Непрерывный асфальт по centerline — без z-fighting на стыках сегментов */
-const RoadSurface = ({ centerline, roadWidth, roadColor, roadRoughness }: TRoadSurfaceProps) => {
+const RoadSurface = ({
+  centerline,
+  roadWidth,
+  roadColor,
+  roadRoughness,
+  roadMetalness,
+}: TRoadSurfaceProps) => {
   const asphaltSource = useMemo(() => createAsphaltTexture(512), []);
   const roughnessSource = useMemo(() => createAsphaltRoughnessMap(512), []);
 
@@ -90,7 +97,7 @@ const RoadSurface = ({ centerline, roadWidth, roadColor, roadRoughness }: TRoadS
         map={maps.map}
         roughnessMap={maps.roughnessMap}
         roughness={roadRoughness}
-        metalness={0.04}
+        metalness={roadMetalness}
       />
     </mesh>
   );
@@ -137,10 +144,13 @@ const RoadColliders = ({
 export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
   const { palette } = config;
   const isNight = config.timeOfDay === 'night';
-  const roadRoughness = isNight ? 0.78 : 0.74;
-  const groundRoughness = isNight ? 0.88 : 0.95;
+  const isRain = config.weather === 'rain';
+  /** Мокрый асфальт в ночь/дождь: ниже roughness, выше metalness — ловит фары и фонари */
+  const roadRoughness = isRain ? 0.32 : isNight ? 0.78 : 0.74;
+  const roadMetalness = isRain ? 0.42 : isNight ? 0.28 : 0.04;
+  const groundRoughness = isNight ? 0.88 : isRain ? 0.72 : 0.95;
   const wallEmissiveIntensity = isNight ? 0 : 0.15;
-  const wallRoughness = isNight ? 0.92 : 0.88;
+  const wallRoughness = isNight ? 0.92 : isRain ? 0.7 : 0.88;
   const terrainSeed = terrainSeedForSlug(config.slug);
   const groundWorldSize = TRACK_TERRAIN.worldSize;
   const terrainY = TRACK_TERRAIN.yOffset;
@@ -243,6 +253,7 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
         roadWidth={config.roadWidth}
         roadColor={palette.road}
         roadRoughness={roadRoughness}
+        roadMetalness={roadMetalness}
       />
 
       {config.walls.map((wall, index) => (

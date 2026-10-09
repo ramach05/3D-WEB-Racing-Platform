@@ -129,6 +129,8 @@ type TVehicleProps = {
   roadWidth: number;
   /** Ширины дороги по точкам (опционально) */
   roadWidths?: number[];
+  /** Дождь: дым от старта с места заменяется водным спреем */
+  isRain: boolean;
 };
 
 type TVehicleHeadlightsProps = {
@@ -405,6 +407,7 @@ export const Vehicle = ({
   centerline,
   roadWidth,
   roadWidths,
+  isRain,
 }: TVehicleProps) => {
   const { world, rapier } = useRapier();
   const lastNonce = useRef(resetNonce);
@@ -751,7 +754,10 @@ export const Vehicle = ({
         lastSkidPos.current[i] = { x: wx, z: wz };
       }
 
-      const smoking = skid.smoking || (oilSkidActive > SKID_SMOKE_THRESHOLD && wheelsOnOil > 0);
+      // На дожде дым от старта с места (throttle-wheelspin) глушим: брызги рисует WheelSpray
+      const throttleOnlySpin = skid.smoking && input.brake <= 0 && input.handbrake <= 0;
+      const skidSmokeActive = skid.smoking && !(isRain && throttleOnlySpin);
+      const smoking = skidSmokeActive || (oilSkidActive > SKID_SMOKE_THRESHOLD && wheelsOnOil > 0);
       if (!anySkid && offroadFx <= 0) {
         smokeTimer.current = 0;
         dirtSmokeTimer.current = 0;
@@ -764,7 +770,7 @@ export const Vehicle = ({
           const wakeX = linvel.x + tmpRight.x * dampedLateral * 0.25;
           const wakeZ = linvel.z + tmpRight.z * dampedLateral * 0.25;
           for (let i = 0; i < WHEEL_LOCAL.length; i += 1) {
-            const inNormalSkid = skid.smoking && (skid.wheels === 'all' || i >= 2);
+            const inNormalSkid = skidSmokeActive && (skid.wheels === 'all' || i >= 2);
             const inOilSmoke = wheelOnOil[i] === true && oilSkidActive > SKID_SMOKE_THRESHOLD;
             if (!inNormalSkid && !inOilSmoke) {
               continue;

@@ -9,7 +9,7 @@ describe('SegaLoader', () => {
     const status = screen.getByRole('status');
     expect(status).toBeInTheDocument();
     expect(status).toHaveAttribute('aria-busy', 'true');
-    expect(status).toHaveTextContent(/LOADING/i);
+    expect(status).toHaveTextContent(/ЗАГРУЗКА/i);
   });
 
   it('renders custom label', () => {
