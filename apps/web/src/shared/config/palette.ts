@@ -83,10 +83,10 @@ export const trackPalettes = {
   },
   storm: {
     /** Серое низкое облачное небо штормового дня: пасмурно, но не ночь (солнце скрыто в зените) */
-    sky: '#6b7682',
-    fog: '#49515a',
-    ground: '#514a3e',
-    road: '#33373d',
+    sky: '#828e9a',
+    fog: '#6e7883',
+    ground: '#5a5346',
+    road: '#3a3f46',
     wall: '#7c776f',
     accent: '#7f909f',
     minimapRoad: '#565b63',

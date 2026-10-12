@@ -288,10 +288,10 @@ const RaceSceneInner = ({
   const forcedLights = isNight || isRain;
   const vehicleId = readSelectedVehicle();
 
-  const fogDist = isNight ? 80 : isRain ? 55 : 300;
-  const fogFar = isNight ? 220 : isRain ? 215 : 560;
-  const hemiIntensity = isNight ? 0.58 : isRain ? 0.78 : 1.28;
-  const dirIntensity = isNight ? 0.85 : isRain ? 1.05 : 3.6;
+  const fogDist = isNight ? 80 : isRain ? 70 : 300;
+  const fogFar = isNight ? 220 : isRain ? 240 : 560;
+  const hemiIntensity = isNight ? 0.58 : isRain ? 0.92 : 1.28;
+  const dirIntensity = isNight ? 0.85 : isRain ? 1.25 : 3.6;
   const dirColor = isNight
     ? scenePalette.sunNight
     : isRain
