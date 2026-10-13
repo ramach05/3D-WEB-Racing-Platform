@@ -11,7 +11,7 @@ type TRaceMinimapProps = {
   className?: string;
 };
 
-/** Миникарта с живым маркером-стрелкой машины; transform пишется через rAF без ререндеров */
+/** Миникарта с живым маркером-шевроном машины; transform пишется через rAF без ререндеров */
 export const RaceMinimap = ({ config, className }: TRaceMinimapProps) => {
   const markerRef = useRef<SVGGElement>(null);
 
@@ -54,15 +54,23 @@ export const RaceMinimap = ({ config, className }: TRaceMinimapProps) => {
       <TrackMinimap config={config} className="block h-auto w-full opacity-90 lg:opacity-100">
         <g ref={markerRef} transform="translate(-20 -20)">
           {/* Якорь (0,0) = точка машины: translate ставит маркер ровно на centerline,
-              rotate задает только направление. Симметричный относительно (0,0) треугольник
-              не «уезжает» поперек дороги при повороте. */}
-          <polygon
-            points="0,12 -10,-10 10,-10"
+              rotate задает только направление. Симметричные относительно (0,0) фигуры
+              не «уезжают» поперек дороги при повороте. */}
+          <circle
+            className="sega-minimap-pulse"
+            r={6}
             fill={config.palette.accent}
-            stroke={scenePalette.white}
+            opacity={0.35}
+          />
+          {/* Шеврон-«навигатор»: кончик по курсу (+y), срезанный хвост */}
+          <polygon
+            points="0,10 -8,-8 0,-2.5 8,-8"
+            fill={config.palette.accent}
+            stroke={scenePalette.black}
             strokeWidth={1.6}
             strokeLinejoin="round"
           />
+          <circle cy={4.5} r={1.4} fill={scenePalette.white} opacity={0.9} />
         </g>
       </TrackMinimap>
     </div>

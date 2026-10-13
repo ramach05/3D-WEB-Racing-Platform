@@ -701,6 +701,25 @@ button:disabled,
   animation: sega-blink 1.1s steps(2, end) infinite;
 }
 
+/* Пульс-кольцо под маркером машины на миникарте */
+@keyframes sega-minimap-pulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.35;
+  }
+  70%,
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+.sega-minimap-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sega-minimap-pulse 1.2s ease-out infinite;
+}
+
 .sega-race-strip-track {
   display: flex;
   width: max-content;
@@ -992,6 +1011,7 @@ button:disabled,
   .sega-skeleton,
   .sega-skeleton--inset,
   .sega-route-progress,
+  .sega-minimap-pulse,
   .sega-finish-title,
   .sega-finish-overlay,
   .sega-finish-confetti__piece,
