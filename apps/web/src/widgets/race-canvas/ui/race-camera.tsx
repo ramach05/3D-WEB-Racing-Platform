@@ -62,8 +62,8 @@ const carVel = new Vector3();
 const finishOffset = new Vector3(0, 11, -22);
 
 const INTRO_DURATION = 3.2;
-const CHASE_Y = 5.5;
-const CHASE_Z = -12;
+const CHASE_Y = 4.2;
+const CHASE_Z = -8;
 
 /** TV: полувремя позиции — плавно, но успевает за разгоном */
 const TV_POS_HALFLIFE = 0.12;
@@ -275,7 +275,7 @@ export const RaceCamera = ({
     const ease = t * t * (3 - 2 * t);
 
     const angle = spawnRotationY + Math.PI + introElapsed.current * 0.55;
-    const radius = MathUtils.lerp(26, 14, ease);
+    const radius = MathUtils.lerp(26, 10, ease);
     const height = MathUtils.lerp(16, CHASE_Y + 2, ease);
     introPos.set(
       spawnPosition[0] + Math.sin(angle) * radius,
