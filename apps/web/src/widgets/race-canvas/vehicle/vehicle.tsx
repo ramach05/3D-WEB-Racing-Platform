@@ -103,6 +103,8 @@ const HEADLIGHT_SHADOW_BIAS = -0.00002;
 const HEADLIGHT_SHADOW_NORMAL_BIAS = 0.015;
 /** fov shadow camera ≈ 2 × spot angle (градусы) — без пустого frustum */
 const HEADLIGHT_SHADOW_FOV = (2 * HEADLIGHT_ANGLE * 180) / Math.PI;
+/** scratch для decompose мировой матрицы кузова в фарах */
+const tmpHeadlightScale = new Vector3();
 
 type TVehicleProps = {
   /** Позиция спавна на трассе */
@@ -134,8 +136,8 @@ type TVehicleProps = {
 };
 
 type TVehicleHeadlightsProps = {
-  /** Ref физического тела для синхронизации фар */
-  bodyRef: RefObject<RapierRigidBody | null>;
+  /** Визуальная группа кузова: интерполированная rapier-ом поза + визуальный attitude */
+  visualRef: RefObject<Group | null>;
   /** Кузов — fallback, пока GLB не отдал измеренные лампы */
   vehicleId: TVehicleId;
   /** Позиции из VehicleModel (меши Headlight после fit) */
@@ -155,7 +157,11 @@ const configureHeadlightShadow = (light: SpotLight) => {
 };
 
 /** Фары вне RigidBody — иначе shadow map SpotLight не окклюдирует стены */
-const VehicleHeadlights = ({ bodyRef, vehicleId, headlightLampsRef }: TVehicleHeadlightsProps) => {
+const VehicleHeadlights = ({
+  visualRef,
+  vehicleId,
+  headlightLampsRef,
+}: TVehicleHeadlightsProps) => {
   const groupRef = useRef<Group>(null);
   const headlightTargetRef = useRef<Object3D>(null);
   const leftHeadlightRef = useRef<SpotLight>(null);
@@ -187,17 +193,16 @@ const VehicleHeadlights = ({ bodyRef, vehicleId, headlightLampsRef }: TVehicleHe
     bindTargets();
   }, []);
 
-  // Синхронизирует группу фар с позой RigidBody каждый кадр.
+  // Жестко фиксирует группу фар в позе кузова: без сглаживания,
+  // чтобы свет не смещался относительно машины при разгоне/торможении.
   useFrame(() => {
-    const body = bodyRef.current;
+    const visual = visualRef.current;
     const group = groupRef.current;
-    if (!body || !group) {
+    if (!visual || !group) {
       return;
     }
-    const { x, y, z } = body.translation();
-    const rotation = body.rotation();
-    group.position.set(x, y, z);
-    group.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+    visual.updateWorldMatrix(true, false);
+    visual.matrixWorld.decompose(group.position, group.quaternion, tmpHeadlightScale);
     const lamps = headlightLampsRef.current ?? fallbackLamps;
     const left = leftHeadlightRef.current;
     const right = rightHeadlightRef.current;
@@ -991,7 +996,7 @@ export const Vehicle = ({
       </RigidBody>
       {headlightsOn ? (
         <VehicleHeadlights
-          bodyRef={bodyRef}
+          visualRef={visualRef}
           vehicleId={vehicleId}
           headlightLampsRef={headlightLampsRef}
         />
