@@ -45,6 +45,7 @@ import {
 import { vehiclePalette } from '@/shared/config';
 import {
   GROUND_PROBE_GROUPS,
+  OBSTACLE_PROBE_GROUPS,
   TIRE_GROUPS,
   VEHICLE_GROUPS,
   WALL_PROBE_GROUPS,
@@ -267,6 +268,14 @@ const WHEEL_LOCAL: TVec3[] = [
   [-0.72, 0.05, -1.05],
   [0.72, 0.05, -1.05],
 ];
+
+/**
+ * Сетка probes под днищем: капсула кузова заметно больше стопки шин (1.2×1.2),
+ * колесные лучи пролетают мимо — опору под кузовом ищем по всей подошве капсулы.
+ */
+const OBSTACLE_PROBE_POINTS: TVec3[] = [-0.7, 0, 0.7].flatMap((px) =>
+  [-1.5, -0.75, 0, 0.75, 1.5].map((pz) => [px, 0.05, pz] as TVec3),
+);
 
 const MAX_SPEED = VEHICLE_MAX_SPEED;
 const REVERSE_MAX = VEHICLE_REVERSE_MAX;
@@ -507,6 +516,9 @@ export const Vehicle = ({
     let groundNormalCount = 0;
     let roadYSum = 0;
     let roadYCount = 0;
+    // Препятствие (стопка шин) под днищем: снап к дороге и кламп вертикали запрещены —
+    // иначе телепорт внутрь коллайдеров = тряска/зависание. Ищется сеткой ниже.
+    let obstacleContact = false;
     tmpGroundNormal.set(0, 0, 0);
     for (const offset of WHEEL_LOCAL) {
       tmpOrigin.set(offset[0], offset[1], offset[2]).applyQuaternion(tmpQuat);
@@ -824,6 +836,38 @@ export const Vehicle = ({
       }
     }
 
+    // Опора под днищем (сетка по всей подошве капсулы): машина на стопке шин —
+    // снап к дороге и кламп вертикали отключаются, иначе телепорт внутрь коллайдеров.
+    // TOI ~ 0 = луч начался внутри препятствия (кузов уже в него утоплен) — тоже опора.
+    for (const offset of OBSTACLE_PROBE_POINTS) {
+      tmpOrigin.set(offset[0], offset[1], offset[2]).applyQuaternion(tmpQuat);
+      const obstacleRay = new rapier.Ray(
+        {
+          x: tmpOrigin.x + translation.x,
+          y: tmpOrigin.y + translation.y,
+          z: tmpOrigin.z + translation.z,
+        },
+        { x: 0, y: -1, z: 0 },
+      );
+      const obstacle = world.castRayAndGetNormal(
+        obstacleRay,
+        WHEEL_GROUND_RAY,
+        true,
+        undefined,
+        OBSTACLE_PROBE_GROUPS,
+        undefined,
+        body,
+      );
+      if (
+        obstacle &&
+        obstacle.timeOfImpact <= GROUND_PROBE_TOI &&
+        (obstacle.timeOfImpact <= 0.06 || obstacle.normal.y >= GROUND_NORMAL_MIN_Y)
+      ) {
+        obstacleContact = true;
+        break;
+      }
+    }
+
     tmpDesired
       .copy(tmpForward)
       .multiplyScalar(targetForward)
@@ -845,15 +889,19 @@ export const Vehicle = ({
     body.setLinvel(
       {
         x: slid.x,
-        y: wheelGrounded && !rampContact ? Math.max(followVy, Math.min(linvel.y, 0)) : linvel.y,
+        y:
+          wheelGrounded && !rampContact && !obstacleContact
+            ? Math.max(followVy, Math.min(linvel.y, 0))
+            : linvel.y,
         z: slid.z,
       },
       true,
     );
 
     // Жесткая привязка к трассе: если решатель все же подбросил кузов над дорогой
-    // (удар о бочку/шины) — вернуть на высоту покоя и погасить вертикаль.
-    if (wheelGrounded && roadYCount > 0) {
+    // (удар о бочку) — вернуть на высоту покоя и погасить вертикаль. На препятствии
+    // (шина под колесом) не снаппим: иначе телепорт внутрь коллайдеров — тряска.
+    if (wheelGrounded && roadYCount > 0 && !obstacleContact) {
       const restY = roadYSum / roadYCount;
       if (translation.y > restY + GROUND_SNAP_TOLERANCE) {
         body.setTranslation({ x: translation.x, y: restY, z: translation.z }, true);

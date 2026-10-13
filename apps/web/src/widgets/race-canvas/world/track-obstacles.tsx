@@ -9,6 +9,7 @@ import {
 } from '@/widgets/race-canvas/lib/barrel-impact';
 import { pulseCameraShake } from '@/widgets/race-canvas/lib/camera-shake';
 import { TIRE_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
+import { isObstacleUnderCar } from '@/widgets/race-canvas/lib/obstacle-under-car';
 import { registerTireHit } from '@/widgets/race-canvas/lib/tire-hit-damping';
 
 type TTrackObstaclesProps = {
@@ -192,7 +193,22 @@ const handleTireHit = (payload: CollisionEnterPayload, tier: number): void => {
     true,
   );
 
-  pinVehicleToGround(hit.vehicleBody);
+  // Шина под кузовом (машина перекатывается через стопку) — не пиним: решатель должен
+  // вытолкнуть корпус наверх, иначе машина вжимается в шины и трясется/зависает.
+  const carPos = hit.vehicleBody.translation();
+  const q = hit.vehicleBody.rotation();
+  // Форвард кузова = q * (0,0,1), проекция на XZ
+  const fx = 2 * (q.x * q.z + q.w * q.y);
+  const fz = 1 - 2 * (q.x * q.x + q.y * q.y);
+  if (
+    !isObstacleUnderCar({
+      carPosition: carPos,
+      carForward: { x: fx, z: fz },
+      obstaclePosition: obstacleBody.translation(),
+    })
+  ) {
+    pinVehicleToGround(hit.vehicleBody);
+  }
 };
 
 /**
