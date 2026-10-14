@@ -1,4 +1,4 @@
-import { type RefObject, useLayoutEffect, useRef } from 'react';
+import { type RefObject, memo, useLayoutEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Sky, Stars } from '@react-three/drei';
 import {
@@ -9,7 +9,7 @@ import {
   type PointLight,
 } from 'three';
 import { Physics, type RapierRigidBody } from '@react-three/rapier';
-import type { TTrackConfig } from '@/entities/track';
+import { isTrackLightingOn, type TTrackConfig } from '@/entities/track';
 import { readSelectedVehicle } from '@/features/vehicle-select';
 import { scenePalette } from '@/shared/config';
 import { CheckpointDetector } from '@/widgets/race-canvas/model/checkpoint-detector';
@@ -45,6 +45,8 @@ type TRaceSceneProps = {
   physicsPaused: boolean;
   /** Пауза анимации толпы */
   crowdPaused: boolean;
+  /** Пауза осадков: только меню-pause; на countdown/finished дождь продолжает идти */
+  rainPaused: boolean;
   /** Счётчик рестарта гонки */
   resetNonce: number;
   /** Колбэк завершения гонки */
@@ -103,7 +105,8 @@ const MOON_FOLLOW_STEP_SQ = 12 * 12;
 /** Дождевое «солнце в зените»: источник почти строго вверху, мягкие короткие тени */
 const RAIN_LIGHT_OFFSET: [number, number, number] = [0, 300, -22];
 const RAIN_SHADOW_HALF_EXTENT = 90;
-const RAIN_SHADOW_MAP = 2048;
+/** Бюджет ночной луны: свет в зените, тени мягкие/рассеянные — 2048 не читается, а стоит в 4 раза дороже */
+const RAIN_SHADOW_MAP = 1024;
 
 /** Солнце (горизонт) днем или луна ночью; в штормовой дождь светила нет (солнце скрыто за облаками) */
 const CelestialBody = ({ config }: TCelestialBodyProps) => {
@@ -277,6 +280,7 @@ const RaceSceneInner = ({
   config,
   physicsPaused,
   crowdPaused,
+  rainPaused,
   resetNonce,
   onFinished,
   onFirstFrame,
@@ -327,7 +331,7 @@ const RaceSceneInner = ({
           mieDirectionalG={0.82}
         />
       )}
-      {isRain && <RainSystem paused={physicsPaused} />}
+      {isRain && <RainSystem paused={rainPaused} />}
       <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} updatePriority={-1} paused={physicsPaused}>
         <TrackWorld config={config} resetNonce={resetNonce} />
         <TrackTreeColliders config={config} />
@@ -396,29 +400,33 @@ const RaceSceneInner = ({
 };
 
 /** Canvas гонки: отдельно от HUD, чтобы React не убивал FPS */
-export const RaceCanvas = ({
+const RaceCanvasView = ({
   config,
   physicsPaused,
   crowdPaused,
+  rainPaused,
   resetNonce,
   onFinished,
   onFirstFrame,
 }: TRaceSceneProps) => {
   const bodyRef = useRef<RapierRigidBody>(null);
   const visualRef = useRef<Group>(null);
+  /** При активном EffectComposer MSAA дефолтного FB не сглаживает ничего (final pass — fullscreen-квад), только оверхед */
+  const composerActive = isTrackLightingOn(config);
 
   return (
     <Canvas
       shadows={{ type: PCFSoftShadowMap }}
       dpr={[1, 1.5]}
       camera={{ fov: 60, near: 0.1, far: 500, position: [0, 8, 16] }}
-      gl={{ antialias: true, powerPreference: 'high-performance' }}
+      gl={{ antialias: !composerActive, powerPreference: 'high-performance' }}
     >
       <WebGlContextGuard />
       <RaceSceneInner
         config={config}
         physicsPaused={physicsPaused}
         crowdPaused={crowdPaused}
+        rainPaused={rainPaused}
         resetNonce={resetNonce}
         onFinished={onFinished}
         onFirstFrame={onFirstFrame}
@@ -428,3 +436,6 @@ export const RaceCanvas = ({
     </Canvas>
   );
 };
+
+/** Мемоизация обязательна: лишний ререндер перестраивает дерево сцены целиком и подвешивает кадр */
+export const RaceCanvas = memo(RaceCanvasView);

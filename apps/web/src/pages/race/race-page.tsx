@@ -15,7 +15,7 @@ import {
   resetRaceSession,
   setVehiclePose,
   togglePause,
-  useRaceHud,
+  useRaceHudSelector,
 } from '@/features/race-session';
 import { Button, PageShell, SegaLoader, StatusText } from '@/shared/ui';
 import { RaceHud, RaceMinimap, RacePerfHud } from '@/widgets/hud';
@@ -68,7 +68,9 @@ export const RacePage = () => {
   const track = tracks?.find((item) => item.slug === trackSlug) ?? null;
   const trackId = track?.id;
   const config = track ? getTrackConfig(track.slug) : null;
-  const hud = useRaceHud();
+  // Только статус и время: шаг обратного отсчета не должен перерисовывать страницу с 3D-сценой.
+  const hudStatus = useRaceHudSelector((snapshot) => snapshot.status);
+  const hudTimeMs = useRaceHudSelector((snapshot) => snapshot.timeMs);
   const cameraMode = useCameraMode();
   const user = useAuthUser();
   const [createResult] = useCreateRaceResultMutation();
@@ -121,7 +123,7 @@ export const RacePage = () => {
     }
   }
 
-  if (hud.status !== 'finished' && showFinishOverlay) {
+  if (hudStatus !== 'finished' && showFinishOverlay) {
     setShowFinishOverlay(false);
   }
 
@@ -131,15 +133,15 @@ export const RacePage = () => {
   const trackBestMs = leaderboard?.[0]?.timeMs ?? null;
 
   useRaceAudio({
-    theme: hud.status === 'finished' ? 'finish' : (config?.audioTheme ?? null),
-    paused: hud.status === 'paused',
+    theme: hudStatus === 'finished' ? 'finish' : (config?.audioTheme ?? null),
+    paused: hudStatus === 'paused',
     enabled: Boolean(config),
     muted: musicMuted,
   });
 
   useRaceDrivingSfx({
-    enabled: Boolean(config) && hud.status === 'racing',
-    paused: hud.status === 'paused',
+    enabled: Boolean(config) && hudStatus === 'racing',
+    paused: hudStatus === 'paused',
     muted: false,
   });
 
@@ -256,13 +258,13 @@ export const RacePage = () => {
 
   // После финиша показывает overlay с задержкой.
   useEffect(() => {
-    if (hud.status !== 'finished') {
+    if (hudStatus !== 'finished') {
       return;
     }
     // Всегда даём сыграть finish-moment (FINISH! → время); CSS сам глушит motion
     const id = window.setTimeout(() => setShowFinishOverlay(true), FINISH_OVERLAY_DELAY_MS);
     return () => window.clearTimeout(id);
-  }, [hud.status]);
+  }, [hudStatus]);
 
   // E2E: вешает __finishRaceForTest на window.
   useEffect(() => {
@@ -328,7 +330,7 @@ export const RacePage = () => {
   }
 
   const physicsPaused =
-    hud.status === 'paused' || hud.status === 'finished' || hud.status === 'countdown';
+    hudStatus === 'paused' || hudStatus === 'finished' || hudStatus === 'countdown';
 
   return (
     <div className="sega-scanlines relative min-h-0 w-full flex-1 overflow-hidden bg-black">
@@ -337,13 +339,14 @@ export const RacePage = () => {
           <RaceCanvas
             config={config}
             physicsPaused={physicsPaused}
-            crowdPaused={hud.status === 'paused'}
+            crowdPaused={hudStatus === 'paused'}
+            rainPaused={hudStatus === 'paused'}
             resetNonce={resetNonce}
             onFinished={onFinished}
             onFirstFrame={handleFirstFrame}
           />
         ) : null}
-        {canvasArmed && config.weather === 'rain' && hud.status !== 'finished' ? (
+        {canvasArmed && config.weather === 'rain' && hudStatus !== 'finished' ? (
           <RaceRainOverlay />
         ) : null}
       </div>
@@ -386,24 +389,24 @@ export const RacePage = () => {
             onCycleCamera={cycleCameraMode}
             muted={musicMuted}
             onToggleMute={toggleMute}
-            footer={!user && hud.status !== 'finished' ? t('race.guestHint') : undefined}
+            footer={!user && hudStatus !== 'finished' ? t('race.guestHint') : undefined}
           />
           <RaceCountdownOverlay />
           <RaceFinishMomentOverlay
-            active={hud.status === 'finished' && !showFinishOverlay}
-            timeMs={finishMeta?.timeMs ?? hud.timeMs}
+            active={hudStatus === 'finished' && !showFinishOverlay}
+            timeMs={finishMeta?.timeMs ?? hudTimeMs}
             isNewBest={finishMeta?.isNewBest ?? false}
           />
           <RacePauseMenu
-            open={hud.status === 'paused'}
+            open={hudStatus === 'paused'}
             onResume={togglePause}
             onRestart={restart}
             onExit={exitToTracks}
           />
           <RaceFinishOverlay
-            open={hud.status === 'finished' && showFinishOverlay}
+            open={hudStatus === 'finished' && showFinishOverlay}
             trackName={track.name}
-            timeMs={finishMeta?.timeMs ?? hud.timeMs}
+            timeMs={finishMeta?.timeMs ?? hudTimeMs}
             bestMs={trackBestMs}
             isNewBest={finishMeta?.isNewBest ?? false}
             isGuest={!user}
@@ -431,7 +434,7 @@ export const RacePage = () => {
               {t('race.restarted')}
             </p>
           ) : null}
-          {!user && hud.status !== 'finished' ? (
+          {!user && hudStatus !== 'finished' ? (
             <p className="pointer-events-none absolute bottom-4 right-4 z-10 hidden max-w-[min(100%,20rem)] text-right text-xs text-white/70 md:block">
               {t('race.guestHint')}
             </p>
