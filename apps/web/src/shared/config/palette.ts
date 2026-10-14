@@ -99,7 +99,7 @@ export const trackPalettes = {
 export const carSkins = {
   coastal: { body: '#ffe600', cabin: '#1a1208', wheel: '#222222' },
   night: { body: '#00e5ff', cabin: '#120018', wheel: '#ff2bd6' },
-  storm: { body: '#6b7b8d', cabin: '#1a1c20', wheel: '#3a3c42' },
+  storm: { body: '#ffffff', cabin: '#1a1c20', wheel: '#c9cfd6' },
 } as const satisfies TCarSkins;
 
 export const treePalette = {
