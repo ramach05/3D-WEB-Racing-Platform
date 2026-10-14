@@ -11,7 +11,9 @@ import {
   integrateDriveForward,
   integrateSteerYaw,
   MAX_CLIMB_VY,
+  resolveGroundFollowVy,
   smoothAngleToward,
+  smoothVyToward,
   SLOPE_MAX_GRADE,
   VEHICLE_ACCEL,
   VEHICLE_HIGH_SPEED_STEER,
@@ -192,6 +194,34 @@ describe('ground slope following', () => {
     // 25 * tan(19°) ≈ 8.6 > MAX_CLIMB_VY → зажато
     expect(vy).toBeLessThanOrEqual(MAX_CLIMB_VY);
     expect(vy).toBeGreaterThan(MAX_CLIMB_VY - 1.5);
+  });
+
+  it('keeps the old clamp on flat ground and climb', () => {
+    // равнина: вертикаль всегда обнуляется, вверх не подпускает
+    expect(resolveGroundFollowVy(0, -2)).toBe(0);
+    expect(resolveGroundFollowVy(0, 3)).toBe(0);
+    // подъем: цель = скорость скольжения вдоль плоскости
+    expect(resolveGroundFollowVy(2.5, -1)).toBe(2.5);
+  });
+
+  it('descends along the slope instead of waiting for gravity to build up', () => {
+    // деки убегают вниз со -3 м/с, гравитация за кадры набежала только на -0.4
+    expect(resolveGroundFollowVy(-3, -0.4)).toBe(-3);
+  });
+
+  it('does not slow a descent already faster than the slope requires', () => {
+    expect(resolveGroundFollowVy(-3, -6)).toBe(-6);
+  });
+
+  it('smooths vy steps FPS-independently', () => {
+    const one60 = smoothVyToward(0, -3, 1 / 60);
+    expect(one60).toBeLessThan(0);
+    expect(one60).toBeGreaterThan(-3);
+    // два шага по 1/30 эквивалентны одному по 1/15
+    expect(smoothVyToward(smoothVyToward(0, -3, 1 / 30), -3, 1 / 30)).toBeCloseTo(
+      smoothVyToward(0, -3, 1 / 15),
+      6,
+    );
   });
 
   it('derives the visual pitch from the ground normal, not from speed', () => {

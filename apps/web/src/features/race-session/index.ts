@@ -39,6 +39,8 @@ export {
   SLOPE_CONTACT_NORMAL_MIN_Y,
   computeGroundFollowVy,
   computeSlopePitchFromNormal,
+  resolveGroundFollowVy,
+  smoothVyToward,
   smoothAngleToward,
 } from './vehicle-physics';
 export {

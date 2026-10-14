@@ -177,6 +177,22 @@ export const computeGroundFollowVy = (
 };
 
 /**
+ * Итоговая вертикальная скорость при контакте с поверхностью. На равнине и подъеме
+ * не дает вдавливаться в полотно и подбрасывать кузов. На спуске (followVy < 0)
+ * прижимает тело к дороге: гравитация за кадр не набирает нужное снижение, кузов
+ * отстает от убегающей вниз деки, а снап к трассе потом телепортирует его — тряска.
+ */
+export const resolveGroundFollowVy = (followVy: number, linvelY: number): number =>
+  followVy >= 0 ? Math.max(followVy, Math.min(linvelY, 0)) : Math.min(linvelY, followVy);
+
+/** Постоянная времени сглаживания целевого vy (с): гасит ступеньку на гребне подъема */
+export const FOLLOW_VY_TAU = 0.05;
+
+/** Новый vy (м/с) при сходимости к цели за dt; экспоненциально, FPS-независимо */
+export const smoothVyToward = (current: number, target: number, dt: number): number =>
+  current + (target - current) * (1 - Math.exp(-dt / FOLLOW_VY_TAU));
+
+/**
  * Целевой наклон кузова (рад, вокруг локальной X) по нормали склона, спроецированной
  * на направление курса (fwdX, fwdZ). КЛЮЧЕВОЕ: зависит только от геометрии нормали,
  * а не от скорости/курса — поэтому наклон не «выстреливает» на входе в поворот.

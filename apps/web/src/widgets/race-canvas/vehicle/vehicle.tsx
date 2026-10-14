@@ -35,8 +35,10 @@ import {
   integrateDriveForward,
   integrateSteerYaw,
   passedCheckpointZone,
+  resolveGroundFollowVy,
   setVehiclePose,
   smoothAngleToward,
+  smoothVyToward,
   SLOPE_CONTACT_NORMAL_MIN_Y,
   tickRace,
   VEHICLE_MAX_SPEED,
@@ -428,6 +430,8 @@ export const Vehicle = ({
   const awaitingLand = useRef(true);
   const groundedGrace = useRef(0);
   const lastGroundNormal = useRef({ x: 0, y: 1, z: 0 });
+  /** Сглаженная целевая вертикальная скорость скольжения по поверхности */
+  const followVyRef = useRef(0);
   const visPitch = useRef(0);
   const lastSkidPos = useRef<(TSkidWheelPos | null)[]>([null, null, null, null]);
   const smokeTimer = useRef(0);
@@ -484,6 +488,7 @@ export const Vehicle = ({
       clearSkidTrail();
       visPitch.current = 0;
       groundedGrace.current = 0;
+      followVyRef.current = 0;
       const visual = visualRef.current;
       if (visual) {
         visual.position.y = 0;
@@ -886,17 +891,21 @@ export const Vehicle = ({
       slid.x,
       slid.z,
     );
-    body.setLinvel(
-      {
-        x: slid.x,
-        y:
-          wheelGrounded && !rampContact && !obstacleContact
-            ? Math.max(followVy, Math.min(linvel.y, 0))
-            : linvel.y,
-        z: slid.z,
-      },
-      true,
-    );
+    let nextVy = linvel.y;
+    if (wheelGrounded && !rampContact && !obstacleContact) {
+      // На спуске деки гравитации за кадр не хватает, чтобы поспевать за полотном:
+      // кузов повисает над дорогой, а снап ниже дергает его вниз (тряска на эстакаде) —
+      // целимся вдоль плоскости и сглаживаем, чтобы гребень не давал ступеньку
+      followVyRef.current = smoothVyToward(
+        followVyRef.current,
+        resolveGroundFollowVy(followVy, linvel.y),
+        clampedDt,
+      );
+      nextVy = followVyRef.current;
+    } else {
+      followVyRef.current = linvel.y;
+    }
+    body.setLinvel({ x: slid.x, y: nextVy, z: slid.z }, true);
 
     // Жесткая привязка к трассе: если решатель все же подбросил кузов над дорогой
     // (удар о бочку) — вернуть на высоту покоя и погасить вертикаль. На препятствии
@@ -906,6 +915,7 @@ export const Vehicle = ({
       if (translation.y > restY + GROUND_SNAP_TOLERANCE) {
         body.setTranslation({ x: translation.x, y: restY, z: translation.z }, true);
         body.setLinvel({ x: slid.x, y: 0, z: slid.z }, true);
+        followVyRef.current = 0;
       }
     }
 
