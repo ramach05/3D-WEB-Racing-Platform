@@ -1,0 +1,70 @@
+diff --git a/loaders/GLTFLoader.cjs b/loaders/GLTFLoader.cjs
+index 15aba5027f97e93b048e9738b45ea8b7e2193b0d..006a271b43a72081a3380a8cbab83385caf2e34a 100644
+--- a/loaders/GLTFLoader.cjs
++++ b/loaders/GLTFLoader.cjs
+@@ -1804,10 +1804,15 @@ class GLTFParser {
+     const URL = self.URL || self.webkitURL;
+     let sourceURI = sourceDef.uri || "";
+     let isObjectURL = false;
++    let directBlob = null;
+     if (sourceDef.bufferView !== void 0) {
+       sourceURI = parser.getDependency("bufferView", sourceDef.bufferView).then(function(bufferView) {
+-        isObjectURL = true;
+         const blob = new Blob([bufferView], { type: sourceDef.mimeType });
++        if (loader.isImageBitmapLoader === true && typeof createImageBitmap !== "undefined") {
++          directBlob = blob;
++          return "";
++        }
++        isObjectURL = true;
+         sourceURI = URL.createObjectURL(blob);
+         return sourceURI;
+       });
+@@ -1815,6 +1820,13 @@ class GLTFParser {
+       throw new Error("THREE.GLTFLoader: Image " + sourceIndex + " is missing URI and bufferView");
+     }
+     const promise = Promise.resolve(sourceURI).then(function(sourceURI2) {
++      if (directBlob !== null) {
++        return createImageBitmap(directBlob, Object.assign({}, loader.options, { colorSpaceConversion: "none" })).then(function(imageBitmap) {
++          const texture = new THREE.Texture(imageBitmap);
++          texture.needsUpdate = true;
++          return texture;
++        });
++      }
+       return new Promise(function(resolve, reject) {
+         let onLoad = resolve;
+         if (loader.isImageBitmapLoader === true) {
+diff --git a/loaders/GLTFLoader.js b/loaders/GLTFLoader.js
+index 851226bb4c491b990459cae65009113035f200cc..0749bcf8faf6a5f54b4bf4a41f65cd107a1a2ed6 100644
+--- a/loaders/GLTFLoader.js
++++ b/loaders/GLTFLoader.js
+@@ -1802,10 +1802,15 @@ class GLTFParser {
+     const URL = self.URL || self.webkitURL;
+     let sourceURI = sourceDef.uri || "";
+     let isObjectURL = false;
++    let directBlob = null;
+     if (sourceDef.bufferView !== void 0) {
+       sourceURI = parser.getDependency("bufferView", sourceDef.bufferView).then(function(bufferView) {
+-        isObjectURL = true;
+         const blob = new Blob([bufferView], { type: sourceDef.mimeType });
++        if (loader.isImageBitmapLoader === true && typeof createImageBitmap !== "undefined") {
++          directBlob = blob;
++          return "";
++        }
++        isObjectURL = true;
+         sourceURI = URL.createObjectURL(blob);
+         return sourceURI;
+       });
+@@ -1813,6 +1818,13 @@ class GLTFParser {
+       throw new Error("THREE.GLTFLoader: Image " + sourceIndex + " is missing URI and bufferView");
+     }
+     const promise = Promise.resolve(sourceURI).then(function(sourceURI2) {
++      if (directBlob !== null) {
++        return createImageBitmap(directBlob, Object.assign({}, loader.options, { colorSpaceConversion: "none" })).then(function(imageBitmap) {
++          const texture = new Texture(imageBitmap);
++          texture.needsUpdate = true;
++          return texture;
++        });
++      }
+       return new Promise(function(resolve, reject) {
+         let onLoad = resolve;
+         if (loader.isImageBitmapLoader === true) {
