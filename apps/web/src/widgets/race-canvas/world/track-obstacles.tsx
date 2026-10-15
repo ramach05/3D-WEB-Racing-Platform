@@ -1,4 +1,5 @@
-import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier';
+import { useEffect } from 'react';
+import { CylinderCollider, RigidBody } from '@react-three/rapier';
 import type { CollisionEnterPayload, RapierRigidBody } from '@react-three/rapier';
 import type { TTrackObstacle, TVec3 } from '@/entities/track';
 import { mapImpactFromSpeed, pulseDriveImpact } from '@/features/race-audio';
@@ -11,6 +12,10 @@ import { pulseCameraShake } from '@/widgets/race-canvas/lib/camera-shake';
 import { TIRE_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
 import { isObstacleUnderCar } from '@/widgets/race-canvas/lib/obstacle-under-car';
 import { registerTireHit } from '@/widgets/race-canvas/lib/tire-hit-damping';
+import {
+  isObstacleHitThrottled,
+  resetObstacleHitThrottle,
+} from '@/widgets/race-canvas/lib/tire-hit-throttle';
 
 type TTrackObstaclesProps = {
   /** Список препятствий (стопки шин / бочки) */
@@ -35,8 +40,12 @@ const TIRE_TIER_COUNT = 3;
 const TIRE_TIER_SPACING = 0.35;
 /** Центр нижней шины от центра стопки (stack height 1.05, нижняя шина лежит на земле) */
 const TIRE_BASE_Y = 0.16 - 1.05 / 2;
-/** Половина габаритов коллайдера одной шины (аппроксимация тора) */
-const TIRE_COLLIDER_HALF: TVec3 = [0.6, 0.17, 0.6];
+/**
+ * Коллайдер одной шины — цилиндр по внешнему габариту тора. Куб выступал углами за
+ * видимый круг на ~25 см: машина цепляла невидимые углы и дрожала при задевании стопки.
+ */
+const TIRE_COLLIDER_RADIUS = TIRE_RADIUS + TIRE_TUBE;
+const TIRE_COLLIDER_HALF_HEIGHT = 0.17;
 /** Скорость машины ниже этого порога — не удар, а касание: только «сход» препятствия с бампера */
 const HIT_MIN_SPEED = 0.5;
 /** Номинальная скорость слабого касания для импульса схода шины, м/с */
@@ -131,13 +140,15 @@ const beginObstacleHit = (
     return null;
   }
 
-  registerTireHit(TIRE_HIT_FACTOR);
-
   const vel = vehicleBody.linvel();
   const speed = Math.hypot(vel.x, vel.z);
-  const impact = mapImpactFromSpeed(speed);
-  pulseDriveImpact(impact);
-  pulseCameraShake(impact);
+  // Повторный вход того же тела в churn-окне: только импульс схода, без штрафа/тряски
+  if (!isObstacleHitThrottled(obstacleBody.handle, performance.now())) {
+    registerTireHit(TIRE_HIT_FACTOR);
+    const impact = mapImpactFromSpeed(speed);
+    pulseDriveImpact(impact);
+    pulseCameraShake(impact);
+  }
   if (speed >= HIT_MIN_SPEED) {
     const invSpeed = 1 / speed;
     return { vehicleBody, obstacleBody, speed, dirX: vel.x * invSpeed, dirZ: vel.z * invSpeed };
@@ -275,8 +286,8 @@ const TireStack = ({ position, rotationY, stackIndex }: TTireStackProps) => (
         collisionGroups={TIRE_GROUPS}
         onCollisionEnter={(payload) => handleTireHit(payload, tier)}
       >
-        <CuboidCollider
-          args={[TIRE_COLLIDER_HALF[0], TIRE_COLLIDER_HALF[1], TIRE_COLLIDER_HALF[2]]}
+        <CylinderCollider
+          args={[TIRE_COLLIDER_HALF_HEIGHT, TIRE_COLLIDER_RADIUS]}
           friction={0.85}
           restitution={0}
           collisionGroups={TIRE_GROUPS}
@@ -289,6 +300,11 @@ const TireStack = ({ position, rotationY, stackIndex }: TTireStackProps) => (
 
 /** Препятствия у стенок — dynamic, отлетают при ударе */
 export const TrackObstacles = ({ obstacles, resetNonce }: TTrackObstaclesProps) => {
+  // Рестарт пересоздаёт тела — окна троттлинга по старым handle не нужны
+  useEffect(() => {
+    resetObstacleHitThrottle();
+  }, [resetNonce]);
+
   if (obstacles.length === 0) {
     return null;
   }
