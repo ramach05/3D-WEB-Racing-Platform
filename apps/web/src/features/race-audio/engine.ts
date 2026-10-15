@@ -52,163 +52,184 @@ const power = (
 ];
 
 // ---------------------------------------------------------------------------
-// Coastal — яркий arena anthem (~160 BPM, мажор C, gallop + высокий square)
-// доля 0.375 с, петля 4.5 с (12 долей)
-// C3=131 G3=196 | G2=98 D3=147 | F2=87 C3=131 | Bb2=117 F3=175
+// Coastal — быстрая Rock 'n' Roll вариация мотива Storm (~150 BPM, мажор G)
+// доля 0.4 с, петля 4.8 с (12 долей)
+// G2=98 D3=147 | C3=131 G3=196 | D3=147 A3=220
 // ---------------------------------------------------------------------------
-const C_BEAT = 0.375;
-const C_E = C_BEAT / 2;
-const C_LOOP = 4.5;
-
-/** Gallop: ♪♪♩ на доле (две шестнадцатых + восьмая) */
-const gallop = (
-  root: number,
-  fifth: number,
-  from: number,
-  beats: number,
-  type: OscillatorType,
-  gain = 0.2,
-): TNote[] => {
-  const notes: TNote[] = [];
-  const sixteenth = C_BEAT / 4;
-  for (let b = 0; b < beats; b += 1) {
-    const t = from + b * C_BEAT;
-    notes.push(...power(root, fifth, t, sixteenth * 0.9, type, gain));
-    notes.push(...power(root, fifth, t + sixteenth, sixteenth * 0.9, type, gain * 0.9));
-    notes.push(...power(root, fifth, t + sixteenth * 2, C_E * 0.9, type, gain));
-  }
-  return notes;
-};
+const C_BEAT = 0.4;
+const C_EIGHTH = C_BEAT / 2;
+const C_LOOP = 4.8;
 
 const COASTAL_DRUMS: TNote[] = (() => {
   const hits: TNote[] = [];
   for (let beat = 0; beat < 12; beat += 1) {
     const t = beat * C_BEAT;
+    // kick on 1,3 snare on 2,4
     if (beat % 2 === 0) {
-      hits.push(noise(t, 0.06, 0.36, 160));
+      hits.push(noise(t, 0.06, 0.42, 140));
+    } else {
+      hits.push(noise(t, 0.055, 0.36, 190));
     }
-    if (beat % 2 === 1) {
-      hits.push(noise(t, 0.08, 0.34, 3800));
+    // closed hat on 8ths
+    hits.push(noise(t + C_EIGHTH, 0.022, 0.16, 7000));
+    // open hat on 4
+    if (beat % 4 === 3) {
+      hits.push(noise(t, 0.07, 0.13, 9000));
     }
-    // открытый hat на «и»
-    hits.push(noise(t + C_E, 0.03, 0.12, 10000));
-    // crash-ish на начало каждого 4-такта
-    if (beat % 4 === 0) {
-      hits.push(noise(t, 0.12, 0.18, 6000));
+    // crash-ish на начало петли
+    if (beat === 0) {
+      hits.push(noise(t, 0.1, 0.15, 6000));
     }
   }
   return hits;
 })();
 
 const COASTAL_BASS: TNote[] = [
-  ...gallop(131, 196, 0, 4, 'square', 0.18),
-  ...gallop(98, 147, 4 * C_BEAT, 4, 'square', 0.19),
-  ...gallop(87, 131, 8 * C_BEAT, 2, 'square', 0.2),
-  ...gallop(117, 175, 10 * C_BEAT, 2, 'square', 0.22),
+  ...power(98, 147, 0, C_BEAT * 1.8, 'square', 0.22),
+  ...power(98, 147, C_BEAT * 2, C_BEAT * 1.8, 'square', 0.22),
+  ...power(131, 196, C_BEAT * 4, C_BEAT * 1.8, 'square', 0.22),
+  ...power(131, 196, C_BEAT * 6, C_BEAT * 1.8, 'square', 0.22),
+  ...power(147, 220, C_BEAT * 8, C_BEAT * 1.8, 'square', 0.22),
+  ...power(147, 220, C_BEAT * 10, C_BEAT * 1.8, 'square', 0.22),
+  // верхний дрон-слой G через всю петлю (как треугольный слой в Storm)
+  ...power(196, 294, 0, C_BEAT * 1.8, 'triangle', 0.18),
+  ...power(196, 294, C_BEAT * 2, C_BEAT * 1.8, 'triangle', 0.18),
+  ...power(196, 294, C_BEAT * 4, C_BEAT * 1.8, 'triangle', 0.18),
+  ...power(196, 294, C_BEAT * 6, C_BEAT * 1.8, 'triangle', 0.18),
+  ...power(196, 294, C_BEAT * 8, C_BEAT * 1.8, 'triangle', 0.18),
+  ...power(196, 294, C_BEAT * 10, C_BEAT * 1.8, 'triangle', 0.18),
 ];
 
-/** Гимновый lead: скачки октав, длинные ноты, яркий square */
-const COASTAL_LEAD: TNote[] = [
-  tone(523, 0, C_BEAT * 1.5, 'square', 0.36),
-  tone(659, 0.5625, C_E * 0.95, 'square', 0.34),
-  tone(784, 0.75, C_BEAT * 1.4, 'square', 0.38),
-  tone(659, 1.3125, C_E * 0.9, 'square', 0.32),
-  tone(587, 1.5, C_BEAT, 'sawtooth', 0.34),
-  tone(523, 1.875, C_E * 0.9, 'square', 0.3),
-  tone(494, 2.0625, C_E * 0.9, 'square', 0.3),
-  tone(523, 2.25, C_BEAT * 1.2, 'square', 0.36),
-  tone(392, 2.8125, C_E * 0.95, 'sawtooth', 0.32),
-  tone(440, 3.0, C_E * 0.95, 'square', 0.34),
-  tone(494, 3.1875, C_E * 0.95, 'square', 0.34),
-  tone(523, 3.375, C_BEAT * 1.1, 'square', 0.38),
-  tone(698, 3.9375, C_BEAT * 0.95, 'sawtooth', 0.36),
-  tone(784, 4.3125, C_E * 0.95, 'square', 0.4),
+/** Риф — структура Storm (нисходящий проход → длинная нота → bridge → square-fill), тональность G */
+const COASTAL_RIFF: TNote[] = [
+  // phrase 1: нисходящий прогон (D E G E D C B C)
+  tone(294, 0.08, C_EIGHTH * 0.8, 'sawtooth', 0.32),
+  tone(330, 0.08 + C_EIGHTH, C_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(392, 0.08 + C_EIGHTH * 2, C_EIGHTH * 0.8, 'sawtooth', 0.34),
+  tone(330, 0.08 + C_EIGHTH * 3, C_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(294, 0.08 + C_EIGHTH * 4, C_EIGHTH * 0.8, 'sawtooth', 0.32),
+  tone(262, 0.08 + C_EIGHTH * 5, C_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(247, 0.08 + C_EIGHTH * 6, C_EIGHTH * 0.8, 'sawtooth', 0.28),
+  tone(262, 0.08 + C_EIGHTH * 7, C_EIGHTH * 0.8, 'sawtooth', 0.3),
+  // phrase 2: выше, с длинной A
+  tone(294, C_BEAT * 2.08, C_EIGHTH * 0.8, 'sawtooth', 0.32),
+  tone(330, C_BEAT * 2.08 + C_EIGHTH, C_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(440, C_BEAT * 2.08 + C_EIGHTH * 2, C_BEAT * 0.9, 'sawtooth', 0.36),
+  tone(392, C_BEAT * 2.08 + C_EIGHTH * 3, C_EIGHTH * 0.8, 'sawtooth', 0.32),
+  tone(330, C_BEAT * 2.08 + C_EIGHTH * 4, C_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(294, C_BEAT * 2.08 + C_EIGHTH * 5, C_EIGHTH * 0.8, 'sawtooth', 0.28),
+  tone(262, C_BEAT * 2.08 + C_EIGHTH * 6, C_BEAT * 0.7, 'sawtooth', 0.3),
+  tone(294, C_BEAT * 2.08 + C_EIGHTH * 7, C_EIGHTH * 0.8, 'sawtooth', 0.32),
+  // bridge: спуск B C D E D C B A под C-аккорд
+  tone(247, C_BEAT * 4.08, C_EIGHTH * 0.8, 'sawtooth', 0.32),
+  tone(262, C_BEAT * 4.08 + C_EIGHTH, C_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(294, C_BEAT * 4.08 + C_EIGHTH * 2, C_EIGHTH * 0.8, 'sawtooth', 0.34),
+  tone(330, C_BEAT * 4.08 + C_EIGHTH * 3, C_EIGHTH * 0.8, 'sawtooth', 0.32),
+  tone(294, C_BEAT * 4.08 + C_EIGHTH * 4, C_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(262, C_BEAT * 4.08 + C_EIGHTH * 5, C_EIGHTH * 0.8, 'sawtooth', 0.28),
+  tone(247, C_BEAT * 4.08 + C_EIGHTH * 6, C_EIGHTH * 0.8, 'sawtooth', 0.3),
+  tone(220, C_BEAT * 4.08 + C_EIGHTH * 7, C_EIGHTH * 0.8, 'sawtooth', 0.32),
+  // fill: восходящий square-забег в D
+  tone(294, C_BEAT * 6.08, C_EIGHTH * 0.5, 'square', 0.36),
+  tone(330, C_BEAT * 6.08 + C_EIGHTH, C_EIGHTH * 0.5, 'square', 0.36),
+  tone(392, C_BEAT * 6.08 + C_EIGHTH * 2, C_EIGHTH * 0.5, 'square', 0.36),
+  tone(440, C_BEAT * 6.08 + C_EIGHTH * 3, C_EIGHTH * 0.5, 'square', 0.36),
+  tone(494, C_BEAT * 6.08 + C_EIGHTH * 4, C_EIGHTH * 0.5, 'square', 0.36),
+  tone(523, C_BEAT * 6.08 + C_EIGHTH * 5, C_EIGHTH * 0.5, 'square', 0.36),
+  tone(587, C_BEAT * 6.08 + C_EIGHTH * 6, C_BEAT * 0.6, 'sawtooth', 0.42),
 ];
 
-const COASTAL_LOOP: TNote[] = [...COASTAL_BASS, ...COASTAL_LEAD, ...COASTAL_DRUMS];
+const COASTAL_LOOP: TNote[] = [...COASTAL_BASS, ...COASTAL_RIFF, ...COASTAL_DRUMS];
 
 // ---------------------------------------------------------------------------
-// Night — тяжёлый blues swagger (~120 BPM, A-минор, shuffle + call/response)
-// доля 0.5 с, петля 6.4 с (≈12.8 долей / 3.2 такта с паузами)
-// A2=110 E3=165 | G2=98 D3=147 | E2=82 B2=123 | D2=73 A2=110
+// Night — тяжёлая Rock 'n' Roll вариация мотива Storm (~124 BPM, минор E)
+// доля 0.484 с, петля 5.81 с (12 долей)
+// E2=82 B2=123 | C2=65 G2=98 | A2=110 E3=165 | B2=123 F#3=185
 // ---------------------------------------------------------------------------
-const N_BEAT = 0.5;
-const N_SWING = N_BEAT * (2 / 3); // длинная доля shuffle
-const N_SHORT = N_BEAT / 3;
-const N_LOOP = 6.4;
+const N_BEAT = 0.484;
+const N_EIGHTH = N_BEAT / 2;
+const N_LOOP = 5.81;
 
-/** Shuffle-бас: длинная + короткая вместо ровных восьмых */
-const shuffleBass = (
+/** Boogie-бас восьмыми: корень—квинта—корень—октава */
+const boogie8 = (
   root: number,
   fifth: number,
+  octave: number,
   from: number,
   beats: number,
-  type: OscillatorType,
   gain = 0.24,
 ): TNote[] => {
   const notes: TNote[] = [];
-  for (let b = 0; b < beats; b += 1) {
-    const t = from + b * N_BEAT;
-    notes.push(...power(root, fifth, t, N_SWING * 0.85, type, gain));
-    notes.push(...power(root, fifth, t + N_SWING, N_SHORT * 0.8, type, gain * 0.85));
+  for (let i = 0; i < beats * 2; i += 1) {
+    const freq = [root, fifth, root, octave][i % 4] ?? root;
+    notes.push(
+      tone(freq, from + i * N_EIGHTH, N_EIGHTH * 0.8, 'square', i % 2 === 0 ? gain : gain * 0.85),
+    );
   }
   return notes;
 };
 
 const NIGHT_DRUMS: TNote[] = (() => {
   const hits: TNote[] = [];
-  // 12 долей: kick на 1 и «и» перед 3, snare на 2 и 4, редкий hat
   for (let beat = 0; beat < 12; beat += 1) {
     const t = beat * N_BEAT;
-    const inBar = beat % 4;
-    if (inBar === 0) {
-      hits.push(noise(t, 0.09, 0.42, 140));
+    // kick on 1,3 snare on 2,4
+    if (beat % 2 === 0) {
+      hits.push(noise(t, 0.08, 0.46, 120));
+    } else {
+      hits.push(noise(t, 0.07, 0.4, 170));
     }
-    if (inBar === 2) {
-      hits.push(noise(t, 0.08, 0.36, 150));
-      hits.push(noise(t - N_SHORT, 0.05, 0.28, 130)); // push kick
+    // closed hat on 8ths
+    hits.push(noise(t + N_EIGHTH, 0.025, 0.14, 5500));
+    // open hat on 4
+    if (beat % 4 === 3) {
+      hits.push(noise(t, 0.08, 0.13, 7500));
     }
-    if (inBar === 1 || inBar === 3) {
-      hits.push(noise(t, 0.1, 0.3, 2800));
+    // tom-подъезд к началу петли
+    if (beat === 11) {
+      hits.push(noise(t + N_EIGHTH, 0.06, 0.3, 320));
     }
-    // только четвертные hat — суше, чем у coastal
-    hits.push(noise(t + N_SWING, 0.02, 0.08, 7500));
   }
   return hits;
 })();
 
 const NIGHT_BASS: TNote[] = [
-  ...shuffleBass(110, 165, 0, 4, 'triangle', 0.26),
-  ...shuffleBass(98, 147, 4 * N_BEAT, 2, 'triangle', 0.24),
-  ...shuffleBass(82, 123, 6 * N_BEAT, 2, 'square', 0.22),
-  ...shuffleBass(110, 165, 8 * N_BEAT, 2, 'triangle', 0.26),
-  ...shuffleBass(73, 110, 10 * N_BEAT, 2, 'square', 0.28),
+  ...boogie8(82, 123, 165, 0, 4, 0.26),
+  ...boogie8(65, 98, 131, N_BEAT * 4, 4, 0.24),
+  ...boogie8(110, 165, 220, N_BEAT * 8, 2, 0.25),
+  ...boogie8(123, 185, 247, N_BEAT * 10, 2, 0.26),
 ];
 
-/**
- * Call-and-response blues lead (паузы между фразами).
- * A-минорная пентатоника: A C D E G
- */
-const NIGHT_LEAD: TNote[] = [
-  // call
-  tone(220, 0.15, N_SHORT * 1.2, 'sawtooth', 0.38),
-  tone(262, 0.15 + N_SHORT * 1.3, N_SHORT, 'sawtooth', 0.34),
-  tone(294, 0.15 + N_SHORT * 2.4, N_BEAT * 0.9, 'sawtooth', 0.4),
-  // response (ниже, с блюзовой «синей» нотой ~G#)
-  tone(196, 2.15, N_SHORT * 1.1, 'sawtooth', 0.36),
-  tone(208, 2.15 + N_SHORT * 1.2, N_SHORT, 'square', 0.32),
-  tone(220, 2.15 + N_SHORT * 2.3, N_BEAT, 'sawtooth', 0.38),
-  // второй call — выше
-  tone(330, 4.2, N_SHORT, 'sawtooth', 0.4),
-  tone(294, 4.2 + N_SHORT * 1.1, N_SHORT, 'sawtooth', 0.36),
-  tone(262, 4.2 + N_SHORT * 2.2, N_SHORT, 'square', 0.34),
-  tone(220, 4.2 + N_SHORT * 3.3, N_BEAT * 1.1, 'sawtooth', 0.42),
-  // финальный punch
-  tone(165, 5.7, N_BEAT * 0.7, 'square', 0.36),
-  tone(220, 6.05, N_BEAT * 0.55, 'sawtooth', 0.4),
+/** Хук-мелодия E-минор: восходящий вопрос-ответ в высоком регистре, кодa октавой вниз */
+const NIGHT_RIFF: TNote[] = [
+  // такт 1 (Em): хук — двойной удар E, подъём к длинной B
+  tone(330, 0.05, N_EIGHTH * 0.8, 'sawtooth', 0.4),
+  tone(330, 0.05 + N_EIGHTH, N_EIGHTH * 0.7, 'square', 0.3),
+  tone(392, 0.05 + N_BEAT, N_EIGHTH * 0.8, 'sawtooth', 0.4),
+  tone(440, 0.05 + N_BEAT * 1.5, N_EIGHTH * 0.8, 'sawtooth', 0.4),
+  tone(494, 0.05 + N_BEAT * 2, N_BEAT * 1.2, 'sawtooth', 0.44),
+  tone(440, 0.05 + N_BEAT * 3.2, N_EIGHTH * 0.8, 'sawtooth', 0.36),
+  tone(392, 0.05 + N_BEAT * 3.6, N_EIGHTH * 0.8, 'sawtooth', 0.36),
+  // такт 2 (C): тот же хук на ступень выше, вершина C5
+  tone(392, 0.05 + N_BEAT * 4, N_EIGHTH * 0.8, 'sawtooth', 0.4),
+  tone(392, 0.05 + N_BEAT * 4.5, N_EIGHTH * 0.7, 'square', 0.3),
+  tone(440, 0.05 + N_BEAT * 5, N_EIGHTH * 0.8, 'sawtooth', 0.4),
+  tone(494, 0.05 + N_BEAT * 5.5, N_EIGHTH * 0.8, 'sawtooth', 0.4),
+  tone(523, 0.05 + N_BEAT * 6, N_BEAT * 1.2, 'sawtooth', 0.44),
+  tone(494, 0.05 + N_BEAT * 7.2, N_EIGHTH * 0.8, 'sawtooth', 0.36),
+  tone(440, 0.05 + N_BEAT * 7.6, N_EIGHTH * 0.8, 'sawtooth', 0.36),
+  // такт 3 (A–B): пик A/C5, затем E5-кульминация с кодой октавой вниз
+  tone(440, 0.05 + N_BEAT * 8, N_EIGHTH * 0.8, 'sawtooth', 0.42),
+  tone(440, 0.05 + N_BEAT * 8.5, N_EIGHTH * 0.7, 'square', 0.32),
+  tone(523, 0.05 + N_BEAT * 9, N_EIGHTH * 0.8, 'sawtooth', 0.42),
+  tone(440, 0.05 + N_BEAT * 9.5, N_EIGHTH * 0.8, 'sawtooth', 0.38),
+  tone(494, 0.05 + N_BEAT * 10, N_EIGHTH * 0.8, 'sawtooth', 0.42),
+  tone(494, 0.05 + N_BEAT * 10.5, N_EIGHTH * 0.7, 'square', 0.32),
+  tone(659, 0.05 + N_BEAT * 11, N_BEAT * 0.45, 'sawtooth', 0.46),
+  tone(330, 0.05 + N_BEAT * 11.5, N_BEAT * 0.4, 'sawtooth', 0.42),
 ];
 
-const NIGHT_LOOP: TNote[] = [...NIGHT_BASS, ...NIGHT_LEAD, ...NIGHT_DRUMS];
+const NIGHT_LOOP: TNote[] = [...NIGHT_BASS, ...NIGHT_RIFF, ...NIGHT_DRUMS];
 
 // ---------------------------------------------------------------------------
 // Finish — торжественный victory fanfare (~100 BPM, мажор C, ~3.2 с)
