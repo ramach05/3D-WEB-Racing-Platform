@@ -82,16 +82,16 @@ export const trackPalettes = {
     minimapBg: '#1c1234',
   },
   storm: {
-    /** Серое низкое облачное небо штормового дня: пасмурно, но не ночь (солнце скрыто в зените) */
-    sky: '#828e9a',
-    fog: '#6e7883',
-    ground: '#5a5346',
-    road: '#3a3f46',
-    wall: '#7c776f',
-    accent: '#7f909f',
-    minimapRoad: '#565b63',
-    minimapWall: '#7f909f',
-    minimapBg: '#2b323a',
+    /** Светлое пасмурное небо дождливого дня: серо-голубое, с просветами, не гроза */
+    sky: '#aebfcd',
+    fog: '#a5b4c1',
+    ground: '#6f6757',
+    road: '#474d56',
+    wall: '#8d8880',
+    accent: '#90a5b8',
+    minimapRoad: '#6a707a',
+    minimapWall: '#90a5b8',
+    minimapBg: '#414a55',
   },
 } as const satisfies TTrackPalettes;
 
@@ -284,7 +284,7 @@ export const scenePalette = {
   checkerDark: '#111111',
   sunDay: '#fff8f0',
   sunNight: '#ffffff',
-  sunRain: '#c3ccd6',
+  sunRain: '#e6edf4',
   obstacle: '#1c1c1e',
   skidMark: '#1c1c1e',
 } as const satisfies TScenePalette;

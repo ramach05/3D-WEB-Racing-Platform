@@ -308,10 +308,10 @@ const RaceSceneInner = ({
   const forcedLights = isNight || isRain;
   const vehicleId = readSelectedVehicle();
 
-  const fogDist = isNight ? 80 : isRain ? 70 : 300;
-  const fogFar = isNight ? 220 : isRain ? 240 : 560;
-  const hemiIntensity = isNight ? 0.58 : isRain ? 0.92 : 1.28;
-  const dirIntensity = isNight ? 0.85 : isRain ? 1.25 : 3.6;
+  const fogDist = isNight ? 80 : isRain ? 130 : 300;
+  const fogFar = isNight ? 220 : isRain ? 400 : 560;
+  const hemiIntensity = isNight ? 0.58 : isRain ? 1.15 : 1.28;
+  const dirIntensity = isNight ? 0.85 : isRain ? 2.2 : 3.6;
   const dirColor = isNight
     ? scenePalette.sunNight
     : isRain
@@ -407,7 +407,7 @@ const RaceSceneInner = ({
         spawnRotationY={config.spawnRotationY}
         resetNonce={resetNonce}
       />
-      <RacePostFx enabled={forcedLights} />
+      <RacePostFx enabled={isNight} />
       <FramePerfTracker />
       <FirstFrameSignal onFirstFrame={onFirstFrame} />
     </>
