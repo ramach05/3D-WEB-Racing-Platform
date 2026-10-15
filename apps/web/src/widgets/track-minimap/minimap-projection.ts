@@ -55,9 +55,7 @@ export const createMinimapProjection = (config: TTrackConfig): TMinimapProjectio
       const dz = b.z - a.z;
       const segLenSq = dx * dx + dz * dz;
       const t =
-        segLenSq > 0
-          ? Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / segLenSq))
-          : 0;
+        segLenSq > 0 ? Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / segLenSq)) : 0;
       const cx = a.x + dx * t;
       const cz = a.z + dz * t;
       const distSq = (x - cx) * (x - cx) + (z - cz) * (z - cz);

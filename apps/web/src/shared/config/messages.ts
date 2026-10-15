@@ -167,6 +167,7 @@ export const ruMessages = {
     error: 'Не удалось загрузить профиль.',
   },
   auth: {
+    loading: 'Загрузка сессии',
     loginTitle: 'Вход',
     registerTitle: 'Регистрация',
     nickname: 'Ник',
@@ -367,6 +368,7 @@ export const enMessages = {
     error: 'Failed to load the profile.',
   },
   auth: {
+    loading: 'Loading session',
     loginTitle: 'Log in',
     registerTitle: 'Sign up',
     nickname: 'Nickname',

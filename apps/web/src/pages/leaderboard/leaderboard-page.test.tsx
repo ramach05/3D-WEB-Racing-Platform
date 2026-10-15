@@ -103,6 +103,8 @@ describe('LeaderboardPage', () => {
 
     renderWithRouter(<LeaderboardPage />);
 
-    expect(screen.getByRole('status', { name: /загружаем трассы|loading tracks/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('status', { name: /загружаем трассы|loading tracks/i }),
+    ).toBeInTheDocument();
   });
 });

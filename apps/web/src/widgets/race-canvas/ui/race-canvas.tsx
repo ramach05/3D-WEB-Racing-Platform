@@ -415,12 +415,7 @@ const RaceSceneInner = ({
 };
 
 /** Canvas гонки: отдельно от HUD, чтобы React не убивал FPS */
-const RaceCanvasView = ({
-  config,
-  resetNonce,
-  onFinished,
-  onFirstFrame,
-}: TRaceSceneProps) => {
+const RaceCanvasView = ({ config, resetNonce, onFinished, onFirstFrame }: TRaceSceneProps) => {
   const bodyRef = useRef<RapierRigidBody>(null);
   const visualRef = useRef<Group>(null);
   /** Composer (bloom/vignette) только ночью; в дождь — без постобработки и с MSAA */

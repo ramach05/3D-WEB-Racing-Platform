@@ -97,7 +97,7 @@ export const buildRoadRibbonGeometry = (
     }
     const cosHalf = mx * n1.nx + mz * n1.nz;
     const iw = interpolatedWidths[i]!;
-    const miter = (iw / 2) / Math.max(Math.abs(cosHalf), 0.2);
+    const miter = iw / 2 / Math.max(Math.abs(cosHalf), 0.2);
 
     leftX[i] = curr.x + mx * miter;
     leftZ[i] = curr.z + mz * miter;

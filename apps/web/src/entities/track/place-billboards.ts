@@ -179,8 +179,7 @@ const adIdForSlot = (slotIndex: number, targetCount: number): TBillboardAdId => 
     return 'for-rent';
   }
   // Смещаем индекс бренда, если слот после for-rent
-  const brandIndex =
-    slotIndex < FOR_RENT_SLOT ? slotIndex : slotIndex - 1;
+  const brandIndex = slotIndex < FOR_RENT_SLOT ? slotIndex : slotIndex - 1;
   return brandAds[brandIndex % brandAds.length]!;
 };
 
@@ -222,21 +221,14 @@ const collectAlongCenterline = (
       const isForRentSlot = slotIndex === Math.min(FOR_RENT_SLOT, targetCount - 1);
       /** Night City for-rent: сдвиг по дуге centerline в сторону заезда (−T) */
       if (frame && isForRentSlot && config.slug === TRACK_SLUG_NIGHT_CITY) {
-        frame = frameAtArcDistance(
-          points,
-          nextDist - FOR_RENT_NIGHT_CITY_ALONG_TRACK_M,
-          perimeter,
-        );
+        frame = frameAtArcDistance(points, nextDist - FOR_RENT_NIGHT_CITY_ALONG_TRACK_M, perimeter);
       }
       if (frame) {
         const { px, pz, nx, nz, tx, tz } = frame;
         const adId = adIdForSlot(slotIndex, targetCount);
         /** Night City: отдельные щиты на стороне напротив обычного чередования */
         let preferOuter = stationIndex % 2 === 0;
-        if (
-          config.slug === TRACK_SLUG_NIGHT_CITY &&
-          NIGHT_CITY_FLIP_SIDE_ADS.has(adId)
-        ) {
+        if (config.slug === TRACK_SLUG_NIGHT_CITY && NIGHT_CITY_FLIP_SIDE_ADS.has(adId)) {
           preferOuter = !preferOuter;
         }
         const sideOrder: readonly { sx: number; sz: number; sideSign: 1 | -1 }[] = preferOuter

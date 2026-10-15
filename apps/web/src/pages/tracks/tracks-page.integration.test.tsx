@@ -16,10 +16,7 @@ describe('TracksPage integration', () => {
     expect(await screen.findByText('Coastal Oval')).toBeInTheDocument();
     const links = screen.getAllByRole('link', { name: /старт|start/i });
     expect(links.length).toBeGreaterThanOrEqual(1);
-    expect(links[0]).toHaveAttribute(
-      'href',
-      `/race/${TRACK_SLUG_COASTAL_OVAL}`,
-    );
+    expect(links[0]).toHaveAttribute('href', `/race/${TRACK_SLUG_COASTAL_OVAL}`);
   });
 
   it('shows error when tracks request fails', async () => {

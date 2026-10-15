@@ -1,7 +1,6 @@
 import type { TOrientedBox } from './config.types';
 import type { TCheckpointLocalCoords } from './oriented-box.types';
 
-
 /** Локальные координаты чекпоинта (совпадают с ориентацией зоны детекции). */
 export const getCheckpointLocalCoords = (
   x: number,

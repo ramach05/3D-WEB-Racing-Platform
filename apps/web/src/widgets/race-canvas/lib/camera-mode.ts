@@ -3,11 +3,7 @@ import { useSyncExternalStore } from 'react';
 export type TCameraMode = 'chase' | 'bumper' | 'tv';
 
 /** Порядок переключения клавишей C */
-export const CAMERA_MODE_ORDER: readonly TCameraMode[] = [
-  'chase',
-  'bumper',
-  'tv',
-] as const;
+export const CAMERA_MODE_ORDER: readonly TCameraMode[] = ['chase', 'bumper', 'tv'] as const;
 
 type TListener = () => void;
 

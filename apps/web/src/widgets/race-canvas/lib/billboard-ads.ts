@@ -124,11 +124,7 @@ const strokeDashedRect = (
 };
 
 /** Укорачивает строку под ширину canvas */
-const fitText = (
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number,
-): string => {
+const fitText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string => {
   if (ctx.measureText(text).width <= maxWidth) {
     return text;
   }
@@ -205,7 +201,11 @@ export const createBillboardTexture = (
     ctx.fillStyle = colors.foreground;
     ctx.font = '700 42px system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(fitText(ctx, copy.slogan, maxTextWidth), TEXTURE_WIDTH / 2, TEXTURE_HEIGHT / 2 + 36);
+    ctx.fillText(
+      fitText(ctx, copy.slogan, maxTextWidth),
+      TEXTURE_WIDTH / 2,
+      TEXTURE_HEIGHT / 2 + 36,
+    );
 
     ctx.fillStyle = colors.accent;
     ctx.font = '700 28px system-ui, sans-serif';
@@ -235,7 +235,5 @@ export const createBillboardTexture = (
 export const BILLBOARD_AD_COPY = AD_COPY;
 
 /** Копия макета для тестов / UI */
-export const getBillboardAdCopy = (
-  adId: TBillboardAdId,
-  locale: TAppLocale,
-): TBillboardAdCopy => AD_COPY[locale][adId];
+export const getBillboardAdCopy = (adId: TBillboardAdId, locale: TAppLocale): TBillboardAdCopy =>
+  AD_COPY[locale][adId];

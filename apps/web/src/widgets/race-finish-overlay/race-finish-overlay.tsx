@@ -93,9 +93,7 @@ export const RaceFinishOverlay = ({
             {t('race.best')}: {bestMs === null ? '—' : formatRaceTime(bestMs)}
           </p>
           {isNewBest ? (
-            <p className="sega-blink uppercase text-[var(--sega-magenta)]">
-              {t('race.newBest')}
-            </p>
+            <p className="sega-blink uppercase text-[var(--sega-magenta)]">{t('race.newBest')}</p>
           ) : null}
         </div>
 

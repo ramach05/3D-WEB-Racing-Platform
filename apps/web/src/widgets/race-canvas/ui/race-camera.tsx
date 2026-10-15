@@ -1,21 +1,12 @@
 import type { RefObject } from 'react';
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import {
-  MathUtils,
-  type Object3D,
-  type PerspectiveCamera,
-  Quaternion,
-  Vector3,
-} from 'three';
+import { MathUtils, type Object3D, type PerspectiveCamera, Quaternion, Vector3 } from 'three';
 import { getDriveSfxSample } from '@/features/race-audio';
 import type { TVec3 } from '@/entities/track';
 import { getRaceHudSnapshot } from '@/features/race-session';
 import { mapModeSpeedToFov, CAMERA_FOV_BASE } from '@/widgets/race-canvas/lib/camera-fov';
-import {
-  getCameraMode,
-  type TCameraMode,
-} from '@/widgets/race-canvas/lib/camera-mode';
+import { getCameraMode, type TCameraMode } from '@/widgets/race-canvas/lib/camera-mode';
 import {
   CAMERA_SHAKE_LOOK_AMP,
   CAMERA_SHAKE_POS_AMP,
@@ -102,7 +93,6 @@ const SEATS: Record<TCameraMode, TCameraSeat> = {
 /** Alpha экспоненциального сглаживания по half-life */
 const halfLifeAlpha = (dt: number, halfLife: number): number =>
   1 - Math.pow(0.5, dt / Math.max(1e-4, halfLife));
-
 
 /** Проверяет prefers-reduced-motion в браузере */
 const prefersReducedMotion = (): boolean => {

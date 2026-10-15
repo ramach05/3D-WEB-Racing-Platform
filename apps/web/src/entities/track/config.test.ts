@@ -232,8 +232,7 @@ describe('track config geometry', () => {
     const sin = Math.sin(finish.rotationY);
     const cos = Math.cos(finish.rotationY);
     const slickLz = dx * sin + dz * cos;
-    const spawnLz =
-      (spawn[0] - finish.position[0]) * sin + (spawn[2] - finish.position[2]) * cos;
+    const spawnLz = (spawn[0] - finish.position[0]) * sin + (spawn[2] - finish.position[2]) * cos;
     expect(spawnLz).toBeGreaterThan(0);
     expect(slickLz).toBeGreaterThan(0);
   });
@@ -248,9 +247,9 @@ describe('track config geometry', () => {
         const distance = Math.hypot(dx, dz);
         const slickRadius = Math.hypot(slick.size[0], slick.size[2]) / 2;
         expect(distance - slickRadius).toBeGreaterThan(minSpawnClearance);
-        expect(isInsideCheckpoint(slick.position[0], slick.position[2], config.startFinishLine)).toBe(
-          false,
-        );
+        expect(
+          isInsideCheckpoint(slick.position[0], slick.position[2], config.startFinishLine),
+        ).toBe(false);
       }
     }
   });
@@ -320,14 +319,18 @@ describe('track config geometry', () => {
       expect(col.size[1]).toBeGreaterThan(0.5);
       // Колонна держит именно деку: поднятая точка моста прямо над ней
       const underDeck = stormEightTrack.centerline.some(
-        (p) => (p.y ?? 0) > 0.9 && Math.hypot(p.x - col.position[0], p.z - col.position[2]) <= halfRoad,
+        (p) =>
+          (p.y ?? 0) > 0.9 && Math.hypot(p.x - col.position[0], p.z - col.position[2]) <= halfRoad,
       );
       expect(underDeck).toBe(true);
       // Колонна не стоит на нижней проезжей части (под мостом)
       let nearestLow = Infinity;
       for (const p of stormEightTrack.centerline) {
         if ((p.y ?? 0) < 0.5) {
-          nearestLow = Math.min(nearestLow, Math.hypot(p.x - col.position[0], p.z - col.position[2]));
+          nearestLow = Math.min(
+            nearestLow,
+            Math.hypot(p.x - col.position[0], p.z - col.position[2]),
+          );
         }
       }
       expect(nearestLow).toBeGreaterThan(halfRoad);

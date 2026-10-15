@@ -50,8 +50,4 @@ export const mapContinuousShake = (
   oilStrength: number,
   skidIntensity: number,
   wallScrape: number,
-): number =>
-  Math.min(
-    1,
-    Math.max(oilStrength, skidIntensity * 0.5, wallScrape * 0.35),
-  );
+): number => Math.min(1, Math.max(oilStrength, skidIntensity * 0.5, wallScrape * 0.35));

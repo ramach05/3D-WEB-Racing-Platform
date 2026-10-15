@@ -6,7 +6,12 @@ import { RacePauseMenu } from './race-pause-menu';
 describe('RacePauseMenu', () => {
   it('renders nothing when closed', () => {
     const { container } = render(
-      <RacePauseMenu open={false} onResume={() => undefined} onRestart={() => undefined} onExit={() => undefined} />,
+      <RacePauseMenu
+        open={false}
+        onResume={() => undefined}
+        onRestart={() => undefined}
+        onExit={() => undefined}
+      />,
     );
 
     expect(container).toBeEmptyDOMElement();
@@ -18,9 +23,7 @@ describe('RacePauseMenu', () => {
     const onRestart = vi.fn();
     const onExit = vi.fn();
 
-    render(
-      <RacePauseMenu open onResume={onResume} onRestart={onRestart} onExit={onExit} />,
-    );
+    render(<RacePauseMenu open onResume={onResume} onRestart={onRestart} onExit={onExit} />);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
 

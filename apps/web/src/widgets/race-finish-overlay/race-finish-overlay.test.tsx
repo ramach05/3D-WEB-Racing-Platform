@@ -49,7 +49,9 @@ describe('RaceFinishOverlay', () => {
     expect(screen.getByText(new RegExp(formatRaceTime(65_340)))).toBeInTheDocument();
     expect(screen.getByText(/новый рекорд|new best/i)).toBeInTheDocument();
     expect(screen.getByText(/войдите|log in/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /лидерборд|leaderboard/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /лидерборд|leaderboard/i }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /рестарт|restart/i }));
     await user.click(screen.getByRole('button', { name: /к трассам|to tracks/i }));

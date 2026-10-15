@@ -138,11 +138,7 @@ const GantryFloodLight = ({ postX, sideZ, beamY, roadWidth, isOn }: TGantryFlood
             GANTRY_FLOOD.mountPlate.width,
           ]}
         />
-        <meshStandardMaterial
-          color={startLightPalette.steel}
-          metalness={0.4}
-          roughness={0.55}
-        />
+        <meshStandardMaterial color={startLightPalette.steel} metalness={0.4} roughness={0.55} />
       </mesh>
 
       {(
@@ -155,19 +151,11 @@ const GantryFloodLight = ({ postX, sideZ, beamY, roadWidth, isOn }: TGantryFlood
       ).map(([bz, by]) => (
         <mesh
           key={`bolt-${bz}-${by}`}
-          position={[
-            plateX - sideX * (GANTRY_FLOOD.mountPlate.depth * 0.35),
-            by,
-            mountZ + bz,
-          ]}
+          position={[plateX - sideX * (GANTRY_FLOOD.mountPlate.depth * 0.35), by, mountZ + bz]}
           rotation={[0, 0, Math.PI / 2]}
         >
           <cylinderGeometry args={[0.006, 0.006, 0.012, 8]} />
-          <meshStandardMaterial
-            color={startLightPalette.bezel}
-            metalness={0.7}
-            roughness={0.35}
-          />
+          <meshStandardMaterial color={startLightPalette.bezel} metalness={0.7} roughness={0.35} />
         </mesh>
       ))}
 
@@ -175,22 +163,14 @@ const GantryFloodLight = ({ postX, sideZ, beamY, roadWidth, isOn }: TGantryFlood
         <cylinderGeometry
           args={[GANTRY_FLOOD.arm.radius, GANTRY_FLOOD.arm.radius, GANTRY_FLOOD.arm.length, 10]}
         />
-        <meshStandardMaterial
-          color={startLightPalette.steel}
-          metalness={0.45}
-          roughness={0.5}
-        />
+        <meshStandardMaterial color={startLightPalette.steel} metalness={0.45} roughness={0.5} />
       </mesh>
 
       <mesh position={[yokeX, 0, mountZ]} castShadow>
         <boxGeometry
           args={[GANTRY_FLOOD.yoke.depth, GANTRY_FLOOD.yoke.height, GANTRY_FLOOD.yoke.width]}
         />
-        <meshStandardMaterial
-          color={startLightPalette.bezel}
-          metalness={0.55}
-          roughness={0.42}
-        />
+        <meshStandardMaterial color={startLightPalette.bezel} metalness={0.55} roughness={0.42} />
       </mesh>
 
       {/* +Z на финиш; линза на передней грани, корпус сзади */}
@@ -286,8 +266,7 @@ export const TrackStartFinishLine = ({
     pulseRef.current += dt;
     const litCount = litCountForHud(hud.status, hud.countdownStep);
     const countdownPulse = 0.55 + Math.sin(pulseRef.current * 4) * 0.35;
-    const finishBlinkOn =
-      hud.status === 'finished' && isFinishLampBlinkOn(pulseRef.current);
+    const finishBlinkOn = hud.status === 'finished' && isFinishLampBlinkOn(pulseRef.current);
 
     const lampMats = [
       lamp0MatRef.current,
@@ -422,10 +401,7 @@ export const TrackStartFinishLine = ({
       {LAMP_XS.map((x, index) => (
         <group key={`start-lamp-${index}`} position={[x, panelY, lampFaceZ]}>
           {/* Козырёк от солнца */}
-          <mesh
-            position={[0, START_LAMP_BAY.hood.offsetY, START_LAMP_BAY.hood.offsetZ]}
-            castShadow
-          >
+          <mesh position={[0, START_LAMP_BAY.hood.offsetY, START_LAMP_BAY.hood.offsetZ]} castShadow>
             <boxGeometry
               args={[
                 START_LAMP_BAY.hood.width,
@@ -441,7 +417,10 @@ export const TrackStartFinishLine = ({
           </mesh>
 
           {/* Тёмная ниша в корпусе */}
-          <mesh position={[0, 0, -START_LAMP_BAY.recessDepth * 0.35]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh
+            position={[0, 0, -START_LAMP_BAY.recessDepth * 0.35]}
+            rotation={[Math.PI / 2, 0, 0]}
+          >
             <cylinderGeometry
               args={[
                 START_LAMP_BAY.recessRadius,
@@ -477,13 +456,7 @@ export const TrackStartFinishLine = ({
             />
           </mesh>
           <mesh position={[0, 0, START_LAMP_BAY.bezelDepth * 0.5]}>
-            <ringGeometry
-              args={[
-                START_LAMP_BAY.lensRadius,
-                START_LAMP_BAY.bezelOuterRadius,
-                28,
-              ]}
-            />
+            <ringGeometry args={[START_LAMP_BAY.lensRadius, START_LAMP_BAY.bezelOuterRadius, 28]} />
             <meshStandardMaterial
               color={startLightPalette.bezel}
               metalness={0.55}

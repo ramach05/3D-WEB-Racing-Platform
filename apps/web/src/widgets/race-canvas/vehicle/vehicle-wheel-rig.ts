@@ -27,10 +27,7 @@ export const computeSteerAxisLocal = (parentWorldQuaternion: Quaternion): Vector
  * вокруг чужой оси (хаотичное вращение). Sedan/pickup не страдали лишь потому, что
  * их пивоты висят на корне с identity-поворотом.
  */
-export const computeAxleLocal = (
-  axleWorld: Vector3,
-  parentWorldQuaternion: Quaternion,
-): Vector3 =>
+export const computeAxleLocal = (axleWorld: Vector3, parentWorldQuaternion: Quaternion): Vector3 =>
   axleWorld.clone().applyQuaternion(parentWorldQuaternion.clone().invert()).normalize();
 
 /**
@@ -68,8 +65,7 @@ export const computeAckermannScale = (steerAngle: number, sideSign: number): num
 const MAX_WHEEL_AXLE_POINTS = 4096;
 const tmpSampled = new Vector3();
 
-const isMeshObject = (object: Object3D): object is Mesh =>
-  (object as Mesh).isMesh === true;
+const isMeshObject = (object: Object3D): object is Mesh => (object as Mesh).isMesh === true;
 
 /** Собирает выборку мировых точек геометрии под node (stride ≤ maxPoints). */
 export const sampleWheelWorldPoints = (
@@ -94,7 +90,9 @@ export const sampleWheelWorldPoints = (
     const count = position.count;
     const stride = Math.max(1, Math.ceil(count / budget));
     for (let i = 0; i < count && budget > 0; i += stride, budget -= 1) {
-      out.push(tmpSampled.fromBufferAttribute(position, i).applyMatrix4(object.matrixWorld).clone());
+      out.push(
+        tmpSampled.fromBufferAttribute(position, i).applyMatrix4(object.matrixWorld).clone(),
+      );
     }
   });
   return out;
@@ -146,10 +144,7 @@ const bestYaw = (
  * и левая сторона крутятся общим spinAngle вперёд (X×Y = Z одинаково для обеих).
  * Fallback (1, 0, 0), когда геометрии мало либо она не похожа на колесо (не тонкая).
  */
-export const measureWheelAxle = (
-  wheel: Object3D,
-  maxPoints = MAX_WHEEL_AXLE_POINTS,
-): Vector3 => {
+export const measureWheelAxle = (wheel: Object3D, maxPoints = MAX_WHEEL_AXLE_POINTS): Vector3 => {
   const pts = sampleWheelWorldPoints(wheel, maxPoints);
   if (pts.length < 8) {
     return new Vector3(1, 0, 0);

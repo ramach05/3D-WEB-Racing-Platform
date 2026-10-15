@@ -48,7 +48,10 @@ export const PINE_CROWN_HEIGHT =
   PINE_TIERS[2]!.height / 2 -
   (PINE_TIERS[0]!.localY - PINE_TIERS[0]!.height / 2);
 export const PINE_CROWN_LOCAL_Y =
-  (PINE_TIERS[0]!.localY - PINE_TIERS[0]!.height / 2 + PINE_TIERS[2]!.localY + PINE_TIERS[2]!.height / 2) /
+  (PINE_TIERS[0]!.localY -
+    PINE_TIERS[0]!.height / 2 +
+    PINE_TIERS[2]!.localY +
+    PINE_TIERS[2]!.height / 2) /
   2;
 
 /** Доля кроны лиственного */

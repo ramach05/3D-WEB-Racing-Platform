@@ -949,10 +949,7 @@ export const Vehicle = ({
     if (wheelGrounded && !rampContact && !obstacleContact) {
       const targetVy = resolveGroundFollowVy(followVy, linvel.y);
       // спуск прижимается позиционно — vy без сглаживания; подъем/равнина сглаживаются
-      nextVy =
-        followVy < 0
-          ? targetVy
-          : smoothVyToward(followVyRef.current, targetVy, clampedDt);
+      nextVy = followVy < 0 ? targetVy : smoothVyToward(followVyRef.current, targetVy, clampedDt);
       followVyRef.current = nextVy;
     } else {
       followVyRef.current = linvel.y;

@@ -33,8 +33,7 @@ describe('buildTribuneTreeExclusionZone', () => {
 
     const tribuneDepth = TRIBUNE_ROWS * ROW_DEPTH;
     const halfDepthX = tribuneDepth / 2 + FOUNDATION_OVERHANG + TREE_EXCLUSION_PADDING;
-    const halfSpanZ =
-      SECTION_PITCH + SECTION_WIDTH / 2 + STAIR_WIDTH + TREE_EXCLUSION_PADDING;
+    const halfSpanZ = SECTION_PITCH + SECTION_WIDTH / 2 + STAIR_WIDTH + TREE_EXCLUSION_PADDING;
     expect(zone.rotationY).toBe(startFinishLine.rotationY);
     expect(zone.size).toEqual([halfDepthX * 2, 8, halfSpanZ * 2]);
     expect(zone.position[1]).toBe(0);

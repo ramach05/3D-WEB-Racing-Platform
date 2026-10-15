@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { coastalOvalTrack, nightCityTrack } from '@/entities/track';
-import {
-  ROAD_THICKNESS,
-  ROAD_TOP_Y,
-  buildRoadRibbonGeometry,
-} from './road-ribbon-geometry';
+import { ROAD_THICKNESS, ROAD_TOP_Y, buildRoadRibbonGeometry } from './road-ribbon-geometry';
 
 describe('buildRoadRibbonGeometry', () => {
   it('returns empty geometry for short centerline', () => {
@@ -50,10 +46,7 @@ describe('buildRoadRibbonGeometry', () => {
 
   it('produces finite geometry for coastal and night city tracks', () => {
     for (const config of [coastalOvalTrack, nightCityTrack]) {
-      const { geometry, pathLength } = buildRoadRibbonGeometry(
-        config.centerline,
-        config.roadWidth,
-      );
+      const { geometry, pathLength } = buildRoadRibbonGeometry(config.centerline, config.roadWidth);
       expect(pathLength).toBeGreaterThan(100);
 
       const positions = geometry.getAttribute('position');

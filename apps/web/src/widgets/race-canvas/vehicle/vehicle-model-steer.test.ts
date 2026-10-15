@@ -147,10 +147,7 @@ describe('computeAxleLocal', () => {
     expect(local.y).toBeCloseTo(-1, 5);
     expect(local.z).toBeCloseTo(0, 5);
     // а в мировых осях спин идёт ровно вокруг исходной оси
-    const worldUsed = local
-      .clone()
-      .applyQuaternion(parentQ)
-      .normalize();
+    const worldUsed = local.clone().applyQuaternion(parentQ).normalize();
     expect(Math.abs(worldUsed.dot(axleWorld))).toBeCloseTo(1, 5);
   });
 
@@ -160,10 +157,7 @@ describe('computeAxleLocal', () => {
     const local = computeAxleLocal(axleWorld, parentQ);
     for (const deg of [0, 30, 60, 90, 120]) {
       // ось поворота в мировых осях не зависит от угла и совпадает с осью шины
-      const worldAxis = local
-        .clone()
-        .applyQuaternion(parentQ)
-        .normalize();
+      const worldAxis = local.clone().applyQuaternion(parentQ).normalize();
       expect(Math.abs(worldAxis.dot(axleWorld))).toBeCloseTo(1, 6);
       void deg;
     }

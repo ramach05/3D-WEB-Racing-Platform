@@ -1,10 +1,10 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @font-face {
   font-family: DotumChe;
-  src: url("../shared/assets/fonts/dotumche.ttf") format("truetype");
+  src: url('../shared/assets/fonts/dotumche.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -12,9 +12,9 @@
 
 /* Один шрифт на всё приложение */
 @theme {
-  --font-sans: DotumChe, "Courier New", monospace;
-  --font-serif: DotumChe, "Courier New", monospace;
-  --font-mono: DotumChe, "Courier New", monospace;
+  --font-sans: DotumChe, 'Courier New', monospace;
+  --font-serif: DotumChe, 'Courier New', monospace;
+  --font-mono: DotumChe, 'Courier New', monospace;
 }
 
 /* Цветовые --* задаёт applyTheme из @/shared/config uiPalette / uiChrome */
@@ -43,7 +43,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: DotumChe, "Courier New", monospace;
+  font-family: DotumChe, 'Courier New', monospace;
   -webkit-font-smoothing: none;
   font-smooth: never;
   text-rendering: geometricPrecision;
@@ -56,7 +56,7 @@ button,
 .sega-card-link,
 .sega-select-trigger,
 .sega-select-item,
-[role="button"] {
+[role='button'] {
   cursor: pointer;
 }
 
@@ -176,7 +176,12 @@ button:disabled,
   width: 100%;
   height: 4px;
   transform-origin: left center;
-  background: linear-gradient(90deg, var(--sega-cyan) 0%, var(--sega-magenta) 50%, var(--sega-yellow) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--sega-cyan) 0%,
+    var(--sega-magenta) 50%,
+    var(--sega-yellow) 100%
+  );
   box-shadow: 0 2px 0 0 var(--border);
   animation: sega-route-progress 0.55s steps(5, end) forwards;
   pointer-events: none;
@@ -347,29 +352,29 @@ button:disabled,
 }
 
 .sega-touch-btn:active,
-.sega-touch-btn[aria-pressed="true"] {
+.sega-touch-btn[aria-pressed='true'] {
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0 0 var(--sega-cyan);
   background: color-mix(in srgb, var(--surface-hover) 40%, black 60%);
 }
 
 .sega-touch-btn--sm:active,
-.sega-touch-btn--sm[aria-pressed="true"] {
+.sega-touch-btn--sm[aria-pressed='true'] {
   box-shadow: 1px 1px 0 0 var(--sega-magenta);
 }
 
 .sega-touch-btn--throttle:active,
-.sega-touch-btn--throttle[aria-pressed="true"] {
+.sega-touch-btn--throttle[aria-pressed='true'] {
   box-shadow: 1px 1px 0 0 var(--sega-yellow);
 }
 
 .sega-touch-btn--brake:active,
-.sega-touch-btn--brake[aria-pressed="true"] {
+.sega-touch-btn--brake[aria-pressed='true'] {
   box-shadow: 1px 1px 0 0 var(--sega-magenta);
 }
 
 .sega-touch-btn--handbrake:active,
-.sega-touch-btn--handbrake[aria-pressed="true"] {
+.sega-touch-btn--handbrake[aria-pressed='true'] {
   box-shadow: 1px 1px 0 0 var(--sega-cyan);
 }
 
@@ -537,7 +542,7 @@ button:disabled,
   background: var(--surface-hover);
 }
 
-.sega-select-trigger[aria-expanded="true"] {
+.sega-select-trigger[aria-expanded='true'] {
   background: var(--surface-hover);
   box-shadow: var(--sega-hover-shadow-pressed);
   color: var(--sega-yellow);
@@ -549,7 +554,7 @@ button:disabled,
   transition: transform 150ms steps(3);
 }
 
-.sega-select-trigger[aria-expanded="true"] .sega-select-chevron {
+.sega-select-trigger[aria-expanded='true'] .sega-select-chevron {
   transform: rotate(180deg);
 }
 
@@ -672,7 +677,7 @@ button:disabled,
 }
 
 .sega-scanlines::after {
-  content: "";
+  content: '';
   pointer-events: none;
   position: absolute;
   inset: 0;
@@ -856,7 +861,12 @@ button:disabled,
 
 .sega-finish-moment {
   background:
-    radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.25) 55%, transparent 75%),
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0.55) 0%,
+      rgba(0, 0, 0, 0.25) 55%,
+      transparent 75%
+    ),
     rgba(0, 0, 0, 0.35);
   overflow: hidden;
 }
@@ -864,7 +874,11 @@ button:disabled,
 .sega-finish-moment__wipe {
   position: absolute;
   inset: 38% -20% 38% -20%;
-  background: repeating-linear-gradient(90deg, var(--finish-wipe-dark) 0 12px, var(--finish-wipe-light) 12px 24px);
+  background: repeating-linear-gradient(
+    90deg,
+    var(--finish-wipe-dark) 0 12px,
+    var(--finish-wipe-light) 12px 24px
+  );
   opacity: 0;
   transform: translateX(-30%) skewX(-12deg);
   animation: sega-finish-moment-wipe 520ms steps(6) both;
@@ -994,7 +1008,6 @@ button:disabled,
     min-width: 5.5rem;
     padding: 0.45rem 0.75rem;
   }
-
 }
 
 /* Компактный HUD держим до lg: на окнах ~800–1000px он иначе съедает треть экрана */

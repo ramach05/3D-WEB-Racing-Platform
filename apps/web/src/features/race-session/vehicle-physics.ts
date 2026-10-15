@@ -215,10 +215,7 @@ export const computeGroundRestY = (
  * коррекции зазор дорастает до порога и рывковый снап трясет кузов.
  * Снижение ограничено сверху (GROUND_STICK_MAX_DROP за кадр).
  */
-export const computeGroundStickY = (
-  restY: number,
-  currentY: number,
-): number | null => {
+export const computeGroundStickY = (restY: number, currentY: number): number | null => {
   const target = restY + GROUND_STICK_MARGIN;
   if (target >= currentY) {
     return null;

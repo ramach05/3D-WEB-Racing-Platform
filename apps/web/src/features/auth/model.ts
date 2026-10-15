@@ -5,6 +5,7 @@ import type { TAuthState } from './model.types';
 
 const initialState: TAuthState = {
   user: null,
+  hydrated: false,
 };
 
 /**
@@ -22,10 +23,13 @@ export const authSlice = createSlice({
       state.user = null;
       clearAuthSession();
     },
+    setHydrated: (state, action: PayloadAction<boolean>) => {
+      state.hydrated = action.payload;
+    },
   },
 });
 
-export const { setUser, logout } = authSlice.actions;
+export const { setUser, logout, setHydrated } = authSlice.actions;
 export const authReducer = authSlice.reducer;
 
 type TAuthRoot = {
@@ -35,6 +39,9 @@ type TAuthRoot = {
 
 /** Текущий пользователь или null */
 export const selectUser = (state: TAuthRoot): TUserPublic | null => state.auth.user;
+
+/** Завершена ли гидрация сессии при старте приложения */
+export const selectHydrated = (state: TAuthRoot): boolean => state.auth.hydrated;
 
 /** Сохраняет access JWT в памяти */
 export const persistAccessToken = (accessToken: string): void => {

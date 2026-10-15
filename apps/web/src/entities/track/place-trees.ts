@@ -116,8 +116,7 @@ export const placeTrackTrees = ({
   maxTrees,
   sampleGroundY,
 }: TPlaceTrackTreesOptions): TPlacedTree[] => {
-  const budget =
-    maxTrees ?? (config.timeOfDay === 'night' ? MAX_TREES_NIGHT : MAX_TREES_COASTAL);
+  const budget = maxTrees ?? (config.timeOfDay === 'night' ? MAX_TREES_NIGHT : MAX_TREES_COASTAL);
   const corridorRadius = config.roadWidth / 2 + WALL_THICKNESS + RUNOFF_CLEARANCE;
   const corridorRadiusSq = corridorRadius * corridorRadius;
   const rng = createRng(hashSlug(config.slug) ^ 0x7e3a91c5);

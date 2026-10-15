@@ -2,11 +2,7 @@ import { type RefObject, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { RapierRigidBody } from '@react-three/rapier';
 import type { TTrackConfig } from '@/entities/track';
-import {
-  accumulateLapTravel,
-  getTrackProgress,
-  isRaceLapCooldownCleared,
-} from '@/entities/track';
+import { accumulateLapTravel, getTrackProgress, isRaceLapCooldownCleared } from '@/entities/track';
 import {
   canRegisterLapCrossing,
   getRaceHudSnapshot,

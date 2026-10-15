@@ -246,10 +246,7 @@ export class DrivingSfxEngine {
     if (sample.kerbRumble > 0) {
       this.kerbPhase += 0.016 * (4 + sample.kerbRumble * 10 + sample.speedMs * 0.15);
       const phase01 = this.kerbPhase % 1;
-      if (
-        shouldPulseKerbTick(sample.kerbRumble, phase01) &&
-        now - this.lastKerbTickAt > 0.07
-      ) {
+      if (shouldPulseKerbTick(sample.kerbRumble, phase01) && now - this.lastKerbTickAt > 0.07) {
         this.lastKerbTickAt = now;
         const peak = 0.12 + sample.kerbRumble * 0.22;
         this.playBurst(0.045, peak, 'bandpass', 900 + sample.kerbRumble * 700, 'white');

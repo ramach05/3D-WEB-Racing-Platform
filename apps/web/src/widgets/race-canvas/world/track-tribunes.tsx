@@ -151,13 +151,13 @@ const TribuneEdgeFlood = ({ tribuneInnerX, sideSign, zSign, isOn }: TTribuneEdge
     <group position={[lightX, lightY, lightZ]}>
       <mesh castShadow rotation={[0.7, 0, -sideSign * 0.12]}>
         <boxGeometry
-          args={[TRIBUNE_FLOOD.housing.width, TRIBUNE_FLOOD.housing.height, TRIBUNE_FLOOD.housing.depth]}
+          args={[
+            TRIBUNE_FLOOD.housing.width,
+            TRIBUNE_FLOOD.housing.height,
+            TRIBUNE_FLOOD.housing.depth,
+          ]}
         />
-        <meshStandardMaterial
-          color={startLightPalette.housing}
-          metalness={0.55}
-          roughness={0.45}
-        />
+        <meshStandardMaterial color={startLightPalette.housing} metalness={0.55} roughness={0.45} />
       </mesh>
       <mesh position={[0, -TRIBUNE_FLOOD.housing.height * 0.4, 0]}>
         <sphereGeometry args={[TRIBUNE_FLOOD.bulbRadius, 12, 10]} />
@@ -270,7 +270,12 @@ const _instScale = new Vector3();
 const _instEuler = new Euler();
 
 /** Один InstancedMesh из списка боксов (поддержка Euler-поворота) */
-const InstancedBoxes = ({ items, fixedSizeXZ, material, castShadow = true }: TInstancedBoxesProps) => {
+const InstancedBoxes = ({
+  items,
+  fixedSizeXZ,
+  material,
+  castShadow = true,
+}: TInstancedBoxesProps) => {
   const meshRef = useRef<InstancedMesh>(null);
   const count = items.length;
 
@@ -432,7 +437,11 @@ const TribuneSection = ({
       <InstancedBoxes items={woodParts} material={materials.seat} castShadow={false} />
 
       <mesh
-        position={[backOuterX + sideSign * (FASCIA_THICKNESS / 2), topRowTop + FASCIA_HEIGHT / 2, 0]}
+        position={[
+          backOuterX + sideSign * (FASCIA_THICKNESS / 2),
+          topRowTop + FASCIA_HEIGHT / 2,
+          0,
+        ]}
         castShadow
         receiveShadow
         material={materials.structure}
@@ -467,17 +476,15 @@ const TribuneSection = ({
       />
 
       <mesh
-        position={[
-          tribuneInnerX + (sideSign * (TRIBUNE_ROWS * ROW_DEPTH + 0.35)) / 2,
-          canopyY,
-          0,
-        ]}
+        position={[tribuneInnerX + (sideSign * (TRIBUNE_ROWS * ROW_DEPTH + 0.35)) / 2, canopyY, 0]}
         castShadow
         receiveShadow
         material={materials.canopy}
         dispose={null}
       >
-        <boxGeometry args={[TRIBUNE_ROWS * ROW_DEPTH + 0.7, CANOPY_THICKNESS, SECTION_WIDTH + 0.8]} />
+        <boxGeometry
+          args={[TRIBUNE_ROWS * ROW_DEPTH + 0.7, CANOPY_THICKNESS, SECTION_WIDTH + 0.8]}
+        />
       </mesh>
 
       {stairSteps.map((step, i) => (
@@ -513,13 +520,7 @@ const TribuneSection = ({
 };
 
 /** Открытые трибуны у старт/финиш (визуал; коллайдеры — TrackTribuneColliders) */
-export const TrackTribunes = ({
-  line,
-  roadWidth,
-  palette,
-  side,
-  isNight,
-}: TTrackTribunesProps) => {
+export const TrackTribunes = ({ line, roadWidth, palette, side, isNight }: TTrackTribunesProps) => {
   const sideSign = tribuneSideSign(side);
   const tribuneInnerX = sideSign * (roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);
 

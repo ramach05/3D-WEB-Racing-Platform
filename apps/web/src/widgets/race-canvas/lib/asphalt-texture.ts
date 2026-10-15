@@ -153,10 +153,7 @@ export const createAsphaltRoughnessMap = (size = 512): CanvasTexture => {
       const n = fbm(u * 40, v * 40, 203, 3);
       const grit = next() * 0.15;
       // 0.48–0.98 в linear: выше = матовее; макро сдвигает целые зоны
-      const r = Math.max(
-        0,
-        Math.min(255, (0.55 + macro * 0.22 + n * 0.2 + grit) * 255),
-      );
+      const r = Math.max(0, Math.min(255, (0.55 + macro * 0.22 + n * 0.2 + grit) * 255));
       const idx = (y * size + x) * 4;
       data[idx] = r;
       data[idx + 1] = r;

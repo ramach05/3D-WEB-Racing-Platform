@@ -164,7 +164,12 @@ describe('placeBillboards', () => {
           const dz = b.z - a.z;
           const lenSq = dx * dx + dz * dz;
           const t =
-            lenSq === 0 ? 0 : Math.max(0, Math.min(1, ((billboard.x - a.x) * dx + (billboard.z - a.z) * dz) / lenSq));
+            lenSq === 0
+              ? 0
+              : Math.max(
+                  0,
+                  Math.min(1, ((billboard.x - a.x) * dx + (billboard.z - a.z) * dz) / lenSq),
+                );
           const px = a.x + dx * t;
           const pz = a.z + dz * t;
           const dist = Math.hypot(billboard.x - px, billboard.z - pz);

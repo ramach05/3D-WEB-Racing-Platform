@@ -31,10 +31,7 @@ import {
   VEHICLE_VARIANT_REV,
   type THeadlightLamps,
 } from '@/widgets/race-canvas/vehicle/vehicle-body-variants';
-import {
-  computeVehicleFit,
-  type TVehicleFit,
-} from '@/widgets/race-canvas/vehicle/vehicle-fit';
+import { computeVehicleFit, type TVehicleFit } from '@/widgets/race-canvas/vehicle/vehicle-fit';
 import { VehicleModelFallback } from '@/widgets/race-canvas/vehicle/vehicle-model-fallback';
 import {
   rearLightEmissiveIntensity,

@@ -1,6 +1,14 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Box3, Group, Quaternion, Vector3, type Mesh, type Object3D, type SkinnedMesh } from 'three';
+import {
+  Box3,
+  Group,
+  Quaternion,
+  Vector3,
+  type Mesh,
+  type Object3D,
+  type SkinnedMesh,
+} from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -700,12 +708,7 @@ describe('real glb wheel integration', () => {
     const line = new Vector3();
 
     /** Максимальная радиальная удалённость вершин мешей с указанными материалами от оси (o, a). */
-    const maxRadial = (
-      pivot: Object3D,
-      o: Vector3,
-      a: Vector3,
-      matNames: string[],
-    ): number => {
+    const maxRadial = (pivot: Object3D, o: Vector3, a: Vector3, matNames: string[]): number => {
       let rMax = 0;
       pivot.traverse((object) => {
         if (!(object as Mesh).isMesh || !object.visible) {

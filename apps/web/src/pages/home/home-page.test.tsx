@@ -5,6 +5,7 @@ import { HomePage } from './home-page';
 
 vi.mock('@/features/auth', () => ({
   useAuthUser: vi.fn(),
+  useAuthHydrated: vi.fn(() => true),
 }));
 
 import { useAuthUser } from '@/features/auth';

@@ -100,7 +100,10 @@ export const LeaderboardTabsSkeleton = ({
             aria-hidden
           >
             <SegaSkeleton
-              className={cx('sega-skeleton--inset h-3.5', TRACK_TAB_WIDTHS[index % TRACK_TAB_WIDTHS.length])}
+              className={cx(
+                'sega-skeleton--inset h-3.5',
+                TRACK_TAB_WIDTHS[index % TRACK_TAB_WIDTHS.length],
+              )}
             />
           </div>
         ))}

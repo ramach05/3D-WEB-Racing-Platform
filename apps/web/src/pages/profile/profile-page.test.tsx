@@ -6,6 +6,7 @@ import { renderWithRouter } from '@/test/render';
 
 vi.mock('@/features/auth', () => ({
   useAuthUser: vi.fn(),
+  useAuthHydrated: vi.fn(() => true),
   useGetMeQuery: vi.fn(),
 }));
 
@@ -56,7 +57,9 @@ describe('ProfilePage', () => {
 
     renderWithRouter(<ProfilePage />);
 
-    expect(screen.getByRole('status', { name: /загружаем профиль|loading profile/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('status', { name: /загружаем профиль|loading profile/i }),
+    ).toBeInTheDocument();
   });
 
   it('shows nickname and best times', () => {

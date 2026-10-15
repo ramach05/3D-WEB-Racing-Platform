@@ -37,7 +37,9 @@ export const TracksPage = () => {
                 <div className="mt-auto pt-3">
                   {config ? (
                     <div>
-                      <p className="text-xs uppercase text-[var(--muted)]">{t('tracks.mapLabel')}</p>
+                      <p className="text-xs uppercase text-[var(--muted)]">
+                        {t('tracks.mapLabel')}
+                      </p>
                       <TrackMinimap
                         config={config}
                         className="mt-2 w-full border-2 border-[var(--border)]"

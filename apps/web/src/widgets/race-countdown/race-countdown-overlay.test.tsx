@@ -1,10 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  beginCountdown,
-  getRaceHudSnapshot,
-  resetRaceSession,
-} from '@/features/race-session';
+import { beginCountdown, getRaceHudSnapshot, resetRaceSession } from '@/features/race-session';
 import { RaceCountdownOverlay } from './race-countdown-overlay';
 
 describe('RaceCountdownOverlay', () => {

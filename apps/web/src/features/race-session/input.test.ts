@@ -52,7 +52,12 @@ describe('bindRaceInput', () => {
 
     for (const modifier of ['metaKey', 'ctrlKey', 'shiftKey', 'altKey'] as const) {
       window.dispatchEvent(
-        new KeyboardEvent('keydown', { code: 'KeyR', repeat: false, bubbles: true, [modifier]: true }),
+        new KeyboardEvent('keydown', {
+          code: 'KeyR',
+          repeat: false,
+          bubbles: true,
+          [modifier]: true,
+        }),
       );
     }
 

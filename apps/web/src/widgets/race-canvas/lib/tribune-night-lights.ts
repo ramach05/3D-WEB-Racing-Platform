@@ -74,8 +74,7 @@ export const tribuneEdgeLightX = (tribuneInnerX: number, sideSign: number): numb
   tribuneInnerX + sideSign * tribuneDepthX() * TRIBUNE_FLOOD.housingDepthFraction;
 
 /** Локальный Y под навесом */
-export const tribuneEdgeLightY = (): number =>
-  canopyUndersideY() - TRIBUNE_FLOOD.housingDropY;
+export const tribuneEdgeLightY = (): number => canopyUndersideY() - TRIBUNE_FLOOD.housingDropY;
 
 /** Локальный Z края крыши */
 export const tribuneEdgeLightZ = (zSign: number): number =>

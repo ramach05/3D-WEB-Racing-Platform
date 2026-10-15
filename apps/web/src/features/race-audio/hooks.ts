@@ -73,11 +73,7 @@ export const useRaceAudio = ({ theme, paused, enabled, muted }: TUseRaceAudioOpt
 };
 
 /** Запускает driving SFX и крутит rAF-обновление snapshot */
-export const useRaceDrivingSfx = ({
-  enabled,
-  paused,
-  muted,
-}: TUseRaceDrivingSfxOptions): void => {
+export const useRaceDrivingSfx = ({ enabled, paused, muted }: TUseRaceDrivingSfxOptions): void => {
   const engineRef = useRef<DrivingSfxEngine | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -134,5 +130,4 @@ export const useRaceDrivingSfx = ({
       engine.setMuted(muted);
     }
   }, [muted]);
-
 };

@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuthUser } from '@/features/auth';
+import { useAuthHydrated, useAuthUser } from '@/features/auth';
 import { getAllTrackConfigs } from '@/entities/track';
-import { PageShell } from '@/shared/ui';
+import { PageShell, SegaSkeleton } from '@/shared/ui';
 import { TrackMinimap } from '@/widgets/track-minimap';
 import { RaceMarquee } from './race-marquee';
 
@@ -16,6 +16,7 @@ const TRACK_NAME_MAP: Record<string, string> = {
 export const HomePage = () => {
   const { t } = useTranslation();
   const user = useAuthUser();
+  const hydrated = useAuthHydrated();
   const trackConfigs = getAllTrackConfigs();
   const marqueeItems = t('home.marqueeItems', { returnObjects: true });
   const marquee = Array.isArray(marqueeItems) ? `${marqueeItems.join(' ')} ` : '';
@@ -35,7 +36,7 @@ export const HomePage = () => {
           <Link to="/tracks" className="sega-btn sega-blink text-base">
             {t('home.pressStart')}
           </Link>
-          {user ? null : (
+          {user ? null : hydrated ? (
             <>
               <Link to="/login" className="sega-btn sega-btn--ghost">
                 {t('nav.login')}
@@ -44,6 +45,11 @@ export const HomePage = () => {
                 {t('nav.register')}
               </Link>
             </>
+          ) : (
+            <span role="status" aria-label={t('auth.loading')} className="flex items-center gap-4">
+              <SegaSkeleton className="sega-skeleton--inset h-[2.6rem] w-24" />
+              <SegaSkeleton className="sega-skeleton--inset h-[2.6rem] w-32" />
+            </span>
           )}
         </div>
 

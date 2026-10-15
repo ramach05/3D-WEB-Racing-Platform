@@ -14,7 +14,14 @@ export type {
   TTrackPalette,
   TVec3,
 } from './config.types';
-export { coastalOvalTrack, getAllTrackConfigs, getTrackConfig, nightCityTrack, stormEightTrack, isTrackLightingOn } from './config';
+export {
+  coastalOvalTrack,
+  getAllTrackConfigs,
+  getTrackConfig,
+  nightCityTrack,
+  stormEightTrack,
+  isTrackLightingOn,
+} from './config';
 export { getCheckpointLocalCoords, isInsideCheckpoint } from './oriented-box';
 export type { TCheckpointLocalCoords } from './oriented-box.types';
 export { placeTrackTrees, TREE_PLACEMENT_LIMITS } from './place-trees';

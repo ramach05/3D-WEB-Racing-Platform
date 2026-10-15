@@ -74,11 +74,7 @@ const remap01 = (value: number, a: number, b: number): number => {
 };
 
 /** Смешивает продольный фактор с боковым срывом */
-const blendWithLateral = (
-  driveFactor: number,
-  lateral: number,
-  lateralWeight: number,
-): number => {
+const blendWithLateral = (driveFactor: number, lateral: number, lateralWeight: number): number => {
   const lateralFactor = remap01(Math.abs(lateral), 0, SKID_LATERAL_FULL);
   return driveFactor * (1 - lateralWeight) + lateralFactor * lateralWeight;
 };

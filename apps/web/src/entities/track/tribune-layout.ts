@@ -95,8 +95,7 @@ export const buildTribuneTreeExclusionZone = ({
   const tribuneInnerLocalX = sideSign * (roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);
   const tribuneDepth = TRIBUNE_ROWS * ROW_DEPTH;
   const centerLocalX = tribuneInnerLocalX + sideSign * (tribuneDepth / 2);
-  const halfSpanZ =
-    SECTION_PITCH + SECTION_WIDTH / 2 + STAIR_WIDTH + TREE_EXCLUSION_PADDING;
+  const halfSpanZ = SECTION_PITCH + SECTION_WIDTH / 2 + STAIR_WIDTH + TREE_EXCLUSION_PADDING;
   const halfDepthX = tribuneDepth / 2 + FOUNDATION_OVERHANG + TREE_EXCLUSION_PADDING;
 
   const cos = Math.cos(startFinishLine.rotationY);
@@ -271,11 +270,7 @@ export const buildTribuneStairs = ({
     // Ступень от земли до поверхности ряда — монолитный блок (не «полка в воздухе»)
     const height = (row + 1) * ROW_HEIGHT;
     steps.push({
-      position: [
-        tribuneRowCenterX(tribuneInnerX, sideSign, row),
-        height / 2,
-        stairLocalZ,
-      ],
+      position: [tribuneRowCenterX(tribuneInnerX, sideSign, row), height / 2, stairLocalZ],
       size: [STAIR_RUN, height, STAIR_WIDTH],
     });
   }

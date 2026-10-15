@@ -1,10 +1,10 @@
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuthUser, useLogout } from '@/features/auth';
+import { useAuthHydrated, useAuthUser, useLogout } from '@/features/auth';
 import { LocaleSwitcher } from '@/features/locale-switcher';
 import { ThemeSwitcher } from '@/features/theme-switcher';
 import { cx } from '@/shared/lib';
-import { Button } from '@/shared/ui';
+import { Button, SegaSkeleton } from '@/shared/ui';
 
 type TNavClassArgs = {
   /** Активен ли текущий маршрут */
@@ -22,6 +22,7 @@ const navClass = ({ isActive }: TNavClassArgs): string =>
 export const AppHeader = () => {
   const { t } = useTranslation();
   const user = useAuthUser();
+  const hydrated = useAuthHydrated();
   const logout = useLogout();
   const navCols = user ? 5 : 6;
 
@@ -81,10 +82,21 @@ export const AppHeader = () => {
           <NavLink to="/profile" className={navClass}>
             <span className="sega-header-nav__label">{t('nav.profile')}</span>
           </NavLink>
-          {user ? null : (
+          {user ? null : hydrated ? (
             <NavLink to="/login" className={navClass}>
               <span className="sega-header-nav__label">{t('nav.login')}</span>
             </NavLink>
+          ) : (
+            <span
+              className={cx(
+                navClass({ isActive: false }),
+                'flex cursor-default items-center justify-center',
+              )}
+              role="status"
+              aria-label={t('auth.loading')}
+            >
+              <SegaSkeleton className="sega-skeleton--inset h-3.5 w-12" />
+            </span>
           )}
         </nav>
       </div>

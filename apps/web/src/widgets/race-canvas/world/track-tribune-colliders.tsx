@@ -118,7 +118,11 @@ const TribuneSectionColliders = ({
           <CuboidCollider
             key={`crowd-${row}`}
             args={[ROW_DEPTH / 2, crowdHeight / 2, SECTION_WIDTH / 2]}
-            position={[tribuneRowCenterX(tribuneInnerX, sideSign, row), seatTopY + crowdHeight / 2, 0]}
+            position={[
+              tribuneRowCenterX(tribuneInnerX, sideSign, row),
+              seatTopY + crowdHeight / 2,
+              0,
+            ]}
             friction={FRICTION}
             restitution={0}
             collisionGroups={WORLD_GROUPS}
@@ -127,7 +131,11 @@ const TribuneSectionColliders = ({
       })}
       <CuboidCollider
         args={[FASCIA_THICKNESS / 2, FASCIA_HEIGHT / 2, (SECTION_WIDTH + 0.2) / 2]}
-        position={[backOuterX + sideSign * (FASCIA_THICKNESS / 2), topRowTop + FASCIA_HEIGHT / 2, 0]}
+        position={[
+          backOuterX + sideSign * (FASCIA_THICKNESS / 2),
+          topRowTop + FASCIA_HEIGHT / 2,
+          0,
+        ]}
         friction={FRICTION}
         restitution={0}
         collisionGroups={WORLD_GROUPS}
@@ -163,11 +171,7 @@ const TribuneSectionColliders = ({
       ) : null}
       <CuboidCollider
         args={[(TRIBUNE_ROWS * ROW_DEPTH + 0.7) / 2, canopyHalfH, (SECTION_WIDTH + 0.8) / 2]}
-        position={[
-          tribuneInnerX + (sideSign * (TRIBUNE_ROWS * ROW_DEPTH + 0.35)) / 2,
-          canopyY,
-          0,
-        ]}
+        position={[tribuneInnerX + (sideSign * (TRIBUNE_ROWS * ROW_DEPTH + 0.35)) / 2, canopyY, 0]}
         friction={FRICTION}
         restitution={0}
         collisionGroups={WORLD_GROUPS}

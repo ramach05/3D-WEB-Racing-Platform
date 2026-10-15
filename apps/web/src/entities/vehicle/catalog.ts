@@ -47,8 +47,7 @@ const vehicleById = Object.fromEntries(VEHICLES.map((vehicle) => [vehicle.id, ve
 >;
 
 /** Возвращает описание машины или undefined */
-export const getVehicle = (id: string): TVehicleDef | undefined =>
-  vehicleById[id as TVehicleId];
+export const getVehicle = (id: string): TVehicleDef | undefined => vehicleById[id as TVehicleId];
 
 /** Проверяет, что строка — валидный id кузова */
 export const isVehicleId = (value: string): value is TVehicleId => value in vehicleById;

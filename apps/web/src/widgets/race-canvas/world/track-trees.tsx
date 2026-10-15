@@ -131,15 +131,8 @@ const TrunkLayer = ({ trees, color, map }: TTrunkLayerProps) => {
       castShadow
       receiveShadow
     >
-      <cylinderGeometry
-        args={[TRUNK_RADIUS, TRUNK_RADIUS_BOTTOM, TRUNK_HEIGHT, TRUNK_SEGMENTS]}
-      />
-      <meshStandardMaterial
-        color={color}
-        map={map}
-        roughness={0.94}
-        metalness={0}
-      />
+      <cylinderGeometry args={[TRUNK_RADIUS, TRUNK_RADIUS_BOTTOM, TRUNK_HEIGHT, TRUNK_SEGMENTS]} />
+      <meshStandardMaterial color={color} map={map} roughness={0.94} metalness={0} />
     </instancedMesh>
   );
 };
@@ -201,12 +194,7 @@ const PineTierLayer = ({
       receiveShadow
     >
       <coneGeometry args={[radius, height, CROWN_RADIAL_SEGMENTS]} />
-      <meshStandardMaterial
-        color={color}
-        map={map}
-        roughness={0.9}
-        metalness={0}
-      />
+      <meshStandardMaterial color={color} map={map} roughness={0.9} metalness={0} />
     </instancedMesh>
   );
 };
@@ -278,21 +266,14 @@ const BroadleafLobeLayer = ({
       receiveShadow
     >
       <sphereGeometry args={[radius, CROWN_RADIAL_SEGMENTS, CROWN_HEIGHT_SEGMENTS]} />
-      <meshStandardMaterial
-        color={color}
-        map={map}
-        roughness={0.88}
-        metalness={0}
-      />
+      <meshStandardMaterial color={color} map={map} roughness={0.88} metalness={0} />
     </instancedMesh>
   );
 };
 
 /** Цвет палитры по ключу tint */
-const paletteTint = (
-  colors: TTreeTimeOfDayColors,
-  tint: keyof TTreeTimeOfDayColors,
-): string => colors[tint];
+const paletteTint = (colors: TTreeTimeOfDayColors, tint: keyof TTreeTimeOfDayColors): string =>
+  colors[tint];
 
 /** Многослойные процедурные деревья (визуал; коллайдеры — TrackTreeColliders) */
 export const TrackTrees = ({ config }: TTrackTreesProps) => {

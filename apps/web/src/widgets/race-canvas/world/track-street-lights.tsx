@@ -264,7 +264,8 @@ const selectActiveSpotIndices = (
 };
 
 /** Стабильный ключ набора индексов для сравнения */
-const indicesKey = (indices: readonly number[]): string => [...indices].sort((a, b) => a - b).join(',');
+const indicesKey = (indices: readonly number[]): string =>
+  [...indices].sort((a, b) => a - b).join(',');
 
 /**
  * Уличные фонари вдоль трассы.

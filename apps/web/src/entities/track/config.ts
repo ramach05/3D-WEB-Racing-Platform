@@ -218,8 +218,7 @@ const buildLoopTrack = ({
   }
 
   /** timeOfDay: night только если явно night или если timeOfDay == night */
-  const derivedTimeOfDay: TTimeOfDay =
-    audioTheme === 'night' ? 'night' : 'day';
+  const derivedTimeOfDay: TTimeOfDay = audioTheme === 'night' ? 'night' : 'day';
 
   return {
     slug,
@@ -714,7 +713,6 @@ const buildDeckPiers = (points: readonly TLoopPoint[], roadWidth: number): TOrie
   return piers;
 };
 
-
 type TPathSegment =
   | {
       kind: 'line';
@@ -962,4 +960,3 @@ export const getAllTrackConfigs = (): TTrackConfig[] => {
  */
 export const isTrackLightingOn = (config: TTrackConfig): boolean =>
   config.timeOfDay === 'night' || config.weather === 'rain';
-

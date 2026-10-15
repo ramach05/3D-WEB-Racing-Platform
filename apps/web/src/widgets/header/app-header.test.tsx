@@ -5,12 +5,14 @@ import { AppHeader } from './app-header';
 
 vi.mock('@/features/auth', () => ({
   useAuthUser: vi.fn(),
+  useAuthHydrated: vi.fn(() => true),
   useLogout: () => vi.fn(),
 }));
 
-import { useAuthUser } from '@/features/auth';
+import { useAuthHydrated, useAuthUser } from '@/features/auth';
 
 const mockedUseAuthUser = vi.mocked(useAuthUser);
+const mockedUseAuthHydrated = vi.mocked(useAuthHydrated);
 
 describe('AppHeader', () => {
   it('truncates long nickname visually but keeps full value in title', () => {
@@ -41,5 +43,16 @@ describe('AppHeader', () => {
     expect(screen.getByRole('group', { name: /настройки|settings/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /тема|theme/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /язык|language/i })).toBeInTheDocument();
+  });
+
+  it('shows skeleton instead of login link while session is hydrating', () => {
+    mockedUseAuthUser.mockReturnValue(null);
+    mockedUseAuthHydrated.mockReturnValue(false);
+    renderWithRouter(<AppHeader />);
+
+    expect(screen.queryByRole('link', { name: /вход|log in/i })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('status', { name: /загрузка сессии|loading session/i }),
+    ).toBeInTheDocument();
   });
 });

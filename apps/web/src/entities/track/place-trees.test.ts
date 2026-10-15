@@ -50,8 +50,7 @@ describe('placeTrackTrees', () => {
 
   it('keeps trees outside the track corridor', () => {
     for (const config of getAllTrackConfigs()) {
-      const corridor =
-        config.roadWidth / 2 + 0.5 + TREE_PLACEMENT_LIMITS.corridorRunoff;
+      const corridor = config.roadWidth / 2 + 0.5 + TREE_PLACEMENT_LIMITS.corridorRunoff;
 
       const trees = placeTrackTrees({ config });
 

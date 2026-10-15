@@ -26,15 +26,15 @@ ffmpeg -i recording.mov -vf "fps=15,scale=960:-1" docs/screenshots/gameplay.gif
 
 ## Стек и почему так
 
-| Выбор                                  | Зачем                                                                                        |
-| -------------------------------------- | -------------------------------------------------------------------------------------------- |
-| **Vite + React 19**, не Next.js        | Это SPA-игра. SSR/hydration с canvas и Rapier WASM только мешают.                            |
-| **pnpm workspaces**, не Turborepo      | Два приложения. Оркестратор не нужен.                                                        |
-| **SQLite + Prisma 7**                  | Один файл БД, без Docker. Prisma 7 + SQLite driver adapter (`better-sqlite3`).               |
-| **Rapier (**`@react-three/rapier`**)** | WASM-физика в том же дереве, что R3F. Arcade, не симулятор F1.                               |
-| **FSD**                                | Границы модулей читаются на собеседовании.                                                   |
-| **Redux Toolkit + RTK Query**          | Auth/API. Симуляция гонки **не** в Redux: vanilla-store + `useSyncExternalStore`.            |
-| **JWT access + httpOnly refresh**      | Access JWT 15m в памяти; refresh — opaque httpOnly cookie + ротация/revoke в БД. |
+| Выбор                                  | Зачем                                                                             |
+| -------------------------------------- | --------------------------------------------------------------------------------- |
+| **Vite + React 19**, не Next.js        | Это SPA-игра. SSR/hydration с canvas и Rapier WASM только мешают.                 |
+| **pnpm workspaces**, не Turborepo      | Два приложения. Оркестратор не нужен.                                             |
+| **SQLite + Prisma 7**                  | Один файл БД, без Docker. Prisma 7 + SQLite driver adapter (`better-sqlite3`).    |
+| **Rapier (**`@react-three/rapier`**)** | WASM-физика в том же дереве, что R3F. Arcade, не симулятор F1.                    |
+| **FSD**                                | Границы модулей читаются на собеседовании.                                        |
+| **Redux Toolkit + RTK Query**          | Auth/API. Симуляция гонки **не** в Redux: vanilla-store + `useSyncExternalStore`. |
+| **JWT access + httpOnly refresh**      | Access JWT 15m в памяти; refresh — opaque httpOnly cookie + ротация/revoke в БД.  |
 
 Пакеты: `@racing/web`, `@racing/api`, `@racing/shared`. Node **22.12+**, pnpm **10**.
 
