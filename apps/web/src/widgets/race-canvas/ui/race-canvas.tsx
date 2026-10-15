@@ -1,4 +1,4 @@
-import { type RefObject, memo, useLayoutEffect, useRef } from 'react';
+import { type ReactNode, type RefObject, memo, useLayoutEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Sky, Stars } from '@react-three/drei';
 import {
@@ -9,8 +9,9 @@ import {
   type PointLight,
 } from 'three';
 import { Physics, type RapierRigidBody } from '@react-three/rapier';
-import { isTrackLightingOn, type TTrackConfig } from '@/entities/track';
+import { type TTrackConfig } from '@/entities/track';
 import { readSelectedVehicle } from '@/features/vehicle-select';
+import { useRaceHudSelector } from '@/features/race-session';
 import { scenePalette } from '@/shared/config';
 import { CheckpointDetector } from '@/widgets/race-canvas/model/checkpoint-detector';
 import { Vehicle } from '@/widgets/race-canvas/vehicle/vehicle';
@@ -41,12 +42,6 @@ import { WebGlContextGuard } from './webgl-context-guard';
 type TRaceSceneProps = {
   /** Конфиг трассы и палитры */
   config: TTrackConfig;
-  /** Пауза физики Rapier */
-  physicsPaused: boolean;
-  /** Пауза анимации толпы */
-  crowdPaused: boolean;
-  /** Пауза осадков: только меню-pause; на countdown/finished дождь продолжает идти */
-  rainPaused: boolean;
   /** Счётчик рестарта гонки */
   resetNonce: number;
   /** Колбэк завершения гонки */
@@ -275,12 +270,33 @@ type TRaceSceneInnerProps = TRaceSceneProps & {
   visualRef: RefObject<Group | null>;
 };
 
+type TRacePhysicsProps = {
+  /** Тело физики: коллајдеры трассы и машина */
+  children: ReactNode;
+};
+
+/**
+ * Гейт паузы физики по HUD-статусу. Подписка изолирована здесь: смена статуса
+ * (countdown/GO/pause) перерисовывает только Physics, а не всё дерево сцены.
+ */
+const RacePhysics = ({ children }: TRacePhysicsProps) => {
+  const paused = useRaceHudSelector(
+    (snapshot) =>
+      snapshot.status === 'countdown' ||
+      snapshot.status === 'paused' ||
+      snapshot.status === 'finished',
+  );
+
+  return (
+    <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} updatePriority={-1} paused={paused}>
+      {children}
+    </Physics>
+  );
+};
+
 /** Свет, физика, трасса и машина */
 const RaceSceneInner = ({
   config,
-  physicsPaused,
-  crowdPaused,
-  rainPaused,
   resetNonce,
   onFinished,
   onFirstFrame,
@@ -331,8 +347,8 @@ const RaceSceneInner = ({
           mieDirectionalG={0.82}
         />
       )}
-      {isRain && <RainSystem paused={rainPaused} />}
-      <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} updatePriority={-1} paused={physicsPaused}>
+      {isRain && <RainSystem />}
+      <RacePhysics>
         <TrackWorld config={config} resetNonce={resetNonce} />
         <TrackTreeColliders config={config} />
         <TrackStreetLightColliders config={config} />
@@ -358,7 +374,7 @@ const RaceSceneInner = ({
           roadWidths={config.roadWidths}
           isRain={isRain}
         />
-      </Physics>
+      </RacePhysics>
       <SkidMarks />
       <WheelSpray bodyRef={bodyRef} enabled={isRain} />
       <TrackKerbs config={config} />
@@ -375,7 +391,6 @@ const RaceSceneInner = ({
         palette={config.palette}
         side={config.startTribuneSide}
         isNight={forcedLights}
-        paused={crowdPaused}
       />
       <TrackTrees config={config} />
       <TrackStreetLights config={config} bodyRef={bodyRef} />
@@ -402,17 +417,14 @@ const RaceSceneInner = ({
 /** Canvas гонки: отдельно от HUD, чтобы React не убивал FPS */
 const RaceCanvasView = ({
   config,
-  physicsPaused,
-  crowdPaused,
-  rainPaused,
   resetNonce,
   onFinished,
   onFirstFrame,
 }: TRaceSceneProps) => {
   const bodyRef = useRef<RapierRigidBody>(null);
   const visualRef = useRef<Group>(null);
-  /** При активном EffectComposer MSAA дефолтного FB не сглаживает ничего (final pass — fullscreen-квад), только оверхед */
-  const composerActive = isTrackLightingOn(config);
+  /** Composer (bloom/vignette) только ночью; в дождь — без постобработки и с MSAA */
+  const composerActive = config.timeOfDay === 'night';
 
   return (
     <Canvas
@@ -424,9 +436,6 @@ const RaceCanvasView = ({
       <WebGlContextGuard />
       <RaceSceneInner
         config={config}
-        physicsPaused={physicsPaused}
-        crowdPaused={crowdPaused}
-        rainPaused={rainPaused}
         resetNonce={resetNonce}
         onFinished={onFinished}
         onFirstFrame={onFirstFrame}

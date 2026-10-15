@@ -30,8 +30,6 @@ type TSpectatorCrowdProps = {
   palette: TTrackPalette;
   /** Ночной неон футболок */
   isNight: boolean;
-  /** Пауза анимации */
-  paused: boolean;
 };
 
 const ARM_RADIUS = 0.038;
@@ -306,7 +304,7 @@ const computeArmAngles = ({
 };
 
 /** Анимированная толпа зрителей через InstancedMesh */
-export const SpectatorCrowd = ({ seats, palette, isNight, paused }: TSpectatorCrowdProps) => {
+export const SpectatorCrowd = ({ seats, palette, isNight }: TSpectatorCrowdProps) => {
   const bodyRef = useRef<InstancedMesh>(null);
   const headRef = useRef<InstancedMesh>(null);
   const leftArmRef = useRef<InstancedMesh>(null);
@@ -470,8 +468,9 @@ export const SpectatorCrowd = ({ seats, palette, isNight, paused }: TSpectatorCr
       return;
     }
 
-    const time = paused ? 0 : state.clock.elapsedTime;
     const status = getRaceHudSnapshot().status;
+    const paused = status === 'paused';
+    const time = paused ? 0 : state.clock.elapsedTime;
     const finishBoost = status === 'finished';
     const racing = status === 'racing' || status === 'countdown';
     let baseEnergy: TEnergyLevel = ENERGY_IDLE;

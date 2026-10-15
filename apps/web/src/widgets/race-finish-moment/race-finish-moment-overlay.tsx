@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useRaceHud } from '@/features/race-session';
+import { useRaceHudSelector } from '@/features/race-session';
 import { formatRaceTime } from '@/shared/lib';
 
 type TFinishMomentPhase = 'finish' | 'time';
@@ -23,8 +23,8 @@ export const RaceFinishMomentOverlay = ({
   isNewBest,
 }: TRaceFinishMomentOverlayProps) => {
   const { t } = useTranslation();
-  const hud = useRaceHud();
-  const visible = active && hud.status === 'finished';
+  const status = useRaceHudSelector((snapshot) => snapshot.status);
+  const visible = active && status === 'finished';
   const [phase, setPhase] = useState<TFinishMomentPhase>('finish');
   const [wasVisible, setWasVisible] = useState(false);
 

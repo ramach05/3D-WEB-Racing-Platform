@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   setCountdownStep,
   startRacing,
-  useRaceHud,
+  useRaceHudSelector,
   type TCountdownStep,
 } from '@/features/race-session';
 
@@ -22,11 +22,12 @@ const prefersReducedMotion = (): boolean => {
 /** Крупный SEGA-отсчёт 3-2-1-GO перед стартом таймера */
 export const RaceCountdownOverlay = () => {
   const { t } = useTranslation();
-  const hud = useRaceHud();
+  const status = useRaceHudSelector((snapshot) => snapshot.status);
+  const countdownStep = useRaceHudSelector((snapshot) => snapshot.countdownStep);
 
   // Ведёт таймеры шагов 3-2-1-GO и стартует гонку.
   useEffect(() => {
-    if (hud.status !== 'countdown') {
+    if (status !== 'countdown') {
       return;
     }
 
@@ -65,13 +66,13 @@ export const RaceCountdownOverlay = () => {
     return () => {
       timers.forEach((id) => window.clearTimeout(id));
     };
-  }, [hud.status]);
+  }, [status]);
 
-  if (hud.status !== 'countdown' || hud.countdownStep === null) {
+  if (status !== 'countdown' || countdownStep === null) {
     return null;
   }
 
-  const label = hud.countdownStep === 0 ? t('race.countdownGo') : String(hud.countdownStep);
+  const label = countdownStep === 0 ? t('race.countdownGo') : String(countdownStep);
 
   return (
     <div
@@ -81,8 +82,8 @@ export const RaceCountdownOverlay = () => {
       aria-atomic="true"
     >
       <p
-        key={hud.countdownStep}
-        className={`sega-countdown__digit ${hud.countdownStep === 0 ? 'sega-countdown__digit--go' : ''}`}
+        key={countdownStep}
+        className={`sega-countdown__digit ${countdownStep === 0 ? 'sega-countdown__digit--go' : ''}`}
       >
         {label}
       </p>

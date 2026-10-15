@@ -24,6 +24,7 @@ let pausedAccumulated = 0;
 let pauseStartedAt = 0;
 let lastNotifyAt = 0;
 const listeners = new Set<TListener>();
+let notifyScheduled = false;
 
 /** Читает лучшее время гостя с этой трассы */
 export const readGuestBest = (trackId: string): number | null => {
@@ -54,14 +55,38 @@ export const subscribeRaceHud = (listener: TListener): (() => void) => {
 /** Текущий снимок HUD */
 export const getRaceHudSnapshot = (): TRaceHudSnapshot => snapshot;
 
+/** Уведомляет подписчиков вне текущего кадра: React-рендеры HUD не должны вырывать кадр у отрисовки сцены */
+const flushListeners = (): void => {
+  if (!notifyScheduled) {
+    return;
+  }
+  notifyScheduled = false;
+  lastNotifyAt = performance.now();
+  listeners.forEach((listener) => listener());
+};
+
+/**
+ * Ставит уведомление на ближайший rAF; серия emit'ов схлопывается в один.
+ * setTimeout — страховка на случай, где rAF не крутится (фоновая вкладка, jsdom-таймеры).
+ */
+const scheduleNotify = (): void => {
+  if (notifyScheduled) {
+    return;
+  }
+  notifyScheduled = true;
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(flushListeners);
+  }
+  setTimeout(flushListeners, 32);
+};
+
 /** Уведомляет подписчиков HUD; без force — не чаще ~80 мс */
 const emit = (force: boolean): void => {
   const now = performance.now();
   if (!force && now - lastNotifyAt < 80) {
     return;
   }
-  lastNotifyAt = now;
-  listeners.forEach((listener) => listener());
+  scheduleNotify();
 };
 
 /** Патчит снимок HUD и шлёт emit */

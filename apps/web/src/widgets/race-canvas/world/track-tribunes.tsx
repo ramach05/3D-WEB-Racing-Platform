@@ -65,8 +65,6 @@ type TTrackTribunesProps = {
   side: TStartTribuneSide;
   /** Ночной режим освещения */
   isNight: boolean;
-  /** Пауза анимации толпы */
-  paused: boolean;
 };
 
 const SPECTATORS_PER_SECTION = 30;
@@ -95,8 +93,6 @@ type TTribuneSectionProps = {
   palette: TTrackPalette;
   /** Ночной режим */
   isNight: boolean;
-  /** Пауза анимации толпы */
-  paused: boolean;
   /** Shared-материалы секции */
   materials: TTribuneMaterials;
 };
@@ -330,7 +326,6 @@ const TribuneSection = ({
   sideSign,
   palette,
   isNight,
-  paused,
   materials,
 }: TTribuneSectionProps) => {
   const seats = useMemo(
@@ -512,7 +507,7 @@ const TribuneSection = ({
 
       <InstancedBoxes items={railParts} material={materials.metal} castShadow={false} />
 
-      <SpectatorCrowd seats={seats} palette={palette} isNight={isNight} paused={paused} />
+      <SpectatorCrowd seats={seats} palette={palette} isNight={isNight} />
     </group>
   );
 };
@@ -524,7 +519,6 @@ export const TrackTribunes = ({
   palette,
   side,
   isNight,
-  paused,
 }: TTrackTribunesProps) => {
   const sideSign = tribuneSideSign(side);
   const tribuneInnerX = sideSign * (roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);
@@ -630,7 +624,6 @@ export const TrackTribunes = ({
           sideSign={sideSign}
           palette={palette}
           isNight={isNight}
-          paused={paused}
           materials={materials}
         />
       ))}

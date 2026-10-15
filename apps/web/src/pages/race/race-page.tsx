@@ -68,9 +68,11 @@ export const RacePage = () => {
   const track = tracks?.find((item) => item.slug === trackSlug) ?? null;
   const trackId = track?.id;
   const config = track ? getTrackConfig(track.slug) : null;
-  // Только статус и время: шаг обратного отсчета не должен перерисовывать страницу с 3D-сценой.
+  // Только статус и время финиша: шаг обратного отсчета и круги не должны перерисовывать страницу с 3D-сценой.
   const hudStatus = useRaceHudSelector((snapshot) => snapshot.status);
-  const hudTimeMs = useRaceHudSelector((snapshot) => snapshot.timeMs);
+  const hudFinishMs = useRaceHudSelector((snapshot) =>
+    snapshot.status === 'finished' ? snapshot.timeMs : 0,
+  );
   const cameraMode = useCameraMode();
   const user = useAuthUser();
   const [createResult] = useCreateRaceResultMutation();
@@ -329,18 +331,12 @@ export const RacePage = () => {
     );
   }
 
-  const physicsPaused =
-    hudStatus === 'paused' || hudStatus === 'finished' || hudStatus === 'countdown';
-
   return (
     <div className="sega-scanlines relative min-h-0 w-full flex-1 overflow-hidden bg-black">
       <div className="absolute inset-0">
         {canvasArmed ? (
           <RaceCanvas
             config={config}
-            physicsPaused={physicsPaused}
-            crowdPaused={hudStatus === 'paused'}
-            rainPaused={hudStatus === 'paused'}
             resetNonce={resetNonce}
             onFinished={onFinished}
             onFirstFrame={handleFirstFrame}
@@ -394,7 +390,7 @@ export const RacePage = () => {
           <RaceCountdownOverlay />
           <RaceFinishMomentOverlay
             active={hudStatus === 'finished' && !showFinishOverlay}
-            timeMs={finishMeta?.timeMs ?? hudTimeMs}
+            timeMs={finishMeta?.timeMs ?? hudFinishMs}
             isNewBest={finishMeta?.isNewBest ?? false}
           />
           <RacePauseMenu
@@ -406,7 +402,7 @@ export const RacePage = () => {
           <RaceFinishOverlay
             open={hudStatus === 'finished' && showFinishOverlay}
             trackName={track.name}
-            timeMs={finishMeta?.timeMs ?? hudTimeMs}
+            timeMs={finishMeta?.timeMs ?? hudFinishMs}
             bestMs={trackBestMs}
             isNewBest={finishMeta?.isNewBest ?? false}
             isGuest={!user}

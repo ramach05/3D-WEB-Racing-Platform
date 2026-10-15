@@ -2,6 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { DoubleSide, Matrix4, Vector3 } from 'three';
 import type { InstancedMesh } from 'three';
 import { useRef } from 'react';
+import { getRaceHudSnapshot } from '@/features/race-session';
 
 const RAIN_COUNT = 5000;
 const RAIN_HEIGHT = 42;
@@ -18,18 +19,15 @@ const tmpCamPos = new Vector3();
 const tmpRot = new Matrix4();
 
 /** Система дождевых частиц: куб следует за камерой, наклон от ветра */
-export const RainSystem = ({ paused }: { paused: boolean }) => {
+export const RainSystem = () => {
   const meshRef = useRef<InstancedMesh>(null);
-  const pausedRef = useRef(paused);
   const { camera } = useThree();
   const windX = useRef(0);
   const windZ = useRef(0);
 
   useFrame(() => {
-    if (pausedRef.current !== paused) {
-      pausedRef.current = paused;
-    }
-    if (paused) return;
+    // Пауза только в меню-pause; на countdown/finished дождь продолжает идти.
+    if (getRaceHudSnapshot().status === 'paused') return;
     const mesh = meshRef.current;
     if (!mesh) return;
 

@@ -3,9 +3,9 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import {
   getRaceHudSnapshot,
+  useRaceHudSelector,
   type TCountdownStep,
   type TRaceStatus,
-  useRaceHud,
 } from '@/features/race-session';
 import { formatRaceTime } from '@/shared/lib';
 
@@ -68,13 +68,16 @@ type TRaceHudProps = {
 /** Текстовый HUD поверх канваса. Время/скорость — через rAF без React-ререндеров. */
 export const RaceHud = ({ trackName, bestMs = null }: TRaceHudProps) => {
   const { t } = useTranslation();
-  const hud = useRaceHud();
+  const status = useRaceHudSelector((snapshot) => snapshot.status);
+  const countdownStep = useRaceHudSelector((snapshot) => snapshot.countdownStep);
+  const lapIndex = useRaceHudSelector((snapshot) => snapshot.lapIndex);
+  const lapTotal = useRaceHudSelector((snapshot) => snapshot.lapTotal);
   const timeRef = useRef<HTMLSpanElement>(null);
   const speedRef = useRef<HTMLSpanElement>(null);
-  const statusLabel = getStatusLabel(hud.status, hud.countdownStep, t);
+  const statusLabel = getStatusLabel(status, countdownStep, t);
   const labelSlotCh = getLabelSlotCh(t);
   const statusSlotCh = getStatusSlotCh(t);
-  const lapDigits = Math.max(1, String(hud.lapTotal).length);
+  const lapDigits = Math.max(1, String(lapTotal).length);
   const lapValueCh = lapDigits * 2 + 1;
   const speedValueCh = SPEED_SLOT_CH + ' km/h'.length;
   const panelMinCh =
@@ -137,7 +140,7 @@ export const RaceHud = ({ trackName, bestMs = null }: TRaceHudProps) => {
           className="sega-race-hud__value"
           style={{ minWidth: `${TIME_SLOT_CH}ch` }}
         >
-          {formatRaceTime(hud.timeMs)}
+          {formatRaceTime(getRaceHudSnapshot().timeMs)}
         </span>
       </p>
       <p className="sega-race-hud__row">
@@ -157,7 +160,7 @@ export const RaceHud = ({ trackName, bestMs = null }: TRaceHudProps) => {
           className="sega-race-hud__value sega-race-hud__value--end"
           style={{ minWidth: `${SPEED_SLOT_CH}ch` }}
         >
-          {Math.round(hud.speedKmh)}
+          {Math.round(getRaceHudSnapshot().speedKmh)}
         </span>
         <span>km/h</span>
       </p>
@@ -166,7 +169,7 @@ export const RaceHud = ({ trackName, bestMs = null }: TRaceHudProps) => {
           {t('race.lap')}:
         </span>
         <span className="sega-race-hud__value" style={{ minWidth: `${lapValueCh}ch` }}>
-          {hud.lapIndex}/{hud.lapTotal}
+          {lapIndex}/{lapTotal}
         </span>
       </p>
     </div>
