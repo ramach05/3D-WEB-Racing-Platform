@@ -26,6 +26,8 @@ import { pulseCameraShake } from '@/widgets/race-canvas/lib/camera-shake';
 import {
   beginCountdown,
   computeGroundFollowVy,
+  computeGroundRestY,
+  computeGroundStickY,
   computeSlopePitchFromNormal,
   computeSteerStrength,
   dampLateralVelocity,
@@ -272,11 +274,14 @@ const WHEEL_LOCAL: TVec3[] = [
 ];
 
 /**
- * Сетка probes под днищем: капсула кузова заметно больше стопки шин (1.2×1.2),
- * колесные лучи пролетают мимо — опору под кузовом ищем по всей подошве капсулы.
+ * Сетка probes под днищем и перед носом: капсула кузова заметно больше стопки шин
+ * (1.2×1.2), колесные лучи пролетают мимо — опору под кузовом ищем по всей подошве.
+ * Точки за передним краем капсулы (z > 1.65) ловят «воткнулись носом в стопку»:
+ * луч изнутри коллайдера дает TOI ~ 0 и отключает снап к дороге, иначе телепорт
+ * утыкает кузов глубже в шины — тряска и замирание.
  */
 const OBSTACLE_PROBE_POINTS: TVec3[] = [-0.7, 0, 0.7].flatMap((px) =>
-  [-1.5, -0.75, 0, 0.75, 1.5].map((pz) => [px, 0.05, pz] as TVec3),
+  [-1.5, -0.75, 0, 0.75, 1.5, 2.1, 2.6].map((pz) => [px, 0.05, pz] as TVec3),
 );
 
 const MAX_SPEED = VEHICLE_MAX_SPEED;
@@ -328,6 +333,13 @@ const tmpDesired = new Vector3();
 const tmpNormal = new Vector3();
 const tmpSlide = new Vector3();
 const tmpGroundNormal = new Vector3();
+// Буферы попаданий лучей колес (переиспользуются между кадрами)
+const tmpWheelHitY: number[] = [0, 0, 0, 0];
+const tmpWheelHitNX: number[] = [0, 0, 0, 0];
+const tmpWheelHitNY: number[] = [0, 0, 0, 0];
+const tmpWheelHitNZ: number[] = [0, 0, 0, 0];
+/** Полоса высот попаданий колес, ниже которой попадание — не полотно под машиной (м) */
+const DECK_HIT_SPREAD = 1.2;
 
 /** Скользит вдоль стены: убирает составляющую скорости по нормали стены */
 const slideAlongWalls = (
@@ -525,7 +537,12 @@ export const Vehicle = ({
     // иначе телепорт внутрь коллайдеров = тряска/зависание. Ищется сеткой ниже.
     let obstacleContact = false;
     tmpGroundNormal.set(0, 0, 0);
-    for (const offset of WHEEL_LOCAL) {
+    // Попадания лучей колес сначала собираются, потом фильтруются выбросы: луч
+    // колеса за краем деки эстакады бьет в землю внизу и без фильтрации тянет
+    // среднюю высоту/нормаль вниз — кузов прижимом утаскивает под трассу.
+    let deckTopY = Number.NEGATIVE_INFINITY;
+    for (let i = 0; i < WHEEL_LOCAL.length; i += 1) {
+      const offset = WHEEL_LOCAL[i]!;
       tmpOrigin.set(offset[0], offset[1], offset[2]).applyQuaternion(tmpQuat);
       tmpOrigin.x += translation.x;
       tmpOrigin.y += translation.y;
@@ -545,25 +562,41 @@ export const Vehicle = ({
         undefined,
         body,
       );
+      tmpWheelHitY[i] = Number.POSITIVE_INFINITY;
       if (hit) {
         // Близкое попадание почти на горизонтальную поверхность = реальный контакт;
         // дальнее — машина в воздухе, почти вертикальная нормаль — стена, а не земля.
         if (hit.timeOfImpact <= GROUND_PROBE_TOI && hit.normal.y >= GROUND_NORMAL_MIN_Y) {
-          wheelGrounded = true;
-          roadYSum += tmpOrigin.y - hit.timeOfImpact;
-          roadYCount += 1;
+          const hitY = tmpOrigin.y - hit.timeOfImpact;
+          tmpWheelHitY[i] = hitY;
+          tmpWheelHitNX[i] = hit.normal.x;
+          tmpWheelHitNY[i] = hit.normal.y;
+          tmpWheelHitNZ[i] = hit.normal.z;
+          if (hitY > deckTopY) {
+            deckTopY = hitY;
+          }
         }
         // Трамплин = реальный уклон (14–20°); нормаль стены не должна отключать
         // кламп вертикальной скорости, иначе удар в ограждение подбрасывает машину.
         if (hit.normal.y < 0.97 && hit.normal.y >= SLOPE_CONTACT_NORMAL_MIN_Y) {
           rampContact = true;
         }
-        if (hit.normal.y >= SLOPE_CONTACT_NORMAL_MIN_Y) {
-          tmpGroundNormal.x += hit.normal.x;
-          tmpGroundNormal.y += hit.normal.y;
-          tmpGroundNormal.z += hit.normal.z;
-          groundNormalCount += 1;
-        }
+      }
+    }
+    for (let i = 0; i < WHEEL_LOCAL.length; i += 1) {
+      const y = tmpWheelHitY[i] ?? Number.POSITIVE_INFINITY;
+      // вне полосы вокруг самой высокой опоры — не полотно под машиной
+      if (!Number.isFinite(y) || Math.abs(y - deckTopY) > DECK_HIT_SPREAD) {
+        continue;
+      }
+      wheelGrounded = true;
+      roadYSum += y;
+      roadYCount += 1;
+      if ((tmpWheelHitNY[i] ?? 0) >= SLOPE_CONTACT_NORMAL_MIN_Y) {
+        tmpGroundNormal.x += tmpWheelHitNX[i] ?? 0;
+        tmpGroundNormal.y += tmpWheelHitNY[i] ?? 0;
+        tmpGroundNormal.z += tmpWheelHitNZ[i] ?? 0;
+        groundNormalCount += 1;
       }
     }
     if (groundNormalCount > 0) {
@@ -891,17 +924,36 @@ export const Vehicle = ({
       slid.x,
       slid.z,
     );
+    // Позиционный прижим к равновесной высоте покоя: на спуске решатель гасит
+    // нормальную составляющую vy и кузов отстает от убегающей деки, а у гребня
+    // подъема vy по касательной перебирает вверх (выпуклый профиль) — в обоих
+    // случаях зазор без коррекции дорастает до порога и рывковый снап трясет машину.
+    const slopeRestY =
+      roadYCount > 0
+        ? computeGroundRestY(
+            roadYSum / roadYCount,
+            tmpGroundNormal.x,
+            tmpGroundNormal.y,
+            tmpGroundNormal.z,
+            COLLIDER_HALF_Z,
+          )
+        : 0;
+    const stickY =
+      wheelGrounded && !rampContact && !obstacleContact && roadYCount > 0
+        ? computeGroundStickY(slopeRestY, translation.y)
+        : null;
+    if (stickY !== null) {
+      body.setTranslation({ x: translation.x, y: stickY, z: translation.z }, true);
+    }
     let nextVy = linvel.y;
     if (wheelGrounded && !rampContact && !obstacleContact) {
-      // На спуске деки гравитации за кадр не хватает, чтобы поспевать за полотном:
-      // кузов повисает над дорогой, а снап ниже дергает его вниз (тряска на эстакаде) —
-      // целимся вдоль плоскости и сглаживаем, чтобы гребень не давал ступеньку
-      followVyRef.current = smoothVyToward(
-        followVyRef.current,
-        resolveGroundFollowVy(followVy, linvel.y),
-        clampedDt,
-      );
-      nextVy = followVyRef.current;
+      const targetVy = resolveGroundFollowVy(followVy, linvel.y);
+      // спуск прижимается позиционно — vy без сглаживания; подъем/равнина сглаживаются
+      nextVy =
+        followVy < 0
+          ? targetVy
+          : smoothVyToward(followVyRef.current, targetVy, clampedDt);
+      followVyRef.current = nextVy;
     } else {
       followVyRef.current = linvel.y;
     }
@@ -911,9 +963,9 @@ export const Vehicle = ({
     // (удар о бочку) — вернуть на высоту покоя и погасить вертикаль. На препятствии
     // (шина под колесом) не снаппим: иначе телепорт внутрь коллайдеров — тряска.
     if (wheelGrounded && roadYCount > 0 && !obstacleContact) {
-      const restY = roadYSum / roadYCount;
-      if (translation.y > restY + GROUND_SNAP_TOLERANCE) {
-        body.setTranslation({ x: translation.x, y: restY, z: translation.z }, true);
+      const bodyY = stickY !== null ? stickY : translation.y;
+      if (bodyY > slopeRestY + GROUND_SNAP_TOLERANCE) {
+        body.setTranslation({ x: translation.x, y: slopeRestY, z: translation.z }, true);
         body.setLinvel({ x: slid.x, y: 0, z: slid.z }, true);
         followVyRef.current = 0;
       }

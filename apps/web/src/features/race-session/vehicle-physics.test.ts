@@ -2,9 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   ANGLE_SMOOTH_MAX_RATE,
   computeGroundFollowVy,
+  computeGroundRestY,
+  computeGroundStickY,
   computeSlopePitchFromNormal,
   computeSteerStrength,
   dampLateralVelocity,
+  GROUND_STICK_MARGIN,
+  GROUND_STICK_MAX_DROP,
   HANDBRAKE_DECEL,
   HANDBRAKE_STEER_BOOST,
   HANDBRAKE_THROTTLE_FACTOR,
@@ -222,6 +226,28 @@ describe('ground slope following', () => {
       smoothVyToward(0, -3, 1 / 15),
       6,
     );
+  });
+
+  it('sticks the body to the equilibrium height (descent and crest overshoot)', () => {
+    // цель = равновесная высота покоя + запас
+    expect(computeGroundStickY(2.5, 2.6)).toBeCloseTo(2.5 + GROUND_STICK_MARGIN, 6);
+    // перебор над равновесием больше лимита — снижение за кадр не больше MaxDrop
+    expect(computeGroundStickY(4.08, 4.35)).toBeCloseTo(4.35 - GROUND_STICK_MAX_DROP, 6);
+  });
+
+  it('raises the rest height on a slope: the flat capsule digs its tail into the deck', () => {
+    // равнина: без смещения
+    expect(computeGroundRestY(2, 0, 1, 0, 1.65)).toBeCloseTo(2, 6);
+    // уклон 10% по x (n=(0.0995,0.995,0)): кузов стоит на halfLen*tanθ выше деки
+    const ny = 0.995;
+    const nx = Math.sqrt(1 - ny * ny);
+    expect(computeGroundRestY(2, nx, ny, 0, 1.65)).toBeCloseTo(2 + 1.65 * (nx / ny), 10);
+  });
+
+  it('does not stick when the body is within the margin or below the equilibrium', () => {
+    expect(computeGroundStickY(3, 3.01)).toBeNull();
+    // кузов ниже цели — вверх не поднимаем
+    expect(computeGroundStickY(3.5, 3.1)).toBeNull();
   });
 
   it('derives the visual pitch from the ground normal, not from speed', () => {
