@@ -170,7 +170,8 @@ describe('API e2e', () => {
     // Старый refresh после ротации больше недействителен
     await request(server).post('/auth/refresh').set('Cookie', oldCookie).expect(401);
 
-    await request(server).post('/auth/refresh').expect(401);
+    // Запрос вообще без cookie — молчаливый 204 (гость), а не 401
+    await request(server).post('/auth/refresh').expect(204);
 
     // Logout отзывает текущую сессию и чистит cookie
     await request(server).post('/auth/logout').set('Cookie', newCookie).expect(204);

@@ -51,13 +51,18 @@ export class AuthController {
   @Post('refresh')
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @ApiOperation({ summary: 'Обновить access по refresh-cookie (ротация)' })
-  async refresh(
-    @Req() req: TAuthedCookieRequest,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<TRefreshResponse> {
-    const issued = await this.authService.refresh(req.cookies?.[REFRESH_COOKIE_NAME]);
+  async refresh(@Req() req: TAuthedCookieRequest, @Res() res: Response): Promise<void> {
+    const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME];
+    // Гость без cookie: пустой 204 вместо 401 (молчаливая гидрация, без ошибки в консоли браузера)
+    if (!refreshToken) {
+      res.status(204).end();
+      return;
+    }
+    const issued = await this.authService.refresh(refreshToken);
     setRefreshCookie(res, issued.refreshToken);
-    return { tokens: { accessToken: issued.accessToken } };
+    res
+      .status(201)
+      .json({ tokens: { accessToken: issued.accessToken } } satisfies TRefreshResponse);
   }
 
   @Post('logout')

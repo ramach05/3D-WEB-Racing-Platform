@@ -37,12 +37,15 @@ export const authApi = racingApi.injectEndpoints({
       },
       invalidatesTags: ['Me'],
     }),
-    refreshSession: build.mutation<TRefreshResponse, void>({
+    refreshSession: build.mutation<TRefreshResponse | undefined, void>({
       query: () => ({ url: '/auth/refresh', method: 'POST' }),
       async onQueryStarted(_arg, { queryFulfilled }) {
         try {
+          // 204 без cookie приходит без тела: ток persist у него нет
           const { data } = await queryFulfilled;
-          persistAccessToken(data.tokens.accessToken);
+          if (data) {
+            persistAccessToken(data.tokens.accessToken);
+          }
         } catch {
           return;
         }
