@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TLoopPoint } from '@/entities/track';
-import { VEHICLE_LATERAL_GRIP } from '@/features/race-session/vehicle-physics';
+import { VEHICLE_LATERAL_GRIP } from '@/features/race-session';
 import { KERB_WIDTH } from '@/widgets/race-canvas/lib/kerb-ribbon-geometry';
 import {
   KERB_LATERAL_GRIP,
@@ -43,19 +43,18 @@ describe('sampleTrackSurfaceKind', () => {
 
 describe('aggregateWheelSurfaces', () => {
   it('returns fractions for mixed wheels', () => {
-    expect(
-      aggregateWheelSurfaces(['asphalt', 'asphalt', 'kerb', 'offroad']),
-    ).toEqual({ asphalt: 0.5, kerb: 0.25, offroad: 0.25 });
+    expect(aggregateWheelSurfaces(['asphalt', 'asphalt', 'kerb', 'offroad'])).toEqual({
+      asphalt: 0.5,
+      kerb: 0.25,
+      offroad: 0.25,
+    });
   });
 });
 
 describe('combineSurfaceGrip', () => {
   it('starts from asphalt micro grip', () => {
     expect(combineSurfaceGrip(undefined, 0, 0, 1)).toBeCloseTo(VEHICLE_LATERAL_GRIP, 5);
-    expect(combineSurfaceGrip(undefined, 0, 0, 0.92)).toBeCloseTo(
-      VEHICLE_LATERAL_GRIP * 0.92,
-      5,
-    );
+    expect(combineSurfaceGrip(undefined, 0, 0, 0.92)).toBeCloseTo(VEHICLE_LATERAL_GRIP * 0.92, 5);
   });
 
   it('blends kerb then offroad, and oil beats both', () => {

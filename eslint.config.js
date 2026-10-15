@@ -122,6 +122,10 @@ const sharedRules = {
   eqeqeq: ['error', 'always', { null: 'ignore' }],
   'no-console': ['error', { allow: ['warn', 'error'] }],
   '@typescript-eslint/no-explicit-any': 'error',
+  '@typescript-eslint/no-unused-vars': [
+    'error',
+    { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+  ],
   '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
   '@typescript-eslint/consistent-type-imports': [
     'error',

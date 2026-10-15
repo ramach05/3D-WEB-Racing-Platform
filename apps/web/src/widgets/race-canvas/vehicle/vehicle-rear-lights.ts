@@ -24,10 +24,7 @@ export const resolveRearLightMode = (brake: number, forwardSpeed: number): TRear
   return 'idle';
 };
 
-/**
- * Целевая emissiveIntensity для режима.
- * @param headlightsOn — ночная трасса: габариты ярче в idle
- */
+/** Целевая emissiveIntensity для режима; headlightsOn — ночная трасса: габариты ярче в idle */
 export const rearLightEmissiveIntensity = (
   mode: TRearLightMode,
   brake: number,

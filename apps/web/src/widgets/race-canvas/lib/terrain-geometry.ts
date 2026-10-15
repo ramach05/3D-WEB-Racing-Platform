@@ -38,7 +38,7 @@ export const buildTerrainHeightfieldArgs = ({
   const segs = Math.max(1, Math.floor(segments));
   const half = worldSize / 2;
   const vertsPerSide = segs + 1;
-  const heights = new Float32Array(vertsPerSide * vertsPerSide);
+  const heights: number[] = new Array<number>(vertsPerSide * vertsPerSide);
   const heightOpts = { centerline, roadWidth, seed };
 
   // Column-major: столбец X, внутри строки по Z (Rapier)
@@ -50,8 +50,7 @@ export const buildTerrainHeightfieldArgs = ({
     }
   }
 
-  // R3R типизирует heights как number[], Rapier принимает Float32Array
-  return [segs, segs, heights as unknown as number[], { x: worldSize, y: 1, z: worldSize }];
+  return [segs, segs, heights, { x: worldSize, y: 1, z: worldSize }];
 };
 
 /**

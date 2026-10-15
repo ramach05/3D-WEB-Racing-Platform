@@ -36,7 +36,8 @@ export const BILLBOARD_POST_HALF_SPAN =
   BILLBOARD_PANEL_WIDTH / 2 + BILLBOARD_FRAME_THICKNESS + BILLBOARD_POST.width * 0.15;
 
 /** Смещение панели вперёд (лицо панели, локальный +X) */
-export const BILLBOARD_PANEL_FORWARD_X = BILLBOARD_POST.depth / 2 + BILLBOARD_PANEL_DEPTH / 2 + 0.02;
+export const BILLBOARD_PANEL_FORWARD_X =
+  BILLBOARD_POST.depth / 2 + BILLBOARD_PANEL_DEPTH / 2 + 0.02;
 
 /** Y верха рамы */
 export const BILLBOARD_FRAME_TOP_Y =
@@ -130,10 +131,16 @@ export const BILLBOARD_NIGHT_FACE = {
  */
 export const faceGlowIntensity = (avgLuminance: number): number => {
   const raw = BILLBOARD_NIGHT_FACE.faceGlowTargetLuma / Math.max(avgLuminance, 1e-4);
-  return Math.min(Math.max(raw, BILLBOARD_NIGHT_FACE.faceGlowMin), BILLBOARD_NIGHT_FACE.faceGlowMax);
+  return Math.min(
+    Math.max(raw, BILLBOARD_NIGHT_FACE.faceGlowMin),
+    BILLBOARD_NIGHT_FACE.faceGlowMax,
+  );
 };
 
-/** @deprecated Оставлен для совместимости тестов; лицо заливает BILLBOARD_FACE_WASH */
+/**
+ * Оставлен для совместимости тестов; лицо заливает BILLBOARD_FACE_WASH.
+ * @deprecated
+ */
 export const BILLBOARD_FLOOD_SPOT = {
   intensity: 6.5,
   distance: 6.5,

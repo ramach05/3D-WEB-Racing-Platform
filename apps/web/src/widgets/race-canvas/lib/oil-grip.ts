@@ -1,4 +1,4 @@
-import { VEHICLE_LATERAL_GRIP } from '@/features/race-session/vehicle-physics';
+import { VEHICLE_LATERAL_GRIP } from '@/features/race-session';
 
 /** Боковой grip на полном масле (все 4 колеса) — мягче ручника */
 export const OIL_LATERAL_GRIP = 2.2;

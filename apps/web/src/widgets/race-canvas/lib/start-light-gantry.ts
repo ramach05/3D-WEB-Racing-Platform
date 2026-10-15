@@ -117,7 +117,10 @@ export const GANTRY_FLOOD_SPOT = {
   decay: 2,
 } as const;
 
-/** @deprecated spill у столбов убран — засвечивал столб вместо трассы */
+/**
+ * Spill у столбов убран — засвечивал столб вместо трассы.
+ * @deprecated
+ */
 export const GANTRY_FLOOD_POINT = {
   intensity: 0,
   distance: 12,

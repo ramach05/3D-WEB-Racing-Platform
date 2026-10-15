@@ -1,4 +1,4 @@
-import { VEHICLE_MAX_SPEED } from '@/features/race-session/vehicle-physics';
+import { VEHICLE_MAX_SPEED } from '@/features/race-session';
 import type { TCameraMode } from './camera-mode';
 
 /** Базовый FOV chase-камеры (как в Canvas) */

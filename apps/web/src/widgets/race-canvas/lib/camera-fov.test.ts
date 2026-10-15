@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { VEHICLE_MAX_SPEED } from '@/features/race-session/vehicle-physics';
+import { VEHICLE_MAX_SPEED } from '@/features/race-session';
 import {
   CAMERA_FOV_BASE,
   CAMERA_FOV_CLOSE,

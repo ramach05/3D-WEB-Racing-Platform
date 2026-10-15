@@ -69,8 +69,17 @@ type TFloodLightProps = {
 
 /** Визуал gooseneck-корпуса (свет лица — RectAreaLight на щите при hasWash) */
 const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
-  const { mount, riserHeight, armLength, armPitch, neckLength, neckPitch, armRadius, housing, bulbRadius } =
-    BILLBOARD_FLOOD;
+  const {
+    mount,
+    riserHeight,
+    armLength,
+    armPitch,
+    neckLength,
+    neckPitch,
+    armRadius,
+    housing,
+    bulbRadius,
+  } = BILLBOARD_FLOOD;
   /** Верх стойки = низ вылета */
   const elbowY = mount.height + riserHeight;
 
@@ -78,29 +87,17 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
     <group position={[BILLBOARD_PANEL_FORWARD_X, BILLBOARD_FRAME_TOP_Y, localZ]}>
       <mesh position={[0, mount.height / 2, 0]}>
         <boxGeometry args={[mount.depth, mount.height, mount.width]} />
-        <meshStandardMaterial
-          color={billboardPalette.floodArm}
-          metalness={0.72}
-          roughness={0.38}
-        />
+        <meshStandardMaterial color={billboardPalette.floodArm} metalness={0.72} roughness={0.38} />
       </mesh>
 
       <mesh position={[0, mount.height + riserHeight / 2, 0]}>
         <cylinderGeometry args={[armRadius, armRadius * 1.05, riserHeight, 8]} />
-        <meshStandardMaterial
-          color={billboardPalette.floodArm}
-          metalness={0.72}
-          roughness={0.38}
-        />
+        <meshStandardMaterial color={billboardPalette.floodArm} metalness={0.72} roughness={0.38} />
       </mesh>
 
       <mesh position={[0, elbowY, 0]}>
         <sphereGeometry args={[armRadius * 1.55, 10, 8]} />
-        <meshStandardMaterial
-          color={billboardPalette.floodArm}
-          metalness={0.7}
-          roughness={0.4}
-        />
+        <meshStandardMaterial color={billboardPalette.floodArm} metalness={0.7} roughness={0.4} />
       </mesh>
 
       <group position={[0, elbowY, 0]} rotation={[0, 0, -armPitch]}>
@@ -264,11 +261,7 @@ const Billboard = ({ billboard, isNight, hasWash, texture }: TBillboardProps) =>
         <boxGeometry
           args={[BILLBOARD_PANEL_DEPTH, BILLBOARD_PANEL_HEIGHT, BILLBOARD_PANEL_WIDTH]}
         />
-        <meshStandardMaterial
-          color={billboardPalette.panelBack}
-          metalness={0.05}
-          roughness={0.9}
-        />
+        <meshStandardMaterial color={billboardPalette.panelBack} metalness={0.05} roughness={0.9} />
       </mesh>
 
       {/* Бумажное / виниловое лицо: снаружи RectAreaLight; дальние — слабый emissive */}
@@ -355,7 +348,8 @@ const selectActiveWashIndices = (
 };
 
 /** Стабильный ключ набора индексов для сравнения */
-const indicesKey = (indices: readonly number[]): string => [...indices].sort((a, b) => a - b).join(',');
+const indicesKey = (indices: readonly number[]): string =>
+  [...indices].sort((a, b) => a - b).join(',');
 
 /**
  * Визуал рекламных щитов вне Physics.
@@ -373,6 +367,7 @@ export const TrackBillboards = ({ config, bodyRef }: TTrackBillboardsProps) => {
     [billboards],
   );
   const [activeWashIndices, setActiveWashIndices] = useState<number[]>(initialActive);
+  const [prevInitialActive, setPrevInitialActive] = useState(initialActive);
   const activeRef = useRef(initialActive);
   const pendingActiveKeyRef = useRef<string | null>(null);
 
@@ -421,10 +416,14 @@ export const TrackBillboards = ({ config, bodyRef }: TTrackBillboardsProps) => {
     };
   }, [textures]);
 
-  // Синхронизирует initial active при смене списка щитов.
+  // Синхронизирует initial active при смене списка щитов: state корректируется на render (паттерн React)
+  if (prevInitialActive !== initialActive) {
+    setPrevInitialActive(initialActive);
+    setActiveWashIndices(initialActive);
+  }
+
   useEffect(() => {
     activeRef.current = initialActive;
-    setActiveWashIndices(initialActive);
   }, [initialActive]);
 
   const activeWashSet = useMemo(() => new Set(activeWashIndices), [activeWashIndices]);

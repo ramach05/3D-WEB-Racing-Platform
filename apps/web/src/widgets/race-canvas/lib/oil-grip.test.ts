@@ -10,7 +10,7 @@ import {
   resolveOilSurfaceGrip,
   tickOilGrip,
 } from './oil-grip';
-import { VEHICLE_LATERAL_GRIP } from '@/features/race-session/vehicle-physics';
+import { VEHICLE_LATERAL_GRIP } from '@/features/race-session';
 
 describe('oil grip store', () => {
   afterEach(() => {

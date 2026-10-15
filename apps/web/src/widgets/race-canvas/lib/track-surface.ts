@@ -1,5 +1,5 @@
 import type { TLoopPoint } from '@/entities/track';
-import { VEHICLE_LATERAL_GRIP } from '@/features/race-session/vehicle-physics';
+import { VEHICLE_LATERAL_GRIP } from '@/features/race-session';
 import { KERB_WIDTH } from '@/widgets/race-canvas/lib/kerb-ribbon-geometry';
 import { distanceToCenterlineSq } from '@/widgets/race-canvas/lib/terrain-height';
 
@@ -50,7 +50,8 @@ export const sampleTrackSurfaceKind = (
       const dx = b.x - a.x;
       const dz = b.z - a.z;
       const lenSq = dx * dx + dz * dz;
-      const t = lenSq === 0 ? 0 : Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / lenSq));
+      const t =
+        lenSq === 0 ? 0 : Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / lenSq));
       const px = a.x + dx * t;
       const pz = a.z + dz * t;
       const dSq = (x - px) ** 2 + (z - pz) ** 2;
