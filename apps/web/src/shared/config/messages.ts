@@ -191,6 +191,12 @@ export const ruMessages = {
     ru: 'Русский',
     en: 'English',
   },
+  boot: {
+    waiting: 'Подключаемся к серверу…',
+    lost: 'Связь с сервером потеряна',
+    hint: 'API еще поднимается — при первом запуске нужно несколько секунд.',
+    hintLost: 'Сервер недоступен: проверь, что запущен pnpm ready-steady-go.',
+  },
   common: {
     loading: 'ЗАГРУЗКА',
   },
@@ -391,6 +397,12 @@ export const enMessages = {
     label: 'Language',
     ru: 'Русский',
     en: 'English',
+  },
+  boot: {
+    waiting: 'Connecting to the server…',
+    lost: 'Connection to the server is lost',
+    hint: 'The API is still starting — a first run needs a few seconds.',
+    hintLost: 'The server is unavailable: check that pnpm ready-steady-go is running.',
   },
   common: {
     loading: 'LOADING',

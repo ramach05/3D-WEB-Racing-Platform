@@ -39,6 +39,7 @@ export const mockMe = {
 };
 
 export const handlers = [
+  http.get(`${api}/health`, () => HttpResponse.json({ status: 'ok' })),
   http.get(`${api}/tracks`, () => HttpResponse.json(mockTracks)),
   http.post(`${api}/auth/login`, async ({ request }) => {
     const body = (await request.json()) as { nickname?: string; password?: string };

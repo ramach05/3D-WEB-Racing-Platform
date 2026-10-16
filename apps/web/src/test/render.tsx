@@ -4,6 +4,7 @@ import type { ReactElement } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { authReducer } from '@/features/auth';
+import { backendReducer } from '@/features/backend-status';
 import { racingApi } from '@/shared/api';
 import '@/entities/leaderboard';
 import '@/entities/race-result';
@@ -21,6 +22,7 @@ export const createTestStore = () =>
   configureStore({
     reducer: {
       auth: authReducer,
+      backend: backendReducer,
       [racingApi.reducerPath]: racingApi.reducer,
     },
     middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(racingApi.middleware),
