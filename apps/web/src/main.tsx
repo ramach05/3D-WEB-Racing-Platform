@@ -1,4 +1,3 @@
-import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AppProviders } from '@/app';
 import { applyTheme, readStoredTheme } from '@/features/theme-switcher';
@@ -11,8 +10,4 @@ if (!rootElement) {
   throw new Error('#root not found');
 }
 
-createRoot(rootElement).render(
-  <StrictMode>
-    <AppProviders />
-  </StrictMode>,
-);
+createRoot(rootElement).render(<AppProviders />);
