@@ -9,36 +9,36 @@ import { DrivingSfxEngine } from './driving-sfx-engine';
 import { ChiptuneEngine, type TRaceMusicTheme } from './engine';
 
 type TUseRaceAudioOptions = {
-  /** Тема чиптюна: трасса или finish */
+  /** Chiptune theme: track or finish */
   theme: TRaceMusicTheme | null;
-  /** Пауза воспроизведения */
+  /** Playback pause */
   paused: boolean;
-  /** Включить аудио на странице */
+  /** Enable audio on the page */
   enabled: boolean;
-  /** Полный mute */
+  /** Full mute */
   muted: boolean;
 };
 
 type TUseRaceDrivingSfxOptions = {
-  /** Включить SFX (обычно status === racing) */
+  /** Enable SFX (usually status === racing) */
   enabled: boolean;
-  /** Пауза без destroy графа */
+  /** Pause without destroying the graph */
   paused: boolean;
-  /** Общий mute с музыкой */
+  /** Shared mute with the music */
   muted: boolean;
 };
 
-/** Запускает чиптюн на странице заезда */
+/** Starts the chiptune on the race page */
 export const useRaceAudio = ({ theme, paused, enabled, muted }: TUseRaceAudioOptions): void => {
   const engineRef = useRef<ChiptuneEngine | null>(null);
 
-  // Синхронизирует pause/mute с текущим движком
+  // Syncs pause/mute with the current engine
   const applyTransport = useEffectEvent((engine: ChiptuneEngine) => {
     engine.setPaused(paused);
     engine.setMuted(muted);
   });
 
-  // Создает движок при enable/theme и останавливает при cleanup.
+  // Creates the engine on enable/theme and stops it on cleanup.
   useEffect(() => {
     if (!enabled || !theme) {
       return undefined;
@@ -55,7 +55,7 @@ export const useRaceAudio = ({ theme, paused, enabled, muted }: TUseRaceAudioOpt
     };
   }, [enabled, theme]);
 
-  // Пробрасывает паузу в активный движок.
+  // Propagates pause to the active engine.
   useEffect(() => {
     const engine = engineRef.current;
     if (engine) {
@@ -63,7 +63,7 @@ export const useRaceAudio = ({ theme, paused, enabled, muted }: TUseRaceAudioOpt
     }
   }, [paused]);
 
-  // Пробрасывает mute в активный движок.
+  // Propagates mute to the active engine.
   useEffect(() => {
     const engine = engineRef.current;
     if (engine) {
@@ -72,18 +72,18 @@ export const useRaceAudio = ({ theme, paused, enabled, muted }: TUseRaceAudioOpt
   }, [muted]);
 };
 
-/** Запускает driving SFX и крутит rAF-обновление snapshot */
+/** Starts driving SFX and runs the rAF snapshot update loop */
 export const useRaceDrivingSfx = ({ enabled, paused, muted }: TUseRaceDrivingSfxOptions): void => {
   const engineRef = useRef<DrivingSfxEngine | null>(null);
   const rafRef = useRef<number | null>(null);
 
-  // Синхронизирует pause/mute с текущим SFX-движком
+  // Syncs pause/mute with the current SFX engine
   const applyTransport = useEffectEvent((engine: DrivingSfxEngine) => {
     engine.setPaused(paused);
     engine.setMuted(muted);
   });
 
-  // Создает SFX-движок и rAF-цикл; на cleanup — stop + reset bus.
+  // Creates the SFX engine and rAF loop; on cleanup — stop + reset the bus.
   useEffect(() => {
     if (!enabled) {
       resetDriveSfx();
@@ -115,7 +115,7 @@ export const useRaceDrivingSfx = ({ enabled, paused, muted }: TUseRaceDrivingSfx
     };
   }, [enabled]);
 
-  // Пробрасывает паузу в активный SFX-движок.
+  // Propagates pause to the active SFX engine.
   useEffect(() => {
     const engine = engineRef.current;
     if (engine) {
@@ -123,7 +123,7 @@ export const useRaceDrivingSfx = ({ enabled, paused, muted }: TUseRaceDrivingSfx
     }
   }, [paused]);
 
-  // Пробрасывает mute в активный SFX-движок.
+  // Propagates mute to the active SFX engine.
   useEffect(() => {
     const engine = engineRef.current;
     if (engine) {

@@ -37,31 +37,31 @@ import {
 } from '@/widgets/race-canvas/lib/start-light-textures';
 
 type TTrackStartFinishLineProps = {
-  /** Ориентированный бокс линии */
+  /** Oriented box of the line */
   line: TOrientedBox;
-  /** Ширина дороги для разметки */
+  /** Road width for markings */
   roadWidth: number;
-  /** Палитра трассы (accent стрелок / финиша) */
+  /** Track palette (arrow / finish accent) */
   palette: TTrackPalette;
-  /** Ночные stadium-прожекторы на gantry */
+  /** Night stadium floodlights on the gantry */
   isNight: boolean;
 };
 
 type TGantryFloodLightProps = {
-  /** Абсолютный X поста (со знаком) */
+  /** Absolute post X (signed) */
   postX: number;
-  /** Сторона линии: +1 спавн, −1 финишный проезд */
+  /** Line side: +1 spawn, −1 finish pass */
   sideZ: 1 | -1;
-  /** Y центра балки */
+  /** Beam center Y */
   beamY: number;
-  /** Ширина дороги для aim */
+  /** Road width for aim */
   roadWidth: number;
-  /** Горит ли прожектор */
+  /** Whether the floodlight is on */
   isOn: boolean;
 };
 
 const CHECKER_COUNT = 10;
-/** Дистанции стрелок на стороне спавна (+local Z / +lz); заезд идет к линии и в −lz. */
+/** Arrow distances on the spawn side (+local Z / +lz); the car drives toward the line into −lz. */
 const ARROW_DISTANCES = [2, 4, 6] as const;
 const MARKING_Y = GANTRY_ROAD_TOP_Y + 0.002;
 
@@ -70,10 +70,10 @@ const LAMP_XS = Array.from({ length: START_LAMP_COUNT }, (_, i) => {
   return centered * START_LAMP_BAY.spacing;
 });
 
-/** Reused for housing.lookAt — не аллоцировать в layout-effect */
+/** Reused for housing.lookAt — do not allocate in layout-effect */
 const floodAimWorld = new Vector3();
 
-/** Stadium-прожектор: Group.lookAt → +Z на финиш; линза и Spot на передней грани. */
+/** Stadium floodlight: Group.lookAt → +Z at the finish; lens and Spot on the front face. */
 const GantryFloodLight = ({ postX, sideZ, beamY, roadWidth, isOn }: TGantryFloodLightProps) => {
   const spotRef = useRef<SpotLight>(null);
   const targetRef = useRef<Object3D>(null);
@@ -88,17 +88,17 @@ const GantryFloodLight = ({ postX, sideZ, beamY, roadWidth, isOn }: TGantryFlood
   const armCenterX = armStartX - sideX * (GANTRY_FLOOD.arm.length / 2);
   const yokeX = armStartX - sideX * GANTRY_FLOOD.arm.length;
 
-  /** Корпус чуть за вилкой, над полотном */
+  /** Housing slightly past the yoke, above the road surface */
   const fixtureX = yokeX - sideX * 0.035;
   const fixtureY = -0.04;
   const fixtureZ = mountZ;
 
-  /** Aim на шахматку финиша — середина своей половины полотна */
+  /** Aim at the finish checker — center of its own half of the road */
   const aimLocalX = sideX * (roadWidth / 2) * GANTRY_FLOOD.aimXFraction - postX;
   const aimLocalY = GANTRY_ROAD_TOP_Y - mountY + 0.03;
   const aimLocalZ = GANTRY_FLOOD.aimZ;
 
-  // Group.lookAt → +Z на цель; Spot target = та же точка.
+  // Group.lookAt → +Z at the target; Spot target = the same point.
   useLayoutEffect(() => {
     const target = targetRef.current;
     const housing = housingAimRef.current;
@@ -122,7 +122,7 @@ const GantryFloodLight = ({ postX, sideZ, beamY, roadWidth, isOn }: TGantryFlood
 
   const lensY = GANTRY_FLOOD.lens.localY;
   const lensZ = GANTRY_FLOOD.lens.localZ;
-  /** Корпус чуть позади лицевой плоскости линзы */
+  /** Housing slightly behind the lens front plane */
   const housingLocalZ = lensZ - GANTRY_FLOOD.housing.depth / 2 - 0.004;
   const boltSpread = GANTRY_FLOOD.mountPlate.width * 0.28;
 
@@ -171,7 +171,7 @@ const GantryFloodLight = ({ postX, sideZ, beamY, roadWidth, isOn }: TGantryFlood
         <meshStandardMaterial color={startLightPalette.bezel} metalness={0.55} roughness={0.42} />
       </mesh>
 
-      {/* +Z на финиш; линза на передней грани, корпус сзади */}
+      {/* +Z at the finish; lens on the front face, housing behind */}
       <group ref={housingAimRef} position={[fixtureX, fixtureY, fixtureZ]}>
         <mesh position={[0, 0, housingLocalZ]} castShadow>
           <boxGeometry
@@ -200,7 +200,7 @@ const GantryFloodLight = ({ postX, sideZ, beamY, roadWidth, isOn }: TGantryFlood
             roughness={0.58}
           />
         </mesh>
-        {/* Диск в XY смотрит в +Z — только лицевая сторона светится */}
+        {/* XY disk faces +Z — only the front side glows */}
         <mesh position={[0, lensY, lensZ]}>
           <circleGeometry args={[GANTRY_FLOOD.lens.radius, 20]} />
           <meshStandardMaterial
@@ -233,7 +233,7 @@ const GantryFloodLight = ({ postX, sideZ, beamY, roadWidth, isOn }: TGantryFlood
   );
 };
 
-/** Шахматная линия старт/финиш, стрелки и F1-gantry со стартовыми огнями */
+/** Checker start/finish line, arrows and F1-gantry with start lights */
 export const TrackStartFinishLine = ({
   line,
   roadWidth,
@@ -258,7 +258,7 @@ export const TrackStartFinishLine = ({
   const lamp4MatRef = useRef<MeshStandardMaterial>(null);
   const pulseRef = useRef(0);
 
-  // Обновляет стартовые лампы и легкий пульс конструкции по HUD-статусу.
+  // Updates start lamps and a slight structure pulse by HUD status.
   useFrame((_, dt) => {
     const hud = getRaceHudSnapshot();
     pulseRef.current += dt;
@@ -292,7 +292,7 @@ export const TrackStartFinishLine = ({
       }
       const on = isLampLit(i, litCount);
       if (on) {
-        // Белый albedo + красный emissive: весь диск ярко читается днем
+        // White albedo + red emissive: the whole disk reads brightly in daylight
         mat.color.set('#ffffff');
         mat.emissive.set(startLightPalette.red);
         mat.emissiveIntensity = START_LAMP_BAY.litEmissiveIntensity * countdownPulse;
@@ -320,7 +320,7 @@ export const TrackStartFinishLine = ({
 
   const lampMatRefs = [lamp0MatRef, lamp1MatRef, lamp2MatRef, lamp3MatRef, lamp4MatRef] as const;
 
-  // Shared без useMemo — после HMR текстур подхватывается новый singleton
+  // Shared without useMemo — after HMR the texture picks up the new singleton
   const housingMap = getSharedStartLightHousingTexture();
   const lensTextures = getSharedStartLightLensTextures();
 
@@ -346,7 +346,7 @@ export const TrackStartFinishLine = ({
         );
       })}
 
-      {/* F1 start-light gantry (визуал; коллайдеры — TrackStartFinishColliders) */}
+      {/* F1 start-light gantry (visuals; colliders — TrackStartFinishColliders) */}
       <mesh position={[-postX, GANTRY_ROAD_TOP_Y + postHeight / 2, 0]} castShadow receiveShadow>
         <boxGeometry args={[GANTRY_POST_WIDTH, postHeight, GANTRY_POST_DEPTH]} />
         <meshStandardMaterial
@@ -382,7 +382,7 @@ export const TrackStartFinishLine = ({
         />
       </mesh>
 
-      {/* Панель и лампы на +Z: спавн/подъезд со стороны +local Z */}
+      {/* Panel and lamps on +Z: spawn/approach from the +local Z side */}
       <mesh position={[0, panelY, panelZ]} castShadow>
         <boxGeometry args={[GANTRY_PANEL_WIDTH, GANTRY_PANEL_HEIGHT, GANTRY_PANEL_DEPTH]} />
         <meshStandardMaterial
@@ -398,7 +398,7 @@ export const TrackStartFinishLine = ({
 
       {LAMP_XS.map((x, index) => (
         <group key={`start-lamp-${index}`} position={[x, panelY, lampFaceZ]}>
-          {/* Козырек от солнца */}
+          {/* Sun hood */}
           <mesh position={[0, START_LAMP_BAY.hood.offsetY, START_LAMP_BAY.hood.offsetZ]} castShadow>
             <boxGeometry
               args={[
@@ -414,7 +414,7 @@ export const TrackStartFinishLine = ({
             />
           </mesh>
 
-          {/* Темная ниша в корпусе */}
+          {/* Dark recess in the housing */}
           <mesh
             position={[0, 0, -START_LAMP_BAY.recessDepth * 0.35]}
             rotation={[Math.PI / 2, 0, 0]}
@@ -434,7 +434,7 @@ export const TrackStartFinishLine = ({
             />
           </mesh>
 
-          {/* Металлическое кольцо-bezel */}
+          {/* Metal bezel ring */}
           <mesh position={[0, 0, 0.01]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry
               args={[
@@ -462,7 +462,7 @@ export const TrackStartFinishLine = ({
             />
           </mesh>
 
-          {/* Плоская LED-линза */}
+          {/* Flat LED lens */}
           <mesh position={[0, 0, 0.028]}>
             <circleGeometry args={[START_LAMP_BAY.lensRadius, 32]} />
             <meshStandardMaterial

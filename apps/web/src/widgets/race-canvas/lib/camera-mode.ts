@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 
 export type TCameraMode = 'chase' | 'bumper' | 'tv';
 
-/** Порядок переключения клавишей C */
+/** Switching order for the C key */
 export const CAMERA_MODE_ORDER: readonly TCameraMode[] = ['chase', 'bumper', 'tv'] as const;
 
 type TListener = () => void;
@@ -10,21 +10,21 @@ type TListener = () => void;
 let mode: TCameraMode = 'chase';
 const listeners = new Set<TListener>();
 
-/** Нормализует режим, если остался устаревший (например hood) */
+/** Normalizes the mode if a stale one remains (e.g. hood) */
 const sanitizeMode = (): void => {
   if (!CAMERA_MODE_ORDER.includes(mode)) {
     mode = 'chase';
   }
 };
 
-/** Уведомляет подписчиков UI */
+/** Notifies UI subscribers */
 const notify = (): void => {
   for (const listener of listeners) {
     listener();
   }
 };
 
-/** Подписка на смену режима (для HUD) */
+/** Subscribe to mode changes (for the HUD) */
 export const subscribeCameraMode = (listener: TListener): (() => void) => {
   listeners.add(listener);
   return () => {
@@ -32,13 +32,13 @@ export const subscribeCameraMode = (listener: TListener): (() => void) => {
   };
 };
 
-/** Текущий режим камеры */
+/** Current camera mode */
 export const getCameraMode = (): TCameraMode => {
   sanitizeMode();
   return mode;
 };
 
-/** Следующий режим по кругу; возвращает новый */
+/** Next mode in the cycle; returns the new one */
 export const cycleCameraMode = (): TCameraMode => {
   sanitizeMode();
   const index = CAMERA_MODE_ORDER.indexOf(mode);
@@ -48,7 +48,7 @@ export const cycleCameraMode = (): TCameraMode => {
   return mode;
 };
 
-/** Сброс на chase (выход из гонки / смена трассы) */
+/** Reset to chase (leaving the race / switching tracks) */
 export const resetCameraMode = (): void => {
   if (mode === 'chase') {
     return;
@@ -57,6 +57,6 @@ export const resetCameraMode = (): void => {
   notify();
 };
 
-/** React-хук текущего режима без лишних ререндеров сцены */
+/** React hook for the current mode without extra scene rerenders */
 export const useCameraMode = (): TCameraMode =>
   useSyncExternalStore(subscribeCameraMode, getCameraMode, getCameraMode);

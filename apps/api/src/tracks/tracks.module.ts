@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TracksController } from './tracks.controller';
 import { TracksService } from './tracks.service';
 
-/** Модуль трасс. Класс — требование Nest Module. */
+/** Tracks module. Class is a Nest Module requirement. */
 @Module({
   controllers: [TracksController],
   providers: [TracksService],

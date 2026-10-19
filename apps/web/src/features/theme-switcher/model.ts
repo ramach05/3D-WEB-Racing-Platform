@@ -1,7 +1,7 @@
 import type { TCssColor, TThemeMode, TUiColorToken } from '@/shared/config';
 import { THEME_STORAGE_KEY, uiChrome, uiPalette } from '@/shared/config';
 
-/** Читает сохраненную тему или light по умолчанию */
+/** Reads the stored theme, defaults to light */
 export const readStoredTheme = (): TThemeMode => {
   const stored = localStorage.getItem(THEME_STORAGE_KEY);
   if (stored === 'light' || stored === 'dark') {
@@ -10,7 +10,7 @@ export const readStoredTheme = (): TThemeMode => {
   return 'light';
 };
 
-/** Вешает class dark на html, пишет CSS-переменные из палитры и localStorage */
+/** Toggles the dark class on html, writes CSS variables from the palette and localStorage */
 export const applyTheme = (theme: TThemeMode): void => {
   const root = document.documentElement;
   const colors: Record<TUiColorToken, TCssColor> = uiPalette[theme];
@@ -27,7 +27,7 @@ export const applyTheme = (theme: TThemeMode): void => {
   localStorage.setItem(THEME_STORAGE_KEY, theme);
 };
 
-/** Переключает светлую и темную тему */
+/** Toggles between light and dark theme */
 export const toggleTheme = (current: TThemeMode): TThemeMode => {
   return current === 'dark' ? 'light' : 'dark';
 };

@@ -1,7 +1,7 @@
 import type { TLeaderboardEntry } from '@racing/shared';
 import { racingApi } from '@/shared/api';
 
-/** RTK endpoint таблицы лидеров по trackSlug */
+/** RTK endpoint for the leaderboard by trackSlug */
 export const leaderboardApi = racingApi.injectEndpoints({
   endpoints: (build) => ({
     getLeaderboard: build.query<TLeaderboardEntry[], string>({

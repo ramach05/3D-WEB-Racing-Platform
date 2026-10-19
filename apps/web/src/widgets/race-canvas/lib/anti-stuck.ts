@@ -1,59 +1,59 @@
 /**
- * Anti-stuck watchdog: машина аркадная и каждый кадр получает целевую скорость через
- * setLinvel, но решатель гасит forward-составляющую о препятствие. Импульс шинам дается
- * только при onCollisionEnter (и однажды), поэтому шина, зажатая машиной у стены/других
- * шин, останавливает машину намертво. Watchdog детектирует «педаль в пол, а скорости нет»
- * и непрерывно выталкивает препятствия из-под бампера, пока машина не поедет.
+ * Anti-stuck watchdog: the car is arcade-style and gets a target speed every frame via
+ * setLinvel, but the solver cancels the forward component against an obstacle. Tires get an
+ * impulse only on onCollisionEnter (and only once), so a tire pinned by the car against a
+ * wall/other tires stops the car dead. The watchdog detects "pedal to the metal, no speed"
+ * and continuously pushes obstacles out from under the bumper until the car moves again.
  */
 
-/** Газ ниже которого залипание не считается */
+/** Throttle below which sticking is not counted */
 export const STUCK_THROTTLE_MIN = 0.5;
-/** Целевая скорость ниже которой машина и так почти стоит */
+/** Target speed below which the car is nearly stationary anyway */
 export const STUCK_TARGET_MIN_SPEED = 2;
-/** Разрыв цели и фактической forward-скорости, м/с, ниже — не залипание */
+/** Gap between target and actual forward speed, m/s; below it — not sticking */
 export const STUCK_SPEED_GAP = 2;
 /**
- * Непрерывное залипание до начала выталкивания, с. Порог заметно ниже «полного
- * стопора»: выталкивание стартует на микростолле, пока контакт не дал видимую
- * тряску и замирание (решатель держит машину в контактных колебаниях дольше 0.4 с).
+ * Continuous sticking before pushing starts, s. The threshold is well below a "full
+ * stop": pushing starts at micro-stall, before the contact produces visible shaking
+ * and freezing (the solver keeps the car in contact oscillation for longer than 0.4 s).
  */
 export const STUCK_AFTER_SECONDS = 0.15;
 
-/** Радиус сферы выталкивания перед носом машины, м */
+/** Radius of the push sphere in front of the car nose, m */
 export const RESCUE_RADIUS = 2.5;
-/** Смещение центра сферы от центра машины по курсу, м */
+/** Offset of the sphere center from the car center along the heading, m */
 export const RESCUE_NOSE_OFFSET = 1.0;
-/** Минимальное расстояние «машина -> препятствие», м: ближе — направление вырождено */
+/** Minimum "car -> obstacle" distance, m; closer — direction is degenerate */
 export const RESCUE_MIN_DIST = 0.05;
-/** Ускорение выталкивания, м/с^2: заведомо выше трения шины об асфальт (~8) */
+/** Push acceleration, m/s^2: clearly above tire-on-asphalt friction (~8) */
 export const RESCUE_BASE_ACCEL = 14;
-/** Добавка ускорения за скорость машины, м/с^2 на м/с */
+/** Extra acceleration per car speed, m/s^2 per m/s */
 export const RESCUE_CAR_ACCEL_SCALE = 2;
-/** Боковая доля выталкивания: уводит препятствие из-под бампера, а не катит впереди */
+/** Lateral share of the push: moves the obstacle out from under the bumper instead of rolling it ahead */
 export const RESCUE_SIDE_SHARE = 0.8;
-/** Вертикальная доля выталкивания: препятствие перекатывается, а не скребет юзом */
+/** Vertical share of the push: the obstacle rolls over instead of scraping along the ground */
 export const RESCUE_UP_SHARE = 0.25;
-/** Допуск бокового смещения, м: меньше — сторона выталкивания берется правая по курсу */
+/** Lateral offset tolerance, m; below it the push side defaults to the right of the heading */
 export const RESCUE_SIDE_DEGENERATE_EPS = 0.05;
 
-/** Вектор в плоскости дороги */
+/** Vector in the road plane */
 export type TAntiStuckVec2 = { x: number; z: number };
 
-/** Сигналы для детекта залипания */
+/** Signals for stuck detection */
 export type TStuckProbe = {
-  /** Газ 0..1 */
+  /** Throttle 0..1 */
   throttle: number;
-  /** Ручник 0..1 */
+  /** Handbrake 0..1 */
   handbrake: number;
-  /** Целевая forward-скорость, м/с */
+  /** Target forward speed, m/s */
   targetForward: number;
-  /** Фактическая forward-скорость, м/с */
+  /** Actual forward speed, m/s */
   forwardSpeed: number;
-  /** Есть ли опора под колесами */
+  /** Whether the wheels have ground support */
   grounded: boolean;
 };
 
-/** Залипание: жмем газ по курсу, есть опора, а разгон не набирается */
+/** Stuck: throttle held along the heading, grounded, but no acceleration builds up */
 export const isStuckAgainstObstacle = ({
   throttle,
   handbrake,
@@ -67,37 +67,37 @@ export const isStuckAgainstObstacle = ({
   targetForward > STUCK_TARGET_MIN_SPEED &&
   targetForward - forwardSpeed > STUCK_SPEED_GAP;
 
-/** Копит таймер залипания; при восстановлении обнуляется */
+/** Accumulates the stuck timer; resets to zero on recovery */
 export const updateStuckTimer = (stuck: boolean, dt: number, timer: number): number =>
   stuck ? timer + dt : 0;
 
-/** Активно время дольше STUCK_AFTER_SECONDS — пора выталкивать */
+/** Active time exceeds STUCK_AFTER_SECONDS — time to push out */
 export const isRescueActive = (timer: number): boolean => timer >= STUCK_AFTER_SECONDS;
 
-/** Параметры выталкивания одного препятствия */
+/** Parameters for pushing out a single obstacle */
 export type TRescueStrike = {
-  /** Центр машины в плоскости дороги */
+  /** Car center in the road plane */
   carPosition: TAntiStuckVec2;
-  /** Единичный вектор курса машины */
+  /** Unit heading vector of the car */
   carForward: TAntiStuckVec2;
-  /** Центр препятствия в плоскости дороги */
+  /** Obstacle center in the road plane */
   obstaclePosition: TAntiStuckVec2;
-  /** Масса препятствия, кг */
+  /** Obstacle mass, kg */
   obstacleMass: number;
-  /** Скорость машины (или целевая), м/с */
+  /** Car speed (or target speed), m/s */
   carSpeed: number;
-  /** Шаг симуляции, с */
+  /** Simulation step, s */
   dt: number;
 };
 
-/** Импульс выталкивания, н·с */
+/** Push-out impulse, N·s */
 export type TRescueImpulse = { x: number; y: number; z: number };
 
 /**
- * Импульс выталкивания за кадр: сила (масса × ускорение), умноженная на dt, поэтому
- * непрерывное удержание гасится только контактами и трением препятствия. Направление —
- * «от машины к препятствию» с боковым уходом из-под бампера. Позади машины препятствие
- * причиной залипания быть не может -> null.
+ * Push-out impulse per frame: force (mass × acceleration) multiplied by dt, so continuous
+ * holding is damped only by the obstacle's contacts and friction. Direction — "from car to
+ * obstacle" with a lateral escape from under the bumper. An obstacle behind the car cannot
+ * cause sticking -> null.
  */
 export const computeRescueImpulse = ({
   carPosition,
@@ -123,7 +123,7 @@ export const computeRescueImpulse = ({
     return null;
   }
 
-  // боковое отклонение препятствия от оси курса — в ту же сторону и уводим
+  // lateral offset of the obstacle from the heading axis — escape to the same side
   const rightX = fz;
   const rightZ = -fx;
   const lateral = dx * rightX + dz * rightZ;

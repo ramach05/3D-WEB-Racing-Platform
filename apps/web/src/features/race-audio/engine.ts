@@ -1,22 +1,22 @@
 import type { TTrackAudioTheme } from '@/entities/track';
 
-/** Тема BGM заезда: луп трассы или финишный victory */
+/** Race BGM theme: track loop or finish victory */
 export type TRaceMusicTheme = TTrackAudioTheme | 'finish';
 
 type TNote = {
-  /** Частота, Гц (для tone) */
+  /** Frequency, Hz (for tone) */
   freq: number;
-  /** Старт относительно начала петли, с */
+  /** Start relative to the loop beginning, s */
   start: number;
-  /** Длительность ноты, с */
+  /** Note duration, s */
   duration: number;
-  /** Форма осциллятора (для tone) */
+  /** Oscillator waveform (for tone) */
   type: OscillatorType;
-  /** Пик огибающей (по умолчанию 0.35) */
+  /** Envelope peak (0.35 by default) */
   gain?: number;
-  /** Тон или шумовой удар */
+  /** Tone or noise hit */
   kind?: 'tone' | 'noise';
-  /** Low-pass для noise (kick низкий, hat высокий) */
+  /** Low-pass for noise (kick low, hat high) */
   filterFreq?: number;
 };
 
@@ -38,7 +38,7 @@ const noise = (start: number, duration: number, gain: number, filterFreq: number
   filterFreq,
 });
 
-/** Power chord: корень + квинта */
+/** Power chord: root + fifth */
 const power = (
   root: number,
   fifth: number,
@@ -52,8 +52,8 @@ const power = (
 ];
 
 // ---------------------------------------------------------------------------
-// Coastal — быстрая Rock 'n' Roll вариация мотива Storm (~150 BPM, мажор G)
-// доля 0.4 с, петля 4.8 с (12 долей)
+// Coastal — fast Rock 'n' Roll variation of the Storm motif (~150 BPM, G major)
+// beat 0.4 s, loop 4.8 s (12 beats)
 // G2=98 D3=147 | C3=131 G3=196 | D3=147 A3=220
 // ---------------------------------------------------------------------------
 const C_BEAT = 0.4;
@@ -76,7 +76,7 @@ const COASTAL_DRUMS: TNote[] = (() => {
     if (beat % 4 === 3) {
       hits.push(noise(t, 0.07, 0.13, 9000));
     }
-    // crash-ish на начало петли
+    // crash-ish on loop start
     if (beat === 0) {
       hits.push(noise(t, 0.1, 0.15, 6000));
     }
@@ -91,7 +91,7 @@ const COASTAL_BASS: TNote[] = [
   ...power(131, 196, C_BEAT * 6, C_BEAT * 1.8, 'square', 0.22),
   ...power(147, 220, C_BEAT * 8, C_BEAT * 1.8, 'square', 0.22),
   ...power(147, 220, C_BEAT * 10, C_BEAT * 1.8, 'square', 0.22),
-  // верхний дрон-слой G через всю петлю (как треугольный слой в Storm)
+  // top drone layer G across the whole loop (like the triangle layer in Storm)
   ...power(196, 294, 0, C_BEAT * 1.8, 'triangle', 0.18),
   ...power(196, 294, C_BEAT * 2, C_BEAT * 1.8, 'triangle', 0.18),
   ...power(196, 294, C_BEAT * 4, C_BEAT * 1.8, 'triangle', 0.18),
@@ -100,9 +100,9 @@ const COASTAL_BASS: TNote[] = [
   ...power(196, 294, C_BEAT * 10, C_BEAT * 1.8, 'triangle', 0.18),
 ];
 
-/** Риф — структура Storm (нисходящий проход → длинная нота → bridge → square-fill), тональность G */
+/** Riff — Storm structure (descending run → long note → bridge → square-fill), key of G */
 const COASTAL_RIFF: TNote[] = [
-  // phrase 1: нисходящий прогон (D E G E D C B C)
+  // phrase 1: descending run (D E G E D C B C)
   tone(294, 0.08, C_EIGHTH * 0.8, 'sawtooth', 0.32),
   tone(330, 0.08 + C_EIGHTH, C_EIGHTH * 0.8, 'sawtooth', 0.3),
   tone(392, 0.08 + C_EIGHTH * 2, C_EIGHTH * 0.8, 'sawtooth', 0.34),
@@ -111,7 +111,7 @@ const COASTAL_RIFF: TNote[] = [
   tone(262, 0.08 + C_EIGHTH * 5, C_EIGHTH * 0.8, 'sawtooth', 0.3),
   tone(247, 0.08 + C_EIGHTH * 6, C_EIGHTH * 0.8, 'sawtooth', 0.28),
   tone(262, 0.08 + C_EIGHTH * 7, C_EIGHTH * 0.8, 'sawtooth', 0.3),
-  // phrase 2: выше, с длинной A
+  // phrase 2: higher, with a long A
   tone(294, C_BEAT * 2.08, C_EIGHTH * 0.8, 'sawtooth', 0.32),
   tone(330, C_BEAT * 2.08 + C_EIGHTH, C_EIGHTH * 0.8, 'sawtooth', 0.3),
   tone(440, C_BEAT * 2.08 + C_EIGHTH * 2, C_BEAT * 0.9, 'sawtooth', 0.36),
@@ -120,7 +120,7 @@ const COASTAL_RIFF: TNote[] = [
   tone(294, C_BEAT * 2.08 + C_EIGHTH * 5, C_EIGHTH * 0.8, 'sawtooth', 0.28),
   tone(262, C_BEAT * 2.08 + C_EIGHTH * 6, C_BEAT * 0.7, 'sawtooth', 0.3),
   tone(294, C_BEAT * 2.08 + C_EIGHTH * 7, C_EIGHTH * 0.8, 'sawtooth', 0.32),
-  // bridge: спуск B C D E D C B A под C-аккорд
+  // bridge: descent B C D E D C B A over the C chord
   tone(247, C_BEAT * 4.08, C_EIGHTH * 0.8, 'sawtooth', 0.32),
   tone(262, C_BEAT * 4.08 + C_EIGHTH, C_EIGHTH * 0.8, 'sawtooth', 0.3),
   tone(294, C_BEAT * 4.08 + C_EIGHTH * 2, C_EIGHTH * 0.8, 'sawtooth', 0.34),
@@ -129,7 +129,7 @@ const COASTAL_RIFF: TNote[] = [
   tone(262, C_BEAT * 4.08 + C_EIGHTH * 5, C_EIGHTH * 0.8, 'sawtooth', 0.28),
   tone(247, C_BEAT * 4.08 + C_EIGHTH * 6, C_EIGHTH * 0.8, 'sawtooth', 0.3),
   tone(220, C_BEAT * 4.08 + C_EIGHTH * 7, C_EIGHTH * 0.8, 'sawtooth', 0.32),
-  // fill: восходящий square-забег в D
+  // fill: ascending square run into D
   tone(294, C_BEAT * 6.08, C_EIGHTH * 0.5, 'square', 0.36),
   tone(330, C_BEAT * 6.08 + C_EIGHTH, C_EIGHTH * 0.5, 'square', 0.36),
   tone(392, C_BEAT * 6.08 + C_EIGHTH * 2, C_EIGHTH * 0.5, 'square', 0.36),
@@ -142,15 +142,15 @@ const COASTAL_RIFF: TNote[] = [
 const COASTAL_LOOP: TNote[] = [...COASTAL_BASS, ...COASTAL_RIFF, ...COASTAL_DRUMS];
 
 // ---------------------------------------------------------------------------
-// Night — тяжелая Rock 'n' Roll вариация мотива Storm (~124 BPM, минор E)
-// доля 0.484 с, петля 5.81 с (12 долей)
+// Night — heavy Rock 'n' Roll variation of the Storm motif (~124 BPM, E minor)
+// beat 0.484 s, loop 5.81 s (12 beats)
 // E2=82 B2=123 | C2=65 G2=98 | A2=110 E3=165 | B2=123 F#3=185
 // ---------------------------------------------------------------------------
 const N_BEAT = 0.484;
 const N_EIGHTH = N_BEAT / 2;
 const N_LOOP = 5.81;
 
-/** Boogie-бас восьмыми: корень—квинта—корень—октава */
+/** Boogie bass in eighths: root—fifth—root—octave */
 const boogie8 = (
   root: number,
   fifth: number,
@@ -185,7 +185,7 @@ const NIGHT_DRUMS: TNote[] = (() => {
     if (beat % 4 === 3) {
       hits.push(noise(t, 0.08, 0.13, 7500));
     }
-    // tom-подъезд к началу петли
+    // tom lead-in to the loop start
     if (beat === 11) {
       hits.push(noise(t + N_EIGHTH, 0.06, 0.3, 320));
     }
@@ -200,9 +200,9 @@ const NIGHT_BASS: TNote[] = [
   ...boogie8(123, 185, 247, N_BEAT * 10, 2, 0.26),
 ];
 
-/** Хук-мелодия E-минор: восходящий вопрос-ответ в высоком регистре, кодa октавой вниз */
+/** Hook melody in E minor: ascending call-and-response in a high register, coda an octave down */
 const NIGHT_RIFF: TNote[] = [
-  // такт 1 (Em): хук — двойной удар E, подъем к длинной B
+  // bar 1 (Em): hook — doubled E hit, climb to a long B
   tone(330, 0.05, N_EIGHTH * 0.8, 'sawtooth', 0.4),
   tone(330, 0.05 + N_EIGHTH, N_EIGHTH * 0.7, 'square', 0.3),
   tone(392, 0.05 + N_BEAT, N_EIGHTH * 0.8, 'sawtooth', 0.4),
@@ -210,7 +210,7 @@ const NIGHT_RIFF: TNote[] = [
   tone(494, 0.05 + N_BEAT * 2, N_BEAT * 1.2, 'sawtooth', 0.44),
   tone(440, 0.05 + N_BEAT * 3.2, N_EIGHTH * 0.8, 'sawtooth', 0.36),
   tone(392, 0.05 + N_BEAT * 3.6, N_EIGHTH * 0.8, 'sawtooth', 0.36),
-  // такт 2 (C): тот же хук на ступень выше, вершина C5
+  // bar 2 (C): same hook a step higher, peak at C5
   tone(392, 0.05 + N_BEAT * 4, N_EIGHTH * 0.8, 'sawtooth', 0.4),
   tone(392, 0.05 + N_BEAT * 4.5, N_EIGHTH * 0.7, 'square', 0.3),
   tone(440, 0.05 + N_BEAT * 5, N_EIGHTH * 0.8, 'sawtooth', 0.4),
@@ -218,7 +218,7 @@ const NIGHT_RIFF: TNote[] = [
   tone(523, 0.05 + N_BEAT * 6, N_BEAT * 1.2, 'sawtooth', 0.44),
   tone(494, 0.05 + N_BEAT * 7.2, N_EIGHTH * 0.8, 'sawtooth', 0.36),
   tone(440, 0.05 + N_BEAT * 7.6, N_EIGHTH * 0.8, 'sawtooth', 0.36),
-  // такт 3 (A–B): пик A/C5, затем E5-кульминация с кодой октавой вниз
+  // bar 3 (A–B): peak A/C5, then E5 culmination with a coda an octave down
   tone(440, 0.05 + N_BEAT * 8, N_EIGHTH * 0.8, 'sawtooth', 0.42),
   tone(440, 0.05 + N_BEAT * 8.5, N_EIGHTH * 0.7, 'square', 0.32),
   tone(523, 0.05 + N_BEAT * 9, N_EIGHTH * 0.8, 'sawtooth', 0.42),
@@ -232,8 +232,8 @@ const NIGHT_RIFF: TNote[] = [
 const NIGHT_LOOP: TNote[] = [...NIGHT_BASS, ...NIGHT_RIFF, ...NIGHT_DRUMS];
 
 // ---------------------------------------------------------------------------
-// Finish — торжественный victory fanfare (~100 BPM, мажор C, ~3.2 с)
-// доля 0.6 с; спокойнее race-лупов, яркий square lead + мягкий бас
+// Finish — solemn victory fanfare (~100 BPM, C major, ~3.2 s)
+// beat 0.6 s; calmer than race loops, bright square lead + soft bass
 // C3=131 G3=196 E3=165 | C4=262 E4=330 G4=392 C5=523
 // ---------------------------------------------------------------------------
 const F_BEAT = 0.6;
@@ -254,7 +254,7 @@ const FINISH_BASS: TNote[] = [
   ...power(131, 196, F_BEAT * 4, F_BEAT * 1.2, 'triangle', 0.22),
 ];
 
-/** Восходящий fanfare: C–E–G–C, затем удержание */
+/** Ascending fanfare: C–E–G–C, then a hold */
 const FINISH_LEAD: TNote[] = [
   tone(262, 0.05, F_BEAT * 0.85, 'square', 0.34),
   tone(330, F_BEAT * 0.9, F_BEAT * 0.85, 'square', 0.36),
@@ -268,7 +268,7 @@ const FINISH_LOOP: TNote[] = [...FINISH_BASS, ...FINISH_LEAD, ...FINISH_DRUMS];
 
 // ---------------------------------------------------------------------------
 // Storm (Rock 'n' Roll) — boogie bass + sawtooth riff (~132 BPM)
-// доля ~0.455 с, петля 5.47 с (12 долей)
+// beat ~0.455 s, loop 5.47 s (12 beats)
 // E2=82 B2=123 | A2=110 E3=165 | B2=123 F#3=185 | E3=165 B3=247
 // ---------------------------------------------------------------------------
 const R_BEAT = 0.455;
@@ -359,7 +359,7 @@ const LOOPS: Record<TRaceMusicTheme, { notes: TNote[]; loopSec: number }> = {
 const MASTER_GAIN = 0.07;
 const DEFAULT_NOTE_GAIN = 0.35;
 
-/** Оригинальный chip-rock на Web Audio (в духе Rock n' Roll Racing / SEGA Genesis, не OST) */
+/** Original chip-rock on Web Audio (in the spirit of Rock n' Roll Racing / SEGA Genesis, not an OST) */
 export class ChiptuneEngine {
   private ctx: AudioContext | null = null;
   private gain: GainNode | null = null;
@@ -372,18 +372,18 @@ export class ChiptuneEngine {
   private generation = 0;
   private readonly activeSources = new Set<AudioScheduledSourceNode>();
 
-  /** Можно ли сейчас звучать */
+  /** Whether sound may play right now */
   private isAudible = (): boolean =>
     this.running && !this.paused && !this.muted && this.theme !== null;
 
-  /** Выставляет master gain по audible */
+  /** Sets master gain based on audibility */
   private applyGain = (): void => {
     if (this.gain) {
       this.gain.gain.value = this.isAudible() ? MASTER_GAIN : 0;
     }
   };
 
-  /** Лениво создает AudioContext и GainNode */
+  /** Lazily creates AudioContext and GainNode */
   private ensureContext = (): AudioContext | null => {
     if (!this.running) {
       return null;
@@ -398,7 +398,7 @@ export class ChiptuneEngine {
     return this.ctx;
   };
 
-  /** Короткий буфер белого шума для ударных */
+  /** Short white noise buffer for drums */
   private getNoiseBuffer = (ctx: AudioContext): AudioBuffer => {
     if (this.noiseBuffer && this.noiseBuffer.sampleRate === ctx.sampleRate) {
       return this.noiseBuffer;
@@ -413,7 +413,7 @@ export class ChiptuneEngine {
     return buffer;
   };
 
-  /** Сбрасывает интервал петли */
+  /** Clears the loop interval */
   private clearTimer = (): void => {
     if (this.timer) {
       clearInterval(this.timer);
@@ -421,7 +421,7 @@ export class ChiptuneEngine {
     }
   };
 
-  /** Останавливает все активные источники */
+  /** Stops all active sources */
   private stopAllNotes = (): void => {
     for (const src of this.activeSources) {
       try {
@@ -438,7 +438,7 @@ export class ChiptuneEngine {
     this.activeSources.clear();
   };
 
-  /** Регистрирует источник и чистит его после окончания */
+  /** Registers a source and cleans it up after it ends */
   private trackSource = (src: AudioScheduledSourceNode): void => {
     this.activeSources.add(src);
     src.onended = () => {
@@ -451,7 +451,7 @@ export class ChiptuneEngine {
     };
   };
 
-  /** Планирует тоновую ноту */
+  /** Schedules a tone note */
   private playTone = (note: TNote, when: number): void => {
     const ctx = this.ensureContext();
     if (!ctx || !this.gain) {
@@ -472,7 +472,7 @@ export class ChiptuneEngine {
     osc.stop(when + note.duration + 0.02);
   };
 
-  /** Планирует шумовой удар (kick / snare / hat) */
+  /** Schedules a noise hit (kick / snare / hat) */
   private playNoise = (note: TNote, when: number): void => {
     const ctx = this.ensureContext();
     if (!ctx || !this.gain) {
@@ -497,7 +497,7 @@ export class ChiptuneEngine {
     src.stop(when + note.duration + 0.02);
   };
 
-  /** Планирует одну ноту или удар */
+  /** Schedules a single note or hit */
   private playNote = (note: TNote, when: number): void => {
     if (note.kind === 'noise') {
       this.playNoise(note, when);
@@ -506,7 +506,7 @@ export class ChiptuneEngine {
     this.playTone(note, when);
   };
 
-  /** Ставит в очередь одну итерацию петли темы */
+  /** Queues one iteration of the theme loop */
   private scheduleLoop = (): void => {
     if (!this.isAudible() || !this.theme) {
       return;
@@ -522,7 +522,7 @@ export class ChiptuneEngine {
     }
   };
 
-  /** Запускает интервал повтора петли */
+  /** Starts the loop repeat interval */
   private startLoopTimer = (): void => {
     this.clearTimer();
     if (!this.theme || !this.running) {
@@ -534,7 +534,7 @@ export class ChiptuneEngine {
     }, loop.loopSec * 1000);
   };
 
-  /** Запускает или останавливает воспроизведение в зависимости от paused/muted */
+  /** Starts or stops playback depending on paused/muted */
   private syncPlayback = (): void => {
     this.applyGain();
     if (this.isAudible()) {
@@ -547,7 +547,7 @@ export class ChiptuneEngine {
     this.clearTimer();
   };
 
-  /** Стартует тему (resume AudioContext при необходимости) */
+  /** Starts a theme (resumes AudioContext if needed) */
   start = async (theme: TRaceMusicTheme): Promise<void> => {
     const generation = ++this.generation;
     this.running = true;
@@ -568,7 +568,7 @@ export class ChiptuneEngine {
     this.syncPlayback();
   };
 
-  /** Пауза/снятие паузы без смены темы */
+  /** Pause/unpause without changing the theme */
   setPaused = (paused: boolean): void => {
     if (this.paused === paused) {
       return;
@@ -577,7 +577,7 @@ export class ChiptuneEngine {
     this.syncPlayback();
   };
 
-  /** Mute/unmute без смены темы */
+  /** Mute/unmute without changing the theme */
   setMuted = (muted: boolean): void => {
     if (this.muted === muted) {
       return;
@@ -586,7 +586,7 @@ export class ChiptuneEngine {
     this.syncPlayback();
   };
 
-  /** Полная остановка и закрытие AudioContext */
+  /** Full stop and AudioContext close */
   stop = (): void => {
     this.generation += 1;
     this.running = false;

@@ -2,19 +2,19 @@ import { BufferAttribute, BufferGeometry } from 'three';
 import type { TLoopPoint } from '@/entities/track';
 import { ROAD_TOP_Y } from './road-ribbon-geometry';
 
-/** Ширина поребрика (м) */
+/** Kerb width (m) */
 export const KERB_WIDTH = 0.42;
-/** Верх поребрика чуть выше асфальта */
+/** Kerb top sits slightly above the asphalt */
 export const KERB_TOP_Y = ROAD_TOP_Y + 0.035;
-/** Толщина поребрика */
+/** Kerb thickness */
 export const KERB_THICKNESS = 0.05;
-/** Длина одной красной/белой полосы вдоль трассы (м) */
+/** Length of one red/white stripe along the track (m) */
 export const KERB_STRIPE_LENGTH = 0.55;
 
 export type TKerbRibbonResult = {
-  /** Лента одного края */
+  /** Ribbon of one edge */
   geometry: BufferGeometry;
-  /** Длина centerline по петле (м) */
+  /** Centerline length along the loop (m) */
   pathLength: number;
 };
 
@@ -23,7 +23,7 @@ type TEdgeNormal = {
   nz: number;
 };
 
-/** Нормаль влево относительно направления ребра a→b */
+/** Left normal relative to the a→b edge direction */
 const edgeNormal = (ax: number, az: number, bx: number, bz: number): TEdgeNormal => {
   const dx = bx - ax;
   const dz = bz - az;
@@ -31,7 +31,7 @@ const edgeNormal = (ax: number, az: number, bx: number, bz: number): TEdgeNormal
   return { nx: -dz / len, nz: dx / len };
 };
 
-/** Узкая лента поребрика вдоль одного края асфальта. `sideSign` +1 — левый край (внешняя нормаль), −1 — правый. Поддерживает per-point Y для elevated секций. */
+/** Narrow kerb ribbon along one asphalt edge. `sideSign` +1 — left edge (outer normal), −1 — right. Supports per-point Y for elevated sections. */
 export const buildKerbRibbonGeometry = (
   centerline: readonly TLoopPoint[],
   roadWidth: number,
@@ -100,7 +100,7 @@ export const buildKerbRibbonGeometry = (
   innerX[n] = innerX[0]!;
   innerZ[n] = innerZ[0]!;
 
-  /** 4 вершины на станцию: topOuter, topInner, botOuter, botInner */
+  /** 4 vertices per station: topOuter, topInner, botOuter, botInner */
   const vertsPerStation = 4;
   const vertexCount = stationCount * vertsPerStation;
   const positions = new Float32Array(vertexCount * 3);
@@ -128,7 +128,7 @@ export const buildKerbRibbonGeometry = (
     const v = distances[i]! * vScale;
     const yOff = centerline[i] ? (centerline[i]!.y ?? 0) : 0;
     const yTop = baseYTop + yOff;
-    // u: 0 у внутреннего края, 1 у внешнего
+    // u: 0 at the inner edge, 1 at the outer edge
     setVertex(i, 0, outerX[i]!, yTop, outerZ[i]!, 1, v);
     setVertex(i, 1, innerX[i]!, yTop, innerZ[i]!, 0, v);
     setVertex(i, 2, outerX[i]!, yBot + yOff, outerZ[i]!, 1, v);
@@ -159,7 +159,7 @@ export const buildKerbRibbonGeometry = (
       // inner side
       pushQuad(a + 1, b + 1, b + 3, a + 3);
     } else {
-      // зеркальный winding, чтобы нормали смотрели наружу объема
+      // mirrored winding so normals face outward from the volume
       pushQuad(a + 0, a + 1, b + 1, b + 0);
       pushQuad(a + 2, b + 2, b + 3, a + 3);
       pushQuad(a + 0, b + 0, b + 2, a + 2);

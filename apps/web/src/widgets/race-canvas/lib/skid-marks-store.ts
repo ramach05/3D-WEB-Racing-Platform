@@ -1,43 +1,43 @@
-/** Емкость кольцевого буфера следов (4 колеса × длинный заезд) */
+/** Capacity of the skid-mark ring buffer (4 wheels × long run) */
 export const SKID_MARK_CAPACITY = 2000;
 
-/** Минимальный шаг (м) между точками одного колеса */
+/** Minimum step (m) between points of one wheel */
 export const SKID_MIN_STEP = 0.1;
 
-/** Ширина следа ≈ пятно контакта шины (м) */
+/** Mark width ≈ tire contact patch (m) */
 export const SKID_MARK_WIDTH = 0.18;
 
-/** Емкость пула дыма (billboard-плоскости дешевле сфер) */
+/** Smoke pool capacity (billboard planes are cheaper than spheres) */
 export const SKID_SMOKE_CAPACITY = 96;
 
-/** Базовое время жизни дымовой частицы (с) */
+/** Base smoke particle lifetime (s) */
 export const SKID_SMOKE_LIFE = 1.35;
 
-/** Доля скорости кузова, которую наследует дым */
+/** Share of body speed inherited by the smoke */
 const SMOKE_WAKE_FACTOR = 0.45;
 
-/** Горизонтальное затухание скорости дыма (1/с) */
+/** Horizontal damping of smoke velocity (1/s) */
 const SMOKE_DRAG = 1.8;
 
-/** Подъемная сила дыма (м/с²) */
+/** Smoke buoyancy (m/s²) */
 const SMOKE_BUOYANCY = 0.55;
 
 export type TSkidMarkSegment = {
-  /** Центр сегмента X */
+  /** Segment center X */
   x: number;
-  /** Центр сегмента Z */
+  /** Segment center Z */
   z: number;
-  /** Yaw в плоскости XZ (рад) */
+  /** Yaw in the XZ plane (rad) */
   yaw: number;
-  /** Длина сегмента вдоль пути (м) */
+  /** Segment length along the path (m) */
   length: number;
-  /** Ширина следа (м) */
+  /** Mark width (m) */
   width: number;
-  /** Начальная непрозрачность 0…1 */
+  /** Initial opacity 0…1 */
   opacity: number;
-  /** Возраст (с) */
+  /** Age (s) */
   age: number;
-  /** Жив ли слот */
+  /** Whether the slot is alive */
   alive: boolean;
 };
 
@@ -45,19 +45,19 @@ export type TSkidSmokeParticle = {
   x: number;
   y: number;
   z: number;
-  /** Скорость X (м/с) */
+  /** Velocity X (m/s) */
   vx: number;
-  /** Скорость Y (м/с) */
+  /** Velocity Y (m/s) */
   vy: number;
-  /** Скорость Z (м/с) */
+  /** Velocity Z (m/s) */
   vz: number;
-  /** Начальный размер */
+  /** Initial size */
   size: number;
-  /** Легкий spin спрайта (рад) */
+  /** Slight sprite spin (rad) */
   spin: number;
-  /** Индивидуальная жизнь (с) */
+  /** Individual lifetime (s) */
   life: number;
-  /** Seed для турбулентности */
+  /** Seed for turbulence */
   seed: number;
   age: number;
   alive: boolean;
@@ -102,7 +102,7 @@ const hashNoise = (x: number, z: number): number => {
   return n - Math.floor(n);
 };
 
-/** Добавляет сегмент следа от предыдущей точки колеса к текущей. Возвращает false, если шаг слишком мал. */
+/** Adds a skid segment from the wheel's previous point to the current one. Returns false if the step is too small. */
 export const pushSkidSample = (
   fromX: number,
   fromZ: number,
@@ -136,7 +136,7 @@ export const pushSkidSample = (
   return true;
 };
 
-/** Спавнит дымок у колеса с начальной скоростью wake от кузова. vel* — мир. скорость кузова (м/с), используется как wake + jitter. */
+/** Spawns smoke at the wheel with initial wake velocity from the body. vel* — world car velocity (m/s), used as wake + jitter. */
 export const pushSkidSmoke = (
   x: number,
   y: number,
@@ -169,7 +169,7 @@ export const pushSkidSmoke = (
   particle.alive = true;
 };
 
-/** Старит дым; мертвые слоты помечает alive=false. Следы живут до resetSkidMarks. */
+/** Ages the smoke; marks dead slots with alive=false. Marks live until resetSkidMarks. */
 export const tickSkidMarks = (dt: number): void => {
   const clampedDt = Math.max(0, dt);
   const drag = Math.exp(-SMOKE_DRAG * clampedDt);
@@ -195,7 +195,7 @@ export const tickSkidMarks = (dt: number): void => {
   }
 };
 
-/** Сброс всех следов и дыма (выход из сессии / смена трека) */
+/** Reset all marks and smoke (leaving the session / switching tracks) */
 export const resetSkidMarks = (): void => {
   for (let i = 0; i < SKID_MARK_CAPACITY; i += 1) {
     segments[i]!.alive = false;
@@ -209,13 +209,13 @@ export const resetSkidMarks = (): void => {
   smokeWrite = 0;
 };
 
-/** Снимок буферов для рендера (те же массивы, readonly) */
+/** Buffer snapshot for rendering (same arrays, readonly) */
 export const getSkidMarksSnapshot = (): TSkidMarksSnapshot => ({
   segments,
   smoke,
 });
 
-/** Непрозрачность сегмента (без затухания по времени в рамках гонки) */
+/** Segment opacity (no time-based fade within a race) */
 export const skidSegmentOpacity = (segment: TSkidMarkSegment): number => {
   if (!segment.alive) {
     return 0;
@@ -223,7 +223,7 @@ export const skidSegmentOpacity = (segment: TSkidMarkSegment): number => {
   return segment.opacity;
 };
 
-/** Прогресс жизни дыма 0…1 */
+/** Smoke lifetime progress 0…1 */
 export const skidSmokeProgress = (particle: TSkidSmokeParticle): number => {
   if (!particle.alive) {
     return 1;
@@ -232,7 +232,7 @@ export const skidSmokeProgress = (particle: TSkidSmokeParticle): number => {
   return Math.min(1, particle.age / life);
 };
 
-/** Альфа-кривая дыма: быстрый набор плотности, затем мягкий спад. Пик около 20% жизни. */
+/** Smoke alpha curve: fast density build-up, then soft fade. Peak around 20% of life. */
 export const skidSmokeOpacity = (progress: number, intensityScale = 1): number => {
   if (progress <= 0 || progress >= 1) {
     return 0;

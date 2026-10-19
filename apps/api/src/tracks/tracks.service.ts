@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { TTrackPublic } from '@racing/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
-/** Список трасс. Класс нужен Nest DI. */
+/** Track list. Class is required by Nest DI. */
 @Injectable()
 export class TracksService {
   constructor(private readonly prisma: PrismaService) {}

@@ -16,26 +16,26 @@ import {
 } from '@/widgets/race-canvas/lib/camera-shake';
 
 type TRaceCameraProps = {
-  /** Визуальная группа машины */
+  /** Vehicle visual group */
   target: RefObject<Object3D | null>;
-  /** Позиция спавна для intro-орбиты */
+  /** Spawn position for the intro orbit */
   spawnPosition: TVec3;
-  /** Угол спавна (рад) */
+  /** Spawn angle (rad) */
   spawnRotationY: number;
-  /** Счетчик рестарта — сбрасывает intro и режим */
+  /** Restart counter — resets intro and mode */
   resetNonce: number;
 };
 
 type TCameraSeat = {
-  /** Локальный offset камеры */
+  /** Local camera offset */
   offset: Vector3;
-  /** Локальный look-target относительно машины (до world) */
+  /** Local look-target relative to the car (before world) */
   lookLocal: Vector3;
-  /** Стиль следования */
+  /** Pursuit style */
   pursuit: 'lerp' | 'snap' | 'operator';
-  /** Скорость сходимости для lerp (меньше = жестче) */
+  /** Convergence speed for lerp (lower = stiffer) */
   followPow: number;
-  /** Множитель shake (близкие камеры — слабее, иначе виден салон) */
+  /** Shake multiplier (close cameras — weaker, otherwise the cabin is visible) */
   shakeScale: number;
 };
 
@@ -56,16 +56,16 @@ const INTRO_DURATION = 3.2;
 const CHASE_Y = 4.2;
 const CHASE_Z = -8;
 
-/** TV: полувремя позиции — плавно, но успевает за разгоном */
+/** TV: position half-life — smooth but keeps up with acceleration */
 const TV_POS_HALFLIFE = 0.12;
-/** TV: look чуть мягче — «рука оператора» */
+/** TV: look slightly softer — "camera operator's hand" */
 const TV_LOOK_HALFLIFE = 0.18;
-/** TV: упреждение по скорости машины (с) */
+/** TV: lead by car velocity (s) */
 const TV_LEAD_SEC = 0.28;
-/** Потолок оценки скорости для lead (м/с) */
+/** Velocity estimate cap for lead (m/s) */
 const TV_VEL_CAP = 36;
 
-/** Seats в локале машины (Z назад отрицательный у chase) */
+/** Seats in the car's local space (Z backward is negative for chase) */
 const SEATS: Record<TCameraMode, TCameraSeat> = {
   chase: {
     offset: new Vector3(0, CHASE_Y, CHASE_Z),
@@ -90,11 +90,11 @@ const SEATS: Record<TCameraMode, TCameraSeat> = {
   },
 };
 
-/** Alpha экспоненциального сглаживания по half-life */
+/** Exponential smoothing alpha by half-life */
 const halfLifeAlpha = (dt: number, halfLife: number): number =>
   1 - Math.pow(0.5, dt / Math.max(1e-4, halfLife));
 
-/** Проверяет prefers-reduced-motion в браузере */
+/** Checks the browser's prefers-reduced-motion */
 const prefersReducedMotion = (): boolean => {
   if (typeof window === 'undefined' || !window.matchMedia) {
     return false;
@@ -102,7 +102,7 @@ const prefersReducedMotion = (): boolean => {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 };
 
-/** Применяет FOV к PerspectiveCamera */
+/** Applies FOV to the PerspectiveCamera */
 const applyFov = (camera: PerspectiveCamera, fov: number): void => {
   if (Math.abs(camera.fov - fov) < 0.05) {
     return;
@@ -111,7 +111,7 @@ const applyFov = (camera: PerspectiveCamera, fov: number): void => {
   camera.updateProjectionMatrix();
 };
 
-/** Псевдослучайный shake-вектор в мире (детерминирован от времени) */
+/** Pseudo-random shake vector in world space (deterministic from time) */
 const fillShakeOffset = (out: Vector3, strength: number, amp: number, t: number): void => {
   if (strength <= 0) {
     out.set(0, 0, 0);
@@ -125,7 +125,7 @@ const fillShakeOffset = (out: Vector3, strength: number, amp: number, t: number)
   );
 };
 
-/** Камера: cinematic intro → seat (chase/bumper/tv) → finish pull-back */
+/** Camera: cinematic intro → seat (chase/bumper/tv) → finish pull-back */
 export const RaceCamera = ({
   target,
   spawnPosition,
@@ -141,7 +141,7 @@ export const RaceCamera = ({
   const prevCarPos = useRef(new Vector3());
   const carVelReady = useRef(false);
 
-  // Intro → seat → finish; FOV и shake на racing.
+  // Intro → seat → finish; FOV and shake on racing.
   useFrame((state, dt) => {
     if (lastNonce.current !== resetNonce) {
       lastNonce.current = resetNonce;

@@ -16,7 +16,7 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(racingApi.middleware),
 });
 
-/** Корневой state */
+/** Root state */
 export type TRootState = ReturnType<typeof store.getState>;
-/** Тип dispatch */
+/** Dispatch type */
 export type TAppDispatch = typeof store.dispatch;

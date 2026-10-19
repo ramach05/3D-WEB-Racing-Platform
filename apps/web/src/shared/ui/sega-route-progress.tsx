@@ -3,13 +3,13 @@ import { useLocation } from 'react-router-dom';
 
 const ROUTE_PROGRESS_MS = 550;
 
-/** Тонкая SEGA-полоска при смене маршрута / обновлении страницы */
+/** Thin SEGA bar on route change / page reload */
 export const SegaRouteProgress = () => {
   const { pathname } = useLocation();
   const [shownPath, setShownPath] = useState<string | null>(pathname);
   const [prevPathname, setPrevPathname] = useState(pathname);
 
-  // Смена маршрута перезапускает полоску: state корректируется на render (паттерн React)
+  // Route change restarts the bar: state is adjusted during render (React pattern)
   if (prevPathname !== pathname) {
     setPrevPathname(pathname);
     setShownPath(pathname);

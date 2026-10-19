@@ -7,7 +7,7 @@ import {
 } from 'three';
 import { kerbPalette } from '@/shared/config';
 
-/** Двухпиксельная текстура красный/белый для тайлинга вдоль V */
+/** Two-pixel red/white texture for tiling along V */
 export const createKerbTexture = (): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = 4;

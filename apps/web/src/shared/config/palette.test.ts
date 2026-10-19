@@ -35,7 +35,7 @@ describe('palette', () => {
     expect(startLightPalette.bezel).toBeTruthy();
     expect(startLightPalette.red).toBeTruthy();
     expect(startLightPalette.floodLight).toBeTruthy();
-    // Smoked glass, не slate-blue
+    // Smoked glass, not slate-blue
     expect(startLightPalette.idle).toBe('#14080a');
     expect(startLightPalette.steel).toBe('#1a1c20');
   });

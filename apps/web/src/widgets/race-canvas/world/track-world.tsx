@@ -26,16 +26,16 @@ import { TRACK_TERRAIN, terrainSeedForSlug } from '@/widgets/race-canvas/lib/ter
 import { TrackObstacles } from './track-obstacles';
 
 /**
- * Невидимое продолжение коллайдера стены вверх над видимым ограждением (0.85 м).
- * Центр капсулы машины ≈ 0.9 м — без продолжения солвер выкатывает капсулу на низкую
- * стену, и машина в повороте перелетает через ограждение.
+ * Invisible wall-collider extension above the visible fence (0.85 m).
+ * Car capsule center ≈ 0.9 m — without the extension the solver rolls the capsule onto the
+ * low wall and the car flies over the fence in a corner.
  */
 const WALL_COLLIDER_EXTENSION = 1.5;
 
 type TTrackWorldProps = {
-  /** Конфиг трассы: стены, препятствия, centerline */
+  /** Track config: walls, obstacles, centerline */
   config: TTrackConfig;
-  /** Счетчик рестарта — пересоздает dynamic-шины */
+  /** Restart counter — recreates dynamic tires */
   resetNonce: number;
 };
 
@@ -47,7 +47,7 @@ type TRoadSurfaceProps = {
   roadMetalness: number;
 };
 
-/** Непрерывный асфальт по centerline — без z-fighting на стыках сегментов */
+/** Continuous asphalt along the centerline — no z-fighting at segment joints */
 const RoadSurface = ({
   centerline,
   roadWidth,
@@ -74,7 +74,7 @@ const RoadSurface = ({
     return { map, roughnessMap };
   }, [asphaltSource, roughnessSource, roadWidth, ribbon.pathLength]);
 
-  // Освобождает геометрию и клоны текстур при размонтировании.
+  // Disposes geometry and texture clones on unmount.
   useEffect(
     () => () => {
       ribbon.geometry.dispose();
@@ -103,7 +103,7 @@ const RoadSurface = ({
   );
 };
 
-/** Trimesh-коллайдер дороги: следует за Y centerline (подъемы, мост) */
+/** Road Trimesh collider: follows centerline Y (climbs, bridge) */
 const RoadColliders = ({
   centerline,
   roadWidth,
@@ -140,12 +140,12 @@ const RoadColliders = ({
   );
 };
 
-/** Дорога (визуал), единый пол и стены с низким трением */
+/** Road (visuals), unified ground, and low-friction walls */
 export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
   const { palette } = config;
   const isNight = config.timeOfDay === 'night';
   const isRain = config.weather === 'rain';
-  /** Мокрый асфальт в ночь/дождь: ниже roughness, выше metalness — ловит фары и фонари */
+  /** Wet asphalt at night/rain: lower roughness, higher metalness — catches headlights and lamps */
   const roadRoughness = isRain ? 0.32 : isNight ? 0.78 : 0.74;
   const roadMetalness = isRain ? 0.42 : isNight ? 0.28 : 0.04;
   const groundRoughness = isNight ? 0.88 : isRain ? 0.72 : 0.95;
@@ -208,7 +208,7 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
     [config.centerline, config.roadWidth, terrainSeed],
   );
 
-  // Освобождает текстуры пола и wall material (бетон — singleton, не dispose).
+  // Disposes ground textures and wall materials (concrete is a singleton, not disposed).
   useEffect(
     () => () => {
       groundSource.dispose();
@@ -223,7 +223,7 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
   return (
     <group>
       <RigidBody type="fixed" colliders={false} friction={0.9} collisionGroups={WORLD_GROUPS}>
-        {/* Упущенный пол: top ≈ -0.05, под дорогой (road top 0.1) — ловит падения */}
+        {/* Failsafe floor: top ≈ -0.05, below the road (road top 0.1) — catches falls */}
         <CuboidCollider
           args={[500, 0.15, 500]}
           position={[0, -0.2, 0]}
@@ -267,7 +267,7 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
           friction={0}
           collisionGroups={WORLD_GROUPS}
         >
-          {/* Коллайдер выше визуала: невидимое продолжение не дает капсуле заехать на стену */}
+          {/* Collider taller than visuals: the invisible extension stops the capsule from riding onto the wall */}
           <CuboidCollider
             args={[
               wall.size[0] / 2,
@@ -279,7 +279,7 @@ export const TrackWorld = ({ config, resetNonce }: TTrackWorldProps) => {
             restitution={0}
             collisionGroups={WORLD_GROUPS}
           />
-          {/* receiveShadow без cast — 256 стен не заполняют shadow maps */}
+          {/* receiveShadow without cast — 256 walls would flood the shadow maps */}
           <mesh
             castShadow={false}
             receiveShadow

@@ -9,7 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RaceResultsModule } from './race-results/race-results.module';
 import { TracksModule } from './tracks/tracks.module';
 
-/** Корневой модуль API. Класс — требование Nest Module. */
+/** Root API module. Class is a Nest Module requirement. */
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),

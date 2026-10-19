@@ -6,12 +6,12 @@ import { PageShell, StatusText, TracksPageSkeleton } from '@/shared/ui';
 import { preloadVehicleModel } from '@/widgets/race-canvas';
 import { TrackMinimap } from '@/widgets/track-minimap';
 
-/** Список трасс с API и планом сверху */
+/** Track list from the API with top-down maps */
 export const TracksPage = () => {
   const { t } = useTranslation();
   const { data, isLoading, isError } = useGetTracksQuery();
 
-  // Прогревает GLB машины до входа в заезд.
+  // Warms up the car GLB before entering the race.
   useEffect(() => {
     preloadVehicleModel();
   }, []);

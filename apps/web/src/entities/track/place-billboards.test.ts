@@ -54,7 +54,7 @@ describe('placeBillboards', () => {
 
     for (const billboard of billboards) {
       const dist = distanceToCenterline(billboard.x, billboard.z, config.centerline);
-      // На дугах closest-point ≠ точка станции: допуск шире wallOffset-выноса
+      // On arcs closest-point ≠ station point: tolerance is wider than the wallOffset outset
       expect(dist).toBeGreaterThan(wallBand - 1);
       expect(dist).toBeLessThan(wallBand + 1);
     }
@@ -134,7 +134,7 @@ describe('placeBillboards', () => {
       (b) => b.adId === 'for-rent',
     );
     expect(nightForRent).toBeDefined();
-    // Детерминизм: позиция стабильна после сдвига вдоль заезда
+    // Determinism: position is stable after the shift along the race direction
     expect(placeBillboards({ config: nightCityTrack }).find((b) => b.adId === 'for-rent')).toEqual(
       nightForRent,
     );
@@ -149,7 +149,7 @@ describe('placeBillboards', () => {
         const facingX = Math.cos(billboard.rotationY);
         const facingZ = -Math.sin(billboard.rotationY);
 
-        // Ближайший сегмент centerline и его касательная (рост индекса)
+        // Nearest centerline segment and its tangent (index growth)
         let bestDist = Infinity;
         let tx = 0;
         let tz = 0;
@@ -181,7 +181,7 @@ describe('placeBillboards', () => {
           }
         }
 
-        // Нормаль панели сонаправлена с касательной, а не против нее
+        // Panel normal is aligned with the tangent, not against it
         const alignment = facingX * tx + facingZ * tz;
         expect(alignment).toBeGreaterThan(0.85);
       }

@@ -41,7 +41,7 @@ export const authApi = racingApi.injectEndpoints({
       query: () => ({ url: '/auth/refresh', method: 'POST' }),
       async onQueryStarted(_arg, { queryFulfilled }) {
         try {
-          // 204 без cookie приходит без тела: ток persist у него нет
+          // 204 without a cookie arrives with no body: there is nothing to persist
           const { data } = await queryFulfilled;
           if (data) {
             persistAccessToken(data.tokens.accessToken);
@@ -58,14 +58,14 @@ export const authApi = racingApi.injectEndpoints({
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
       }),
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        // Чистим локальное состояние сразу, не дожидаясь ответа: revoke на сервере best-effort.
-        // invalidatesTags тут запрещен — RTK инвалидирует теги в старте мутации, и рефетч
-        // /auth/me со старым токеном воскресил бы пользователя после clearAuth.
+        // Clear local state right away without waiting for the response: server-side revoke is best-effort.
+        // invalidatesTags is forbidden here — RTK invalidates tags at mutation start, and refetching
+        // /auth/me with the old token would resurrect the user after clearAuth.
         dispatch(clearAuth());
         try {
           await queryFulfilled;
         } catch {
-          // Локальный выход даже если revoke на сервере не удался
+          // Local logout even if server-side revoke failed
         }
       },
     }),

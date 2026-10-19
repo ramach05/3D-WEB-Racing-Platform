@@ -1,4 +1,4 @@
-/** Трасса, как её видит клиент */
+/** A track as the client sees it */
 export type TTrackPublic = {
   id: string;
   slug: string;

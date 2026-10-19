@@ -1,7 +1,7 @@
 import type { TDriveSfxSample } from './drive-sfx-bus';
 import { mapGravelFromOffroad, shouldPulseKerbTick } from './drive-sfx-map';
 
-/** Тише музыки (~0.1), чтобы SFX не перекрикивали чиптюн */
+/** Quieter than the music (~0.1) so SFX do not drown out the chiptune */
 const MASTER_GAIN = 0.12;
 const NOISE_BUFFER_SEC = 2;
 
@@ -11,7 +11,7 @@ type TNoiseLayer = {
   gain: GainNode;
 };
 
-/** Procedural driving SFX без непрерывного звука езды: визг шин, скрежет, удары, oil-slap, gravel и kerb tick. */
+/** Procedural driving SFX without a continuous driving hum: tire screech, scrape, impacts, oil-slap, gravel and kerb tick. */
 export class DrivingSfxEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -29,17 +29,17 @@ export class DrivingSfxEngine {
   private kerbPhase = 0;
   private lastKerbTickAt = 0;
 
-  /** Можно ли звучать */
+  /** Whether sound may play */
   private isAudible = (): boolean => this.running && !this.paused && !this.muted;
 
-  /** Master gain по audible */
+  /** Sets master gain based on audibility */
   private applyMaster = (): void => {
     if (this.master) {
       this.master.gain.value = this.isAudible() ? MASTER_GAIN : 0;
     }
   };
 
-  /** Белый шум */
+  /** White noise */
   private getWhiteBuffer = (ctx: AudioContext): AudioBuffer => {
     if (this.whiteBuffer && this.whiteBuffer.sampleRate === ctx.sampleRate) {
       return this.whiteBuffer;
@@ -54,7 +54,7 @@ export class DrivingSfxEngine {
     return buffer;
   };
 
-  /** Коричневый шум — удары / oil-slap / gravel */
+  /** Brown noise — impacts / oil-slap / gravel */
   private getBrownBuffer = (ctx: AudioContext): AudioBuffer => {
     if (this.brownBuffer && this.brownBuffer.sampleRate === ctx.sampleRate) {
       return this.brownBuffer;
@@ -97,7 +97,7 @@ export class DrivingSfxEngine {
     return { source, filter, gain };
   };
 
-  /** Плавно ставит gain */
+  /** Ramps gain smoothly */
   private setGain = (node: GainNode | null, value: number, when: number, tau = 0.04): void => {
     if (!node) {
       return;
@@ -106,7 +106,7 @@ export class DrivingSfxEngine {
     node.gain.setTargetAtTime(value <= 0.00005 ? 0.0001 : value, when, tau);
   };
 
-  /** Строит граф непрерывных слоев */
+  /** Builds the continuous layers graph */
   private buildGraph = (ctx: AudioContext): void => {
     this.compressor = ctx.createDynamicsCompressor();
     this.compressor.threshold.value = -20;
@@ -156,7 +156,7 @@ export class DrivingSfxEngine {
     src.stop(when + duration + 0.03);
   };
 
-  /** Старт AudioContext и графа */
+  /** Starts AudioContext and the graph */
   start = async (): Promise<void> => {
     const generation = ++this.generation;
     this.running = true;
@@ -175,19 +175,19 @@ export class DrivingSfxEngine {
     }
   };
 
-  /** Пауза без уничтожения графа */
+  /** Pause without destroying the graph */
   setPaused = (paused: boolean): void => {
     this.paused = paused;
     this.applyMaster();
   };
 
-  /** Mute без уничтожения графа */
+  /** Mute without destroying the graph */
   setMuted = (muted: boolean): void => {
     this.muted = muted;
     this.applyMaster();
   };
 
-  /** Обновляет слои из snapshot и one-shot событий */
+  /** Updates layers from the snapshot and one-shot events */
   update = (sample: TDriveSfxSample, impact: number, oilSlap: number): void => {
     const ctx = this.ctx;
     if (!ctx || !this.running) {
@@ -254,7 +254,7 @@ export class DrivingSfxEngine {
     }
   };
 
-  /** Останавливает граф и закрывает контекст */
+  /** Stops the graph and closes the context */
   stop = (): void => {
     this.generation += 1;
     this.running = false;

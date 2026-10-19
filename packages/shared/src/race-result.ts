@@ -1,4 +1,4 @@
-/** Сохранённый результат заезда */
+/** A saved race result */
 export type TRaceResultPublic = {
   id: string;
   timeMs: number;
@@ -7,14 +7,14 @@ export type TRaceResultPublic = {
   createdAt: string;
 };
 
-/** Создание результата после финиша */
+/** Creating a result after the finish */
 export type TCreateRaceResultRequest = {
   trackId: string;
   timeMs: number;
 };
 
-/** Нижняя граница времени: отсекаем читы «мгновенный финиш» */
+/** Lower time bound: filters out instant-finish cheats */
 export const RACE_TIME_MIN_MS = 8_000;
 
-/** Верхняя граница: заезд дольше 15 минут не принимаем */
+/** Upper bound: races longer than 15 minutes are rejected */
 export const RACE_TIME_MAX_MS = 15 * 60 * 1000;

@@ -3,15 +3,15 @@ import type { TLeaderboardEntry } from '@/entities/leaderboard';
 import { cx, formatRaceTime } from '@/shared/lib';
 
 type TLeaderboardTableProps = {
-  /** Строки таблицы */
+  /** Table rows */
   entries: TLeaderboardEntry[];
-  /** Подсветить строку текущего игрока */
+  /** Highlight the current player's row */
   highlightUserId?: string;
-  /** Ограничить число видимых строк (топ-N) */
+  /** Limit the number of visible rows (top-N) */
   maxRows?: number;
 };
 
-/** Таблица лидеров с семантической разметкой */
+/** Leaderboard table with semantic markup */
 export const LeaderboardTable = ({ entries, highlightUserId, maxRows }: TLeaderboardTableProps) => {
   const { t } = useTranslation();
   const rows = maxRows === undefined ? entries : entries.slice(0, maxRows);

@@ -2,14 +2,14 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TracksService } from './tracks.service';
 
-/** HTTP-слой трасс. Класс и методы прототипа нужны Nest. */
+/** Tracks HTTP layer. Class and prototype methods are required by Nest. */
 @ApiTags('tracks')
 @Controller('tracks')
 export class TracksController {
   constructor(private readonly tracksService: TracksService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Список трасс' })
+  @ApiOperation({ summary: 'List of tracks' })
   list() {
     return this.tracksService.list();
   }

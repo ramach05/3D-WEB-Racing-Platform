@@ -6,7 +6,7 @@ import type { CreateRaceResultDto } from './dto/create-race-result.dto';
 
 const LEADERBOARD_LIMIT = 20;
 
-/** Результаты и таблица лидеров. Класс нужен Nest DI. */
+/** Race results and leaderboard. Class is required by Nest DI. */
 @Injectable()
 export class RaceResultsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -14,10 +14,10 @@ export class RaceResultsService {
   create = async (user: TJwtUser, dto: CreateRaceResultDto): Promise<TRaceResultPublic> => {
     const track = await this.prisma.track.findUnique({ where: { id: dto.trackId } });
     if (!track) {
-      throw new NotFoundException('Трасса не найдена');
+      throw new NotFoundException('Track not found');
     }
     if (!track.isAvailable) {
-      throw new BadRequestException('Трасса пока недоступна');
+      throw new BadRequestException('Track is not available yet');
     }
 
     const created = await this.prisma.raceResult.create({
@@ -40,7 +40,7 @@ export class RaceResultsService {
   leaderboard = async (trackSlug: string): Promise<TLeaderboardEntry[]> => {
     const track = await this.prisma.track.findUnique({ where: { slug: trackSlug } });
     if (!track) {
-      throw new NotFoundException('Трасса не найдена');
+      throw new NotFoundException('Track not found');
     }
 
     const results = await this.prisma.raceResult.findMany({

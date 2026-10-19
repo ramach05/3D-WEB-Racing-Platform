@@ -1,8 +1,8 @@
 export type TTrackProgress = {
-  /** Индекс текущего сегмента петли */
+  /** Index of the current loop segment */
   segmentIndex: number;
-  /** Параметр внутри сегмента: 0..1 */
+  /** Parameter inside the segment: 0..1 */
   segmentT: number;
-  /** Позиция на круге: 0..1 */
+  /** Position on the lap: 0..1 */
   ratio: number;
 };

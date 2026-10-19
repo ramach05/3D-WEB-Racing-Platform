@@ -23,17 +23,17 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { CSRF_HEADER_NAME, type TJwtUser } from './auth.types';
 
 /**
- * CSRF-защита cookie-эндпоинтов: браузер обязан прислать кастомный заголовок,
- * который невозможно добавить кросс-сайтом без успешного CORS-preflight.
- * Требуется только когда refresh-cookie реально есть — гость без cookie не мишень.
- * При sameSite=lax это двойная страховка, при sameSite=none — обязательная проверка.
+ * CSRF protection for cookie endpoints: the browser must send a custom header
+ * that a cross-site request cannot add without a successful CORS preflight.
+ * Required only when a refresh cookie is actually present — a guest without a cookie is not a target.
+ * With sameSite=lax this is belt and braces; with sameSite=none it is mandatory.
  */
 const assertCsrfWhenAuthed = (
   cookieToken: string | undefined,
   requestedWith: string | undefined,
 ): void => {
   if (cookieToken && !requestedWith) {
-    throw new ForbiddenException(`Нужен заголовок ${CSRF_HEADER_NAME}`);
+    throw new ForbiddenException(`Missing ${CSRF_HEADER_NAME} header`);
   }
 };
 
@@ -41,7 +41,7 @@ type TAuthedCookieRequest = Request & {
   cookies?: Record<string, string | undefined>;
 };
 
-/** HTTP-слой auth. Класс и методы прототипа нужны Nest для декораторов маршрутов. */
+/** Auth HTTP layer. Class and prototype methods are required by Nest for route decorators. */
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -49,7 +49,7 @@ export class AuthController {
 
   @Post('register')
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Регистрация (refresh → httpOnly cookie)' })
+  @ApiOperation({ summary: 'Register (refresh → httpOnly cookie)' })
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
@@ -61,7 +61,7 @@ export class AuthController {
 
   @Post('login')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Логин (refresh → httpOnly cookie)' })
+  @ApiOperation({ summary: 'Login (refresh → httpOnly cookie)' })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -73,8 +73,8 @@ export class AuthController {
 
   @Post('refresh')
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Обновить access по refresh-cookie (ротация)' })
-  @ApiHeader({ name: CSRF_HEADER_NAME, description: 'CSRF-маркер своего XHR', required: true })
+  @ApiOperation({ summary: 'Refresh access token via refresh cookie (rotation)' })
+  @ApiHeader({ name: CSRF_HEADER_NAME, description: 'CSRF marker of an own XHR', required: true })
   async refresh(
     @Req() req: TAuthedCookieRequest,
     @Res() res: Response,
@@ -82,7 +82,7 @@ export class AuthController {
   ): Promise<void> {
     const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME];
     assertCsrfWhenAuthed(refreshToken, requestedWith);
-    // Гость без cookie: пустой 204 вместо 401 (молчаливая гидрация, без ошибки в консоли браузера)
+    // Guest without a cookie: empty 204 instead of 401 (silent hydration, no browser console error)
     if (!refreshToken) {
       res.status(204).end();
       return;
@@ -97,8 +97,8 @@ export class AuthController {
   @Post('logout')
   @HttpCode(204)
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Выход: revoke refresh-сессии и clear cookie' })
-  @ApiHeader({ name: CSRF_HEADER_NAME, description: 'CSRF-маркер своего XHR', required: true })
+  @ApiOperation({ summary: 'Logout: revoke the refresh session and clear the cookie' })
+  @ApiHeader({ name: CSRF_HEADER_NAME, description: 'CSRF marker of an own XHR', required: true })
   async logout(
     @Req() req: TAuthedCookieRequest,
     @Res({ passthrough: true }) res: Response,
@@ -113,7 +113,7 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Текущий пользователь и личные лучшие времена' })
+  @ApiOperation({ summary: 'Current user and personal best times' })
   me(@CurrentUser() user: TJwtUser) {
     return this.authService.me(user);
   }

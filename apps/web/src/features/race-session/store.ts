@@ -1,6 +1,6 @@
 import type { TCountdownStep, TRaceHudSnapshot } from './store.types';
 
-/** Число кругов на любой трассе */
+/** Lap count on every track */
 export const RACE_LAP_TOTAL = 3;
 
 type TListener = () => void;
@@ -26,7 +26,7 @@ let lastNotifyAt = 0;
 const listeners = new Set<TListener>();
 let notifyScheduled = false;
 
-/** Читает лучшее время гостя с этой трассы */
+/** Reads the guest's best time for this track */
 export const readGuestBest = (trackId: string): number | null => {
   const raw = localStorage.getItem(`${BEST_PREFIX}${trackId}`);
   if (!raw) {
@@ -36,7 +36,7 @@ export const readGuestBest = (trackId: string): number | null => {
   return Number.isFinite(value) ? value : null;
 };
 
-/** Пишет лучшее время гостя */
+/** Stores the guest's best time */
 export const writeGuestBest = (trackId: string, timeMs: number): void => {
   const current = readGuestBest(trackId);
   if (current === null || timeMs < current) {
@@ -44,7 +44,7 @@ export const writeGuestBest = (trackId: string, timeMs: number): void => {
   }
 };
 
-/** Подписка HUD на снимок заезда */
+/** HUD subscription to the race snapshot */
 export const subscribeRaceHud = (listener: TListener): (() => void) => {
   listeners.add(listener);
   return () => {
@@ -52,10 +52,10 @@ export const subscribeRaceHud = (listener: TListener): (() => void) => {
   };
 };
 
-/** Текущий снимок HUD */
+/** Current HUD snapshot */
 export const getRaceHudSnapshot = (): TRaceHudSnapshot => snapshot;
 
-/** Уведомляет подписчиков вне текущего кадра: React-рендеры HUD не должны вырывать кадр у отрисовки сцены */
+/** Notifies subscribers outside the current frame: HUD React renders must not steal a frame from scene rendering */
 const flushListeners = (): void => {
   if (!notifyScheduled) {
     return;
@@ -65,7 +65,7 @@ const flushListeners = (): void => {
   listeners.forEach((listener) => listener());
 };
 
-/** Ставит уведомление на ближайший rAF; серия emit'ов схлопывается в один. setTimeout — страховка на случай, где rAF не крутится (фоновая вкладка, jsdom-таймеры). */
+/** Batches the notification into the next rAF; a burst of emits collapses into one. setTimeout is a safety net for places where rAF does not run (background tab, jsdom timers). */
 const scheduleNotify = (): void => {
   if (notifyScheduled) {
     return;
@@ -77,7 +77,7 @@ const scheduleNotify = (): void => {
   setTimeout(flushListeners, 32);
 };
 
-/** Уведомляет подписчиков HUD; без force — не чаще ~80 мс */
+/** Notifies HUD subscribers; without force — at most once per ~80 ms */
 const emit = (force: boolean): void => {
   const now = performance.now();
   if (!force && now - lastNotifyAt < 80) {
@@ -86,13 +86,13 @@ const emit = (force: boolean): void => {
   scheduleNotify();
 };
 
-/** Патчит снимок HUD и шлет emit */
+/** Patches the HUD snapshot and emits */
 const setSnapshot = (patch: Partial<TRaceHudSnapshot>, force = false): void => {
   snapshot = { ...snapshot, ...patch };
   emit(force);
 };
 
-/** Готовит заезд к старту (countdown / ready) */
+/** Prepares the race for the start (countdown / ready) */
 export const resetRaceSession = (
   trackId: string,
   checkpointTotal: number,
@@ -117,7 +117,7 @@ export const resetRaceSession = (
   );
 };
 
-/** После касания земли: 3-2-1-GO перед стартом таймера */
+/** After touching down: 3-2-1-GO before the timer starts */
 export const beginCountdown = (): void => {
   if (snapshot.status !== 'ready') {
     return;
@@ -125,7 +125,7 @@ export const beginCountdown = (): void => {
   setSnapshot({ status: 'countdown', countdownStep: 3 }, true);
 };
 
-/** Обновляет цифру/GO на оверлее и стартовых огнях */
+/** Updates the digit/GO on the overlay and the start lights */
 export const setCountdownStep = (step: TCountdownStep): void => {
   if (snapshot.status !== 'countdown') {
     return;
@@ -133,14 +133,14 @@ export const setCountdownStep = (step: TCountdownStep): void => {
   setSnapshot({ countdownStep: step }, true);
 };
 
-/** Старт таймера после countdown */
+/** Starts the timer after the countdown */
 export const startRacing = (): void => {
   startedAt = performance.now();
   pausedAccumulated = 0;
   setSnapshot({ status: 'racing', timeMs: 0, countdownStep: null }, true);
 };
 
-/** Пауза: физика останавливается снаружи */
+/** Pause: physics is stopped externally */
 export const pauseRace = (): void => {
   if (snapshot.status !== 'racing') {
     return;
@@ -149,7 +149,7 @@ export const pauseRace = (): void => {
   setSnapshot({ status: 'paused' }, true);
 };
 
-/** Снятие паузы */
+/** Resumes a paused race */
 export const resumeRace = (): void => {
   if (snapshot.status !== 'paused') {
     return;
@@ -158,7 +158,7 @@ export const resumeRace = (): void => {
   setSnapshot({ status: 'racing' }, true);
 };
 
-/** Переключает паузу */
+/** Toggles the pause */
 export const togglePause = (): void => {
   if (snapshot.status === 'racing') {
     pauseRace();
@@ -169,7 +169,7 @@ export const togglePause = (): void => {
   }
 };
 
-/** Тик таймера и скорости из useFrame. Пишет в snapshot без React emit (HUD читает через rAF). */
+/** Timer and speed tick from useFrame. Writes into snapshot without a React emit (HUD reads via rAF). */
 export const tickRace = (speedKmh: number): void => {
   if (snapshot.status !== 'racing' || startedAt === 0) {
     snapshot.speedKmh = speedKmh;
@@ -179,7 +179,7 @@ export const tickRace = (speedKmh: number): void => {
   snapshot.speedKmh = speedKmh;
 };
 
-/** Засчитывает завершенный круг (пересечение финишной линии после достаточного прогресса). Возвращает true, когда пройдены все круги заезда. */
+/** Counts a completed lap (crossing the finish line with enough progress). Returns true when all race laps are done. */
 export const registerLapComplete = (): boolean => {
   if (snapshot.status !== 'racing') {
     return false;
@@ -196,9 +196,9 @@ export const registerLapComplete = (): boolean => {
 };
 
 /**
- * Чекпоинт по порядку внутри текущего круга.
- * Возвращает true только когда пройдены все круги (финиш заезда).
- * @deprecated Используется только в unit-тестах; в игре круги считает registerLapComplete.
+ * Checkpoint in order within the current lap.
+ * Returns true only when all laps are completed (race finish).
+ * @deprecated Used only in unit tests; the game counts laps via registerLapComplete.
  */
 export const registerCheckpoint = (index: number): boolean => {
   if (snapshot.status !== 'racing') {
@@ -229,7 +229,7 @@ export const registerCheckpoint = (index: number): boolean => {
   return true;
 };
 
-/** Финиш: фиксирует время и best для гостя */
+/** Finish: records the final time and the guest's best */
 export const finishRace = (trackId: string): number => {
   const timeMs = Math.round(
     snapshot.status === 'racing' && startedAt !== 0
@@ -248,7 +248,7 @@ export const finishRace = (trackId: string): number => {
   return timeMs;
 };
 
-/** Принудительный финиш для e2e (без вождения) */
+/** Forced finish for e2e (no driving) */
 export const finishRaceForTest = (trackId: string, timeMs: number): number => {
   writeGuestBest(trackId, timeMs);
   setSnapshot(

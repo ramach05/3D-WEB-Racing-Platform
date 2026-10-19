@@ -3,34 +3,34 @@ export const VEHICLE_REVERSE_MAX = 10;
 export const VEHICLE_ACCEL = 48;
 export const VEHICLE_BRAKE = 72;
 export const VEHICLE_LATERAL_GRIP = 11;
-/** Пик силы руля после разгона; ниже — слабее, чтобы не крутиться на месте */
+/** Peak steering force after acceleration; weaker below it to avoid spinning in place */
 export const VEHICLE_LOW_SPEED_STEER = 0.58;
 export const VEHICLE_HIGH_SPEED_STEER = 0.42;
-/** До этой скорости (м/с) сила руля растет с нуля. Выше прежнего 1.4 — на ползучей скорости yaw не разворачивает машину на месте. */
+/** Steering force ramps up from zero up to this speed (m/s). Above the former 1.4 — at crawl speed yaw does not spin the car in place. */
 export const VEHICLE_STEER_ENGAGE_SPEED = 5;
 
-/** Целевая угловая скорость (рад/с) при полной силе руля (strength=1). Ближе к arcade-базе (~4.32), все еще чуть спокойнее. */
+/** Target yaw rate (rad/s) at full steering strength (strength=1). Close to arcade base (~4.32), still a bit calmer. */
 export const VEHICLE_STEER_YAW_RATE = 3.6;
 
-/** Скорость сходимости yaw к цели (1/с). Ближе к arcade (0.75) отклику на кадре 1/60. */
+/** Yaw convergence rate toward the target (1/s). Closer to the arcade (0.75) response at a 1/60 frame. */
 export const VEHICLE_YAW_FOLLOW = -Math.log(0.78) * 60;
 
-/** Затухание yaw на месте (1/с). Согласовано с прежним `angvel * 0.12` на кадре 1/60: -ln(0.12)*60. */
+/** Yaw decay at standstill (1/s). Matches the former `angvel * 0.12` at a 1/60 frame: -ln(0.12)*60. */
 export const VEHICLE_YAW_STOP = -Math.log(0.12) * 60;
 
-/** Замедление ручника (м/с²) — слабее ножного тормоза, но без долгого выбега */
+/** Handbrake deceleration (m/s²) — weaker than the foot brake, but without a long coast */
 export const HANDBRAKE_DECEL = 40;
 
-/** Доля газа при зажатом ручнике: 0.35 * ACCEL − HANDBRAKE_DECEL ≈ −23 м/с² — дрифт с падением скорости */
+/** Throttle factor while the handbrake is held: 0.35 * ACCEL − HANDBRAKE_DECEL ≈ −23 m/s² — drift that scrubs speed */
 export const HANDBRAKE_THROTTLE_FACTOR = 0.35;
 
-/** Боковой grip при ручнике без газа */
+/** Lateral grip with handbrake and no throttle */
 export const HANDBRAKE_LATERAL_GRIP = 2;
 
-/** Боковой grip при ручнике + газе (сильнее срыв задней оси) */
+/** Lateral grip with handbrake + throttle (stronger rear axle breakaway) */
 export const HANDBRAKE_THROTTLE_LATERAL_GRIP = 1.2;
 
-/** Множитель силы руля при ручнике (initiation handbrake turn) */
+/** Steering strength multiplier with the handbrake (initiation handbrake turn) */
 export const HANDBRAKE_STEER_BOOST = 1.45;
 
 export type TDriveLongitudinalInput = {
@@ -40,7 +40,7 @@ export type TDriveLongitudinalInput = {
   dt: number;
 };
 
-/** Интегрирует продольную скорость: ручник приоритетнее ножного тормоза и гасит скорость к нулю с обеих сторон; без ручника — тормоз/реверс как раньше. */
+/** Integrates longitudinal speed: handbrake takes priority over the foot brake and bleeds speed to zero from both signs; without handbrake — brake/reverse as before. */
 export const integrateDriveForward = (
   forwardSpeed: number,
   input: TDriveLongitudinalInput,
@@ -74,7 +74,7 @@ export const integrateDriveForward = (
   return target;
 };
 
-/** Экспоненциальное гашение боковой скорости; ручник сильно снижает grip */
+/** Exponential damping of lateral speed; handbrake heavily reduces grip */
 export const dampLateralVelocity = (
   lateral: number,
   handbrake: number,
@@ -92,7 +92,7 @@ export const dampLateralVelocity = (
   return lateral * Math.exp(-grip * dt);
 };
 
-/** Сила руля: 0 на месте, плавный набор до engage, слабее к максимуму; ручник усиливает */
+/** Steering strength: 0 at standstill, ramps up smoothly to engage, weaker near top speed; handbrake boosts it */
 export const computeSteerStrength = (forwardSpeed: number, handbrake = 0): number => {
   const absSpeed = Math.abs(forwardSpeed);
   if (absSpeed < 0.12) {
@@ -106,7 +106,7 @@ export const computeSteerStrength = (forwardSpeed: number, handbrake = 0): numbe
   return handbrake > 0 ? base * HANDBRAKE_STEER_BOOST : base;
 };
 
-/** Новый yaw (рад/с), независимый от FPS. Раньше `* 0.75` за кадр на тяжелых сценах (Night City) давал почти вдвое больший отклик. */
+/** New yaw rate (rad/s), independent of FPS. The old `* 0.75` per frame gave nearly twice the response in heavy scenes (Night City). */
 export const integrateSteerYaw = (
   currentYaw: number,
   steerInput: number,
@@ -122,23 +122,23 @@ export const integrateSteerYaw = (
   return currentYaw + (targetYaw - currentYaw) * follow;
 };
 
-/** Контакт с поверхностью учитывается как «дорога», только если нормаль почти вертикальна (стены — нет) */
+/** A surface contact counts as "road" only when the normal is nearly vertical (walls — no) */
 export const GROUND_NORMAL_MIN_Y = 0.5;
 
-/** Максимальный уклон (град), который считаем проезжей поверхностью: круче — стена/бордюр/откос */
+/** Max slope grade (deg) treated as drivable surface: steeper means wall/curb/embankment */
 export const SLOPE_MAX_GRADE_DEG = 20;
 export const SLOPE_MAX_GRADE = (SLOPE_MAX_GRADE_DEG * Math.PI) / 180;
-/** Порог нормали для «годной» земли, пригодной для подъема и визуального наклона */
+/** Normal threshold for usable ground, fit for climbing and visual tilt */
 export const SLOPE_CONTACT_NORMAL_MIN_Y = Math.cos(SLOPE_MAX_GRADE);
 
-/** Потолок вертикальной составляющей подъема по склону (м/с): защита от подброса на наклонной нормали */
+/** Cap on the vertical climb component on a slope (m/s): guards against being launched up on a tilted normal */
 export const MAX_CLIMB_VY = 8;
 
 /**
- * Вертикальная скорость (м/с), нужная чтобы скользить вдоль плоскости с нормалью
- * (nx, ny, nz) при горизонтальной скорости (vx, vz). На равнине дает 0, на подъеме —
- * ровно ту, что нужна чтобы кузов не вдавливало в полотно. Зажата по величине, чтобы
- * крутая нормаль (съезд/откос/бордюр) на высокой скорости не выстрелила машину вверх.
+ * Vertical velocity (m/s) needed to slide along a plane with normal
+ * (nx, ny, nz) at horizontal velocity (vx, vz). Returns 0 on flat ground; on a climb —
+ * exactly what keeps the body from sinking into the road surface. Clamped in magnitude so a
+ * steep normal (drop-off/embankment/curb) does not launch the car upward at high speed.
  */
 export const computeGroundFollowVy = (
   nx: number,
@@ -156,27 +156,27 @@ export const computeGroundFollowVy = (
 };
 
 /**
- * Итоговая вертикальная скорость при контакте с поверхностью. На равнине и подъеме
- * не дает вдавливаться в полотно и подбрасывать кузов. На спуске (followVy < 0)
- * целим вдоль плоскости без запаса: гравитация за кадр не набирает нужное снижение,
- * кузов отстает от убегающей вниз деки (дополнительно Y прижимается позиционно,
- * см. computeGroundStickY) — иначе копится зазор и рывковый снап трясет машину.
+ * Final vertical velocity on surface contact. On flat ground and climbs it
+ * prevents sinking into the road surface and bouncing the body. On a descent (followVy < 0)
+ * we aim along the plane with no margin: gravity cannot build the needed drop within one frame,
+ * the body lags behind the deck running away below (Y is also pressed down positionally,
+ * see computeGroundStickY) — otherwise a gap accumulates and a jarring snap shakes the car.
  */
 export const resolveGroundFollowVy = (followVy: number, linvelY: number): number =>
   followVy >= 0 ? Math.max(followVy, Math.min(linvelY, 0)) : Math.min(linvelY, followVy);
 
-/** Запас цели позиционного прижима над равновесной высотой на склоне (м) */
+/** Margin above the equilibrium rest height on a slope for the positional stick target (m) */
 export const GROUND_STICK_MARGIN = 0.02;
 
-/** Потолок снижения за один кадр позиционным прижимом (м): не ронять кузов телепортом сильнее */
+/** Cap on the per-frame drop from the positional stick (m): never teleport the body down harder */
 export const GROUND_STICK_MAX_DROP = 0.15;
 
 /**
- * Высота покоя горизонтальной капсулы (наклон запрещен) на склоне: ее нижняя
- * кромка длиной 2·halfLen упирается в поднимающееся назад полотно — кузов стоит
- * выше деки под колесами на halfLen·tanθ. Игнорировать это нельзя: снап к «деке
- * под колесами» вдавливает зад капсулы в тримеш, выстреливает вверх и через
- * трение съедает скорость и управляемость.
+ * Rest height of the horizontal capsule (tilt is forbidden) on a slope: its lower
+ * edge, 2·halfLen long, digs into the road surface rising toward the rear — the body sits
+ * above the deck under the wheels by halfLen·tanθ. This cannot be ignored: snapping to the
+ * "deck under the wheels" buries the capsule's rear in the trimesh, launches it up and
+ * friction eats away speed and handling.
  */
 export const computeGroundRestY = (
   deckY: number,
@@ -187,12 +187,12 @@ export const computeGroundRestY = (
 ): number => deckY + halfLen * (Math.hypot(nx, nz) / Math.max(ny, 0.5));
 
 /**
- * Целевая Y позиционного прижима: равновесная высота покоя + запас, если кузов
- * выше нее (иначе null — не поднимаем). Нужен и на спуске (решатель гасит
- * нормальную составляющую vy, кузов отстает от убегающей деки), и у гребня
- * подъема (vy по касательной перебирает вверх на выпуклом профиле): без
- * коррекции зазор дорастает до порога и рывковый снап трясет кузов.
- * Снижение ограничено сверху (GROUND_STICK_MAX_DROP за кадр).
+ * Target Y for the positional stick: equilibrium rest height + margin when the body
+ * is above it (otherwise null — never lift). Needed both on a descent (the solver damps
+ * the normal vy component, the body lags the deck running away below) and near the crest
+ * of a climb (tangential vy overshoots upward on a convex profile): without the
+ * correction the gap grows to the threshold and a jarring snap shakes the body.
+ * Drop is capped per frame (GROUND_STICK_MAX_DROP).
  */
 export const computeGroundStickY = (restY: number, currentY: number): number | null => {
   const target = restY + GROUND_STICK_MARGIN;
@@ -202,18 +202,18 @@ export const computeGroundStickY = (restY: number, currentY: number): number | n
   return Math.max(target, currentY - GROUND_STICK_MAX_DROP);
 };
 
-/** Постоянная времени сглаживания целевого vy на подъеме/равнине (с): гасит ступеньку на гребне */
+/** Time constant (s) for smoothing the target vy on climbs/flat ground: smooths the step at the crest */
 export const FOLLOW_VY_TAU = 0.05;
 
-/** Новый vy (м/с) при сходимости к цели за dt; экспоненциально, FPS-независимо */
+/** New vy (m/s) after converging toward the target over dt; exponential, FPS-independent */
 export const smoothVyToward = (current: number, target: number, dt: number): number =>
   current + (target - current) * (1 - Math.exp(-dt / FOLLOW_VY_TAU));
 
 /**
- * Целевой наклон кузова (рад, вокруг локальной X) по нормали склона, спроецированной
- * на направление курса (fwdX, fwdZ). КЛЮЧЕВОЕ: зависит только от геометрии нормали,
- * а не от скорости/курса — поэтому наклон не «выстреливает» на входе в поворот.
- * Подъем вперед дает отрицательный угол (нос вверх). Зажат по максимальному уклону.
+ * Target body pitch (rad, around local X) from the slope normal projected onto
+ * the heading direction (fwdX, fwdZ). KEY POINT: depends only on normal geometry,
+ * not on speed/heading — so the pitch never "snaps" when entering a corner.
+ * Climbing ahead gives a negative angle (nose up). Clamped to the max slope grade.
  */
 export const computeSlopePitchFromNormal = (
   nx: number,
@@ -230,12 +230,12 @@ export const computeSlopePitchFromNormal = (
   return Math.max(-SLOPE_MAX_GRADE, Math.min(SLOPE_MAX_GRADE, pitch));
 };
 
-/** Постоянная времени сглаживания визуального угла (с) */
+/** Time constant (s) for visual angle smoothing */
 export const ANGLE_SMOOTH_TAU = 0.12;
-/** Потолок скорости доворота визуального угла (рад/с) */
+/** Cap on the visual angle's rate of change (rad/s) */
 export const ANGLE_SMOOTH_MAX_RATE = 3;
 
-/** Визуальный угол (рад) после сходимости к target за dt: экспоненциально (FPS-независимо) с потолком шага — без перерегулирования на резкой смене цели */
+/** Visual angle (rad) after converging toward target over dt: exponential (FPS-independent) with a step cap — no overshoot on an abrupt target change */
 export const smoothAngleToward = (current: number, target: number, dt: number): number => {
   const follow = 1 - Math.exp(-dt / ANGLE_SMOOTH_TAU);
   const step = (target - current) * follow;

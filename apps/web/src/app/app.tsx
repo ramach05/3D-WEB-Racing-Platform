@@ -6,7 +6,7 @@ import { store } from './store';
 import './i18n';
 import './styles.css';
 
-/** Корень React-приложения: store + гейт доступности API + роутер */
+/** React app root: store + API availability gate + router */
 export const AppProviders = () => {
   return (
     <Provider store={store}>

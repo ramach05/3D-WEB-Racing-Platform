@@ -33,7 +33,7 @@ import { createBillboardTexture } from '@/widgets/race-canvas/lib/billboard-ads'
 
 let rectAreaLightsReady = false;
 
-/** Один раз инициализирует шейдеры RectAreaLight */
+/** Initializes RectAreaLight shaders once per app */
 const ensureRectAreaLights = () => {
   if (rectAreaLightsReady) {
     return;
@@ -43,31 +43,31 @@ const ensureRectAreaLights = () => {
 };
 
 type TTrackBillboardsProps = {
-  /** Конфиг трассы */
+  /** Track config */
   config: TTrackConfig;
-  /** Ref машины — выбираем ближайшие щиты для RectAreaLight */
+  /** Car ref — nearest boards get RectAreaLight */
   bodyRef?: RefObject<RapierRigidBody | null>;
 };
 
 type TBillboardProps = {
-  /** Размещенный щит */
+  /** Placed billboard */
   billboard: TPlacedBillboard;
-  /** Ночная трасса — gooseneck-подсветка включена */
+  /** Night track — gooseneck lighting enabled */
   isNight: boolean;
-  /** Монтировать RectAreaLight (distance-LOD) */
+  /** Mount RectAreaLight (distance-LOD) */
   hasWash: boolean;
-  /** Текстура макета */
+  /** Layout texture */
   texture: CanvasTexture;
 };
 
 type TFloodLightProps = {
-  /** Смещение по ширине щита (локальный Z) */
+  /** Offset across the board (local Z) */
   localZ: number;
-  /** Горят ли лампы */
+  /** Whether the lamps are lit */
   isOn: boolean;
 };
 
-/** Визуал gooseneck-корпуса (свет лица — RectAreaLight на щите при hasWash) */
+/** Gooseneck housing visuals (face light is RectAreaLight on the board when hasWash) */
 const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
   const {
     mount,
@@ -80,7 +80,7 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
     housing,
     bulbRadius,
   } = BILLBOARD_FLOOD;
-  /** Верх стойки = низ вылета */
+  /** Top of the mount = start of the arm riser */
   const elbowY = mount.height + riserHeight;
 
   return (
@@ -155,9 +155,9 @@ const FloodLight = ({ localZ, isOn }: TFloodLightProps) => {
   );
 };
 
-/** Ровная заливка лица щита — без конусных кругов SpotLight */
+/** Flat even wash over the board face — no conical SpotLight pools */
 const BillboardFaceWash = () => {
-  // Подключает uniforms RectAreaLight один раз на приложение.
+  // Attaches RectAreaLight uniforms once per app.
   useLayoutEffect(() => {
     ensureRectAreaLights();
   }, []);
@@ -167,7 +167,7 @@ const BillboardFaceWash = () => {
   return (
     <rectAreaLight
       position={[faceX + BILLBOARD_FACE_WASH.standoff, BILLBOARD_PANEL_CENTER_Y, 0]}
-      /** −Z источника → −X мира: свет смотрит на лицо щита */
+      /** Light −Z → world −X: the light points at the board face */
       rotation={[0, Math.PI / 2, 0]}
       width={BILLBOARD_FACE_WASH.width}
       height={BILLBOARD_FACE_WASH.height}
@@ -177,32 +177,32 @@ const BillboardFaceWash = () => {
   );
 };
 
-/** Один придорожный щит: столбы, бумажный короб, gooseneck-подсветка */
+/** One roadside billboard: posts, paper box, gooseneck lighting */
 const Billboard = ({ billboard, isNight, hasWash, texture }: TBillboardProps) => {
   const postCenterY = BILLBOARD_POST_HEIGHT / 2;
   const frameOuterWidth = BILLBOARD_PANEL_WIDTH + BILLBOARD_FRAME_THICKNESS * 2;
   const frameOuterHeight = BILLBOARD_PANEL_HEIGHT + BILLBOARD_FRAME_THICKNESS * 2;
   const frameCenterX = BILLBOARD_PANEL_FORWARD_X;
   const useFaceFallback = isNight && !hasWash;
-  /** Яркость нормирована по макету: светлый «for-rent» не выбеливается, темные макеты не чернеют */
+  /** Brightness normalized by layout: light "for-rent" art is not washed out, dark layouts are not crushed */
   const avgLuminance = texture.userData.avgLuminance as number | undefined;
   const faceGlow = faceGlowIntensity(avgLuminance ?? BILLBOARD_NIGHT_FACE.faceGlowTargetLuma);
 
   return (
     <group position={[billboard.x, 0, billboard.z]} rotation={[0, billboard.rotationY, 0]}>
-      {/* Левый столб */}
+      {/* Left post */}
       <mesh position={[0, postCenterY, -BILLBOARD_POST_HALF_SPAN]} castShadow receiveShadow>
         <boxGeometry args={[BILLBOARD_POST.width, BILLBOARD_POST_HEIGHT, BILLBOARD_POST.depth]} />
         <meshStandardMaterial color={billboardPalette.pole} metalness={0.78} roughness={0.35} />
       </mesh>
 
-      {/* Правый столб */}
+      {/* Right post */}
       <mesh position={[0, postCenterY, BILLBOARD_POST_HALF_SPAN]} castShadow receiveShadow>
         <boxGeometry args={[BILLBOARD_POST.width, BILLBOARD_POST_HEIGHT, BILLBOARD_POST.depth]} />
         <meshStandardMaterial color={billboardPalette.pole} metalness={0.78} roughness={0.35} />
       </mesh>
 
-      {/* Верхняя балка рамы */}
+      {/* Top frame beam */}
       <mesh
         position={[
           frameCenterX,
@@ -215,7 +215,7 @@ const Billboard = ({ billboard, isNight, hasWash, texture }: TBillboardProps) =>
         <meshStandardMaterial color={billboardPalette.frame} metalness={0.25} roughness={0.7} />
       </mesh>
 
-      {/* Нижняя балка рамы */}
+      {/* Bottom frame beam */}
       <mesh
         position={[
           frameCenterX,
@@ -228,7 +228,7 @@ const Billboard = ({ billboard, isNight, hasWash, texture }: TBillboardProps) =>
         <meshStandardMaterial color={billboardPalette.frame} metalness={0.25} roughness={0.7} />
       </mesh>
 
-      {/* Боковые стойки рамы */}
+      {/* Frame side stiles */}
       <mesh
         position={[
           frameCenterX,
@@ -252,7 +252,7 @@ const Billboard = ({ billboard, isNight, hasWash, texture }: TBillboardProps) =>
         <meshStandardMaterial color={billboardPalette.frame} metalness={0.25} roughness={0.7} />
       </mesh>
 
-      {/* Короб панели (тыл / толщина) */}
+      {/* Panel box (back / thickness) */}
       <mesh
         position={[BILLBOARD_PANEL_FORWARD_X, BILLBOARD_PANEL_CENTER_Y, 0]}
         castShadow
@@ -264,7 +264,7 @@ const Billboard = ({ billboard, isNight, hasWash, texture }: TBillboardProps) =>
         <meshStandardMaterial color={billboardPalette.panelBack} metalness={0.05} roughness={0.9} />
       </mesh>
 
-      {/* Бумажное / виниловое лицо: снаружи RectAreaLight; дальние — слабый emissive */}
+      {/* Paper / vinyl face: RectAreaLight up close; far boards — weak emissive */}
       <mesh
         position={[
           BILLBOARD_PANEL_FORWARD_X + BILLBOARD_PANEL_DEPTH / 2 + 0.005,
@@ -295,11 +295,11 @@ const Billboard = ({ billboard, isNight, hasWash, texture }: TBillboardProps) =>
   );
 };
 
-/** Расстояние от (x,z) до щита */
+/** Distance from (x,z) to the billboard */
 const billboardDistance = (billboard: TPlacedBillboard, x: number, z: number): number =>
   Math.hypot(billboard.x - x, billboard.z - z);
 
-/** K ближайших щитов с hysteresis: прежние wash остаются, пока не дальше K-го + margin. Возвращает отсортированные индексы (ближайший первым). */
+/** K nearest billboards with hysteresis: current washes stay active until farther than K-th + margin. Returns sorted indices (nearest first). */
 const selectActiveWashIndices = (
   billboards: TPlacedBillboard[],
   x: number,
@@ -344,11 +344,11 @@ const selectActiveWashIndices = (
   });
 };
 
-/** Стабильный ключ набора индексов для сравнения */
+/** Stable key of an index set for comparison */
 const indicesKey = (indices: readonly number[]): string =>
   [...indices].sort((a, b) => a - b).join(',');
 
-/** Визуал рекламных щитов вне Physics. Коллайдеры — в TrackBillboardColliders. Ночью RectAreaLight — только у K ближайших к машине. */
+/** Billboard visuals outside Physics. Colliders live in TrackBillboardColliders. At night RectAreaLight mounts only on the K boards nearest the car. */
 export const TrackBillboards = ({ config, bodyRef }: TTrackBillboardsProps) => {
   const { i18n } = useTranslation();
   const locale: TAppLocale = i18n.language === 'en' ? 'en' : 'ru';
@@ -364,7 +364,7 @@ export const TrackBillboards = ({ config, bodyRef }: TTrackBillboardsProps) => {
   const activeRef = useRef(initialActive);
   const pendingActiveKeyRef = useRef<string | null>(null);
 
-  // Обновляет active wash set; setState — после кадра.
+  // Updates the active wash set; setState runs after the frame.
   useFrame(() => {
     if (!isNight || !bodyRef?.current || billboards.length === 0) {
       return;
@@ -400,7 +400,7 @@ export const TrackBillboards = ({ config, bodyRef }: TTrackBillboardsProps) => {
     return map;
   }, [billboards, locale]);
 
-  // Освобождает GPU-текстуры при смене трассы / языка / размонтировании.
+  // Releases GPU textures on track / locale change or unmount.
   useEffect(() => {
     return () => {
       for (const texture of textures.values()) {
@@ -409,7 +409,7 @@ export const TrackBillboards = ({ config, bodyRef }: TTrackBillboardsProps) => {
     };
   }, [textures]);
 
-  // Синхронизирует initial active при смене списка щитов: state корректируется на render (паттерн React)
+  // Syncs initial active when the billboard list changes: state adjusted during render (React pattern)
   if (prevInitialActive !== initialActive) {
     setPrevInitialActive(initialActive);
     setActiveWashIndices(initialActive);

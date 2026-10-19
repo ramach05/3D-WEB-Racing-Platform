@@ -6,10 +6,10 @@ import {
   SRGBColorSpace,
 } from 'three';
 
-/** Период решетки value-noise по X (целый) — гарантирует бесшовную тайловку по U */
+/** Value-noise lattice period along X (integer) — guarantees seamless tiling in U */
 const PERIOD_X = 16;
 
-/** Детерминированный хэш решетки; X заведен по модулю PERIOD_X для бесшовности */
+/** Deterministic lattice hash; X is wrapped modulo PERIOD_X for seamlessness */
 const hash2 = (x: number, y: number, seed: number): number => {
   const wx = ((x % PERIOD_X) + PERIOD_X) % PERIOD_X;
   let n = (wx * 374761393 + y * 668265263 + seed) | 0;
@@ -17,7 +17,7 @@ const hash2 = (x: number, y: number, seed: number): number => {
   return ((n ^ (n >>> 16)) >>> 0) / 0xffffffff;
 };
 
-/** Value-noise 0..1 с билинейной интерполяцией */
+/** Value noise 0..1 with bilinear interpolation */
 const valueNoise = (x: number, y: number, seed: number): number => {
   const x0 = Math.floor(x);
   const y0 = Math.floor(y);
@@ -32,7 +32,7 @@ const valueNoise = (x: number, y: number, seed: number): number => {
   return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
 };
 
-/** fBm: сумма октав; частота по X кратна PERIOD_X, чтобы каждая октава была периодична */
+/** fBm: sum of octaves; X frequency is a multiple of PERIOD_X so each octave stays periodic */
 const fbm = (ux: number, y: number, seed: number, octaves: number): number => {
   let amp = 0.5;
   let sum = 0;
@@ -48,9 +48,9 @@ const fbm = (ux: number, y: number, seed: number, octaves: number): number => {
 };
 
 /**
- * Тайловая текстура штормового облачного слоя: темная сланцевая база,
- * разрывы облаков (fbm) дают светлые верхушки и темные подбрюшья.
- * Бесшовна по U; вертикально — слабое затемнение к зениту для глубины.
+ * Tiled storm cloud layer texture: dark slate base,
+ * cloud breaks (fbm) produce bright tops and dark bellies.
+ * Seamless in U; vertically — slight darkening toward the zenith for depth.
  */
 export const createStormCloudTexture = (size = 512): CanvasTexture => {
   const canvas = document.createElement('canvas');
@@ -72,14 +72,14 @@ export const createStormCloudTexture = (size = 512): CanvasTexture => {
       const detail = fbm(v, u * 9, 91, 4);
       const mass = coverage * 0.7 + detail * 0.3;
 
-      // Светлое подбрюшье → белая верхушка облака; высокая база = дождливый день, а не гроза
+      // Bright belly → white cloud top; a high base = rainy day, not a thunderstorm
       const shade = 135 + Math.max(0, mass - 0.4) * 210;
-      // Небольшая синева штормового неба + легкая холодность сверху
+      // Slight blue of the storm sky + a touch of coldness at the top
       let r = shade * 0.86;
       let g = shade * 0.94;
       let b = shade * 1.06;
 
-      // Разрывы: местами чуть темнее (просвет грозовой тучи)
+      // Breaks: locally a bit darker (a gap in the storm cloud)
       if (mass < 0.32) {
         const d = (0.32 - mass) * 70;
         r -= d;
@@ -109,7 +109,7 @@ export const createStormCloudTexture = (size = 512): CanvasTexture => {
 
 let sharedStormCloudTexture: CanvasTexture | null = null;
 
-/** Один CanvasTexture облаков на сессию гонки (купол неба шторма). Не dispose из компонентов — переиспользуется между трассами. */
+/** One clouds CanvasTexture per race session (storm sky dome). Do not dispose from components — reused between tracks. */
 export const getSharedStormCloudTexture = (size = 512): CanvasTexture => {
   if (!sharedStormCloudTexture) {
     sharedStormCloudTexture = createStormCloudTexture(size);

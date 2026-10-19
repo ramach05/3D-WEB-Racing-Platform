@@ -2,19 +2,19 @@ import type { TCheckpointLocalCoords, TOrientedBox } from '@/entities/track';
 import { isInsideCheckpoint } from '@/entities/track';
 
 type TVec2 = {
-  /** Мировая X */
+  /** World X */
   x: number;
-  /** Мировая Z */
+  /** World Z */
   z: number;
 };
 
-/** Минимальная доля круга до засчета финишной линии (анти-ложный старт). */
+/** Minimum lap progress fraction before the finish line counts (guards against a false start). */
 export const MIN_LAP_PROGRESS = 0.85;
 
-/** Зона у старт/финиш — cooldown снимается после ухода на долю круга от линии. */
+/** Zone around start/finish — the cooldown lifts after moving a lap fraction away from the line. */
 export const START_FINISH_COOLDOWN_RATIO = 0.14;
 
-/** Локальные координаты линии: lx — поперек, lz — вдоль трассы (спавн на lz > 0). */
+/** Local coords of the line: lx across the track, lz along it (spawn at lz > 0). */
 export const getTrackLineLocalCoords = (
   x: number,
   z: number,
@@ -30,13 +30,13 @@ export const getTrackLineLocalCoords = (
   };
 };
 
-/** Точка внутри объема финиша в координатах трассы. */
+/** Point inside the finish volume in track coordinates. */
 export const isInsideFinishZone = (x: number, z: number, line: TOrientedBox): boolean => {
   const { lx, lz } = getTrackLineLocalCoords(x, z, line);
   return Math.abs(lx) <= line.size[0] / 2 && Math.abs(lz) <= line.size[2] / 2;
 };
 
-/** Проезд через зону чекпоинта с учетом перемещения между кадрами. */
+/** Passing through the checkpoint zone, accounting for movement between frames. */
 export const passedCheckpointZone = (
   prevX: number | null,
   prevZ: number | null,
@@ -65,7 +65,7 @@ export const passedCheckpointZone = (
   return false;
 };
 
-/** Пересекаются ли отрезки AB и CD на плоскости XZ */
+/** Whether segments AB and CD intersect on the XZ plane */
 const segmentsIntersect = (a: TVec2, b: TVec2, c: TVec2, d: TVec2): boolean => {
   const denom = (b.x - a.x) * (d.z - c.z) - (b.z - a.z) * (d.x - c.x);
   if (Math.abs(denom) < 1e-9) {
@@ -76,7 +76,7 @@ const segmentsIntersect = (a: TVec2, b: TVec2, c: TVec2, d: TVec2): boolean => {
   return t >= 0 && t <= 1 && u >= 0 && u <= 1;
 };
 
-/** Пересечение траектории машины с отрезком линии финиша. */
+/** Intersection of the car's path with the finish line segment. */
 export const crossedFinishLine = (
   prevX: number,
   prevZ: number,
@@ -101,7 +101,7 @@ export const crossedFinishLine = (
 
   return segmentsIntersect({ x: prevX, z: prevZ }, { x, z }, lineStart, lineEnd);
 };
-/** Смена знака lz внутри ширины линии — ловит проезд, который сегментный тест иногда пропускает у края дороги. */
+/** Sign flip of lz within the line width — catches a crossing the segment test sometimes misses near the road edge. */
 export const crossedFinishPlane = (
   prevX: number,
   prevZ: number,
@@ -135,7 +135,7 @@ export const crossedFinishPlane = (
   return Math.abs(lx) <= halfWidth;
 };
 
-/** Пересечение линии финиша с учетом перемещения между кадрами. */
+/** Finish line crossing accounting for movement between frames. */
 export const passedFinishLine = (
   prevX: number | null,
   prevZ: number | null,
@@ -171,7 +171,7 @@ export const passedFinishLine = (
   return false;
 };
 
-/** Проезд финиша только в направлении заезда: `lz + → −` (см. `race-direction.ts`). Учитывает посадку ровно на плоскость (lz ≈ 0) между кадрами. */
+/** Finish crossing only in the race direction: `lz + → −` (see `race-direction.ts`). Handles landing exactly on the plane (lz ≈ 0) between frames. */
 export const isForwardFinishCrossing = (
   prevX: number,
   prevZ: number,
@@ -185,7 +185,7 @@ export const isForwardFinishCrossing = (
   const prevOnPlane = Math.abs(prev.lz) <= 1e-9 && Math.abs(prev.lx) <= halfWidth;
   const currOnPlane = Math.abs(curr.lz) <= 1e-9 && Math.abs(curr.lx) <= halfWidth;
 
-  // Со стороны спавна (lz > 0) на плоскость или уход с плоскости в −lz.
+  // From the spawn side (lz > 0) onto the plane, or leaving the plane toward −lz.
   if (prev.lz > 0 && currOnPlane) {
     return true;
   }
@@ -208,7 +208,7 @@ export const isForwardFinishCrossing = (
   return Math.abs(lx) <= halfWidth;
 };
 
-/** Пересечение финиша только в направлении заезда, с subsample между кадрами. */
+/** Finish crossing only in the race direction, with subsampling between frames. */
 export const passedFinishLineForward = (
   prevX: number | null,
   prevZ: number | null,
@@ -238,7 +238,7 @@ export const passedFinishLineForward = (
   return false;
 };
 
-/** Можно ли засчитать пересечение финиша как завершение круга. */
+/** Whether a finish crossing may be counted as a completed lap. */
 export const canRegisterLapCrossing = (
   crossed: boolean,
   inCooldown: boolean,

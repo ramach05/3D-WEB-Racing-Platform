@@ -3,7 +3,7 @@ import { getRaceHudSnapshot } from '@/features/race-session';
 
 const DROP_POOL_SIZE = 420;
 const GRAVITY = 620;
-/** Порог радиуса, с которого капля срывается и течет, оставляя след */
+/** Radius threshold at which a drop breaks loose and runs down, leaving a trail */
 const RUN_THRESHOLD = 3.4;
 
 type TDrop = {
@@ -12,7 +12,7 @@ type TDrop = {
   r: number;
   vy: number;
   vx: number;
-  /** true — капля прилипла; false — течет вниз со следом */
+  /** true — drop is stuck; false — runs down leaving a trail */
   stuck: boolean;
   life: number;
   maxLife: number;
@@ -25,10 +25,10 @@ for (let i = 0; i < DROP_POOL_SIZE; i += 1) {
 }
 
 /**
- * DOM-оверлей капель на «стекле» (дождливые трассы, вся сессия заезда:
- * готовность, отсчет, гонка, пауза). Капли прилипают и растут, срываются
- * и текут вниз со светящимся следом; темп спавна зависит от скорости.
- * Скорость читается из snapshot напрямую (tickRace пишет без React-emit).
+ * DOM drop overlay on the "glass" (rainy tracks, the whole race session:
+ * ready, countdown, racing, paused). Drops stick and grow, break loose
+ * and run down with a glowing trail; spawn rate depends on speed.
+ * Speed is read from the snapshot directly (tickRace writes without React-emit).
  */
 export const RaceRainOverlay = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -67,8 +67,8 @@ export const RaceRainOverlay = () => {
       ctx.clearRect(0, 0, width, height);
 
       const speedFactor = Math.min(1, Math.abs(getRaceHudSnapshot().speedKmh) / 60);
-      // В стоячем положении капли копятся (поток не сдувает); при езде напор на стекло
-      // многократно выше — темп появления растет с скоростью в несколько раз
+      // When stationary drops accumulate (airflow doesn't blow them off); while driving the pressure on the glass
+      // is much higher — spawn rate grows several times with speed
       spawnTimer += dt * (26 + speedFactor * 85);
       while (spawnTimer >= 1) {
         spawnTimer -= 1;
@@ -98,7 +98,7 @@ export const RaceRainOverlay = () => {
         if (!d.active) continue;
         d.life += dt;
 
-        // Прилипшая капля подрастает (конденсат); крупная срывается вниз
+        // A stuck drop grows (condensation); a large one breaks loose and runs down
         if (d.stuck) {
           d.r += dt * (0.9 + speedFactor * 0.4);
           if (d.r >= RUN_THRESHOLD || (speedFactor > 0.5 && d.r > RUN_THRESHOLD - 1.2)) {
@@ -107,7 +107,7 @@ export const RaceRainOverlay = () => {
         }
 
         if (!d.stuck) {
-          // Текущая капля: тяжелет вниз, легкий боковой дрейф, ускоряется
+          // Running drop: gets heavier downward, slight lateral drift, accelerates
           d.vy += GRAVITY * dt * (0.34 + speedFactor * 0.16);
           d.vy = Math.min(d.vy, 900);
           d.vx += (Math.random() - 0.5) * 12 * dt;
@@ -123,7 +123,7 @@ export const RaceRainOverlay = () => {
         const headAlpha = Math.min(1, d.life * 4) * Math.min(1, (d.maxLife - d.life) * 3);
         const speedFade = Math.min(1, 0.7 + speedFactor * 0.3);
 
-        // След текущей капли
+        // Trail of the running drop
         if (!d.stuck && d.vy > 20) {
           const trailLen = Math.min(140, d.vy * 0.16);
           const grad = ctx.createLinearGradient(d.x, d.y - trailLen, d.x, d.y);
@@ -138,7 +138,7 @@ export const RaceRainOverlay = () => {
           ctx.stroke();
         }
 
-        // Голова капли — блик + капля
+        // Drop head — highlight + droplet
         ctx.beginPath();
         ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(176,200,222,${0.22 * headAlpha * speedFade})`;

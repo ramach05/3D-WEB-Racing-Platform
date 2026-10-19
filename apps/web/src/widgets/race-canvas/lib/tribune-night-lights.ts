@@ -8,11 +8,11 @@ import {
   tribuneRowCenterX,
 } from '@/entities/track';
 
-/** Stadium-прожекторы на краях крыши (визуал всегда; SpotLight только ночью). Без shadow map; неон рядов — отдельно. */
+/** Stadium floods at the roof edges (visual always; SpotLight only at night). No shadow map; row neon is separate. */
 export const TRIBUNE_FLOOD = {
-  /** Опускание корпуса от нижней грани навеса */
+  /** Housing drop from the canopy underside */
   housingDropY: 0.12,
-  /** Доля глубины трибуны от внутреннего края */
+  /** Share of grandstand depth from the inner edge */
   housingDepthFraction: 0.35,
   housing: {
     width: 0.22,
@@ -20,32 +20,32 @@ export const TRIBUNE_FLOOD = {
     depth: 0.28,
   },
   bulbRadius: 0.04,
-  /** Emissive линзы под Bloom */
+  /** Lens emissive for Bloom */
   lensEmissiveIntensity: 1.35,
 } as const;
 
-/** Два SpotLight на ±Z краях крыши, вниз на зрителей. Бюджет: ровно 2 источника на всю трибуну, castShadow=false. */
+/** Two SpotLights at the ±Z roof edges, pointing down at the spectators. Budget: exactly 2 sources per grandstand, castShadow=false. */
 export const TRIBUNE_EDGE_SPOT = {
   intensity: 42,
   distance: 14,
-  /** Широкий конус — половина грандстенда */
+  /** Wide cone — half of the grandstand */
   angle: 0.95,
   penumbra: 0.9,
   decay: 2,
-  /** |Z| от центра: край внешней секции с небольшим inset */
+  /** |Z| from center: outer section edge with a small inset */
   zInset: 1.15,
-  /** Aim Z как доля edge Z (внутрь к центру) */
+  /** Aim Z as a fraction of edge Z (inward toward center) */
   aimZFraction: 0.32,
-  /** Ряд aim (0-based) */
+  /** Aim row (0-based) */
   aimRow: 2,
-  /** Высота aim над рядом */
+  /** Aim height above the row */
   aimYOffset: 0.45,
 } as const;
 
-/** ± края крыши вдоль зала */
+/** ± roof edges along the hall */
 export const TRIBUNE_EDGE_Z_SIGNS = [-1, 1] as const;
 
-/** Фоновая заливка толпы: слабый fill, основной свет — от edge Spot */
+/** Background crowd wash: weak fill, main light comes from the edge Spot */
 export const TRIBUNE_CROWD_WASH = {
   color: [1, 0.94, 0.82] as const,
   shirtAdd: 0.18,
@@ -55,31 +55,31 @@ export const TRIBUNE_CROWD_WASH = {
   neonBounce: 0.06,
 } as const;
 
-/** Глубина площадки рядов по X */
+/** Row platform depth along X */
 export const tribuneDepthX = () => TRIBUNE_ROWS * ROW_DEPTH;
 
-/** Полупролет трибуны по Z (от центра до внешнего торца секции) */
+/** Half-span of the grandstand along Z (from center to the outer section end) */
 export const tribuneHalfSpanZ = () => SECTION_PITCH + SECTION_WIDTH / 2;
 
-/** Локальный X корпуса / Spot на краю крыши */
+/** Local X of the housing / Spot at the roof edge */
 export const tribuneEdgeLightX = (tribuneInnerX: number, sideSign: number): number =>
   tribuneInnerX + sideSign * tribuneDepthX() * TRIBUNE_FLOOD.housingDepthFraction;
 
-/** Локальный Y под навесом */
+/** Local Y under the canopy */
 export const tribuneEdgeLightY = (): number => canopyUndersideY() - TRIBUNE_FLOOD.housingDropY;
 
-/** Локальный Z края крыши */
+/** Local Z of the roof edge */
 export const tribuneEdgeLightZ = (zSign: number): number =>
   zSign * (tribuneHalfSpanZ() - TRIBUNE_EDGE_SPOT.zInset);
 
-/** Aim X — средний ряд */
+/** Aim X — middle row */
 export const tribuneEdgeAimX = (tribuneInnerX: number, sideSign: number): number =>
   tribuneRowCenterX(tribuneInnerX, sideSign, TRIBUNE_EDGE_SPOT.aimRow);
 
-/** Aim Y — торс зрителя */
+/** Aim Y — spectator torso */
 export const tribuneEdgeAimY = (): number =>
   rowTopY(TRIBUNE_EDGE_SPOT.aimRow) + TRIBUNE_EDGE_SPOT.aimYOffset;
 
-/** Aim Z — внутрь от края к центру зала */
+/** Aim Z — inward from the edge toward the hall center */
 export const tribuneEdgeAimZ = (zSign: number): number =>
   tribuneEdgeLightZ(zSign) * TRIBUNE_EDGE_SPOT.aimZFraction;

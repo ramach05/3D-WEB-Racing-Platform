@@ -24,11 +24,11 @@ import type {
 } from './spectator-crowd.types';
 
 type TSpectatorCrowdProps = {
-  /** Места зрителей секции */
+  /** Section spectator seats */
   seats: TSpectatorSeat[];
-  /** Палитра трассы: accent для emissive-подкраски толпы */
+  /** Track palette: accent tints crowd emissive */
   palette: TTrackPalette;
-  /** Ночной неон футболок */
+  /** Night neon shirts */
   isNight: boolean;
 };
 
@@ -40,10 +40,10 @@ const ARM_PIVOT_OFFSET = ARM_TOTAL / 2;
 const TORSO_RADIUS = 0.11;
 const TORSO_LENGTH = 0.28;
 
-/** Берет элемент массива по модулю индекса */
+/** Picks an array item by index modulo length */
 const pick = <T,>(items: readonly T[], index: number): T => items[index % items.length] as T;
 
-/** Выбирает поведение зрителя по весам ~45/20/15/10/5/5 */
+/** Picks spectator behavior by weights ~45/20/15/10/5/5 */
 const pickBehavior = (roll: number): TSpectatorBehavior => {
   if (roll < 0.45) {
     return 'watch';
@@ -63,7 +63,7 @@ const pickBehavior = (roll: number): TSpectatorBehavior => {
   return 'cheer';
 };
 
-/** Создает места зрителей на секции трибуны (локальные координаты секции) */
+/** Builds spectator seats for a tribune section (section-local coordinates) */
 export const buildSpectatorSeats = ({
   tribuneInnerX,
   sideSign,
@@ -76,7 +76,7 @@ export const buildSpectatorSeats = ({
   const rowDepth = 0.75;
   const rowHeight = 0.65;
   const seatSpacing = 0.92;
-  // Крайние места соседних секций оказываются примерно на seatSpacing друг от друга
+  // Outermost seats of adjacent sections end up ~seatSpacing apart
   const halfSpan = Math.min(sectionWidth / 2 - 0.2, sectionPitch / 2 - seatSpacing / 2);
   const usableWidth = Math.max(seatSpacing, halfSpan * 2);
   const maxCols = Math.max(1, Math.floor(usableWidth / seatSpacing + 0.001) + 1);
@@ -124,15 +124,15 @@ export const buildSpectatorSeats = ({
 };
 
 type TEnergyLevel = {
-  /** Амплитуда покачивания */
+  /** Bob amplitude */
   bobAmp: number;
-  /** Множитель скорости bob */
+  /** Bob speed multiplier */
   bobSpeed: number;
-  /** Амплитуда маха руками */
+  /** Arm wave amplitude */
   waveAmp: number;
-  /** Множитель скорости маха */
+  /** Wave speed multiplier */
   waveSpeed: number;
-  /** Амплитуда наклона */
+  /** Lean amplitude */
   leanAmp: number;
 };
 
@@ -162,7 +162,7 @@ const ENERGY_CHEER: TEnergyLevel = {
 
 const ENERGY_NIGHT_BOOST = 1.06;
 
-/** Записывает instanceColor для InstancedMesh */
+/** Writes instanceColor for an InstancedMesh */
 const applyInstanceColors = (mesh: InstancedMesh, colors: Color[]): void => {
   for (let i = 0; i < colors.length; i += 1) {
     const color = colors[i];
@@ -177,7 +177,7 @@ const applyInstanceColors = (mesh: InstancedMesh, colors: Color[]): void => {
   material.needsUpdate = true;
 };
 
-/** Подкрашивает emissive цветом инстанса + теплый stadium-wash / neon bounce */
+/** Tints emissive per instance color + warm stadium-wash / neon bounce */
 const enableInstanceEmissiveTint = (
   material: MeshStandardMaterial,
   washAdd: number,
@@ -210,17 +210,17 @@ ${shader.fragmentShader}`.replace(
 };
 
 type TArmAngles = {
-  /** Подъем руки (локальный X) */
+  /** Arm raise (local X) */
   raise: number;
-  /** Взмах в сторону (локальный Z) */
+  /** Side swing (local Z) */
   swing: number;
-  /** Вынос вперед (локальный Y twist / pitch mix) */
+  /** Forward reach (local Y twist / pitch mix) */
   forward: number;
 };
 
 const ARM_DOWN: TArmAngles = { raise: 0.15, swing: 0.08, forward: 0.05 };
 
-/** Считает углы рук по поведению зрителя */
+/** Computes arm angles from spectator behavior */
 const computeArmAngles = ({
   behavior,
   side,
@@ -303,7 +303,7 @@ const computeArmAngles = ({
   return { left, right };
 };
 
-/** Анимированная толпа зрителей через InstancedMesh */
+/** Animated spectator crowd via InstancedMesh */
 export const SpectatorCrowd = ({ seats, palette, isNight }: TSpectatorCrowdProps) => {
   const bodyRef = useRef<InstancedMesh>(null);
   const headRef = useRef<InstancedMesh>(null);
@@ -366,7 +366,7 @@ export const SpectatorCrowd = ({ seats, palette, isNight }: TSpectatorCrowdProps
     [seats, shirtColors, pantsColors],
   );
 
-  // Красит инстансы и включает emissive-tint ночью.
+  // Colors instances and enables emissive tint at night.
   useLayoutEffect(() => {
     const bodyMesh = bodyRef.current;
     const leftArmMesh = leftArmRef.current;
@@ -431,7 +431,7 @@ export const SpectatorCrowd = ({ seats, palette, isNight }: TSpectatorCrowdProps
     }
   }, [coloredSeats, isNight, palette.accent]);
 
-  // Анимирует bob/wave/lean зрителей по статусу гонки и behavior.
+  // Animates spectator bob/wave/lean by race status and behavior.
   useFrame((state) => {
     if (coloredSeats.length === 0) {
       return;
@@ -613,13 +613,13 @@ export const SpectatorCrowd = ({ seats, palette, isNight }: TSpectatorCrowdProps
   }
 
   const count = coloredSeats.length;
-  // Слабый цветной glow; toneMapped=true — иначе bloom выжигает футболки в белый
-  /** Stadium-wash: теплый fill + легкий neon bounce (без PointLight на каждый ряд) */
+  // Weak colored glow; toneMapped=true — otherwise bloom burns shirts to white
+  /** Stadium-wash: warm fill + slight neon bounce (no PointLight per row) */
   const shirtEmissiveIntensity = isNight ? TRIBUNE_CROWD_WASH.shirtEmissive : 0;
   const armEmissiveIntensity = isNight ? TRIBUNE_CROWD_WASH.skinEmissive : 0;
   const headEmissiveIntensity = isNight ? TRIBUNE_CROWD_WASH.skinEmissive : 0;
 
-  /** Ночью толпа не кастит тени — меньше work в moon/headlight shadow passes */
+  /** At night the crowd casts no shadows — less work in moon/headlight shadow passes */
   const castCrowdShadow = !isNight;
 
   return (

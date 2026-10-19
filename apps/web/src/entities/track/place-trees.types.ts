@@ -3,25 +3,25 @@ import type { TTrackConfig } from './config.types';
 export type TTreeKind = 'pine' | 'broadleaf';
 
 export type TPlacedTree = {
-  /** Мировая X */
+  /** World X */
   x: number;
-  /** Мировая Z */
+  /** World Z */
   z: number;
-  /** Высота основания над плоскостью трассы (рельеф) */
+  /** Base height above the track plane (terrain) */
   groundY: number;
-  /** Масштаб дерева */
+  /** Tree scale */
   scale: number;
-  /** Поворот вокруг Y (рад) */
+  /** Rotation around Y (rad) */
   rotationY: number;
-  /** Вид кроны */
+  /** Canopy kind */
   kind: TTreeKind;
 };
 
 export type TPlaceTrackTreesOptions = {
-  /** Конфиг трассы */
+  /** Track config */
   config: TTrackConfig;
-  /** Лимит деревьев */
+  /** Tree limit */
   maxTrees?: number;
-  /** Высота грунта в (x,z); по умолчанию 0 */
+  /** Ground height at (x,z); defaults to 0 */
   sampleGroundY?: (x: number, z: number) => number;
 };

@@ -2,17 +2,17 @@ import { useSyncExternalStore } from 'react';
 import { getRaceHudSnapshot, subscribeRaceHud } from './store';
 import type { TRaceHudSnapshot } from './store.types';
 
-/** Примитив нужен ради Object.is-сравнения в useSyncExternalStore: объект всегда дал бы ререндер */
+/** The primitive is needed for Object.is comparison in useSyncExternalStore: an object would always rerender */
 type TSelectorResult = string | number | boolean | null;
 
-/** HUD читает симуляцию без Redux, чтобы канвас не ре-рендерился */
+/** HUD reads the simulation without Redux so the canvas does not rerender */
 export const useRaceHud = () => {
   return useSyncExternalStore(subscribeRaceHud, getRaceHudSnapshot, getRaceHudSnapshot);
 };
 
 /**
- * Подписка на одно поле снимка: ререндер только при его смене.
- * Нужен там, где важен только статус, — иначе шаг обратного отсчета перерисовывает страницу с 3D-сценой.
+ * Subscription to a single snapshot field: rerender only when it changes.
+ * Needed where only the status matters — otherwise each countdown step repaints the page with the 3D scene.
  */
 export const useRaceHudSelector = <T extends TSelectorResult>(
   selector: (snapshot: TRaceHudSnapshot) => T,

@@ -5,17 +5,17 @@ import { useBackendStatus } from '@/features/backend-status';
 import { racingApi } from '@/shared/api';
 import { SegaLoader, SegaSkeleton } from '@/shared/ui';
 
-/** Через сколько ожидания старта показывать подсказку */
+/** How long to wait before showing the hint */
 const HINT_DELAY_MS = 8_000;
 
 type TDelayedHintProps = {
-  /** Текст подсказки */
+  /** Hint text */
   text: string;
-  /** Задержка появления */
+  /** Appearance delay */
   delayMs: number;
 };
 
-/** Подсказка, появляющаяся только если ожидание затянулось */
+/** Hint that appears only if the wait drags on */
 const DelayedHint = ({ text, delayMs }: TDelayedHintProps) => {
   const [visible, setVisible] = useState(false);
 
@@ -33,11 +33,11 @@ const DelayedHint = ({ text, delayMs }: TDelayedHintProps) => {
 };
 
 type TBackendGateProps = {
-  /** Контент, который рендерится только при живом API */
+  /** Content rendered only while the API is alive */
   children: ReactNode;
 };
 
-/** Гейт доступности API: до первого /health — лоадер; при последующей потере связи контент смонтирован, сверху плашка */
+/** API availability gate: loader until first /health; on later connection loss content stays mounted with a banner on top */
 export const BackendGate = ({ children }: TBackendGateProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();

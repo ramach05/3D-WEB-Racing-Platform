@@ -3,55 +3,55 @@ export type TSpectatorBehavior = 'watch' | 'lean' | 'waveOne' | 'clap' | 'cheer'
 export type TSpectatorWaveSide = 'left' | 'right';
 
 export type TSpectatorSeat = {
-  /** Мировая X */
+  /** World X */
   x: number;
-  /** Мировая Y */
+  /** World Y */
   y: number;
-  /** Мировая Z */
+  /** World Z */
   z: number;
-  /** Угол взгляда (рад) */
+  /** Facing angle (rad) */
   yaw: number;
-  /** Фаза анимации рук */
+  /** Arm animation phase */
   phase: number;
-  /** Фаза наклона корпуса */
+  /** Body lean phase */
   leanPhase: number;
-  /** Скорость покачивания */
+  /** Bobbing speed */
   bobSpeed: number;
-  /** Скорость маха руками */
+  /** Arm waving speed */
   waveSpeed: number;
-  /** Масштаб по X */
+  /** X scale */
   scaleX: number;
-  /** Масштаб по Y */
+  /** Y scale */
   scaleY: number;
-  /** Поведение зрителя */
+  /** Spectator behavior */
   behavior: TSpectatorBehavior;
-  /** Сторона машущей руки (для waveOne / phone) */
+  /** Waving arm side (for waveOne / phone) */
   waveSide: TSpectatorWaveSide;
-  /** Есть кепка */
+  /** Has a cap */
   hasCap: boolean;
-  /** Есть флажок */
+  /** Has a flag */
   hasFlag: boolean;
-  /** Есть волосы (только без кепки) */
+  /** Has hair (only without a cap) */
   hasHair: boolean;
-  /** Цвет футболки */
+  /** Shirt color */
   shirtColor: string;
-  /** Цвет кожи */
+  /** Skin color */
   skinColor: string;
-  /** Цвет штанов */
+  /** Pants color */
   pantsColor: string;
-  /** Цвет кепки / волос / флага */
+  /** Cap / hair / flag color */
   accentColor: string;
 };
 
 export type TBuildSpectatorSeatsOptions = {
-  /** Внутренний X трибуны относительно старта */
+  /** Tribune inner X relative to the start line */
   tribuneInnerX: number;
-  /** Знак стороны (−1 / +1) */
+  /** Side sign (−1 / +1) */
   sideSign: number;
-  /** Число зрителей в секции */
+  /** Spectator count per section */
   count: number;
-  /** Ширина секции */
+  /** Section width */
   sectionWidth: number;
-  /** Шаг центров соседних секций — ограничивает рассадку, чтобы стыки не пустели и не пересекались */
+  /** Center-to-center pitch of adjacent sections — clamps seating so joints stay filled and non-overlapping */
   sectionPitch: number;
 };

@@ -28,10 +28,10 @@ describe('computeBarrelSideDirection', () => {
       1,
     );
 
-    // курс +Z, бочка правее оси -> отскок в +X
+    // heading +Z, barrel right of the axis -> bounce toward +X
     expect(right.x).toBeCloseTo(1);
     expect(right.z).toBeCloseTo(0);
-    // бочка левее оси -> отскок в -X
+    // barrel left of the axis -> bounce toward -X
     expect(left.x).toBeCloseTo(-1);
     expect(left.z).toBeCloseTo(0);
   });
@@ -45,7 +45,7 @@ describe('computeBarrelSideDirection', () => {
       1,
     );
 
-    // курс +X, бочка со стороны +Z -> отскок в +Z
+    // heading +X, barrel on the +Z side -> bounce toward +Z
     expect(side.x).toBeCloseTo(0);
     expect(side.z).toBeCloseTo(1);
   });
@@ -93,7 +93,7 @@ describe('computeBarrelDeltaV', () => {
 
 describe('computeBarrelSpeedCap', () => {
   it('never clamps below the car speed', () => {
-    // потолок ниже скорости машины снова приклеил бы бочку к бамперу
+    // a cap below the car speed would stick the barrel to the bumper again
     for (const speed of [0, 5, 10, 20, 30]) {
       expect(computeBarrelSpeedCap(speed)).toBeGreaterThan(speed);
     }
@@ -143,7 +143,7 @@ describe('computeBarrelBounce', () => {
   it('pushes the barrel sideways off the car axis', () => {
     const { impulse } = computeBarrelBounce(strike);
 
-    // боковая составляющая заметно больше продольной
+    // lateral component clearly larger than longitudinal
     expect(impulse.x).toBeGreaterThan(impulse.z);
     expect(impulse.z).toBeGreaterThan(0);
   });
@@ -169,10 +169,10 @@ describe('computeBarrelBounce', () => {
   it('spins the barrel into a forward roll, not a drift', () => {
     const { torqueImpulse, impulse } = computeBarrelBounce(strike);
 
-    // ось качения горизонтальна и перпендикулярна вылету
+    // the rolling axis is horizontal and perpendicular to the launch direction
     expect(torqueImpulse.y).toBe(0);
     expect(torqueImpulse.x * impulse.x + torqueImpulse.z * impulse.z).toBeCloseTo(0);
-    // бочка летит в +X -> качение требует отрицательного вращения вокруг Z
+    // barrel flies toward +X -> rolling requires negative rotation around Z
     expect(torqueImpulse.z).toBeLessThan(0);
   });
 

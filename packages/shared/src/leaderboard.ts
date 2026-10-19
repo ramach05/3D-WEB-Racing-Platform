@@ -1,4 +1,4 @@
-/** Строка глобальной таблицы лидеров */
+/** A row of the global leaderboard */
 export type TLeaderboardEntry = {
   rank: number;
   userId: string;

@@ -3,7 +3,7 @@ import * as bcrypt from 'bcrypt';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from './auth.service';
 
-/** Реальный bcrypt-хеш для тестов, сравнивающих пароль (cost 4 — быстрее без потери смысла) */
+/** Real bcrypt hash for tests that compare passwords (cost 4 — faster without losing meaning) */
 const hashOf = async (password: string): Promise<string> => bcrypt.hash(password, 4);
 
 type TPrismaMock = {
@@ -17,7 +17,7 @@ type TPrismaMock = {
   };
 };
 
-/** Собирает AuthService с заглушками Prisma/Jwt/Config под тесты ниже */
+/** Builds AuthService with Prisma/Jwt/Config stubs for the tests below */
 const makeService = (): {
   service: AuthService;
   prisma: TPrismaMock;

@@ -4,19 +4,19 @@ import type { TLoopPoint } from '@/entities/track';
 import { TRACK_TERRAIN, sampleTerrainHeight } from './terrain-height';
 
 export type TBuildTerrainGeometryOptions = {
-  /** Centerline трассы для маски чаши */
+  /** Track centerline for the basin mask */
   centerline: TLoopPoint[];
-  /** Ширина дороги */
+  /** Road width */
   roadWidth: number;
-  /** Размер квадрата в мире (м) */
+  /** Square size in world units (m) */
   worldSize?: number;
-  /** Число сегментов по стороне */
+  /** Number of segments per side */
   segments?: number;
-  /** Seed шума */
+  /** Noise seed */
   seed?: number;
 };
 
-/** Данные для Rapier HeightfieldCollider — та же сетка, что у визуала */
+/** Data for the Rapier HeightfieldCollider — same grid as the visual */
 export type TTerrainHeightfieldArgs = [
   nrows: number,
   ncols: number,
@@ -24,7 +24,7 @@ export type TTerrainHeightfieldArgs = [
   scale: { x: number; y: number; z: number },
 ];
 
-/** Высоты в column-major порядке для HeightfieldCollider. nrows/ncols = число ячеек; длина heights = (nrows+1)*(ncols+1). */
+/** Heights in column-major order for HeightfieldCollider. nrows/ncols = number of cells; heights length = (nrows+1)*(ncols+1). */
 export const buildTerrainHeightfieldArgs = ({
   centerline,
   roadWidth,
@@ -38,7 +38,7 @@ export const buildTerrainHeightfieldArgs = ({
   const heights: number[] = new Array<number>(vertsPerSide * vertsPerSide);
   const heightOpts = { centerline, roadWidth, seed };
 
-  // Column-major: столбец X, внутри строки по Z (Rapier)
+  // Column-major: column X, within it rows along Z (Rapier)
   for (let ix = 0; ix < vertsPerSide; ix += 1) {
     const x = -half + (ix / segs) * worldSize;
     for (let iz = 0; iz < vertsPerSide; iz += 1) {
@@ -50,7 +50,7 @@ export const buildTerrainHeightfieldArgs = ({
   return [segs, segs, heights, { x: worldSize, y: 1, z: worldSize }];
 };
 
-/** Горизонтальный heightfield в плоскости XZ: Y = sampleTerrainHeight. UV покрывают весь квадрат 0..1 для тайлинга dirt-текстуры. */
+/** Horizontal heightfield in the XZ plane: Y = sampleTerrainHeight. UVs cover the whole square 0..1 for dirt-texture tiling. */
 export const buildTerrainGeometry = ({
   centerline,
   roadWidth,

@@ -3,33 +3,33 @@ import { VEHICLE_LATERAL_GRIP } from '@/features/race-session';
 import { KERB_WIDTH } from '@/widgets/race-canvas/lib/kerb-ribbon-geometry';
 import { distanceToCenterlineSq } from '@/widgets/race-canvas/lib/terrain-height';
 
-/** Боковой grip на полном оффроуде */
+/** Lateral grip on full offroad */
 export const OFFROAD_LATERAL_GRIP = 4.5;
 
-/** Доля прироста продольной скорости от газа на оффроуде */
+/** Share of longitudinal speed gain from throttle on offroad */
 export const OFFROAD_THROTTLE_FACTOR = 0.72;
 
-/** Боковой grip на поребрике (чуть слабее асфальта) */
+/** Lateral grip on the kerb (slightly weaker than asphalt) */
 export const KERB_LATERAL_GRIP = 8.5;
 
-/** Ниже этой |скорости| (м/с) dirt-smoke / kerb rumble не активны */
+/** Below this |speed| (m/s) dirt-smoke / kerb rumble are inactive */
 export const SURFACE_FX_SPEED_MIN = 6;
 
-/** При этой |скорости| (м/с) off-road SFX / smoke ≈ пик */
+/** At this |speed| (m/s) off-road SFX / smoke ≈ peak */
 export const SURFACE_FX_SPEED_FULL = 22;
 
 export type TTrackSurfaceKind = 'asphalt' | 'kerb' | 'offroad';
 
 export type TWheelSurfaceFractions = {
-  /** Доля колес на чистом асфальте 0…1 */
+  /** Share of wheels on clean asphalt 0…1 */
   asphalt: number;
-  /** Доля колес на поребрике 0…1 */
+  /** Share of wheels on the kerb 0…1 */
   kerb: number;
-  /** Доля колес за краем дороги 0…1 */
+  /** Share of wheels beyond the road edge 0…1 */
   offroad: number;
 };
 
-/** Классифицирует покрытие по латеральному расстоянию до centerline */
+/** Classifies the surface by lateral distance to the centerline */
 export const sampleTrackSurfaceKind = (
   x: number,
   z: number,
@@ -91,7 +91,7 @@ export const sampleTrackSurfaceKind = (
   return 'asphalt';
 };
 
-/** Считает доли asphalt / kerb / offroad по набору колес */
+/** Computes asphalt / kerb / offroad shares over the set of wheels */
 export const aggregateWheelSurfaces = (kinds: TTrackSurfaceKind[]): TWheelSurfaceFractions => {
   const total = kinds.length;
   if (total === 0) {
@@ -116,7 +116,7 @@ export const aggregateWheelSurfaces = (kinds: TTrackSurfaceKind[]): TWheelSurfac
   };
 };
 
-/** Микро-вариация grip асфальта 0.92…1.05 по мировым XZ. Детерминированный value-noise без аллокаций. */
+/** Micro-variation of asphalt grip 0.92…1.05 by world XZ. Deterministic value-noise without allocations. */
 export const sampleAsphaltMicroGrip = (x: number, z: number): number => {
   const nx = Math.floor(x * 0.35);
   const nz = Math.floor(z * 0.35);
@@ -127,9 +127,9 @@ export const sampleAsphaltMicroGrip = (x: number, z: number): number => {
 };
 
 /**
- * Эффективный surfaceGrip: oil > offroad > kerb > asphalt(+micro).
- * Меньше значение = скользче (cap для dampLateralVelocity).
- * Oil — оверлей с абсолютным приоритетом над латеральным покрытием.
+ * Effective surfaceGrip: oil > offroad > kerb > asphalt(+micro).
+ * Lower value = more slippery (cap for dampLateralVelocity).
+ * Oil is an overlay with absolute priority over the lateral surface.
  */
 export const combineSurfaceGrip = (
   oilGrip: number | undefined,
@@ -157,7 +157,7 @@ export const combineSurfaceGrip = (
   return grip;
 };
 
-/** Смягчает прирост продольной скорости на оффроуде (доля колес 0…1). */
+/** Softens longitudinal speed gain on offroad (wheel share 0…1). */
 export const applyOffroadThrottleFactor = (
   forwardSpeed: number,
   targetForward: number,
@@ -176,7 +176,7 @@ export const applyOffroadThrottleFactor = (
   return forwardSpeed + delta * factor;
 };
 
-/** Сила оффроуд-эффектов 0…1 от доли колес и скорости */
+/** Offroad effects strength 0…1 from wheel share and speed */
 export const computeOffroadFxStrength = (offroadFrac: number, forwardSpeed: number): number => {
   const frac = Math.max(0, Math.min(1, offroadFrac));
   if (frac <= 0) {
@@ -193,7 +193,7 @@ export const computeOffroadFxStrength = (offroadFrac: number, forwardSpeed: numb
   return frac * speedFactor;
 };
 
-/** Сила rumble поребрика 0…1 */
+/** Kerb rumble strength 0…1 */
 export const computeKerbRumble = (kerbFrac: number, forwardSpeed: number): number => {
   const frac = Math.max(0, Math.min(1, kerbFrac));
   if (frac <= 0) {

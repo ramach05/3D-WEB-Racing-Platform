@@ -1,6 +1,6 @@
 import type { TTrackConfig } from './config.types';
 
-/** Идентификаторы рекламных макетов на щитах */
+/** Ad layout identifiers on the billboards */
 export const BILLBOARD_AD_IDS = [
   'torque-cola',
   'apex-tires',
@@ -12,21 +12,21 @@ export const BILLBOARD_AD_IDS = [
 export type TBillboardAdId = (typeof BILLBOARD_AD_IDS)[number];
 
 export type TPlacedBillboard = {
-  /** Мировая X */
+  /** World X */
   x: number;
-  /** Мировая Z */
+  /** World Z */
   z: number;
-  /** Поворот вокруг Y (рад): локальная +X — нормаль панели вдоль касательной centerline (рост индекса), лицом навстречу заезду. Не зависит от стороны трассы. */
+  /** Rotation around Y (rad): local +X is the panel normal along the centerline tangent (index growth), facing the oncoming race. Independent of the track side. */
   rotationY: number;
-  /** +1 — внешняя сторона стадиона, −1 — внутренняя */
+  /** +1 — outer stadium side, −1 — inner */
   sideSign: 1 | -1;
-  /** Макет рекламы на панели */
+  /** Ad layout on the panel */
   adId: TBillboardAdId;
 };
 
 export type TPlaceBillboardsOptions = {
-  /** Конфиг трассы */
+  /** Track config */
   config: TTrackConfig;
-  /** Целевое число щитов (по умолчанию 5) */
+  /** Target number of billboards (default 5) */
   targetCount?: number;
 };

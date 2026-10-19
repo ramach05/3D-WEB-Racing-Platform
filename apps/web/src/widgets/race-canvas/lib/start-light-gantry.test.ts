@@ -29,7 +29,7 @@ describe('gantry floodlights', () => {
     const keys = GANTRY_FLOOD_PLACEMENTS.map(({ sideX, sideZ }) => `${sideX}:${sideZ}`);
     expect(new Set(keys).size).toBe(2);
     expect(GANTRY_FLOOD_PLACEMENTS.every(({ sideZ }) => sideZ === 1)).toBe(true);
-    // Aim на линию финиша (шахматка ≈ 0), не вбок вдоль трассы
+    // Aim at the finish line (checker ≈ 0), not sideways along the track
     expect(Math.abs(GANTRY_FLOOD.aimZ)).toBeLessThan(0.5);
     expect(GANTRY_FLOOD.aimXFraction).toBeGreaterThan(0.1);
     expect(GANTRY_FLOOD.aimXFraction).toBeLessThan(0.4);
@@ -41,7 +41,7 @@ describe('gantry floodlights', () => {
     expect(GANTRY_FLOOD.yoke.width).toBeGreaterThan(GANTRY_FLOOD.arm.radius * 2);
     expect(GANTRY_FLOOD.housing.depth).toBeGreaterThan(GANTRY_FLOOD.hood.depth);
     expect(GANTRY_FLOOD.mountDropY).toBeGreaterThan(0);
-    // Group.lookAt → +Z на цель; линза на передней грани
+    // Group.lookAt → +Z toward the target; lens on the front face
     expect(GANTRY_FLOOD.lens.localZ).toBeGreaterThan(0);
     expect(GANTRY_FLOOD.lens.localZ).toBeGreaterThan(GANTRY_FLOOD.housing.depth / 2 - 0.02);
     expect(GANTRY_FLOOD.arm.length).toBeLessThan(0.2);

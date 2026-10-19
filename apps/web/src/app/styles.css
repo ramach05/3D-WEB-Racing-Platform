@@ -10,17 +10,17 @@
   font-display: swap;
 }
 
-/* Один шрифт на всё приложение */
+/* One font for the whole app */
 @theme {
   --font-sans: DotumChe, 'Courier New', monospace;
   --font-serif: DotumChe, 'Courier New', monospace;
   --font-mono: DotumChe, 'Courier New', monospace;
 }
 
-/* Цветовые --* задаёт applyTheme из @/shared/config uiPalette / uiChrome */
+/* Color --* vars are set by applyTheme from @/shared/config uiPalette / uiChrome */
 :root {
   --pixel-border: 3px;
-  /* Единый arcade hover: pixel punch */
+  /* Single arcade hover: pixel punch */
   --sega-hover-tx: -3px;
   --sega-hover-ty: -3px;
   --sega-hover-shadow: 4px 4px 0 0 var(--sega-cyan), 7px 7px 0 0 var(--sega-magenta);
@@ -91,9 +91,9 @@ button:disabled,
 }
 
 /**
- * Оверлеи поверх 3D-сцены (HUD/миникарта/FPS на странице заезда).
- * Полупрозрачный фон вместо плотной --surface, чтобы панель не перекрывала трассу.
- * Объявлено после .sega-panel — та же специфичность, выигрывает по порядку.
+ * Overlays on top of the 3D scene (HUD/minimap/FPS on the race page).
+ * Translucent background instead of solid --surface so the panel doesn't hide the track.
+ * Declared after .sega-panel — same specificity, wins by order.
  */
 .sega-panel--overlay {
   background: rgb(0 0 0 / 0.65);
@@ -137,7 +137,7 @@ button:disabled,
   animation: sega-skeleton-pulse 1s steps(2, end) infinite;
 }
 
-/** Вложенный скелетон без собственной рамки/тени (внутри tab/panel) */
+/** Nested skeleton without its own border/shadow (inside tab/panel) */
 .sega-skeleton--inset {
   border: 0;
   box-shadow: none;
@@ -202,7 +202,7 @@ button:disabled,
   }
 }
 
-/** Race HUD: фиксированная ширина слотов, чтобы панель не прыгала */
+/** Race HUD: fixed slot widths so the panel doesn't jump */
 .sega-race-hud {
   box-sizing: border-box;
   max-width: 100%;
@@ -233,7 +233,7 @@ button:disabled,
   text-align: end;
 }
 
-/** Мобильный touch-пад управления гонкой (только < md) */
+/** Mobile race control touch-pad (only < md) */
 .sega-touch-pad {
   position: absolute;
   right: 0;
@@ -459,7 +459,7 @@ button:disabled,
   color: var(--sega-yellow);
 }
 
-/** Мобильная навигация: равные ячейки в пиксельной рамке */
+/** Mobile navigation: equal cells in a pixel border */
 .sega-header-nav {
   display: grid;
   grid-template-columns: repeat(var(--sega-nav-cols, 5), minmax(0, 1fr));
@@ -706,7 +706,7 @@ button:disabled,
   animation: sega-blink 1.1s steps(2, end) infinite;
 }
 
-/* Пульс-кольцо под маркером машины на миникарте */
+/* Pulse ring under the car marker on the minimap */
 @keyframes sega-minimap-pulse {
   0% {
     transform: scale(0.5);
@@ -996,7 +996,7 @@ button:disabled,
   }
 }
 
-/** Узкие экраны: селекты, табы трасс и HUD не раздувают layout */
+/** Narrow screens: selects, track tabs and HUD don't inflate the layout */
 @media (max-width: 767px) {
   .sega-select-trigger,
   .sega-select-trigger--sm {
@@ -1010,7 +1010,7 @@ button:disabled,
   }
 }
 
-/* Компактный HUD держим до lg: на окнах ~800–1000px он иначе съедает треть экрана */
+/* Keep the compact HUD up to lg: on ~800–1000px windows it otherwise eats a third of the screen */
 @media (max-width: 1023px) {
   .sega-race-hud {
     padding: 0.45rem 0.6rem;

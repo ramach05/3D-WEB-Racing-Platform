@@ -11,7 +11,7 @@ const STEP_MS = 750;
 const GO_MS = 550;
 const STEPS: TCountdownStep[] = [3, 2, 1, 0];
 
-/** Проверяет prefers-reduced-motion в браузере */
+/** Checks the browser's prefers-reduced-motion */
 const prefersReducedMotion = (): boolean => {
   if (typeof window === 'undefined' || !window.matchMedia) {
     return false;
@@ -19,13 +19,13 @@ const prefersReducedMotion = (): boolean => {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 };
 
-/** Крупный SEGA-отсчет 3-2-1-GO перед стартом таймера */
+/** Big SEGA 3-2-1-GO countdown before the timer starts */
 export const RaceCountdownOverlay = () => {
   const { t } = useTranslation();
   const status = useRaceHudSelector((snapshot) => snapshot.status);
   const countdownStep = useRaceHudSelector((snapshot) => snapshot.countdownStep);
 
-  // Ведет таймеры шагов 3-2-1-GO и стартует гонку.
+  // Runs the 3-2-1-GO step timers and starts the race.
   useEffect(() => {
     if (status !== 'countdown') {
       return;

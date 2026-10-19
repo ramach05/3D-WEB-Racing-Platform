@@ -12,20 +12,20 @@ import {
 } from '@/features/race-session';
 
 type TCheckpointDetectorProps = {
-  /** Конфиг трассы (centerline, финиш) */
+  /** Track config (centerline, finish) */
   config: TTrackConfig;
-  /** Ref физического тела машины */
+  /** Ref to the vehicle physics body */
   bodyRef: RefObject<RapierRigidBody | null>;
-  /** Счетчик рестарта — сбрасывает прогресс круга */
+  /** Restart counter — resets lap progress */
   resetNonce: number;
-  /** Колбэк при завершении гонки */
+  /** Callback when the race finishes */
   onFinished: () => void;
 };
 
 /**
- * Детектор кругов в направлении заезда (см. `race-direction.ts`):
- * travel по убывающему ratio + финиш только `lz + → −`.
- * continuityWindow: для figure-8 — предотвращает зачет полета/прыжка как progress.
+ * Lap detector aligned with the race direction (see `race-direction.ts`):
+ * travel over decreasing ratio + finish only on `lz + → −`.
+ * continuityWindow: for figure-8 — prevents counting a flight/jump as progress.
  */
 export const CheckpointDetector = ({
   config,

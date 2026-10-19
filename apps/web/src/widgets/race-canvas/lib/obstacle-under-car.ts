@@ -1,17 +1,17 @@
-/** Половина длины подошвы машины по курсу (капсульный коллайдер, half Z) */
+/** Half length of the car footprint along the heading (capsule collider, half Z) */
 export const CAR_UNDER_HALF_LENGTH = 1.65;
-/** Половина ширины подошвы машины поперек курса (капсульный коллайдер, radius) */
+/** Half width of the car footprint across the heading (capsule collider, radius) */
 export const CAR_UNDER_HALF_WIDTH = 0.82;
 
-/** Позы машины и препятствия в мировых координатах */
+/** Car and obstacle poses in world coordinates */
 export type TUnderCarProbe = {
   carPosition: { x: number; y: number; z: number };
-  /** Курс машины в плоскости дороги (не нормирован) */
+  /** Car heading in the road plane (not normalized) */
   carForward: { x: number; z: number };
   obstaclePosition: { x: number; y: number; z: number };
 };
 
-/** Препятствие под кузовом: машина перекатывается через него, прижимать к земле нельзя */
+/** Obstacle under the body: the car rolls over it, it must not be pinned to the ground */
 export const isObstacleUnderCar = ({
   carPosition,
   carForward,
@@ -26,7 +26,7 @@ export const isObstacleUnderCar = ({
   const dx = obstaclePosition.x - carPosition.x;
   const dz = obstaclePosition.z - carPosition.z;
   const along = dx * fx + dz * fz;
-  // правая ось курса = (fz, -fx)
+  // right heading axis = (fz, -fx)
   const lateral = dx * fz - dz * fx;
   return (
     Math.abs(lateral) <= CAR_UNDER_HALF_WIDTH &&

@@ -12,7 +12,7 @@ const TRACK_NAME_MAP: Record<string, string> = {
   'storm-eight': 'home.stormEight',
 };
 
-/** Лендинг в стиле SEGA title screen */
+/** Landing page styled after a SEGA title screen */
 export const HomePage = () => {
   const { t } = useTranslation();
   const user = useAuthUser();

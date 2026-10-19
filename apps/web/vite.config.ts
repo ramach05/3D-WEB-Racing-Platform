@@ -6,7 +6,7 @@ import { defineConfig } from 'vite';
 const srcDir = fileURLToPath(new URL('./src', import.meta.url));
 const sharedSrc = fileURLToPath(new URL('../../packages/shared/src/index.ts', import.meta.url));
 
-/** Конфиг Vite для apps/web */
+/** Vite config for apps/web */
 export const viteConfig = defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {

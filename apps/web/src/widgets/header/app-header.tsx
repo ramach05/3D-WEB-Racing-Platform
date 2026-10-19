@@ -7,18 +7,18 @@ import { cx } from '@/shared/lib';
 import { Button, SegaSkeleton } from '@/shared/ui';
 
 type TNavClassArgs = {
-  /** Активен ли текущий маршрут */
+  /** Whether the current route is active */
   isActive: boolean;
 };
 
-/** Класс пункта меню: активный маршрут выделяем фоном */
+/** Nav item class: highlight the active route with a background */
 const navClass = ({ isActive }: TNavClassArgs): string =>
   cx(
     'sega-nav-link sega-header-nav__link px-1.5 py-2 text-center text-[0.65rem] font-medium uppercase leading-tight sm:text-xs md:px-3 md:py-1.5 md:text-sm',
     isActive ? 'bg-[var(--surface-hover)] text-[var(--sega-yellow)]' : 'text-[var(--muted)]',
   );
 
-/** Шапка сайта: навигация, тема, язык, сессия */
+/** Site header: navigation, theme, language, session */
 export const AppHeader = () => {
   const { t } = useTranslation();
   const user = useAuthUser();

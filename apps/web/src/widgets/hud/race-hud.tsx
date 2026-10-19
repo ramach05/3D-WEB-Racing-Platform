@@ -9,14 +9,14 @@ import {
 } from '@/features/race-session';
 import { formatRaceTime } from '@/shared/lib';
 
-/** Ширина слота времени `mm:ss.hs` */
+/** Width of the `mm:ss.hs` time slot */
 const TIME_SLOT_CH = 8;
-/** Скорость до 999 km/h */
+/** Speed up to 999 km/h */
 const SPEED_SLOT_CH = 3;
-/** Запас к `ch` для пропорционального/кириллического шрифта */
+/** Padding on `ch` for proportional/Cyrillic fonts */
 const CH_PAD = 2;
 
-/** Локализованная подпись статуса заезда для HUD */
+/** Localized race status label for the HUD */
 const getStatusLabel = (
   status: TRaceStatus,
   countdownStep: TCountdownStep | null,
@@ -36,7 +36,7 @@ const getStatusLabel = (
   }
 };
 
-/** Макс. длина слота статуса для текущей локали (чтобы панель не сужалась) */
+/** Max status slot length for the current locale (so the panel does not shrink) */
 const getStatusSlotCh = (t: TFunction): number =>
   Math.max(
     t('race.ready').length,
@@ -47,7 +47,7 @@ const getStatusSlotCh = (t: TFunction): number =>
     1,
   );
 
-/** Макс. длина подписей строк HUD для текущей локали */
+/** Max HUD row label length for the current locale */
 const getLabelSlotCh = (t: TFunction): number =>
   Math.max(
     t('race.track').length,
@@ -59,13 +59,13 @@ const getLabelSlotCh = (t: TFunction): number =>
   ) + 1;
 
 type TRaceHudProps = {
-  /** Название текущей трассы */
+  /** Name of the current track */
   trackName: string;
-  /** Рекорд трассы из лидерборда (#1), мс */
+  /** Track record from the leaderboard (#1), ms */
   bestMs?: number | null;
 };
 
-/** Текстовый HUD поверх канваса. Время/скорость — через rAF без React-ререндеров. */
+/** Text HUD over the canvas. Time/speed update via rAF without React rerenders. */
 export const RaceHud = ({ trackName, bestMs = null }: TRaceHudProps) => {
   const { t } = useTranslation();
   const status = useRaceHudSelector((snapshot) => snapshot.status);
@@ -87,7 +87,7 @@ export const RaceHud = ({ trackName, bestMs = null }: TRaceHudProps) => {
         Math.max(trackName.length, statusSlotCh, TIME_SLOT_CH, speedValueCh, lapValueCh),
     ) + CH_PAD;
 
-  // Пишет time/speed в DOM без React — иначе Chrome дергает всю страницу ~12 Гц.
+  // Writes time/speed into the DOM without React — otherwise Chrome jerks the whole page ~12 Hz.
   useEffect(() => {
     let raf = 0;
     let lastTimeText = '';

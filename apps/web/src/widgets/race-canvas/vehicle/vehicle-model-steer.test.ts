@@ -56,11 +56,11 @@ describe('computeAckermannScale', () => {
   });
 });
 
-/** Строит «запеченное» колесо: ось цилиндра (тонкая) направлена по (cos yaw, 0, sin yaw). */
+/** Builds a "baked" wheel: the cylinder axis (thin) points along (cos yaw, 0, sin yaw). */
 const makeWheel = (yawDeg: number, wheelX = 0, wheelZ = 0): Group => {
   const geometry = new CylinderGeometry(0.35, 0.35, 0.25, 24);
-  geometry.rotateZ(Math.PI / 2); // ось Y → −X
-  // ось → (cos yaw, 0, sin yaw): toe запекаем прямо в вершины (как в GLB-«глухарях»)
+  geometry.rotateZ(Math.PI / 2); // Y axis → −X
+  // axis → (cos yaw, 0, sin yaw): bake toe right into the vertices (like in "dumb" GLBs)
   geometry.rotateY(Math.PI - (yawDeg * Math.PI) / 180);
   const group = new Group();
   const mesh = new Mesh(geometry, new MeshStandardMaterial());
@@ -103,9 +103,9 @@ describe('measureWheelAxle', () => {
     const wheel = makeWheel(8);
     const axle = measureWheelAxle(wheel);
     const yawCorr = computeToeYawCorrection(axle);
-    // Коррекция = азимут оси: three крутит +X к −Z, поэтому R_up(+bearing) приводит ось к +X.
+    // Correction = axis bearing: three rotates +X toward −Z, so R_up(+bearing) brings the axis to +X.
     expect(yawCorr).toBeCloseTo((8 * Math.PI) / 180, 1);
-    // Композиция как в buildWheelRig: setFromAxisAngle(up, yawCorr) выпрямляет ось.
+    // Composition as in buildWheelRig: setFromAxisAngle(up, yawCorr) straightens the axis.
     const aligned = axle.clone().applyAxisAngle(new Vector3(0, 1, 0), yawCorr);
     expect(Math.abs(bearingDeg(aligned))).toBeLessThan(0.8);
   });
@@ -137,16 +137,16 @@ describe('computeAxleLocal', () => {
   });
 
   it('round-trips a non-trivial world axle under BodyUnderside (−90° X)', () => {
-    // −90° вокруг X: тот же quat, что у родителя колес CarConcept
+    // −90° around X: the same quat as CarConcept's wheel parent
     const parentQ = new Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
-    // ось вдоль Z ловит «забытый» inverse: без него локальная ось остается мировым (0,0,1),
-    // и мировая ось вращения после пивота уезжает в (0,±1,0) — spin не совпадает с осью шины.
+    // an axis along Z catches a "forgotten" inverse: without it the local axis stays the world (0,0,1),
+    // and the world rotation axis after the pivot shifts to (0,±1,0) — spin no longer matches the tire axis.
     const axleWorld = new Vector3(0, 0, 1);
     const local = computeAxleLocal(axleWorld, parentQ);
     expect(local.x).toBeCloseTo(0, 5);
     expect(local.y).toBeCloseTo(-1, 5);
     expect(local.z).toBeCloseTo(0, 5);
-    // а в мировых осях спин идет ровно вокруг исходной оси
+    // and in world axes the spin goes exactly around the original axis
     const worldUsed = local.clone().applyQuaternion(parentQ).normalize();
     expect(Math.abs(worldUsed.dot(axleWorld))).toBeCloseTo(1, 5);
   });
@@ -156,7 +156,7 @@ describe('computeAxleLocal', () => {
     const axleWorld = new Vector3(0.3, 0, 0.95).normalize();
     const local = computeAxleLocal(axleWorld, parentQ);
     for (const deg of [0, 30, 60, 90, 120]) {
-      // ось поворота в мировых осях не зависит от угла и совпадает с осью шины
+      // the rotation axis in world axes is angle-independent and matches the tire axis
       const worldAxis = local.clone().applyQuaternion(parentQ).normalize();
       expect(Math.abs(worldAxis.dot(axleWorld))).toBeCloseTo(1, 6);
       void deg;

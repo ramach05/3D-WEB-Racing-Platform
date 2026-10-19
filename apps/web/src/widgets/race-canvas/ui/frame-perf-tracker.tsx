@@ -1,9 +1,9 @@
 import { useFrame } from '@react-three/fiber';
 import { tickFrame } from '@/features/race-perf';
 
-/** Считает FPS/CPU в render loop, не трогая React на каждый кадр */
+/** Tracks FPS/CPU in the render loop without touching React every frame */
 export const FramePerfTracker = () => {
-  // Замеряет CPU кадра через onAfterRender, без React-setState.
+  // Measures frame CPU via onAfterRender, without React-setState.
   useFrame((state) => {
     const start = performance.now();
     const { scene } = state;

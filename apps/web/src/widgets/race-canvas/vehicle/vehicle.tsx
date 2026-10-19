@@ -93,63 +93,63 @@ import {
 
 type TSkidWheelPos = { x: number; z: number };
 
-/** Прожекторы фар: интенсивность с запасом под decay=2 */
+/** Headlight spotlights: intensity with headroom for decay=2 */
 const HEADLIGHT_INTENSITY = 75;
 const HEADLIGHT_ANGLE = 0.42;
 const HEADLIGHT_PENUMBRA = 0.7;
 const HEADLIGHT_DISTANCE = 24;
 const HEADLIGHT_DECAY = 2;
-/** Прицел: в плоскость асфальта впереди */
+/** Aim: at the asphalt plane ahead */
 const HEADLIGHT_TARGET: TVec3 = [0, -1.0, 11];
-/** Одна shadowed-фара × 768² вместо двух — главный shadow hotspot ночи */
+/** One shadowed headlight × 768² instead of two — the main night shadow hotspot */
 const HEADLIGHT_SHADOW_MAP = 768;
 const HEADLIGHT_SHADOW_NEAR = 0.5;
 const HEADLIGHT_SHADOW_BIAS = -0.00002;
 const HEADLIGHT_SHADOW_NORMAL_BIAS = 0.015;
-/** fov shadow camera ≈ 2 × spot angle (градусы) — без пустого frustum */
+/** shadow camera fov ≈ 2 × spot angle (degrees) — no empty frustum */
 const HEADLIGHT_SHADOW_FOV = (2 * HEADLIGHT_ANGLE * 180) / Math.PI;
-/** scratch для decompose мировой матрицы кузова в фарах */
+/** scratch for decomposing the body's world matrix in the headlights */
 const tmpHeadlightScale = new Vector3();
 
 type TVehicleProps = {
-  /** Позиция спавна на трассе */
+  /** Spawn position on the track */
   spawnPosition: TVec3;
-  /** Угол поворота при спавне (рад) */
+  /** Yaw angle at spawn (rad) */
   spawnRotationY: number;
-  /** Счетчик рестарта гонки */
+  /** Race restart counter */
   resetNonce: number;
-  /** Ref физического тела Rapier */
+  /** Ref to the Rapier physics body */
   bodyRef: RefObject<RapierRigidBody | null>;
-  /** Ref визуальной группы кузова */
+  /** Ref to the visual body group */
   visualRef: RefObject<Group | null>;
-  /** Выбранный кузов из гаража */
+  /** Body chosen in the garage */
   vehicleId: TVehicleId;
-  /** Раскраска кузова / кабины / колес */
+  /** Body / cabin / wheel colors */
   carSkin: TCarSkin;
-  /** Включить фары (ночь) */
+  /** Enable headlights (night) */
   headlightsOn: boolean;
-  /** Зоны луж масла на трассе */
+  /** Oil slick zones on the track */
   oilSlicks: TOrientedBox[];
-  /** Центровая линия трассы */
+  /** Track centerline */
   centerline: TLoopPoint[];
-  /** Ширина дороги */
+  /** Road width */
   roadWidth: number;
-  /** Ширины дороги по точкам (опционально) */
+  /** Road width per point (optional) */
   roadWidths?: number[];
-  /** Дождь: дым от старта с места заменяется водным спреем */
+  /** Rain: standing-start tire smoke is replaced by wheel spray */
   isRain: boolean;
 };
 
 type TVehicleHeadlightsProps = {
-  /** Визуальная группа кузова: интерполированная rapier-ом поза + визуальный attitude */
+  /** Body visual group: rapier-interpolated pose + visual attitude */
   visualRef: RefObject<Group | null>;
-  /** Кузов — fallback, пока GLB не отдал измеренные лампы */
+  /** Body — fallback until the GLB reports measured lamps */
   vehicleId: TVehicleId;
-  /** Позиции из VehicleModel (меши Headlight после fit) */
+  /** Positions from VehicleModel (Headlight meshes after fit) */
   headlightLampsRef: RefObject<THeadlightLamps | null>;
 };
 
-/** Настраивает shadow map только у левой фары */
+/** Configures the shadow map on the left headlight only */
 const configureHeadlightShadow = (light: SpotLight) => {
   light.castShadow = true;
   light.shadow.mapSize.set(HEADLIGHT_SHADOW_MAP, HEADLIGHT_SHADOW_MAP);
@@ -161,7 +161,7 @@ const configureHeadlightShadow = (light: SpotLight) => {
   light.shadow.camera.updateProjectionMatrix();
 };
 
-/** Фары вне RigidBody — иначе shadow map SpotLight не окклюдирует стены */
+/** Headlights live outside the RigidBody — otherwise the SpotLight shadow map doesn't occlude walls */
 const VehicleHeadlights = ({
   visualRef,
   vehicleId,
@@ -173,7 +173,7 @@ const VehicleHeadlights = ({
   const rightHeadlightRef = useRef<SpotLight>(null);
   const fallbackLamps = headlightLocalPositions(vehicleId);
 
-  /** Привязывает aim-target; тень только у левой фары */
+  /** Binds the aim-target; shadow on the left headlight only */
   const bindTargets = () => {
     const aim = headlightTargetRef.current;
     const left = leftHeadlightRef.current;
@@ -193,13 +193,13 @@ const VehicleHeadlights = ({
     }
   };
 
-  // Привязывает aim-target к фарам после монтирования.
+  // Binds the aim-target to the headlights after mounting.
   useLayoutEffect(() => {
     bindTargets();
   }, []);
 
-  // Жестко фиксирует группу фар в позе кузова: без сглаживания,
-  // чтобы свет не смещался относительно машины при разгоне/торможении.
+  // Hard-locks the headlight group to the body pose: no smoothing,
+  // so the light doesn't shift relative to the car under acceleration/braking.
   useFrame(() => {
     const visual = visualRef.current;
     const group = groupRef.current;
@@ -274,11 +274,11 @@ const WHEEL_LOCAL: TVec3[] = [
 ];
 
 /**
- * Сетка probes под днищем и перед носом: капсула кузова заметно больше стопки шин
- * (1.2×1.2), колесные лучи пролетают мимо — опору под кузовом ищем по всей подошве.
- * Точки за передним краем капсулы (z > 1.65) ловят «воткнулись носом в стопку»:
- * луч изнутри коллайдера дает TOI ~ 0 и отключает снап к дороге, иначе телепорт
- * утыкает кузов глубже в шины — тряска и замирание.
+ * Probe grid under the floor and ahead of the nose: the body capsule is much larger than a tire stack
+ * (1.2×1.2), wheel rays fly past it — support under the body is searched across the whole footprint.
+ * Points beyond the capsule front edge (z > 1.65) catch "nose-first into a stack":
+ * a ray from inside the collider gives TOI ~ 0 and disables the road snap, otherwise the teleport
+ * jams the body deeper into the tires — shaking and freezing.
  */
 const OBSTACLE_PROBE_POINTS: TVec3[] = [-0.7, 0, 0.7].flatMap((px) =>
   [-1.5, -0.75, 0, 0.75, 1.5, 2.1, 2.6].map((pz) => [px, 0.05, pz] as TVec3),
@@ -286,31 +286,31 @@ const OBSTACLE_PROBE_POINTS: TVec3[] = [-0.7, 0, 0.7].flatMap((px) =>
 
 const MAX_SPEED = VEHICLE_MAX_SPEED;
 const REVERSE_MAX = VEHICLE_REVERSE_MAX;
-/** Горизонтальная капсула ≈ габариты кузова: гладкое скольжение вдоль стен */
+/** Horizontal capsule ≈ body footprint: smooth sliding along walls */
 const COLLIDER_HALF_X = 0.82;
 const COLLIDER_HALF_Z = 1.65;
 const COLLIDER_RADIUS = COLLIDER_HALF_X;
 const COLLIDER_HALF_HEIGHT = COLLIDER_HALF_Z - COLLIDER_RADIUS;
 const COLLIDER_Y = COLLIDER_RADIUS;
-/** Запас луча за край коллайдера для раннего slide */
+/** Ray margin beyond the collider edge for early slide */
 const WALL_PROBE_MARGIN = 0.2;
-/** Look-ahead (с): удлиняет probe на скорость «в стену», ~2–3 кадра @ 60 fps */
+/** Look-ahead (s): extends the probe by the velocity heading "into the wall", ~2–3 frames @ 60 fps */
 const WALL_PROBE_LOOKAHEAD = 0.04;
-/** Высота спавна над точкой старта — машина падает на трассу */
+/** Spawn height above the start point — the car drops onto the track */
 const SPAWN_DROP_HEIGHT = 3.2;
-/** После касания ждем почти нулевую вертикальную скорость */
+/** After touchdown wait for near-zero vertical velocity */
 const LAND_SETTLE_VY = 1.2;
 
-/** Длина луча-зонда под колесом: достает до земли с запасом ~1.5 м, но короткая, чтобы не цеплять далекие стены */
+/** Probe ray length under a wheel: reaches the ground with ~1.5 m headroom, but short enough not to catch distant walls */
 const WHEEL_GROUND_RAY = 2.5;
-/** Порог контакта с дорогой (м): до земли ≈1.5–2.0 м, а TOI >2.5 м — это стена/откос */
+/** Road contact threshold (m): to the ground ≈1.5–2.0 m, while TOI >2.5 m is a wall/embankment */
 const GROUND_PROBE_TOI = 2.8;
-/** Запас «на земли» после последней точки контакта — перекрывает краткий отрыв на гребне */
+/** "Grounded" grace after the last contact point — covers a brief liftoff at a crest */
 const GROUNDED_GRACE_SECONDS = 0.15;
-/** Допуск высоты над дорогой: выше — это подброс, возвращаем тело на трассу */
+/** Altitude tolerance above the road: above it is a toss, return the body to the track */
 const GROUND_SNAP_TOLERANCE = 0.25;
 
-/** Поднимает точку спавна на SPAWN_DROP_HEIGHT над асфальтом */
+/** Raises the spawn point by SPAWN_DROP_HEIGHT above the asphalt */
 const elevatedSpawn = (spawnPosition: TVec3): { x: number; y: number; z: number } => ({
   x: spawnPosition[0],
   y: spawnPosition[1] + SPAWN_DROP_HEIGHT,
@@ -326,15 +326,15 @@ const tmpDesired = new Vector3();
 const tmpNormal = new Vector3();
 const tmpSlide = new Vector3();
 const tmpGroundNormal = new Vector3();
-// Буферы попаданий лучей колес (переиспользуются между кадрами)
+// Wheel ray hit buffers (reused between frames)
 const tmpWheelHitY: number[] = [0, 0, 0, 0];
 const tmpWheelHitNX: number[] = [0, 0, 0, 0];
 const tmpWheelHitNY: number[] = [0, 0, 0, 0];
 const tmpWheelHitNZ: number[] = [0, 0, 0, 0];
-/** Полоса высот попаданий колес, ниже которой попадание — не полотно под машиной (м) */
+/** Band of wheel hit heights around the topmost support; outside it a hit is not the road surface under the car (m) */
 const DECK_HIT_SPREAD = 1.2;
 
-/** Скользит вдоль стены: убирает составляющую скорости по нормали стены */
+/** Slides along a wall: removes the velocity component along the wall normal */
 const slideAlongWalls = (
   world: ReturnType<typeof useRapier>['world'],
   rapier: ReturnType<typeof useRapier>['rapier'],
@@ -352,7 +352,7 @@ const slideAlongWalls = (
   const result = velocity.clone();
 
   for (const dir of probes) {
-    // dir — луч к стене; удлиняем probe при движении навстречу
+    // dir — ray toward the wall; extend the probe when moving into it
     const intoProbe = Math.max(0, velocity.dot(dir));
     if (intoProbe < 0.01) {
       continue;
@@ -378,13 +378,13 @@ const slideAlongWalls = (
     if (!hit) {
       continue;
     }
-    // Нормаль стены (не ось машины) — иначе под углом обнуляется весь forward
+    // Wall normal (not a car axis) — otherwise at an angle the whole forward gets zeroed
     tmpNormal.set(hit.normal.x, 0, hit.normal.z);
     if (tmpNormal.lengthSq() < 0.001) {
       continue;
     }
     tmpNormal.normalize();
-    // Нормаль должна смотреть навстречу лучу (из стены к машине)
+    // The normal must face the ray (from the wall toward the car)
     if (tmpNormal.dot(dir) > 0) {
       tmpNormal.negate();
     }
@@ -398,7 +398,7 @@ const slideAlongWalls = (
   return result;
 };
 
-/** Проезд колеса через любую oriented-box зону с subsample между кадрами. */
+/** Whether a wheel crossed any oriented-box zone, with subsampling between frames. */
 const isWheelOnAnyZone = (
   prevX: number | null,
   prevZ: number | null,
@@ -414,7 +414,7 @@ const isWheelOnAnyZone = (
   return false;
 };
 
-/** Arcade-машина: отзывчивое руление, скольжение вдоль стен */
+/** Arcade car: responsive steering, sliding along walls */
 export const Vehicle = ({
   spawnPosition,
   spawnRotationY,
@@ -435,7 +435,7 @@ export const Vehicle = ({
   const awaitingLand = useRef(true);
   const groundedGrace = useRef(0);
   const lastGroundNormal = useRef({ x: 0, y: 1, z: 0 });
-  /** Сглаженная целевая вертикальная скорость скольжения по поверхности */
+  /** Smoothed target vertical velocity for sliding along the surface */
   const followVyRef = useRef(0);
   const visPitch = useRef(0);
   const lastSkidPos = useRef<(TSkidWheelPos | null)[]>([null, null, null, null]);
@@ -460,9 +460,9 @@ export const Vehicle = ({
     dirtSmokeTimer.current = 0;
   };
 
-  // Визуальный attitude кузова: наклон по склону + тряска керба. Крена в повороте нет —
-  // наклон корпуса на повороте выглядел нереалистично. Пишется только в дочернюю
-  // визуальную группу — физическое тело остается плоским (вращения только вокруг Y).
+  // Visual body attitude: slope pitch + kerb shake. No roll in corners —
+  // body lean in turns looked unrealistic. Written only to the child
+  // visual group — the physics body stays flat (rotation around Y only).
   const applyVisualAttitude = (pitchTarget: number, kerbShakePitch: number, dt: number) => {
     visPitch.current = smoothAngleToward(visPitch.current, pitchTarget, dt);
     const visual = visualRef.current;
@@ -471,7 +471,7 @@ export const Vehicle = ({
     }
   };
 
-  // Arcade-физика: рестарт, ввод, grip и скольжение вдоль стен.
+  // Arcade physics: restart, input, grip and sliding along walls.
   useFrame((_, dt) => {
     const body = bodyRef.current;
     if (!body) {
@@ -526,13 +526,13 @@ export const Vehicle = ({
     let groundNormalCount = 0;
     let roadYSum = 0;
     let roadYCount = 0;
-    // Препятствие (стопка шин) под днищем: снап к дороге и кламп вертикали запрещены —
-    // иначе телепорт внутрь коллайдеров = тряска/зависание. Ищется сеткой ниже.
+    // Obstacle (tire stack) under the floor: road snap and vertical clamp are forbidden —
+    // otherwise teleporting inside colliders = shaking/hanging. Detected by the grid below.
     let obstacleContact = false;
     tmpGroundNormal.set(0, 0, 0);
-    // Попадания лучей колес сначала собираются, потом фильтруются выбросы: луч
-    // колеса за краем деки эстакады бьет в землю внизу и без фильтрации тянет
-    // среднюю высоту/нормаль вниз — кузов прижимом утаскивает под трассу.
+    // Wheel ray hits are collected first, then outliers are filtered: a ray from a wheel
+    // past the edge of an elevated deck hits the ground below and, unfiltered, drags the
+    // average height/normal down — the body stick pulls the car under the track.
     let deckTopY = Number.NEGATIVE_INFINITY;
     for (let i = 0; i < WHEEL_LOCAL.length; i += 1) {
       const offset = WHEEL_LOCAL[i]!;
@@ -544,8 +544,8 @@ export const Vehicle = ({
         { x: tmpOrigin.x, y: tmpOrigin.y, z: tmpOrigin.z },
         { x: 0, y: -1, z: 0 },
       );
-      // Только мир (дорога/стены): контакт с бочкой/шиной не должен считаться опорой
-      // и отключать кламп вертикальной скорости — иначе препятствие подбрасывает машину.
+      // World only (road/walls): contact with a barrel/tire must not count as support
+      // or disable the vertical velocity clamp — otherwise an obstacle tosses the car.
       const hit = world.castRayAndGetNormal(
         ray,
         WHEEL_GROUND_RAY,
@@ -557,8 +557,8 @@ export const Vehicle = ({
       );
       tmpWheelHitY[i] = Number.POSITIVE_INFINITY;
       if (hit) {
-        // Близкое попадание почти на горизонтальную поверхность = реальный контакт;
-        // дальнее — машина в воздухе, почти вертикальная нормаль — стена, а не земля.
+        // Close hit on a nearly horizontal surface = real contact;
+        // a far one — the car is airborne, a near-vertical normal is a wall, not ground.
         if (hit.timeOfImpact <= GROUND_PROBE_TOI && hit.normal.y >= GROUND_NORMAL_MIN_Y) {
           const hitY = tmpOrigin.y - hit.timeOfImpact;
           tmpWheelHitY[i] = hitY;
@@ -569,8 +569,8 @@ export const Vehicle = ({
             deckTopY = hitY;
           }
         }
-        // Трамплин = реальный уклон (14–20°); нормаль стены не должна отключать
-        // кламп вертикальной скорости, иначе удар в ограждение подбрасывает машину.
+        // Ramp = a real slope (14–20°); a wall normal must not disable
+        // the vertical velocity clamp, otherwise hitting a barrier tosses the car.
         if (hit.normal.y < 0.97 && hit.normal.y >= SLOPE_CONTACT_NORMAL_MIN_Y) {
           rampContact = true;
         }
@@ -578,7 +578,7 @@ export const Vehicle = ({
     }
     for (let i = 0; i < WHEEL_LOCAL.length; i += 1) {
       const y = tmpWheelHitY[i] ?? Number.POSITIVE_INFINITY;
-      // вне полосы вокруг самой высокой опоры — не полотно под машиной
+      // outside the band around the topmost support — not the road surface under the car
       if (!Number.isFinite(y) || Math.abs(y - deckTopY) > DECK_HIT_SPREAD) {
         continue;
       }
@@ -650,7 +650,7 @@ export const Vehicle = ({
       if (visual) {
         visual.position.y = 0;
       }
-      // В воздухе — кузов плавно возвращается к ровному (наклон → 0).
+      // Airborne — the body eases back to level (pitch → 0).
       applyVisualAttitude(0, 0, clampedDt);
       tickDriveSfxSample({
         ...IDLE_DRIVE_SFX_SAMPLE,
@@ -664,7 +664,7 @@ export const Vehicle = ({
       return;
     }
 
-    // Детект поверхностей / масла по каждому колесу.
+    // Per-wheel surface / oil detection.
     const wheelOnOil: boolean[] = [false, false, false, false];
     const wheelKinds: TTrackSurfaceKind[] = ['asphalt', 'asphalt', 'asphalt', 'asphalt'];
     let wheelsOnOil = 0;
@@ -718,7 +718,7 @@ export const Vehicle = ({
       if (visual) {
         visual.position.y = Math.sin(kerbPhase.current * 18) * amp;
       }
-      // Наклон тряски добавится к визуальному наклону склона в applyVisualAttitude.
+      // Shake pitch is added to the visual slope pitch in applyVisualAttitude.
       kerbShakePitch = Math.sin(kerbPhase.current * 23) * amp * 0.55;
     } else {
       kerbPhase.current = 0;
@@ -767,7 +767,7 @@ export const Vehicle = ({
       lateral,
       grounded: wheelGrounded,
     });
-    // Intensity следа масла для колеса, которое сейчас на луже (не residual).
+    // Oil trail intensity for a wheel currently on a slick (not residual).
     const oilSkidActive = wheelsOnOil > 0 ? computeOilSkidIntensity(1, forwardSpeed) : 0;
     const offroadSkidBoost = offroadFx * 0.35;
 
@@ -802,7 +802,7 @@ export const Vehicle = ({
         lastSkidPos.current[i] = { x: wx, z: wz };
       }
 
-      // На дожде дым от старта с места (throttle-wheelspin) глушим: брызги рисует WheelSpray
+      // In rain, mute standing-start smoke (throttle-wheelspin): WheelSpray draws the splashes
       const throttleOnlySpin = skid.smoking && input.brake <= 0 && input.handbrake <= 0;
       const skidSmokeActive = skid.smoking && !(isRain && throttleOnlySpin);
       const smoking = skidSmokeActive || (oilSkidActive > SKID_SMOKE_THRESHOLD && wheelsOnOil > 0);
@@ -867,9 +867,9 @@ export const Vehicle = ({
       }
     }
 
-    // Опора под днищем (сетка по всей подошве капсулы): машина на стопке шин —
-    // снап к дороге и кламп вертикали отключаются, иначе телепорт внутрь коллайдеров.
-    // TOI ~ 0 = луч начался внутри препятствия (кузов уже в него утоплен) — тоже опора.
+    // Support under the floor (grid across the whole capsule footprint): car on a tire stack —
+    // road snap and vertical clamp are disabled, otherwise teleport inside colliders.
+    // TOI ~ 0 = the ray started inside the obstacle (the body is already sunk in) — also support.
     for (const offset of OBSTACLE_PROBE_POINTS) {
       tmpOrigin.set(offset[0], offset[1], offset[2]).applyQuaternion(tmpQuat);
       const obstacleRay = new rapier.Ray(
@@ -907,9 +907,9 @@ export const Vehicle = ({
     const desiredHz = Math.hypot(tmpDesired.x, tmpDesired.z);
     const slid = slideAlongWalls(world, rapier, body, tmpDesired);
     const slidHz = Math.hypot(slid.x, slid.z);
-    // На земле не даем коллизиям подбрасывать машину вверх, но позволяем заезжать
-    // на подъем: vy = желаемое скольжение по плоскости (зажато), только при реальном
-    // контакте и вне трамплина. В grace/воздухе vy не трогаем — естественная дуга.
+    // On the ground collisions must not toss the car up, but driving onto a rise is allowed:
+    // vy = desired slide along the plane (clamped), only on real contact and off a ramp.
+    // In grace/air vy is untouched — natural arc.
     const followVy = computeGroundFollowVy(
       tmpGroundNormal.x,
       tmpGroundNormal.y,
@@ -917,10 +917,10 @@ export const Vehicle = ({
       slid.x,
       slid.z,
     );
-    // Позиционный прижим к равновесной высоте покоя: на спуске решатель гасит
-    // нормальную составляющую vy и кузов отстает от убегающей деки, а у гребня
-    // подъема vy по касательной перебирает вверх (выпуклый профиль) — в обоих
-    // случаях зазор без коррекции дорастает до порога и рывковый снап трясет машину.
+    // Positional stick to the equilibrium rest height: on a descent the solver damps
+    // the normal component of vy and the body lags the receding deck, while near the crest
+    // of a rise the tangential vy overshoots upward (convex profile) — in both cases the gap
+    // grows to the threshold without correction and a jerky snap shakes the car.
     const slopeRestY =
       roadYCount > 0
         ? computeGroundRestY(
@@ -941,7 +941,7 @@ export const Vehicle = ({
     let nextVy = linvel.y;
     if (wheelGrounded && !rampContact && !obstacleContact) {
       const targetVy = resolveGroundFollowVy(followVy, linvel.y);
-      // спуск прижимается позиционно — vy без сглаживания; подъем/равнина сглаживаются
+      // descent sticks positionally — vy unsmoothed; ascent/flat are smoothed
       nextVy = followVy < 0 ? targetVy : smoothVyToward(followVyRef.current, targetVy, clampedDt);
       followVyRef.current = nextVy;
     } else {
@@ -949,9 +949,9 @@ export const Vehicle = ({
     }
     body.setLinvel({ x: slid.x, y: nextVy, z: slid.z }, true);
 
-    // Жесткая привязка к трассе: если решатель все же подбросил кузов над дорогой
-    // (удар о бочку) — вернуть на высоту покоя и погасить вертикаль. На препятствии
-    // (шина под колесом) не снаппим: иначе телепорт внутрь коллайдеров — тряска.
+    // Hard track attachment: if the solver still tossed the body above the road
+    // (barrel impact) — return to rest height and kill vertical motion. On an obstacle
+    // (tire under a wheel) don't snap: otherwise teleport inside colliders — shaking.
     if (wheelGrounded && roadYCount > 0 && !obstacleContact) {
       const bodyY = stickY !== null ? stickY : translation.y;
       if (bodyY > slopeRestY + GROUND_SNAP_TOLERANCE) {
@@ -961,8 +961,8 @@ export const Vehicle = ({
       }
     }
 
-    // Анти-залипание: газ в пол, а машина стоит (шина упралась в стену/другие шины) —
-    // непрерывно выталкивать препятствия из-под носового бампера, пока не поедет.
+    // Anti-stuck: throttle wide open but the car stands still (tire pressed into a wall/other tires) —
+    // continuously push obstacles out from under the front bumper until it starts moving.
     stuckTimer.current = updateStuckTimer(
       isStuckAgainstObstacle({
         throttle: input.throttle,
@@ -987,7 +987,7 @@ export const Vehicle = ({
         new rapier.Ball(RESCUE_RADIUS),
         (collider) => {
           const obstacle = collider.parent();
-          // шины и бочки — dynamic; статичный мир и самого себя пропускаем
+          // tires and barrels are dynamic; skip the static world and the car itself
           if (obstacle && obstacle.isDynamic() && !seen.has(obstacle.handle)) {
             seen.add(obstacle.handle);
             rescueBodies.push(obstacle);
@@ -1020,11 +1020,11 @@ export const Vehicle = ({
     const steerSign = Math.sign(forwardSpeed || input.throttle - input.brake || 1);
     let nextYaw = integrateSteerYaw(angvel.y, input.steer, steerStrength, steerSign, clampedDt);
     nextYaw += computeOilYawKick(oilStrength, input.steer, forwardSpeed, lateral);
-    // Кузов физически плоский: вращение и угловая скорость строго вокруг Y —
-    // наклон корпуса только визуальный (по склону), крена в повороте нет.
+    // The body is physically flat: rotation and angular velocity strictly around Y —
+    // body pitch is visual only (along the slope), no roll in corners.
     body.setAngvel({ x: 0, y: nextYaw, z: 0 }, true);
 
-    // Визуальный attitude: наклон по нормали склона, без крена в повороте.
+    // Visual attitude: pitch along the slope normal, no roll in corners.
     const pitchTarget = wheelGrounded
       ? computeSlopePitchFromNormal(
           tmpGroundNormal.x,

@@ -1,44 +1,44 @@
-/** Общие размеры деревьев: визуал и коллайдеры импортируют отсюда. Единицы — локальные до per-tree scale. */
+/** Shared tree dimensions: visuals and colliders import from here. Units are local, before per-tree scale. */
 
-/** Нижний радиус ствола (у земли, шире) */
+/** Trunk bottom radius (at ground, wider) */
 export const TRUNK_RADIUS_BOTTOM = 0.3;
-/** Верхний радиус ствола / радиус коллайдера ствола */
+/** Trunk top radius / trunk collider radius */
 export const TRUNK_RADIUS = 0.14;
-/** Высота ствола */
+/** Trunk height */
 export const TRUNK_HEIGHT = 2.85;
-/** Центр ствола по Y */
+/** Trunk center along Y */
 export const TRUNK_LOCAL_Y = TRUNK_HEIGHT / 2;
-/** Сегменты цилиндра ствола */
+/** Trunk cylinder segments */
 export const TRUNK_SEGMENTS = 8;
 
-/** Множители scale ствола по виду (один cylinder geometry) */
+/** Trunk scale multipliers by kind (one cylinder geometry) */
 export const TRUNK_KIND_SCALE = {
   pine: { xz: 0.92, y: 1.12 },
   broadleaf: { xz: 1.12, y: 0.88 },
 } as const;
 
-/** Ярус кроны сосны */
+/** One pine crown tier */
 export type TPineTier = {
-  /** Радиус основания конуса */
+  /** Cone base radius */
   radius: number;
-  /** Высота конуса */
+  /** Cone height */
   height: number;
-  /** Центр конуса по Y */
+  /** Cone center along Y */
   localY: number;
-  /** Кастить тень (только крупнейший) */
+  /** Whether to cast shadow (only the largest one) */
   castShadow: boolean;
-  /** Ключ tint в палитре */
+  /** Tint key in the palette */
   tint: 'pineDark' | 'pine' | 'pineLight';
 };
 
-/** Три яруса сосны: низ широкий → верх узкий */
+/** Three pine tiers: wide bottom → narrow top */
 export const PINE_TIERS: readonly TPineTier[] = [
   { radius: 1.55, height: 2.05, localY: 3.15, castShadow: true, tint: 'pineDark' },
   { radius: 1.12, height: 1.85, localY: 4.45, castShadow: false, tint: 'pine' },
   { radius: 0.68, height: 1.55, localY: 5.65, castShadow: false, tint: 'pineLight' },
 ];
 
-/** Аппроксимация кроны сосны для коллайдера */
+/** Pine crown approximation for the collider */
 export const PINE_CROWN_RADIUS = PINE_TIERS[0]!.radius;
 export const PINE_CROWN_HEIGHT =
   PINE_TIERS[2]!.localY +
@@ -51,21 +51,21 @@ export const PINE_CROWN_LOCAL_Y =
     PINE_TIERS[2]!.height / 2) /
   2;
 
-/** Доля кроны лиственного */
+/** Broadleaf crown share */
 export type TBroadleafLobe = {
-  /** Радиус сферы до неравномерного scale */
+  /** Sphere radius before non-uniform scale */
   radius: number;
-  /** Центр относительно основания дерева */
+  /** Center relative to the tree base */
   offset: readonly [number, number, number];
-  /** Неравномерный scale → эллипсоид */
+  /** Non-uniform scale → ellipsoid */
   scale: readonly [number, number, number];
-  /** Кастить тень */
+  /** Whether to cast shadow */
   castShadow: boolean;
-  /** Ключ tint */
+  /** Tint key */
   tint: 'broadleaf' | 'broadleafLight';
 };
 
-/** 4 overlapping lobes неправильной кроны */
+/** 4 overlapping lobes of an irregular crown */
 export const BROADLEAF_LOBES: readonly TBroadleafLobe[] = [
   {
     radius: 1.45,
@@ -97,10 +97,10 @@ export const BROADLEAF_LOBES: readonly TBroadleafLobe[] = [
   },
 ];
 
-/** Аппроксимация кроны лиственного для коллайдера */
+/** Broadleaf crown approximation for the collider */
 export const BROADLEAF_CROWN_RADIUS = 1.65;
 export const BROADLEAF_CROWN_LOCAL_Y = 3.55;
 
-/** Сегменты конуса / сферы кроны */
+/** Crown cone / sphere segments */
 export const CROWN_RADIAL_SEGMENTS = 8;
 export const CROWN_HEIGHT_SEGMENTS = 6;

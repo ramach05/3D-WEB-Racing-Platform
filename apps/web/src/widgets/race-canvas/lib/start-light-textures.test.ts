@@ -8,7 +8,7 @@ import {
   resetStartLightTextureCache,
 } from './start-light-textures';
 
-/** Минимальный 2d-контекст для процедурных texture-тестов в jsdom */
+/** Minimal 2d context for procedural texture tests in jsdom */
 const installCanvas2dMock = (): void => {
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(((
     type: string,

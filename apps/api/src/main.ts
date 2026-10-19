@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
-/** Поднимает HTTP-сервер Nest: CORS, cookies, валидация, Swagger */
+/** Boots the Nest HTTP server: CORS, cookies, validation, Swagger */
 const bootstrap = async (): Promise<void> => {
   const app = await NestFactory.create(AppModule);
   app.use(helmet());
@@ -23,7 +23,7 @@ const bootstrap = async (): Promise<void> => {
   );
 
   const isProd = process.env.NODE_ENV === 'production';
-  // Swagger недоступен в production: не публикуем поверхность API наружу
+  // Swagger is disabled in production: don't expose the API surface
   if (!isProd) {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('3D WEB Racing Platform API')

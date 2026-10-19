@@ -7,7 +7,7 @@ import {
   fittedWidth,
 } from './vehicle-fit';
 
-/** Габариты CarConcept.glb (метры), снятые через Three.js Box3 */
+/** CarConcept.glb dimensions (meters), taken via Three.js Box3 */
 const CAR_CONCEPT_BOUNDS = {
   size: { x: 2.716158700804741, y: 1.307954089198598, z: 4.357385993003845 },
   min: { x: -1.363296299549969, y: -0.15929903224516784, z: -1.940231204032898 },
@@ -37,7 +37,7 @@ describe('computeVehicleFit', () => {
   it('keeps fitted width near the capsule footprint', () => {
     const fit = computeVehicleFit(CAR_CONCEPT_BOUNDS);
     const width = fittedWidth(CAR_CONCEPT_BOUNDS, fit);
-    // Длина важнее ширины: допускаем визуальный overhang относительно капсулы
+    // Length matters more than width: allow visual overhang relative to the capsule
     expect(width).toBeGreaterThan(VEHICLE_TARGET_WIDTH * 0.9);
     expect(width).toBeLessThan(VEHICLE_TARGET_WIDTH * 1.4);
   });

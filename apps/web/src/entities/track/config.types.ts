@@ -6,109 +6,109 @@ export type TTrackWeather = 'clear' | 'rain';
 export type TVec3 = readonly [number, number, number];
 
 export type TOrientedBox = {
-  /** Центр бокса */
+  /** Box center */
   position: TVec3;
-  /** Габариты [x, y, z] */
+  /** Dimensions [x, y, z] */
   size: TVec3;
-  /** Поворот вокруг Y (рад) */
+  /** Rotation around Y (rad) */
   rotationY: number;
 };
 
 export type TObstacleKind = 'tireStack' | 'fuelBarrel';
 
 export type TTrackObstacle = TOrientedBox & {
-  /** Тип препятствия */
+  /** Obstacle type */
   kind: TObstacleKind;
 };
 
 export type TLoopPoint = {
-  /** X на плоскости трассы */
+  /** X on the track plane */
   x: number;
-  /** Z на плоскости трассы */
+  /** Z on the track plane */
   z: number;
-  /** Высота над плоскостью трассы (опционально; если нет — y=0) */
+  /** Height above the track plane (optional; defaults to y=0) */
   y?: number;
 };
 
-/** Палитра материалов трассы — значения из shared/config trackPalettes */
+/** Track material palette — values from shared/config trackPalettes */
 export type TTrackPalette = TTrackPaletteColors;
 
-/** Окраска машины — значения из shared/config carSkins */
+/** Car paint — values from shared/config carSkins */
 export type TCarSkin = TCarSkinColors;
 
 export type TTrackAudioTheme = 'coastal' | 'night' | 'rock';
 
 export type TTimeOfDay = 'day' | 'night';
 
-/** Сторона трибун относительно направления заезда (left = левая от машины; заезд против centerline) */
+/** Grandstand side relative to the race direction (left = car's left; the race runs against centerline index growth) */
 export type TStartTribuneSide = 'left' | 'right';
 
 export type TTrackConfig = {
-  /** Идентификатор трассы */
+  /** Track identifier */
   slug: TTrackSlug;
-  /** Точка спавна машины (на стороне финиша lz > 0) */
+  /** Car spawn point (on the finish side lz > 0) */
   spawnPosition: TVec3;
-  /** Угол носа на старте / респавне (рад). Направление заезда — против роста индекса centerline; см. `race-direction.ts`. */
+  /** Nose angle at start / respawn (rad). The race direction is against centerline index growth; see `race-direction.ts`. */
   spawnRotationY: number;
-  /** Линия старт/финиш */
+  /** Start/finish line */
   startFinishLine: TOrientedBox;
-  /** Стены трассы */
+  /** Track walls */
   walls: TOrientedBox[];
-  /** Чекпоинты (legacy / запас) */
+  /** Checkpoints (legacy / fallback) */
   checkpoints: TOrientedBox[];
-  /** Динамические препятствия */
+  /** Dynamic obstacles */
   obstacles: TTrackObstacle[];
-  /** Лужи масла на асфальте (зоны потери сцепления) */
+  /** Oil slicks on the asphalt (grip-loss zones) */
   oilSlicks: TOrientedBox[];
-  /** Центровая линия: ratio растет с индексом; заезд идет против роста — см. `race-direction.ts` */
+  /** Centerline: ratio grows with index; the race runs against index growth — see `race-direction.ts` */
   centerline: TLoopPoint[];
-  /** Ширина дороги */
+  /** Road width */
   roadWidth: number;
-  /** Палитра материалов */
+  /** Material palette */
   palette: TTrackPalette;
-  /** Окраска машины */
+  /** Car paint */
   carSkin: TCarSkin;
-  /** Тема чиптюна */
+  /** Chiptune theme */
   audioTheme: TTrackAudioTheme;
-  /** День или ночь */
+  /** Day or night */
   timeOfDay: TTimeOfDay;
-  /** Сторона трибун у старта */
+  /** Grandstand side at the start */
   startTribuneSide: TStartTribuneSide;
-  /** Зоны, где деревья нельзя размещать (трибуны и т.п.) */
+  /** Zones where trees must not be placed (grandstands etc.) */
   treeExclusionZones: TOrientedBox[];
-  /** Высота каждой точки centerline (опционально); если нет — y=0 */
+  /** Height of each centerline point (optional); defaults to y=0 */
   centerlineY?: number[];
-  /** Ширины дороги по точкам centerline (опционально); если нет — roadWidth */
+  /** Road widths per centerline point (optional); defaults to roadWidth */
   roadWidths?: number[];
-  /** Окно исключения стен: [ratioStart, ratioEnd] — сегменты между этими ratio не рисуют стены */
+  /** Wall exclusion window: [ratioStart, ratioEnd] — segments between these ratios draw no walls */
   wallExclusionWindows?: [number, number][];
-  /** Опоры elevated-полотна (визуальные пилоны под мостом) */
+  /** Elevated-deck piers (visual pylons under the bridge) */
   piers?: TOrientedBox[];
-  /** Погода на трассе */
+  /** Track weather */
   weather?: TTrackWeather;
 };
 
 export type TBuildLoopOptions = {
-  /** Идентификатор трассы */
+  /** Track identifier */
   slug: TTrackSlug;
-  /** Точки петли centerline */
+  /** Centerline loop points */
   points: TLoopPoint[];
-  /** Ширина дороги */
+  /** Road width */
   roadWidth: number;
-  /** Палитра */
+  /** Palette */
   palette: TTrackPalette;
-  /** Окраска машины */
+  /** Car paint */
   carSkin: TCarSkin;
-  /** Тема аудио */
+  /** Audio theme */
   audioTheme: TTrackAudioTheme;
-  /** Метры от линии финиша вдоль centerline (сторона +lz) */
+  /** Meters from the finish line along the centerline (+lz side) */
   spawnOffsetMeters: number;
-  /** Сторона трибун */
+  /** Grandstand side */
   startTribuneSide: TStartTribuneSide;
-  /** Окно исключения стен: [ratioStart, ratioEnd] */
+  /** Wall exclusion window: [ratioStart, ratioEnd] */
   wallExclusionWindows?: [number, number][];
-  /** Высота каждой точки centerline (опционально) */
+  /** Height of each centerline point (optional) */
   centerlineY?: number[];
-  /** Погода на трассе */
+  /** Track weather */
   weather?: TTrackWeather;
 };

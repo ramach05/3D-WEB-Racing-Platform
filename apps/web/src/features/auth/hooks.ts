@@ -5,7 +5,7 @@ import { readAuthSession } from '@/shared/lib';
 import { useGetMeQuery, useLogoutSessionMutation, useRefreshSessionMutation } from './api';
 import { selectHydrated, selectUser, setHydrated } from './model';
 
-/** Гидрация: refresh cookie → access в памяти → /auth/me */
+/** Hydration: refresh cookie → access in memory → /auth/me */
 export const AuthHydrator = () => {
   const [bootstrapped, setBootstrapped] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
@@ -20,7 +20,7 @@ export const AuthHydrator = () => {
           await refreshSession().unwrap();
         }
       } catch {
-        // Гость без cookie / протухшая сессия
+        // Guest without a cookie / expired session
       } finally {
         if (!cancelled) {
           setHasAccess(Boolean(readAuthSession()));
@@ -38,17 +38,17 @@ export const AuthHydrator = () => {
   return null;
 };
 
-/** Текущий пользователь из Redux */
+/** Current user from Redux */
 export const useAuthUser = () => {
   return useSelector(selectUser);
 };
 
-/** Завершена ли стартовая гидрация сессии (до этого гость/пользователь неизвестны) */
+/** Whether initial session hydration finished (before it guest/user status is unknown) */
 export const useAuthHydrated = () => {
   return useSelector(selectHydrated);
 };
 
-/** Выход: revoke refresh-cookie на сервере + локальная очистка и сброс кэшей запросов */
+/** Logout: revoke refresh-cookie on the server + local cleanup and request cache reset */
 export const useLogout = () => {
   const [logoutSession] = useLogoutSessionMutation();
   const dispatch = useDispatch();
@@ -56,7 +56,7 @@ export const useLogout = () => {
   return useCallback(() => {
     void (async () => {
       await logoutSession();
-      // Сбрасываем кэш RTK Query, чтобы законсервированный getMe не вернул user при монтировании
+      // Reset RTK Query cache so a stale cached getMe does not return the user on mount
       dispatch(racingApi.util.resetApiState());
     })();
   }, [logoutSession, dispatch]);

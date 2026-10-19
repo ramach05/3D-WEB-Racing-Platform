@@ -15,15 +15,15 @@ import {
 import { WORLD_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
 
 type TTrackStartFinishCollidersProps = {
-  /** Ориентированный бокс линии старт/финиш */
+  /** Oriented box of the start/finish line */
   line: TOrientedBox;
-  /** Ширина дороги */
+  /** Road width */
   roadWidth: number;
 };
 
 const FRICTION = 0.4;
 
-/** Fixed-коллайдеры F1-gantry внутри Physics (столбы, балка, панель ламп). Визуал остается в TrackStartFinishLine вне Physics. */
+/** Fixed F1-gantry colliders inside Physics (posts, beam, lamp panel). Visuals stay in TrackStartFinishLine outside Physics. */
 export const TrackStartFinishColliders = ({ line, roadWidth }: TTrackStartFinishCollidersProps) => {
   const postX = roadWidth / 2 + GANTRY_POST_OUTSET;
   const spanWidth = postX * 2 + GANTRY_POST_WIDTH;

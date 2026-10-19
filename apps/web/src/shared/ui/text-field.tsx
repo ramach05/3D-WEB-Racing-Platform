@@ -2,13 +2,13 @@ import type { InputHTMLAttributes, ReactNode } from 'react';
 import { cx } from '@/shared/lib';
 
 type TTextFieldProps = InputHTMLAttributes<HTMLInputElement> & {
-  /** Подпись поля */
+  /** Field label */
   label: string;
-  /** Текст ошибки или null */
+  /** Error text or null */
   error?: string | null;
 };
 
-/** Поле формы с label и текстом ошибки */
+/** Form field with label and error text */
 export const TextField = ({ label, error, id, className, ...rest }: TTextFieldProps) => {
   const fieldId = id ?? rest.name;
   const errorId = error && fieldId ? `${fieldId}-error` : undefined;
@@ -29,11 +29,11 @@ export const TextField = ({ label, error, id, className, ...rest }: TTextFieldPr
 };
 
 type TStatusTextProps = {
-  /** Текст статуса */
+  /** Status text */
   children: ReactNode;
 };
 
-/** Сообщение loading/empty/error */
+/** Loading/empty/error message */
 export const StatusText = ({ children }: TStatusTextProps) => {
   return <p className="mt-3 text-[var(--muted)]">{children}</p>;
 };

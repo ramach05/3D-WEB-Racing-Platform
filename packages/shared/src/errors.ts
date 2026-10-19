@@ -1,17 +1,17 @@
-/** Тело ошибки Nest / ValidationPipe */
+/** Nest / ValidationPipe error body */
 export type TApiErrorBody = {
   statusCode: number;
   message: string | string[];
   error: string;
 };
 
-/** Значение, которое можно безопасно превратить в текст ошибки */
+/** A value that can be safely turned into error text */
 export type TCaughtError = {
   message?: string;
   toString: () => string;
 };
 
-/** Достаёт человекочитаемый текст из ошибки без any/unknown */
+/** Extracts human-readable text from an error without any/unknown */
 export const getErrorMessage = (error: TCaughtError): string => {
   if (typeof error.message === 'string' && error.message.length > 0) {
     return error.message;
@@ -20,7 +20,7 @@ export const getErrorMessage = (error: TCaughtError): string => {
   return error.toString();
 };
 
-/** Сводит message из Nest (строка или массив) к одной строке */
+/** Reduces a Nest message (string or array) to a single string */
 export const flattenApiMessage = (message: string | string[]): string => {
   if (typeof message === 'string') {
     return message;

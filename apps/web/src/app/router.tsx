@@ -13,11 +13,11 @@ import { SegaRouteProgress } from '@/shared/ui';
 import { AppHeader } from '@/widgets/header';
 
 type TAppLayoutProps = {
-  /** Содержимое main */
+  /** Main content */
   children: ReactNode;
 };
 
-/** Корневой layout: шапка + main */
+/** Root layout: header + main */
 const AppLayout = ({ children }: TAppLayoutProps) => {
   const { t } = useTranslation();
 
@@ -38,7 +38,7 @@ const AppLayout = ({ children }: TAppLayoutProps) => {
   );
 };
 
-/** Маршруты SPA */
+/** SPA routes */
 export const AppRouter = () => {
   return (
     <BrowserRouter>

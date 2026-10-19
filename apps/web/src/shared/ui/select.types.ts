@@ -1,21 +1,21 @@
 export type TSelectOption<T extends string> = {
-  /** Значение опции */
+  /** Option value */
   value: T;
-  /** Подпись в UI */
+  /** Label in the UI */
   label: string;
 };
 
 export type TSelectProps<T extends string> = {
-  /** aria-label триггера */
+  /** aria-label of the trigger */
   label: string;
-  /** Текущее значение */
+  /** Current value */
   value: T;
-  /** Список опций */
+  /** List of options */
   options: TSelectOption<T>[];
-  /** Колбэк смены значения */
+  /** Value change callback */
   onChange: (value: T) => void;
-  /** Доп. классы корня */
+  /** Extra root classes */
   className?: string;
-  /** Размер триггера */
+  /** Trigger size */
   size?: 'md' | 'sm';
 };

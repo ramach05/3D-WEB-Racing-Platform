@@ -1,4 +1,4 @@
 export type TAuthSession = {
-  /** JWT access в памяти; refresh только в httpOnly cookie */
+  /** Access JWT in memory; refresh only in the httpOnly cookie */
   accessToken: string;
 };

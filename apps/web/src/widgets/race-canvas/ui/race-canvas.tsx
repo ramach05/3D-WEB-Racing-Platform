@@ -40,22 +40,22 @@ import { RacePostFx } from './race-postfx';
 import { WebGlContextGuard } from './webgl-context-guard';
 
 type TRaceSceneProps = {
-  /** Конфиг трассы и палитры */
+  /** Track config and palette */
   config: TTrackConfig;
-  /** Счетчик рестарта гонки */
+  /** Race restart counter */
   resetNonce: number;
-  /** Колбэк завершения гонки */
+  /** Race finish callback */
   onFinished: () => void;
-  /** Один колбэк после первого представленного кадра (для скрытия лоадера) */
+  /** Single callback after the first presented frame (to hide the loader) */
   onFirstFrame?: () => void;
 };
 
 type TFirstFrameSignalProps = {
-  /** Колбэк после первого представленного кадра */
+  /** Callback after the first presented frame */
   onFirstFrame?: () => void;
 };
 
-/** Сигналит о первом кадре: useFrame идет до render, поэтому ждем еще два rAF после present */
+/** Signals the first frame: useFrame runs before render, so we wait two more rAF after present */
 const FirstFrameSignal = ({ onFirstFrame }: TFirstFrameSignalProps) => {
   const firedRef = useRef(false);
 
@@ -73,19 +73,19 @@ const FirstFrameSignal = ({ onFirstFrame }: TFirstFrameSignalProps) => {
 };
 
 type TCelestialBodyProps = {
-  /** Конфиг трассы (день/ночь) */
+  /** Track config (day/night) */
   config: TTrackConfig;
 };
 
-/** Диск солнца на горизонте — виден из chase-камеры во время заезда */
+/** Sun disc on the horizon — visible from the chase camera during a run */
 const SUN_HORIZON_POSITION: [number, number, number] = [0, 30, -255];
 const SUN_LIGHT_POSITION: [number, number, number] = [0, 140, -255];
-/** Высокое солнце только для Sky (~45°) — ясное голубое небо */
+/** High sun for Sky only (~45°) — clear blue sky */
 const SKY_SUN_POSITION: [number, number, number] = [80, 140, -120];
 const MOON_HORIZON_POSITION: [number, number, number] = [-245, 21, -14];
-/** Смещение лунного DirectionalLight относительно машины (направление сохраняется) */
+/** Moon DirectionalLight offset relative to the car (direction preserved) */
 const MOON_LIGHT_OFFSET: [number, number, number] = [-184, 24, -10];
-/** Половина ortho-frustum луны вокруг машины — выше texel density без роста mapSize */
+/** Moon ortho-frustum half around the car — higher texel density without raising mapSize */
 const MOON_SHADOW_HALF_EXTENT = 95;
 const MOON_SHADOW_MAP = 1024;
 const MOON_SHADOW_BIAS = -0.00015;
@@ -95,15 +95,15 @@ const MOON_SHADOW_NEAR = 1;
 const MOON_SHADOW_FAR = 320;
 const DAY_SHADOW_HALF_EXTENT = 140;
 const DAY_SHADOW_MAP = 2048;
-/** Квадрат шага follow луны (м²) — реже двигаем shadow camera */
+/** Moon follow step square (m²) — move the shadow camera less often */
 const MOON_FOLLOW_STEP_SQ = 12 * 12;
-/** Дождевое «солнце в зените»: источник почти строго вверху, мягкие короткие тени */
+/** Rain "sun at zenith": light source almost straight up, soft short shadows */
 const RAIN_LIGHT_OFFSET: [number, number, number] = [0, 300, -22];
 const RAIN_SHADOW_HALF_EXTENT = 90;
-/** Бюджет ночной луны: свет в зените, тени мягкие/рассеянные — 2048 не читается, а стоит в 4 раза дороже */
+/** Night moon budget: light at zenith, soft/diffuse shadows — 2048 doesn't read but costs 4x more */
 const RAIN_SHADOW_MAP = 1024;
 
-/** Солнце (горизонт) днем или луна ночью; в штормовой дождь светила нет (солнце скрыто за облаками) */
+/** Sun (horizon) by day or moon at night; no celestial body in storm rain (sun hidden behind clouds) */
 const CelestialBody = ({ config }: TCelestialBodyProps) => {
   if (config.weather === 'rain') {
     return null;
@@ -118,22 +118,22 @@ const CelestialBody = ({ config }: TCelestialBodyProps) => {
 };
 
 type TPrimaryDirectionalLightProps = {
-  /** Ночная трасса — луна с follow-frustum */
+  /** Night track — moon with follow-frustum */
   isNight: boolean;
-  /** Штормовой дождь — невидимое солнце в зените, мягкие тени с follow-frustum */
+  /** Storm rain — invisible sun at zenith, soft shadows with follow-frustum */
   isRain: boolean;
-  /** Ref машины для центрирования shadow camera */
+  /** Car ref for centering the shadow camera */
   bodyRef: RefObject<RapierRigidBody | null>;
-  /** Цвет направленного света */
+  /** Directional light color */
   color: string;
-  /** Интенсивность */
+  /** Intensity */
   intensity: number;
 };
 
 /**
- * Солнце (день) / луна (ночь) / невидимое солнце в зените (дождь).
- * Target — sibling в сцене (не child light): иначе direction = 0 и WebGL падает.
- * Ночью и в дождь light+target сдвигаются шагами ~12 м вокруг машины.
+ * Sun (day) / moon (night) / invisible sun at zenith (rain).
+ * Target — sibling in the scene (not a child of the light): otherwise direction = 0 and WebGL fails.
+ * At night and in rain light+target shift in ~12 m steps around the car.
  */
 const PrimaryDirectionalLight = ({
   isNight,
@@ -147,7 +147,7 @@ const PrimaryDirectionalLight = ({
   const followRef = useRef({ x: 0, z: 0, ready: false });
   const follow = isNight || isRain;
 
-  // Привязывает target и ortho frustum.
+  // Binds the target and ortho frustum.
   useLayoutEffect(() => {
     const light = lightRef.current;
     const target = targetRef.current;
@@ -177,7 +177,7 @@ const PrimaryDirectionalLight = ({
     }
   }, [isNight, isRain, follow]);
 
-  // Ночью/в дождь двигает light+target шагами ~12 м (не каждый кадр).
+  // At night/rain moves light+target in ~12 m steps (not every frame).
   useFrame(() => {
     if (!follow) {
       return;
@@ -241,15 +241,15 @@ const PrimaryDirectionalLight = ({
 };
 
 type TNeonAccentLightProps = {
-  /** Цвет point light */
+  /** Point light color */
   color: string;
 };
 
-/** Пульсирующий accent light для night neon */
+/** Pulsing accent light for night neon */
 const NeonAccentLight = ({ color }: TNeonAccentLightProps) => {
   const lightRef = useRef<PointLight>(null);
 
-  // Пульсирует intensity accent light по sin-времени.
+  // Pulses accent light intensity over sin time.
   useFrame((state) => {
     if (!lightRef.current) {
       return;
@@ -264,18 +264,18 @@ const NeonAccentLight = ({ color }: TNeonAccentLightProps) => {
 };
 
 type TRaceSceneInnerProps = TRaceSceneProps & {
-  /** Ref физического тела машины */
+  /** Ref to the physics body */
   bodyRef: RefObject<RapierRigidBody | null>;
-  /** Ref визуальной группы кузова */
+  /** Ref to the visual body group */
   visualRef: RefObject<Group | null>;
 };
 
 type TRacePhysicsProps = {
-  /** Тело физики: коллайдеры трассы и машина */
+  /** Physics body: track colliders and vehicle */
   children: ReactNode;
 };
 
-/** Гейт паузы физики по HUD-статусу. Подписка изолирована здесь: смена статуса (countdown/GO/pause) перерисовывает только Physics, а не все дерево сцены. */
+/** Physics pause gate driven by HUD status. Subscription is isolated here: a status change (countdown/GO/pause) re-renders only Physics, not the whole scene tree. */
 const RacePhysics = ({ children }: TRacePhysicsProps) => {
   const paused = useRaceHudSelector(
     (snapshot) =>
@@ -291,7 +291,7 @@ const RacePhysics = ({ children }: TRacePhysicsProps) => {
   );
 };
 
-/** Свет, физика, трасса и машина */
+/** Lights, physics, track and vehicle */
 const RaceSceneInner = ({
   config,
   resetNonce,
@@ -411,11 +411,11 @@ const RaceSceneInner = ({
   );
 };
 
-/** Canvas гонки: отдельно от HUD, чтобы React не убивал FPS */
+/** Race Canvas: separate from the HUD so React doesn't kill FPS */
 const RaceCanvasView = ({ config, resetNonce, onFinished, onFirstFrame }: TRaceSceneProps) => {
   const bodyRef = useRef<RapierRigidBody>(null);
   const visualRef = useRef<Group>(null);
-  /** Composer (bloom/vignette) только ночью; в дождь — без постобработки и с MSAA */
+  /** Composer (bloom/vignette) only at night; in rain — no post-processing, with MSAA */
   const composerActive = config.timeOfDay === 'night';
 
   return (
@@ -438,5 +438,5 @@ const RaceCanvasView = ({ config, resetNonce, onFinished, onFirstFrame }: TRaceS
   );
 };
 
-/** Мемоизация обязательна: лишний ререндер перестраивает дерево сцены целиком и подвешивает кадр */
+/** Memoization is mandatory: an extra rerender rebuilds the whole scene tree and stalls the frame */
 export const RaceCanvas = memo(RaceCanvasView);

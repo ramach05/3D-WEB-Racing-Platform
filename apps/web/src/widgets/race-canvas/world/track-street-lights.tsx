@@ -30,46 +30,46 @@ import {
 } from '@/widgets/race-canvas/lib/street-lamp';
 
 type TTrackStreetLightsProps = {
-  /** Конфиг трассы */
+  /** Track config */
   config: TTrackConfig;
-  /** Ref машины — выбираем ближайшие фонари для Spot / shadow */
+  /** Car ref — nearest lamps get Spot / shadow */
   bodyRef?: RefObject<RapierRigidBody | null>;
 };
 
 type TStreetLampProps = {
-  /** Размещенный фонарь */
+  /** Placed street lamp */
   lamp: TPlacedStreetLamp;
-  /** Горит ли линза (ночь) */
+  /** Whether the lens is lit (night) */
   isOn: boolean;
-  /** Монтировать SpotLight (distance-LOD) */
+  /** Mount SpotLight (distance-LOD) */
   hasSpot: boolean;
-  /** Этот Spot кастит shadow map (только один на сцене) */
+  /** This Spot casts the shadow map (only one in the scene) */
   castLightShadow: boolean;
 };
 
 type TArmJoint = {
-  /** Локальный X */
+  /** Local X */
   x: number;
-  /** Локальный Y */
+  /** Local Y */
   y: number;
 };
 
 type TArmSegmentProps = {
-  /** Начало сегмента */
+  /** Segment start */
   from: TArmJoint;
-  /** Конец сегмента */
+  /** Segment end */
   to: TArmJoint;
-  /** Радиус трубы */
+  /** Pipe radius */
   radius: number;
 };
 
-/** Цилиндр кронштейна между двумя суставами. Длина чуть больше расстояния — overlap закрывает щели в суставах. */
+/** Bracket cylinder between two joints. Length is slightly greater — overlap hides joint gaps. */
 const ArmSegment = ({ from, to, radius }: TArmSegmentProps) => {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const span = Math.hypot(dx, dy);
   const length = span + STREET_LAMP_ARM_JOINT_OVERLAP;
-  /** Cylinder вдоль +Y → поворот Z так, чтобы ось смотрела в (dx, dy) */
+  /** Cylinder along +Y → rotate on Z so the axis points at (dx, dy) */
   const rotZ = -Math.atan2(dx, dy);
 
   return (
@@ -84,7 +84,7 @@ const ArmSegment = ({ from, to, radius }: TArmSegmentProps) => {
   );
 };
 
-/** Настраивает низкобюджетную shadow map у Spot фонаря */
+/** Configures the low-budget shadow map of the lamp Spot */
 const configureLampSpotShadow = (light: SpotLight) => {
   light.castShadow = true;
   light.shadow.mapSize.set(STREET_LAMP_SPOT_SHADOW.mapSize, STREET_LAMP_SPOT_SHADOW.mapSize);
@@ -96,12 +96,12 @@ const configureLampSpotShadow = (light: SpotLight) => {
   light.shadow.camera.updateProjectionMatrix();
 };
 
-/** Один cobra-head фонарь: столб, непрерывный кронштейн, плафон; Spot — только при hasSpot */
+/** One cobra-head lamp: pole, continuous arm, luminaire; Spot only when hasSpot */
 const StreetLamp = ({ lamp, isOn, hasSpot, castLightShadow }: TStreetLampProps) => {
   const spotRef = useRef<SpotLight>(null);
   const targetRef = useRef<Object3D>(null);
 
-  // Привязывает SpotLight к aim и настраивает shadow map вне render-loop.
+  // Binds SpotLight to the aim and configures the shadow map outside the render-loop.
   useLayoutEffect(() => {
     if (!hasSpot) {
       return;
@@ -127,7 +127,7 @@ const StreetLamp = ({ lamp, isOn, hasSpot, castLightShadow }: TStreetLampProps) 
 
   return (
     <group position={[lamp.x, 0, lamp.z]} rotation={[0, lamp.rotationY, 0]}>
-      {/* Столб */}
+      {/* Pole */}
       <mesh position={[0, poleCenterY, 0]} castShadow receiveShadow>
         <cylinderGeometry
           args={[
@@ -140,7 +140,7 @@ const StreetLamp = ({ lamp, isOn, hasSpot, castLightShadow }: TStreetLampProps) 
         <meshStandardMaterial color={streetLampPalette.pole} metalness={0.72} roughness={0.38} />
       </mesh>
 
-      {/* Воротник у стыка столб/кронштейн */}
+      {/* Collar at the pole/arm joint */}
       <mesh position={[0, STREET_LAMP_POLE_TOP_Y, 0]} castShadow>
         <cylinderGeometry
           args={[
@@ -153,11 +153,11 @@ const StreetLamp = ({ lamp, isOn, hasSpot, castLightShadow }: TStreetLampProps) 
         <meshStandardMaterial color={streetLampPalette.arm} metalness={0.7} roughness={0.36} />
       </mesh>
 
-      {/* Кронштейн: два перекрывающихся сегмента без щелей */}
+      {/* Arm: two overlapping segments, no gaps */}
       <ArmSegment from={poleJoint} to={elbowJoint} radius={STREET_LAMP_ARM_RADIUS} />
       <ArmSegment from={elbowJoint} to={tipJoint} radius={STREET_LAMP_ARM_RADIUS * 0.92} />
 
-      {/* Корпус плафона — насаживается на конец кронштейна */}
+      {/* Luminaire housing — slipped over the arm tip */}
       <mesh position={[armTipX, luminaireY + STREET_LAMP_HOUSING.height * 0.15, 0]} castShadow>
         <boxGeometry
           args={[STREET_LAMP_HOUSING.width, STREET_LAMP_HOUSING.height, STREET_LAMP_HOUSING.depth]}
@@ -165,7 +165,7 @@ const StreetLamp = ({ lamp, isOn, hasSpot, castLightShadow }: TStreetLampProps) 
         <meshStandardMaterial color={streetLampPalette.housing} metalness={0.55} roughness={0.45} />
       </mesh>
 
-      {/* Линза: теплая при isOn, темная выключенная днем */}
+      {/* Lens: warm when isOn, dark and off by day */}
       <mesh position={[armTipX, luminaireY - STREET_LAMP_LENS.height * 0.35, 0]}>
         <boxGeometry
           args={[STREET_LAMP_LENS.width, STREET_LAMP_LENS.height, STREET_LAMP_LENS.depth]}
@@ -182,7 +182,7 @@ const StreetLamp = ({ lamp, isOn, hasSpot, castLightShadow }: TStreetLampProps) 
 
       {hasSpot ? (
         <>
-          {/* Aim: пятно на проезжей части, не под столб */}
+          {/* Aim: patch on the roadway, not under the pole */}
           <object3D
             ref={targetRef}
             position={[STREET_LAMP_SPOT_AIM_LOCAL_X, STREET_LAMP_ROAD_TOP_Y + 0.05, 0]}
@@ -211,11 +211,11 @@ const StreetLamp = ({ lamp, isOn, hasSpot, castLightShadow }: TStreetLampProps) 
   );
 };
 
-/** Расстояние от (x,z) до фонаря */
+/** Distance from (x,z) to the lamp */
 const lampDistance = (lamp: TPlacedStreetLamp, x: number, z: number): number =>
   Math.hypot(lamp.x - x, lamp.z - z);
 
-/** K ближайших фонарей с hysteresis: прежние Spot остаются, пока не дальше K-го + margin. Возвращает отсортированные индексы (ближайший первым). */
+/** K nearest lamps with hysteresis: current Spots stay active until farther than K-th + margin. Returns sorted indices (nearest first). */
 const selectActiveSpotIndices = (
   lamps: TPlacedStreetLamp[],
   x: number,
@@ -257,11 +257,11 @@ const selectActiveSpotIndices = (
   });
 };
 
-/** Стабильный ключ набора индексов для сравнения */
+/** Stable key of an index set for comparison */
 const indicesKey = (indices: readonly number[]): string =>
   [...indices].sort((a, b) => a - b).join(',');
 
-/** Уличные фонари вдоль трассы. Столбы есть днем и ночью; Spot — только у K ближайших ночью; shadow — у одного nearest. */
+/** Street lamps along the track. Poles exist day and night; Spots only on the K nearest at night; shadow on one nearest. */
 export const TrackStreetLights = ({ config, bodyRef }: TTrackStreetLightsProps) => {
   const lamps = useMemo(() => placeStreetLamps({ config }), [config]);
   const isOn = isTrackLightingOn(config);
@@ -276,7 +276,7 @@ export const TrackStreetLights = ({ config, bodyRef }: TTrackStreetLightsProps) 
   const pendingActiveKeyRef = useRef<string | null>(null);
   const pendingShadowRef = useRef<number | null>(null);
 
-  // Обновляет active Spot set и shadow caster; setState — после кадра.
+  // Updates the active Spot set and shadow caster; setState runs after the frame.
   useFrame(() => {
     if (!isOn || !bodyRef?.current || lamps.length === 0) {
       return;
@@ -356,7 +356,7 @@ export const TrackStreetLights = ({ config, bodyRef }: TTrackStreetLightsProps) 
   );
 };
 
-/** Индекс ближайшего фонаря к (x, z); -1 если список пуст */
+/** Index of the lamp nearest to (x, z); -1 when the list is empty */
 const findNearestLampIndex = (lamps: TPlacedStreetLamp[], x: number, z: number): number => {
   let bestIndex = -1;
   let bestDistSq = Number.POSITIVE_INFINITY;

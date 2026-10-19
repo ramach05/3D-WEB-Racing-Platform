@@ -3,13 +3,13 @@ import type { TBillboardAdId } from '@/entities/track';
 import { billboardPalette, type TAppLocale } from '@/shared/config';
 
 type TBillboardAdCopy = {
-  /** Название бренда */
+  /** Brand name */
   brand: string;
-  /** Главный слоган */
+  /** Main slogan */
   slogan: string;
-  /** Вторая шутка / мотивация */
+  /** Second joke / motivation */
   punchline: string;
-  /** Мелкая строка внизу */
+  /** Small print at the bottom */
   tagline: string;
 };
 
@@ -83,11 +83,11 @@ const AD_COPY: Record<TAppLocale, Record<TBillboardAdId, TBillboardAdCopy>> = {
 const TEXTURE_WIDTH = 1024;
 const TEXTURE_HEIGHT = 512;
 
-/** Перевод sRGB-канала 0..1 в линейную яркость */
+/** Converts an sRGB channel 0..1 to linear luminance */
 const srgbToLinear = (c: number): number =>
   c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 
-/** Средняя линейная яркость canvas (выборка каждые `stride` пикселей). Нужна, чтобы ночной glow лица был одинаково читаемым у светлых и темных макетов. */
+/** Average linear luminance of the canvas (sampling every `stride` pixels). Needed so the night glow of the face reads equally for light and dark layouts. */
 const avgLuminanceOf = (ctx: CanvasRenderingContext2D, stride = 16): number => {
   const { width, height } = ctx.canvas;
   const { data } = ctx.getImageData(0, 0, width, height);
@@ -106,7 +106,7 @@ const avgLuminanceOf = (ctx: CanvasRenderingContext2D, stride = 16): number => {
   return sum / samples;
 };
 
-/** Рисует пунктирный прямоугольник для for-rent */
+/** Draws a dashed rectangle for the for-rent ad */
 const strokeDashedRect = (
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -120,7 +120,7 @@ const strokeDashedRect = (
   ctx.setLineDash([]);
 };
 
-/** Укорачивает строку под ширину canvas */
+/** Truncates a line to fit the canvas width */
 const fitText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string => {
   if (ctx.measureText(text).width <= maxWidth) {
     return text;
@@ -132,7 +132,7 @@ const fitText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number):
   return `${truncated}…`;
 };
 
-/** Генерирует canvas-текстуру рекламного макета на выбранном языке */
+/** Generates the canvas texture of an ad layout in the selected locale */
 export const createBillboardTexture = (
   adId: TBillboardAdId,
   locale: TAppLocale = 'en',
@@ -149,12 +149,12 @@ export const createBillboardTexture = (
   const copy = AD_COPY[locale][adId];
   const maxTextWidth = TEXTURE_WIDTH - 96;
 
-  // Фон
+  // Background
   ctx.fillStyle = colors.background;
   ctx.fillRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
   if (adId === 'for-rent') {
-    // Белый щит: пунктирная рамка + одна надпись по центру
+    // White board: dashed border + one centered line
     ctx.strokeStyle = colors.foreground;
     ctx.lineWidth = 6;
     strokeDashedRect(ctx, 72, 72, TEXTURE_WIDTH - 144, TEXTURE_HEIGHT - 144, 18);
@@ -165,17 +165,17 @@ export const createBillboardTexture = (
     ctx.textBaseline = 'middle';
     ctx.fillText(fitText(ctx, copy.slogan, maxTextWidth), TEXTURE_WIDTH / 2, TEXTURE_HEIGHT / 2);
   } else {
-    // Тонкая «металлическая» кромка
+    // Thin "metal" edge
     ctx.strokeStyle = billboardPalette.bolt;
     ctx.lineWidth = 10;
     ctx.strokeRect(8, 8, TEXTURE_WIDTH - 16, TEXTURE_HEIGHT - 16);
 
-    // Акцентная полоса сверху / снизу
+    // Accent stripe at the top / bottom
     ctx.fillStyle = colors.accent;
     ctx.fillRect(0, 0, TEXTURE_WIDTH, 28);
     ctx.fillRect(0, TEXTURE_HEIGHT - 28, TEXTURE_WIDTH, 28);
 
-    // Декоративный «лого-блок»
+    // Decorative "logo block"
     ctx.fillStyle = colors.accent;
     ctx.beginPath();
     ctx.moveTo(48, 78);
@@ -212,7 +212,7 @@ export const createBillboardTexture = (
       TEXTURE_HEIGHT / 2 + 92,
     );
 
-    // Нижняя полоска
+    // Bottom strip
     ctx.fillStyle = colors.accent;
     ctx.globalAlpha = 0.85;
     ctx.fillRect(120, TEXTURE_HEIGHT - 88, TEXTURE_WIDTH - 240, 6);
@@ -231,6 +231,6 @@ export const createBillboardTexture = (
 
 export const BILLBOARD_AD_COPY = AD_COPY;
 
-/** Копия макета для тестов / UI */
+/** Layout copy for tests / UI */
 export const getBillboardAdCopy = (adId: TBillboardAdId, locale: TAppLocale): TBillboardAdCopy =>
   AD_COPY[locale][adId];

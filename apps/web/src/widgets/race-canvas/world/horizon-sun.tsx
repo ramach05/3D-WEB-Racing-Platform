@@ -12,11 +12,11 @@ import {
 } from 'three';
 import { horizonSunStops, type TRadialColorStop } from '@/shared/config';
 
-/** Угловая скорость медленного дыхания ореола (~0.35 Hz) */
+/** Angular speed of the corona's slow breathing (~0.35 Hz) */
 const BREATHE_SPEED = 2.2;
-/** Угловая скорость атмосферного мерцания */
+/** Angular speed of atmospheric shimmer */
 const SHIMMER_SPEED = 3.4;
-/** Фазовый сдвиг мерцания относительно дыхания */
+/** Shimmer phase shift relative to breathing */
 const SHIMMER_PHASE = 1.1;
 
 const CORONA_SCALE_AMP = 0.06;
@@ -26,7 +26,7 @@ const GLOW_OPACITY_AMP = 0.12;
 const GLOW_SHIMMER_SCALE_AMP = 0.03;
 const GLOW_SHIMMER_OPACITY_AMP = 0.04;
 
-/** Рисует радиальный градиент в CanvasTexture */
+/** Draws a radial gradient into a CanvasTexture */
 const createRadialGradientTexture = (
   stops: readonly TRadialColorStop[],
   size = 256,
@@ -53,19 +53,19 @@ const createRadialGradientTexture = (
 };
 
 type TSunLayerProps = {
-  /** Текстура слоя */
+  /** Layer texture */
   map: Texture;
-  /** Размер плоскости */
+  /** Plane size */
   size: number;
-  /** Порядок отрисовки (меньше = дальше) */
+  /** Draw order (lower = farther) */
   renderOrder: number;
-  /** Ref меша для анимации ореола; у статичного ядра не нужен */
+  /** Mesh ref for corona animation; static core does not need it */
   meshRef?: RefObject<Mesh | null>;
-  /** Additive для ореола; ядро — Normal, чтобы цвет не выбеливался */
+  /** Additive for the corona; core is Normal to avoid washing out color */
   additive?: boolean;
 };
 
-/** Один billboard-слой солнца */
+/** One sun billboard layer */
 const SunLayer = ({ map, size, renderOrder, meshRef, additive = true }: TSunLayerProps) => (
   <mesh ref={meshRef} renderOrder={renderOrder}>
     <planeGeometry args={[size, size]} />
@@ -81,7 +81,7 @@ const SunLayer = ({ map, size, renderOrder, meshRef, additive = true }: TSunLaye
   </mesh>
 );
 
-/** Применяет scale и opacity к слою, если материал — MeshBasicMaterial */
+/** Applies scale and opacity to a layer when its material is MeshBasicMaterial */
 const applyLayerPulse = (mesh: Mesh | null, scale: number, opacity: number) => {
   if (!mesh) {
     return;
@@ -94,11 +94,11 @@ const applyLayerPulse = (mesh: Mesh | null, scale: number, opacity: number) => {
 };
 
 type THorizonSunProps = {
-  /** Мировая позиция солнца */
+  /** Sun world position */
   position: [number, number, number];
 };
 
-/** Солнце на горизонте: billboard с многослойным градиентом */
+/** Horizon sun: billboard with layered gradient */
 export const HorizonSun = ({ position }: THorizonSunProps) => {
   const glowRef = useRef<Mesh>(null);
   const coronaRef = useRef<Mesh>(null);
@@ -112,7 +112,7 @@ export const HorizonSun = ({ position }: THorizonSunProps) => {
     [],
   );
 
-  // Освобождает текстуры солнца при размонтировании.
+  // Disposes sun textures on unmount.
   useEffect(
     () => () => {
       textures.core.dispose();
@@ -122,7 +122,7 @@ export const HorizonSun = ({ position }: THorizonSunProps) => {
     [textures],
   );
 
-  // Ядро зафиксировано; мягкое дыхание и мерцание только у ореола (corona/glow).
+  // Core is fixed; soft breathing and shimmer apply to corona/glow layers only.
   useFrame((state) => {
     const t = state.clock.elapsedTime;
     const breathe = Math.sin(t * BREATHE_SPEED);

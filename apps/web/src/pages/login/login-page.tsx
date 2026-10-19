@@ -1,7 +1,7 @@
 import { LoginForm } from '@/features/auth';
 import { PageShell } from '@/shared/ui';
 
-/** Страница входа */
+/** Login page */
 export const LoginPage = () => {
   return (
     <PageShell>

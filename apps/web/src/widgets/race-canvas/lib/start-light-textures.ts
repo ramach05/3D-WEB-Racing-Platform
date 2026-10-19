@@ -1,16 +1,16 @@
 import { CanvasTexture, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace } from 'three';
 
-/** Размер LED-матрицы внутри круглой линзы */
+/** LED matrix size inside the round lens */
 const LED_GRID = 8;
 
 type TLensTextures = {
-  /** Albedo: smoked glass + видимая сетка диодов */
+  /** Albedo: smoked glass + visible diode grid */
   map: CanvasTexture;
-  /** Emissive: заливка диска + горячие LED-точки (иначе светят только точки) */
+  /** Emissive: disc fill + hot LED dots (otherwise only the dots would glow) */
   emissiveMap: CanvasTexture;
 };
 
-/** Пишет пиксель RGBA в ImageData */
+/** Writes an RGBA pixel into ImageData */
 const setPixel = (
   data: Uint8ClampedArray,
   size: number,
@@ -28,7 +28,7 @@ const setPixel = (
   data[idx + 3] = a;
 };
 
-/** Завершает CanvasTexture из canvas (без тайлинга — один спрайт на линзу) */
+/** Finalizes a CanvasTexture from a canvas (no tiling — one sprite per lens) */
 const finishTexture = (canvas: HTMLCanvasElement, srgb = true): CanvasTexture => {
   const texture = new CanvasTexture(canvas);
   if (srgb) {
@@ -40,7 +40,7 @@ const finishTexture = (canvas: HTMLCanvasElement, srgb = true): CanvasTexture =>
   return texture;
 };
 
-/** Круглая F1-линза: smoked glass + LED-сетка. emissiveMap — почти весь диск яркий (с LED-hotspots), чтобы лампа читалась днем. */
+/** Round F1 lens: smoked glass + LED grid. emissiveMap — nearly the whole disc is bright (with LED hotspots) so the lamp reads well in daylight. */
 export const createStartLightLensTextures = (size = 256): TLensTextures => {
   const mapCanvas = document.createElement('canvas');
   mapCanvas.width = size;
@@ -87,7 +87,7 @@ export const createStartLightLensTextures = (size = 256): TLensTextures => {
       let gCh = (14 + rimGlow * 30) * centerShade;
       let bCh = (16 + rimGlow * 34) * centerShade;
 
-      // Emissive: сплошная заливка диска (главное свечение) + LED
+      // Emissive: solid disc fill (main glow) + LEDs
       const fill = Math.pow(1 - rim * 0.55, 1.15);
       let emis = 0.82 * fill;
 
@@ -123,7 +123,7 @@ export const createStartLightLensTextures = (size = 256): TLensTextures => {
   };
 };
 
-/** Легкий matte-шум для панели (без швов/заклепок — иначе «непонятная текстура»). */
+/** Light matte noise for the panel (no seams/rivets — otherwise it looks like "a random texture"). */
 export const createStartLightHousingTexture = (size = 128): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -160,13 +160,13 @@ export const createStartLightHousingTexture = (size = 128): CanvasTexture => {
 let sharedLensTextures: TLensTextures | null = null;
 let sharedHousingTexture: CanvasTexture | null = null;
 
-/** Сброс shared-кэша (HMR / тесты) */
+/** Reset the shared cache (HMR / tests) */
 export const resetStartLightTextureCache = (): void => {
   sharedLensTextures = null;
   sharedHousingTexture = null;
 };
 
-/** Один комплект lens map/emissiveMap на сессию */
+/** One lens map/emissiveMap set per session */
 export const getSharedStartLightLensTextures = (size = 256): TLensTextures => {
   if (!sharedLensTextures) {
     sharedLensTextures = createStartLightLensTextures(size);
@@ -174,7 +174,7 @@ export const getSharedStartLightLensTextures = (size = 256): TLensTextures => {
   return sharedLensTextures;
 };
 
-/** Одна housing-текстура на сессию */
+/** One housing texture per session */
 export const getSharedStartLightHousingTexture = (size = 128): CanvasTexture => {
   if (!sharedHousingTexture) {
     sharedHousingTexture = createStartLightHousingTexture(size);

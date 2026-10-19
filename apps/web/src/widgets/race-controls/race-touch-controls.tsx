@@ -9,37 +9,37 @@ import { useTranslation } from 'react-i18next';
 import { clearTouchAxes, setTouchAxis, type TTouchAxis } from '@/features/race-session';
 
 type TRaceTouchControlsProps = {
-  /** Рестарт заезда */
+  /** Restart the race */
   onRestart: () => void;
-  /** Пауза / снятие паузы */
+  /** Pause / resume */
   onTogglePause: () => void;
-  /** Переключение режима камеры */
+  /** Cycle the camera mode */
   onCycleCamera: () => void;
-  /** Текст под кнопками (например guest hint) */
+  /** Text below the buttons (e.g. guest hint) */
   footer?: ReactNode;
-  /** Звук выключен (для состояния кнопки) */
+  /** Sound is off (for the button state) */
   muted?: boolean;
-  /** Переключение звука; без нее кнопка не рендерится */
+  /** Toggle sound; without it the button is not rendered */
   onToggleMute?: () => void;
 };
 
 type TAxisButtonProps = {
-  /** Ось touch-ввода */
+  /** Touch input axis */
   axis: TTouchAxis;
-  /** Видимый символ на кнопке */
+  /** Visible glyph on the button */
   symbol: string;
   /** aria-label */
   label: string;
-  /** Доп. класс (например accent) */
+  /** Extra class (e.g. accent) */
   className?: string;
 };
 
-/** Кнопка оси: hold через pointer capture */
+/** Axis button: hold via pointer capture */
 const AxisButton = ({ axis, symbol, label, className }: TAxisButtonProps) => {
   const [pressed, setPressed] = useState(false);
   const pressedRef = useRef(false);
 
-  // Сбрасывает ось, если кнопка еще считалась нажатой
+  // Clears the axis if the button was still considered pressed
   const release = (): void => {
     if (!pressedRef.current) {
       return;
@@ -49,7 +49,7 @@ const AxisButton = ({ axis, symbol, label, className }: TAxisButtonProps) => {
     setTouchAxis(axis, false);
   };
 
-  // pointerdown: захват и активация оси
+  // pointerdown: capture the pointer and activate the axis
   const onPointerDown = (event: ReactPointerEvent<HTMLButtonElement>): void => {
     event.preventDefault();
     if (typeof event.currentTarget.setPointerCapture === 'function') {
@@ -76,7 +76,7 @@ const AxisButton = ({ axis, symbol, label, className }: TAxisButtonProps) => {
   );
 };
 
-/** Мобильный SEGA-пад: руль слева, газ/тормоз справа, пауза и рестарт сверху */
+/** Mobile SEGA pad: steering on the left, throttle/brake on the right, pause and restart on top */
 export const RaceTouchControls = ({
   onRestart,
   onTogglePause,

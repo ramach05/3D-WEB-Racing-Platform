@@ -1,8 +1,8 @@
 import type { TUserPublic } from '@racing/shared';
 
 export type TAuthState = {
-  /** Текущий пользователь или null, если гость */
+  /** Current user, or null if guest */
   user: TUserPublic | null;
-  /** Гидрация refresh-сессии завершена (до этого статус неизвестен) */
+  /** Refresh-session hydration finished (status unknown before that) */
   hydrated: boolean;
 };

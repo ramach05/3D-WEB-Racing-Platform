@@ -76,7 +76,7 @@ describe('computeRescueImpulse', () => {
     });
     expect(impulse).not.toBeNull();
     expect(impulse!.z).toBeGreaterThan(0);
-    // мертвый центр -> сторона по умолчанию правая (+X при курсе +Z)
+    // dead center -> default side is right (+X when heading +Z)
     expect(impulse!.x).toBeGreaterThan(0);
   });
 

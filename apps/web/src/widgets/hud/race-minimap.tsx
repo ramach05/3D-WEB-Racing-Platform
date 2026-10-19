@@ -5,18 +5,18 @@ import { scenePalette } from '@/shared/config';
 import { createMinimapProjection, TrackMinimap } from '@/widgets/track-minimap';
 
 type TRaceMinimapProps = {
-  /** Конфиг трассы для плана и проекции маркера */
+  /** Track config for the plan view and marker projection */
   config: TTrackConfig;
-  /** CSS-класс контейнера */
+  /** CSS class of the container */
   className?: string;
 };
 
-/** Миникарта с живым маркером-шевроном машины; transform пишется через rAF без ререндеров */
+/** Minimap with a live vehicle chevron marker; transform is written via rAF without rerenders */
 export const RaceMinimap = ({ config, className }: TRaceMinimapProps) => {
   const markerRef = useRef<SVGGElement>(null);
 
-  // Поза машины обновляется в useFrame вне React, поэтому читаем ее в rAF-цикле
-  // и пишем transform прямо в DOM (тот же прием, что время/скорость в RaceHud).
+  // The vehicle pose updates in useFrame outside React, so read it in an rAF loop
+  // and write transform straight into the DOM (same trick as time/speed in RaceHud).
   useEffect(() => {
     const projection = createMinimapProjection(config);
 
@@ -33,8 +33,8 @@ export const RaceMinimap = ({ config, className }: TRaceMinimapProps) => {
       );
     };
 
-    // Стартовый трансформ = проекция точки спавна, чтобы маркер не «прыгал»
-    // из дефолтного значения на старт до первого rAF/физического кадра.
+    // Initial transform = projection of the spawn point so the marker does not "jump"
+    // from its default value at the start before the first rAF/physics frame.
     applyPose(config.spawnPosition[0], config.spawnPosition[2], config.spawnRotationY);
 
     let raf = 0;
@@ -53,16 +53,16 @@ export const RaceMinimap = ({ config, className }: TRaceMinimapProps) => {
     <div className={`sega-panel sega-panel--overlay p-1.5 ${className ?? ''}`}>
       <TrackMinimap config={config} className="block h-auto w-full opacity-90 lg:opacity-100">
         <g ref={markerRef} transform="translate(-20 -20)">
-          {/* Якорь (0,0) = точка машины: translate ставит маркер ровно на centerline,
-              rotate задает только направление. Симметричные относительно (0,0) фигуры
-              не «уезжают» поперек дороги при повороте. */}
+          {/* Anchor (0,0) = the car's point: translate places the marker exactly on the centerline,
+              rotate sets only the direction. Shapes symmetric about (0,0)
+              do not "slide" across the road when rotated. */}
           <circle
             className="sega-minimap-pulse"
             r={6}
             fill={config.palette.accent}
             opacity={0.35}
           />
-          {/* Шеврон-«навигатор»: кончик по курсу (+y), срезанный хвост */}
+          {/* Chevron "navigator": tip along the heading (+y), clipped tail */}
           <polygon
             points="0,10 -8,-8 0,-2.5 8,-8"
             fill={config.palette.accent}

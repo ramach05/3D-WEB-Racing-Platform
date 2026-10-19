@@ -1,10 +1,10 @@
 export type TDriveInput = {
-  /** Газ: 0 или 1 */
+  /** Throttle: 0 or 1 */
   throttle: number;
-  /** Руль: −1…1 (влево +, вправо −) */
+  /** Steering: −1…1 (left +, right −) */
   steer: number;
-  /** Тормоз/назад: 0 или 1 */
+  /** Brake/reverse: 0 or 1 */
   brake: number;
-  /** Ручной тормоз: 0 или 1 */
+  /** Handbrake: 0 or 1 */
   handbrake: number;
 };

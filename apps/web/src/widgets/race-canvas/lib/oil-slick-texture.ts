@@ -2,7 +2,7 @@ import { CanvasTexture, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace }
 
 type TRng = () => number;
 
-/** LCG-генератор 0..1 из seed */
+/** LCG generator producing 0..1 from a seed */
 const createRng = (seedInit: number): TRng => {
   let seed = seedInit >>> 0;
   return () => {
@@ -11,14 +11,14 @@ const createRng = (seedInit: number): TRng => {
   };
 };
 
-/** Детерминированный хэш 2D-координат в 0..1 */
+/** Deterministic hash of 2D coordinates into 0..1 */
 const hash2 = (x: number, y: number, seed: number): number => {
   let n = (x * 374761393 + y * 668265263 + seed) | 0;
   n = (n ^ (n >>> 13)) * 1274126177;
   return ((n ^ (n >>> 16)) >>> 0) / 0xffffffff;
 };
 
-/** Value-noise 0..1 с билинейной интерполяцией */
+/** Value noise 0..1 with bilinear interpolation */
 const valueNoise = (x: number, y: number, seed: number): number => {
   const x0 = Math.floor(x);
   const y0 = Math.floor(y);
@@ -33,7 +33,7 @@ const valueNoise = (x: number, y: number, seed: number): number => {
   return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
 };
 
-/** Процедурная лужа масла: темный эллипс с мягкими краями и слабым радужным бликом. ClampToEdge — один спрайт на пятно, без тайлинга. */
+/** Procedural oil slick: dark ellipse with soft edges and a faint rainbow sheen. ClampToEdge — one sprite per slick, no tiling. */
 export const createOilSlickTexture = (size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -51,12 +51,12 @@ export const createOilSlickTexture = (size = 256): CanvasTexture => {
     for (let x = 0; x < size; x += 1) {
       const u = (x + 0.5) / size;
       const v = (y + 0.5) / size;
-      // Эллипс с легкой деформацией края
+      // Ellipse with slight edge deformation
       const edgeWobble = (valueNoise(u * 6, v * 6, 17) - 0.5) * 0.08;
       const dx = (u - 0.5) * 2;
       const dy = (v - 0.5) * 2;
       const r = Math.hypot(dx * 1.05, dy * 0.92) + edgeWobble;
-      // Мягкий alpha: центр плотный, край прозрачный
+      // Soft alpha: dense center, transparent edge
       const alpha = Math.max(0, Math.min(1, (0.92 - r) / 0.28));
       if (alpha <= 0.004) {
         const idx = (y * size + x) * 4;
@@ -72,19 +72,19 @@ export const createOilSlickTexture = (size = 256): CanvasTexture => {
       const n3 = valueNoise(u * 22 + n1, v * 18, 101);
       const grit = (next() - 0.5) * 8;
 
-      // База: почти черное масло с коричневым теплом
+      // Base: near-black oil with brown warmth
       let rCh = 18 + n1 * 22 + grit;
       let gCh = 14 + n1 * 16 + grit * 0.6;
       let bCh = 12 + n2 * 14;
 
-      // Слабый rainbow sheen (тонкая пленка)
+      // Faint rainbow sheen (thin film)
       const sheen = Math.pow(Math.max(0, n3 - 0.55), 1.6) * (0.35 + n2 * 0.4);
       const hue = (n1 * 0.55 + n2 * 0.45) * Math.PI * 2;
       rCh += sheen * (90 + Math.cos(hue) * 70);
       gCh += sheen * (70 + Math.cos(hue + 2.1) * 55);
       bCh += sheen * (100 + Math.cos(hue + 4.2) * 80);
 
-      // Чуть светлее к центру блика
+      // Slightly lighter toward the sheen center
       const centerGlow = Math.max(0, 1 - r * 1.4) * 12;
       rCh += centerGlow;
       gCh += centerGlow * 0.85;

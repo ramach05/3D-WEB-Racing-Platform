@@ -23,23 +23,23 @@ export class RaceResultsController {
   @Post('race-results')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Сохранить время заезда' })
+  @ApiOperation({ summary: 'Save a race time' })
   create(@CurrentUser() user: TJwtUser, @Body() dto: CreateRaceResultDto) {
     return this.raceResultsService.create(user, dto);
   }
 
   @Get('leaderboard')
-  @ApiOperation({ summary: 'Лучшие личные времена по трассе' })
+  @ApiOperation({ summary: 'Best personal times on a track' })
   @ApiQuery({ name: 'trackSlug', required: true })
   leaderboard(@Query('trackSlug') trackSlug?: string) {
     if (!trackSlug) {
-      throw new BadRequestException('Нужен trackSlug');
+      throw new BadRequestException('trackSlug is required');
     }
     return this.raceResultsService.leaderboard(trackSlug);
   }
 
   @Get('leaderboard/:slug')
-  @ApiOperation({ summary: 'Лучшие личные времена по трассе (по slug)' })
+  @ApiOperation({ summary: 'Best personal times on a track (by slug)' })
   leaderboardBySlug(@Param('slug') slug: string) {
     return this.raceResultsService.leaderboard(slug);
   }

@@ -1,91 +1,91 @@
 import type { TOrientedBox, TStartTribuneSide, TVec3 } from './config.types';
 
-/** Общие размеры трибун — визуал и зона запрета деревьев из одних чисел */
+/** Shared grandstand dimensions — visuals and tree-ban zone use the same numbers */
 export const TRIBUNE_ROWS = 5;
 export const ROW_HEIGHT = 0.65;
 export const ROW_DEPTH = 0.75;
-/** Геометрия чуть шире шага — непрерывные ступени; зрители укладываются в sectionPitch */
+/** Geometry slightly wider than the pitch — continuous steps; spectators fit within sectionPitch */
 export const SECTION_WIDTH = 8;
 export const SECTION_PITCH = 6;
 export const SECTION_Z_OFFSETS = [-SECTION_PITCH, 0, SECTION_PITCH] as const;
 export const WALL_OFFSET = 0.5;
 export const TRIBUNE_MARGIN = 2.5;
-/** Запас под кроны + цоколь/лестницы вокруг площадки трибун */
+/** Canopy padding + plinth/stairs around the grandstand platform */
 export const TREE_EXCLUSION_PADDING = 5;
 
-/** Цоколь: толщина плиты, уходящей ниже ROAD_TOP_Y */
+/** Plinth: thickness of the slab sinking below ROAD_TOP_Y */
 export const FOUNDATION_THICKNESS = 0.28;
-/** Выступ цоколя за платформу по X/Z */
+/** Plinth overhang beyond the platform on X/Z */
 export const FOUNDATION_OVERHANG = 0.25;
 
-/** Сечение стойки навеса (тонкая стальная колонна) */
+/** Canopy post cross-section (slim steel column) */
 export const CANOPY_POST_SIZE = 0.14;
-/** Задние стойки на секцию (±Z, опционально центр) */
+/** Rear posts per section (±Z, optionally center) */
 export const CANOPY_POSTS_PER_SECTION = 3;
-/** Y-центр навеса относительно верхней кромки заднего ряда */
+/** Canopy Y-center relative to the top edge of the back row */
 export const CANOPY_CENTER_Y_OFFSET = 1.25;
-/** Толщина плиты навеса */
+/** Canopy slab thickness */
 export const CANOPY_THICKNESS = 0.08;
 
-/** Высота трубчатого поручня над поверхностью ряда */
+/** Tube handrail height above the row surface */
 export const RAIL_HEIGHT = 0.92;
-/** Диаметр трубы ограждения */
+/** Railing tube diameter */
 export const RAIL_TUBE = 0.055;
-/** Шаг вертикальных стоек ограждения */
+/** Vertical railing post spacing */
 export const RAIL_POST_SPACING = 1.55;
-/** Насколько стойка утоплена в бетон */
+/** How deep the post is embedded in concrete */
 export const RAIL_POST_EMBED = 0.08;
 
-/** Ширина лестничного пролета у торца */
+/** Stair flight width at the section end */
 export const STAIR_WIDTH = 1.15;
-/** Глубина одной ступени лестницы (= глубина ряда) */
+/** Depth of one stair step (= row depth) */
 export const STAIR_RUN = ROW_DEPTH;
-/** Лестница вплотную к торцу секции (без зазора) */
+/** Stair flush against the section end (no gap) */
 export const STAIR_GAP = 0;
-/** Низкий бортик с внешней стороны лестницы (не глухая стена) */
+/** Low curb on the outer side of the stair (not a solid wall) */
 export const STAIR_CURB_HEIGHT = 0.16;
 export const STAIR_CURB_THICKNESS = 0.07;
 
-/** Высота планки сиденья */
+/** Seat plank height */
 export const SEAT_PLANK_HEIGHT = 0.07;
-/** Глубина планки сиденья */
+/** Seat plank depth */
 export const SEAT_PLANK_DEPTH = 0.38;
-/** Высота спинки скамьи */
+/** Bench backrest height */
 export const SEAT_BACK_HEIGHT = 0.32;
-/** Толщина спинки */
+/** Backrest thickness */
 export const SEAT_BACK_THICKNESS = 0.04;
 
-/** Низкая задняя панель (не стена — только фасция) */
+/** Low rear panel (not a wall — fascia only) */
 export const FASCIA_HEIGHT = 0.42;
 export const FASCIA_THICKNESS = 0.08;
 
-/** Y верхней кромки ряда (локально к ROAD_TOP_Y группы) */
+/** Y of the row top edge (locally to the group's ROAD_TOP_Y) */
 export const rowTopY = (row: number) => (row + 1) * ROW_HEIGHT;
 
-/** Y центра навеса */
+/** Y of the canopy center */
 export const canopyCenterY = () => rowTopY(TRIBUNE_ROWS - 1) + CANOPY_CENTER_Y_OFFSET;
 
-/** Нижняя грань навеса */
+/** Canopy underside */
 export const canopyUndersideY = () => canopyCenterY() - CANOPY_THICKNESS / 2;
 
 /**
- * Знак стороны в локале финишной линии. Визуал и коллайдеры трибун повернуты на
- * `startFinishLine.rotationY` = yaw вдоль РОСТА индекса centerline, а заезд идет
- * против него (race-direction.ts). Значит машина на старте смотрит в локальный −Z,
- * ее левая сторона — локальный −X. Отсюда `left` → −1.
+ * Side sign in the finish-line local frame. Grandstand visuals and colliders are rotated by
+ * `startFinishLine.rotationY` = yaw along centerline index GROWTH, while the race runs
+ * against it (race-direction.ts). So the car at the start looks toward local −Z
+ * and its left side is local −X. Hence `left` → −1.
  */
 export const tribuneSideSign = (side: TStartTribuneSide): number => (side === 'left' ? -1 : 1);
 
 type TBuildTribuneExclusionOptions = {
-  /** Линия старт/финиш — якорь ориентации */
+  /** Start/finish line — orientation anchor */
   startFinishLine: TOrientedBox;
-  /** Ширина дороги */
+  /** Road width */
   roadWidth: number;
-  /** Сторона трибун относительно движения */
+  /** Grandstand side relative to the direction of travel */
   side: TStartTribuneSide;
 };
 
-/** Ориентированная коробка вокруг зрительских трибун (мир старт/финиша). */
+/** Oriented box around the spectator grandstands (start/finish world). */
 export const buildTribuneTreeExclusionZone = ({
   startFinishLine,
   roadWidth,
@@ -110,18 +110,18 @@ export const buildTribuneTreeExclusionZone = ({
   };
 };
 
-/** X центра ряда трибуны */
+/** X of a grandstand row center */
 export const tribuneRowCenterX = (tribuneInnerX: number, sideSign: number, row: number) =>
   tribuneInnerX + sideSign * (row * ROW_DEPTH + ROW_DEPTH / 2);
 
 export type TTribuneCanopyPost = {
-  /** Центр стойки [x, y, z] в локале секции (y от ROAD_TOP_Y) */
+  /** Post center [x, y, z] in the section local frame (y from ROAD_TOP_Y) */
   position: TVec3;
-  /** Высота стойки */
+  /** Post height */
   height: number;
 };
 
-/** Задние стальные колонны навеса (±Z + центр) — фасад открыт. */
+/** Rear steel canopy columns (±Z + center) — facade stays open. */
 export const buildTribuneCanopyPosts = (
   tribuneInnerX: number,
   sideSign: number,
@@ -140,13 +140,13 @@ export const buildTribuneCanopyPosts = (
 };
 
 export type TTribuneSeatPlank = {
-  /** Центр планки [x, y, z] */
+  /** Plank center [x, y, z] */
   position: TVec3;
-  /** Размеры [depthX, height, widthZ] */
+  /** Dimensions [depthX, height, widthZ] */
   size: TVec3;
 };
 
-/** Сиденья и спинки на каждом ряду секции */
+/** Seats and backrests on each row of the section */
 export const buildTribuneSeatPlanks = (
   tribuneInnerX: number,
   sideSign: number,
@@ -160,7 +160,7 @@ export const buildTribuneSeatPlanks = (
       position: [centerX, top + SEAT_PLANK_HEIGHT / 2, 0],
       size: [SEAT_PLANK_DEPTH, SEAT_PLANK_HEIGHT, SECTION_WIDTH - 0.35],
     });
-    // Спинка у задней кромки ряда
+    // Backrest at the rear edge of the row
     backs.push({
       position: [
         centerX + sideSign * (SEAT_PLANK_DEPTH / 2 - SEAT_BACK_THICKNESS / 2),
@@ -174,15 +174,15 @@ export const buildTribuneSeatPlanks = (
 };
 
 export type TTribuneRailPart = {
-  /** Центр [x, y, z] */
+  /** Center [x, y, z] */
   position: TVec3;
-  /** Размеры [sx, sy, sz] — unit box до масштаба */
+  /** Dimensions [sx, sy, sz] — unit box before scaling */
   size: TVec3;
-  /** Euler XYZ (рад), по умолчанию 0 */
+  /** Euler XYZ (rad), defaults to 0 */
   rotation?: TVec3;
 };
 
-/** Трубчатое ограждение заднего ряда: поручень + стойки, утопленные в бетон. */
+/** Tube railing on the back row: handrail + posts embedded in concrete. */
 export const buildTribuneBackRails = (
   tribuneInnerX: number,
   sideSign: number,
@@ -195,7 +195,7 @@ export const buildTribuneBackRails = (
   const half = SECTION_WIDTH / 2 - 0.12;
   const spanZ = half * 2;
 
-  // Горизонтальный поручень и средняя перекладина — ровно между крайними стойками
+  // Horizontal handrail and mid rail — exactly between the outermost posts
   parts.push({
     position: [railX, top + RAIL_HEIGHT, 0],
     size: [RAIL_TUBE, RAIL_TUBE, spanZ],
@@ -220,27 +220,27 @@ export const buildTribuneBackRails = (
 };
 
 export type TTribuneStairStep = {
-  /** Центр ступени [x, y, z] */
+  /** Step center [x, y, z] */
   position: TVec3;
-  /** Размеры [depthX, height, widthZ] */
+  /** Dimensions [depthX, height, widthZ] */
   size: TVec3;
 };
 
 export type TTribuneStairStringer = {
-  /** Центр бортика */
+  /** Curb center */
   position: TVec3;
-  /** Размеры */
+  /** Dimensions */
   size: TVec3;
 };
 
 type TBuildTribuneStairsOptions = {
   tribuneInnerX: number;
   sideSign: number;
-  /** Индекс секции в SECTION_Z_OFFSETS */
+  /** Section index within SECTION_Z_OFFSETS */
   sectionIndex: number;
 };
 
-/** Знак внешнего торца (−1 / +1) или null, если секция не крайняя */
+/** Outer end sign (−1 / +1) or null if the section is not an edge one */
 export const tribuneOuterEndSign = (sectionIndex: number): -1 | 1 | null => {
   const lastIndex = SECTION_Z_OFFSETS.length - 1;
   if (sectionIndex === 0) return -1;
@@ -248,7 +248,7 @@ export const tribuneOuterEndSign = (sectionIndex: number): -1 | 1 | null => {
   return null;
 };
 
-/** Лестницы только на внешних торцах крайних секций — вплотную к рядам. */
+/** Stairs only on outer ends of the edge sections — flush against the rows. */
 export const buildTribuneStairs = ({
   tribuneInnerX,
   sideSign,
@@ -261,7 +261,7 @@ export const buildTribuneStairs = ({
   const steps: TTribuneStairStep[] = [];
 
   for (let row = 0; row < TRIBUNE_ROWS; row += 1) {
-    // Ступень от земли до поверхности ряда — монолитный блок (не «полка в воздухе»)
+    // Step from the ground up to the row surface — a monolithic block (not a "shelf in the air")
     const height = (row + 1) * ROW_HEIGHT;
     steps.push({
       position: [tribuneRowCenterX(tribuneInnerX, sideSign, row), height / 2, stairLocalZ],
@@ -272,7 +272,7 @@ export const buildTribuneStairs = ({
   return steps;
 };
 
-/** Низкий бортик вдоль внешней стороны лестницы (вместо глухой бетонной стены). */
+/** Low curb along the outer side of the stair (instead of a solid concrete wall). */
 export const buildTribuneStairStringer = ({
   tribuneInnerX,
   sideSign,
@@ -295,7 +295,7 @@ export const buildTribuneStairStringer = ({
   };
 };
 
-/** Ограждение лестницы: стойки на каждой ступени + наклонный поручень (без «палки в воздухе»). */
+/** Stair railing: posts on each step + a sloped handrail (no "stick in the air"). */
 export const buildTribuneStairRails = (
   stairSteps: readonly TTribuneStairStep[],
   _tribuneInnerX: number,
@@ -312,7 +312,7 @@ export const buildTribuneStairRails = (
 
   const treadTopY = (step: TTribuneStairStep) => step.position[1] + step.size[1] / 2;
 
-  // Стойки на каждой ступени, утоплены в бетон
+  // Posts on each step, embedded in concrete
   for (const step of stairSteps) {
     const top = treadTopY(step);
     const postHeight = RAIL_HEIGHT + RAIL_POST_EMBED;
@@ -322,7 +322,7 @@ export const buildTribuneStairRails = (
     });
   }
 
-  // Наклонный поручень и средняя перекладина между первой и последней стойкой
+  // Sloped handrail and mid rail between the first and last post
   const x0 = first.position[0];
   const x1 = last.position[0];
   const y0 = treadTopY(first) + RAIL_HEIGHT;

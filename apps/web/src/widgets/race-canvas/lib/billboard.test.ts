@@ -47,12 +47,12 @@ describe('billboard constants', () => {
     expect(BILLBOARD_ACTIVE_WASH.count).toBeGreaterThanOrEqual(1);
     expect(BILLBOARD_ACTIVE_WASH.count).toBeLessThanOrEqual(3);
     expect(BILLBOARD_ACTIVE_WASH.switchHysteresis).toBeGreaterThan(0);
-    // светлый «for-rent» (~0.6): гасится, чтобы не быть лайтбоксом
+    // light "for-rent" (~0.6): dimmed so it does not become a lightbox
     expect(faceGlowIntensity(0.6)).toBeLessThan(0.3);
-    // темный макет (~0.05): светится сильнее
+    // dark layout (~0.05): glows stronger
     expect(faceGlowIntensity(0.05)).toBeGreaterThan(1);
     expect(faceGlowIntensity(0.6)).toBeLessThan(faceGlowIntensity(0.05));
-    // клампы на крайних значениях
+    // clamps at extreme values
     expect(faceGlowIntensity(1e-9)).toBe(BILLBOARD_NIGHT_FACE.faceGlowMax);
     expect(faceGlowIntensity(100)).toBe(BILLBOARD_NIGHT_FACE.faceGlowMin);
     expect(BILLBOARD_NIGHT_FACE.bulbEmissive).toBeGreaterThan(1);

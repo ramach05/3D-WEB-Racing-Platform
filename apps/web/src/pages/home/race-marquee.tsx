@@ -1,29 +1,29 @@
 import { useEffect, useRef, useState } from 'react';
 
 type TRaceMarqueeProps = {
-  /** Текст бегущей строки */
+  /** Marquee text */
   text: string;
 };
 
-/** Бегущая строка с бесшовным зациклированием */
+/** Marquee with seamless looping */
 export const RaceMarquee = ({ text }: TRaceMarqueeProps) => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const [copiesPerSegment, setCopiesPerSegment] = useState(2);
 
-  // Подбираем число копий текста под ширину viewport
+  // Pick the number of text copies to cover the viewport width
   useEffect(() => {
     const viewport = viewportRef.current;
     const measure = measureRef.current;
     if (!viewport || !measure) return;
 
-    // Пересчет копий при ресайзе
+    // Recompute copy count on resize
     const update = () => {
       const viewportWidth = viewport.clientWidth;
       const unitWidth = measure.getBoundingClientRect().width;
       if (unitWidth <= 0) return;
 
-      // Каждый сегмент должен быть шире viewport, чтобы не было пробела при зацикливании
+      // Each segment must be wider than the viewport so looping leaves no gap
       setCopiesPerSegment(Math.max(2, Math.ceil(viewportWidth / unitWidth) + 1));
     };
 

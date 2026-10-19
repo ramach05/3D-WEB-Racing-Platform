@@ -9,20 +9,20 @@ import {
 } from '@/widgets/race-canvas/lib/street-lamp';
 
 type TTrackStreetLightCollidersProps = {
-  /** Конфиг трассы — тот же список фонарей, что у визуала */
+  /** Track config — same lamp list as the visuals */
   config: TTrackConfig;
 };
 
 type TStreetLampColliderProps = {
-  /** Размещенный фонарь */
+  /** Placed street lamp */
   lamp: TPlacedStreetLamp;
-  /** Индекс для ключа */
+  /** Index used in the key */
   index: number;
 };
 
 const FRICTION = 0.4;
 
-/** Fixed-тело одного столба */
+/** Fixed body of one pole */
 const StreetLampCollider = ({ lamp, index }: TStreetLampColliderProps) => {
   const centerY = STREET_LAMP_ROAD_TOP_Y + STREET_LAMP_POLE_HEIGHT / 2;
 
@@ -51,7 +51,7 @@ const StreetLampCollider = ({ lamp, index }: TStreetLampColliderProps) => {
   );
 };
 
-/** Fixed-коллайдеры столбов фонарей внутри Physics. Визуал остается в TrackStreetLights вне Physics. */
+/** Fixed lamp-pole colliders inside Physics. Visuals stay in TrackStreetLights outside Physics. */
 export const TrackStreetLightColliders = ({ config }: TTrackStreetLightCollidersProps) => {
   const lamps = useMemo(() => placeStreetLamps({ config }), [config]);
 

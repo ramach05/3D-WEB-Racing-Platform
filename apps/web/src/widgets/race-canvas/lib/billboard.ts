@@ -1,120 +1,120 @@
-/** Геометрия придорожного рекламного щита — визуал и коллайдеры из одних чисел */
+/** Roadside billboard geometry — visuals and colliders derived from the same numbers */
 
-/** Верх асфальта / земли */
+/** Top of asphalt / ground */
 export const BILLBOARD_ROAD_TOP_Y = 0.1;
 
-/** Ширина панели (вдоль трассы, локальный Z) */
+/** Panel width (along the track, local Z) */
 export const BILLBOARD_PANEL_WIDTH = 4.6;
-/** Высота панели */
+/** Panel height */
 export const BILLBOARD_PANEL_HEIGHT = 2.4;
-/** Толщина панели (короб бумажного щита) */
+/** Panel thickness (paper billboard box) */
 export const BILLBOARD_PANEL_DEPTH = 0.14;
 
-/** Ширина рамы вокруг панели */
+/** Frame width around the panel */
 export const BILLBOARD_FRAME_THICKNESS = 0.12;
-/** Глубина рамы (короб) */
+/** Frame depth (box) */
 export const BILLBOARD_FRAME_DEPTH = 0.22;
 
-/** Сечение столба [width, depth] */
+/** Post cross-section [width, depth] */
 export const BILLBOARD_POST = {
   width: 0.16,
   depth: 0.16,
 } as const;
 
-/** Высота столбов от земли до верха рамы */
+/** Post height from ground to frame top */
 export const BILLBOARD_POST_HEIGHT =
   BILLBOARD_ROAD_TOP_Y + 1.35 + BILLBOARD_PANEL_HEIGHT + BILLBOARD_FRAME_THICKNESS * 2;
 
-/** Y низа панели (над землей) */
+/** Y of panel bottom (above ground) */
 export const BILLBOARD_PANEL_BOTTOM_Y = BILLBOARD_ROAD_TOP_Y + 1.35;
 
-/** Y центра панели */
+/** Y of panel center */
 export const BILLBOARD_PANEL_CENTER_Y = BILLBOARD_PANEL_BOTTOM_Y + BILLBOARD_PANEL_HEIGHT / 2;
 
-/** Полуширина между центрами столбов */
+/** Half-span between post centers */
 export const BILLBOARD_POST_HALF_SPAN =
   BILLBOARD_PANEL_WIDTH / 2 + BILLBOARD_FRAME_THICKNESS + BILLBOARD_POST.width * 0.15;
 
-/** Смещение панели вперед (лицо панели, локальный +X) */
+/** Panel offset forward (panel face, local +X) */
 export const BILLBOARD_PANEL_FORWARD_X =
   BILLBOARD_POST.depth / 2 + BILLBOARD_PANEL_DEPTH / 2 + 0.02;
 
-/** Y верха рамы */
+/** Y of frame top */
 export const BILLBOARD_FRAME_TOP_Y =
   BILLBOARD_PANEL_CENTER_Y + BILLBOARD_PANEL_HEIGHT / 2 + BILLBOARD_FRAME_THICKNESS;
 
 /**
- * Две gooseneck-лампы сверху: цельная сборка крепление → стойка → вылет → шея → корпус.
- * Локально: +X — нормаль лица, Z — вдоль ширины щита.
- * Вылет длиннее, чтобы корпус стоял ~0.7–0.9 м перед лицом (как трековые flood).
+ * Two gooseneck lamps on top: a single assembly mount → riser → arm → neck → housing.
+ * Locally: +X is the face normal, Z runs along the billboard width.
+ * The arm is longer so the housing sits ~0.7–0.9 m in front of the face (like track floods).
  */
 export const BILLBOARD_FLOOD = {
-  /** Смещение ламп от центра по Z (~четверти панели) */
+  /** Lamp offset from center along Z (~quarter of the panel) */
   zSpan: BILLBOARD_PANEL_WIDTH * 0.28,
-  /** Плита крепления на верхней раме [depthX, heightY, widthZ] */
+  /** Mounting plate on the top frame [depthX, heightY, widthZ] */
   mount: {
     depth: 0.14,
     height: 0.05,
     width: 0.14,
   },
-  /** Высота вертикальной стойки над рамой */
+  /** Vertical riser height above the frame */
   riserHeight: 0.18,
-  /** Длина основного вылета вперед */
+  /** Main arm length forward */
   armLength: 1.05,
-  /** Наклон вылета вниз (рад), от горизонтали */
+  /** Arm pitch downward (rad) from horizontal */
   armPitch: 0.28,
-  /** Короткая шея к корпусу */
+  /** Short neck to the housing */
   neckLength: 0.28,
-  /** Доп. наклон шеи вниз относительно вылета */
+  /** Additional neck pitch downward relative to the arm */
   neckPitch: 0.72,
-  /** Толщина трубы кронштейна */
+  /** Bracket tube radius */
   armRadius: 0.034,
-  /** Корпус прожектора [w, h, d] */
+  /** Flood housing [w, h, d] */
   housing: {
     width: 0.16,
     height: 0.11,
     depth: 0.2,
   },
-  /** Радиус «колбы» */
+  /** "Bulb" radius */
   bulbRadius: 0.038,
 } as const;
 
-/** Позиция корпуса gooseneck в корне FloodLight (для визуала). X — вынос перед лицом, Y — чуть выше рамы. */
+/** Gooseneck housing position in the FloodLight root (for visuals). X — standoff in front of the face, Y — slightly above the frame. */
 export const BILLBOARD_FLOOD_LIGHT_LOCAL = {
   x: 0.82,
   y: 0.06,
   z: 0,
 } as const;
 
-/** Мягкая заливка лица через RectAreaLight (без конусных «кругов» SpotLight). Один area-wash на щит — как рассеянный свет от пары flood на треке. */
+/** Soft face wash via RectAreaLight (no conical SpotLight "blobs"). One area-wash per billboard — like the scattered light of a flood pair at a track. */
 export const BILLBOARD_FACE_WASH = {
-  /** Вынос источника перед лицом панели */
+  /** Light source standoff in front of the panel face */
   standoff: 0.9,
   width: BILLBOARD_PANEL_WIDTH * 0.9,
   height: BILLBOARD_PANEL_HEIGHT * 0.82,
   intensity: 2.8,
 } as const;
 
-/** Бюджет Night City: RectAreaLight только у K ближайших щитов. Дальние — слабый emissive-fallback лица. */
+/** Night City budget: RectAreaLight only on the K nearest billboards. Farther ones get a weak emissive face fallback. */
 export const BILLBOARD_ACTIVE_WASH = {
-  /** Сколько RectAreaLight монтировать одновременно */
+  /** How many RectAreaLights to mount at once */
   count: 2,
-  /** Держать прежний wash, пока щит не дальше K-го + hysteresis (м) */
+  /** Keep the previous wash until the billboard is farther than the K-th + hysteresis (m) */
   switchHysteresis: 10,
 } as const;
 
-/** Ночные emissive: колба всегда; лицо — только fallback без активного wash. */
+/** Night emissive: bulb always; face — only as fallback without an active wash. */
 export const BILLBOARD_NIGHT_FACE = {
-  /** Целевая линейная яркость лица вдалеке: одинаковая воспринимаемая яркость у всех макетов */
+  /** Target linear face luminance in the distance: equal perceived brightness across all layouts */
   faceGlowTargetLuma: 0.14,
-  /** Клампы faceGlowIntensity: «бумажные» макеты не в лайтбокс, «чернильные» не в черноту */
+  /** faceGlowIntensity clamps: "paper" layouts don't become lightboxes, "ink" ones don't go black */
   faceGlowMin: 0.08,
   faceGlowMax: 2.5,
-  /** EmissiveIntensity колбы flood (bloom) */
+  /** Flood bulb EmissiveIntensity (bloom) */
   bulbEmissive: 1.4,
 } as const;
 
-/** EmissiveIntensity лица вдалеке: нормировка по средней яркости текстуры. Без нее константа одинаково «лайтбокс» для светлого for-rent и «чернота» для apex-tires. */
+/** Face EmissiveIntensity in the distance: normalized by average texture luminance. Without it, a constant is an equal "lightbox" for the light for-rent and "blackness" for apex-tires. */
 export const faceGlowIntensity = (avgLuminance: number): number => {
   const raw = BILLBOARD_NIGHT_FACE.faceGlowTargetLuma / Math.max(avgLuminance, 1e-4);
   return Math.min(
@@ -124,7 +124,7 @@ export const faceGlowIntensity = (avgLuminance: number): number => {
 };
 
 /**
- * Оставлен для совместимости тестов; лицо заливает BILLBOARD_FACE_WASH.
+ * Kept for test compatibility; the face is washed by BILLBOARD_FACE_WASH.
  * @deprecated
  */
 export const BILLBOARD_FLOOD_SPOT = {
@@ -135,14 +135,14 @@ export const BILLBOARD_FLOOD_SPOT = {
   decay: 1.85,
 } as const;
 
-/** Локальный spill у колбы — не используется на лице щита */
+/** Local spill at the bulb — not used on the billboard face */
 export const BILLBOARD_FLOOD_FILL = {
   intensity: 0.35,
   distance: 1.8,
   decay: 2,
 } as const;
 
-/** Half-extents коллайдеров */
+/** Collider half-extents */
 export const BILLBOARD_COLLIDER = {
   post: {
     halfWidth: BILLBOARD_POST.width * 0.6,

@@ -6,14 +6,14 @@ import {
   SRGBColorSpace,
 } from 'three';
 
-/** Повторов хвои на кроне сосны */
+/** Pine needle repeats on the crown */
 export const PINE_FOLIAGE_WRAP = 2.8;
-/** Повторов листвы на кроне лиственного */
+/** Broadleaf foliage repeats on the crown */
 export const BROADLEAF_FOLIAGE_WRAP = 2.2;
 
 type TRng = () => number;
 
-/** LCG-генератор 0..1 из seed */
+/** LCG generator producing 0..1 from a seed */
 const createRng = (seedInit: number): TRng => {
   let seed = seedInit >>> 0;
   return () => {
@@ -22,14 +22,14 @@ const createRng = (seedInit: number): TRng => {
   };
 };
 
-/** Детерминированный хэш 2D-координат в 0..1 */
+/** Deterministic hash of 2D coordinates into 0..1 */
 const hash2 = (x: number, y: number, seed: number): number => {
   let n = (x * 374761393 + y * 668265263 + seed) | 0;
   n = (n ^ (n >>> 13)) * 1274126177;
   return ((n ^ (n >>> 16)) >>> 0) / 0xffffffff;
 };
 
-/** Value-noise 0..1 с билинейной интерполяцией */
+/** Value noise 0..1 with bilinear interpolation */
 const valueNoise = (x: number, y: number, seed: number): number => {
   const x0 = Math.floor(x);
   const y0 = Math.floor(y);
@@ -59,7 +59,7 @@ const fbm = (x: number, y: number, seed: number, octaves: number): number => {
   return norm > 0 ? sum / norm : 0;
 };
 
-/** Пишет mid-gray пиксель с легким зеленым уклоном для tint через material.color */
+/** Writes a mid-gray pixel with a slight green bias for tinting via material.color */
 const writeFoliagePixel = (
   data: Uint8ClampedArray,
   idx: number,
@@ -73,7 +73,7 @@ const writeFoliagePixel = (
   data[idx + 3] = 255;
 };
 
-/** Хвоя сосны: мелкая игольчатая зернистость + темные карманы. Mid albedo — тинт через material.color. */
+/** Pine needles: fine needle-like grain + dark pockets. Mid albedo — tint via material.color. */
 export const createPineFoliageTexture = (size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -120,7 +120,7 @@ export const createPineFoliageTexture = (size = 256): CanvasTexture => {
   return texture;
 };
 
-/** Листва широколиственного: пятна кластеров листьев. Mid albedo — тинт через material.color. */
+/** Broadleaf foliage: leaf-cluster patches. Mid albedo — tint via material.color. */
 export const createBroadleafFoliageTexture = (size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -173,7 +173,7 @@ export const createBroadleafFoliageTexture = (size = 256): CanvasTexture => {
 let sharedPineFoliage: CanvasTexture | null = null;
 let sharedBroadleafFoliage: CanvasTexture | null = null;
 
-/** Shared хвоя — один раз на сессию */
+/** Shared pine needles — created once per session */
 export const getSharedPineFoliageTexture = (size = 256): CanvasTexture => {
   if (!sharedPineFoliage) {
     sharedPineFoliage = createPineFoliageTexture(size);
@@ -181,7 +181,7 @@ export const getSharedPineFoliageTexture = (size = 256): CanvasTexture => {
   return sharedPineFoliage;
 };
 
-/** Shared листва — один раз на сессию */
+/** Shared broadleaf foliage — created once per session */
 export const getSharedBroadleafFoliageTexture = (size = 256): CanvasTexture => {
   if (!sharedBroadleafFoliage) {
     sharedBroadleafFoliage = createBroadleafFoliageTexture(size);

@@ -5,33 +5,33 @@ import { Button } from '@/shared/ui';
 import type { TFinishSubmitState } from './race-finish-overlay.types';
 
 type TRaceFinishOverlayProps = {
-  /** Показать оверлей */
+  /** Show the overlay */
   open: boolean;
-  /** Название трассы */
+  /** Track name */
   trackName: string;
-  /** Время заезда, мс */
+  /** Race time, ms */
   timeMs: number;
-  /** Лучшее время, мс */
+  /** Best time, ms */
   bestMs: number | null;
-  /** Новый личный рекорд */
+  /** New personal best */
   isNewBest: boolean;
-  /** Гость без сохранения результата */
+  /** Guest without result saving */
   isGuest: boolean;
-  /** Статус отправки результата */
+  /** Result submission status */
   submitState: TFinishSubmitState;
-  /** Rank текущего игрока (считается на page) */
+  /** Current player's rank (computed on the page) */
   userRank?: number | null;
-  /** Слот таблицы лидеров — композиция со слоя pages */
+  /** Leaderboard table slot — composition from the pages layer */
   leaderboardSlot?: ReactNode;
-  /** Рестарт заезда */
+  /** Restart the race */
   onRestart: () => void;
-  /** Выход к списку трасс */
+  /** Exit to the track list */
   onExit: () => void;
-  /** Открыть полный лидерборд */
+  /** Open the full leaderboard */
   onOpenLeaderboard: () => void;
 };
 
-/** Celebratory overlay после финиша: время, рекорд, топ лидеров и действия */
+/** Celebratory overlay after the finish: time, record, top racers and actions */
 export const RaceFinishOverlay = ({
   open,
   trackName,
@@ -49,7 +49,7 @@ export const RaceFinishOverlay = ({
   const { t } = useTranslation();
   const firstButton = useRef<HTMLButtonElement>(null);
 
-  // Фокус на первую кнопку при открытии оверлея.
+  // Focus the first button when the overlay opens.
   useEffect(() => {
     if (open) {
       firstButton.current?.focus();

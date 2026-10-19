@@ -36,30 +36,30 @@ import { RaceFinishOverlay, type TFinishSubmitState } from '@/widgets/race-finis
 import { LeaderboardTable } from '@/widgets/leaderboard-table';
 import { RacePauseMenu } from '@/widgets/race-pause-menu';
 
-/** Время в допустимом диапазоне для POST /race-results (целое мс) */
+/** Race time within the allowed range for POST /race-results (integer ms) */
 const isSubmittableRaceTime = (timeMs: number): boolean => {
   const ms = Math.round(timeMs);
   return Number.isInteger(ms) && ms >= RACE_TIME_MIN_MS && ms <= RACE_TIME_MAX_MS;
 };
 
 type TRaceTestApi = {
-  /** Тестовый хук для мгновенного финиша (e2e) */
+  /** Test hook for instant finish (e2e) */
   __finishRaceForTest?: () => void;
 };
 
 type TFinishMeta = {
-  /** Время заезда в мс */
+  /** Race time in ms */
   timeMs: number;
-  /** Новый личный рекорд */
+  /** New personal best */
   isNewBest: boolean;
-  /** Статус отправки результата на сервер */
+  /** Result submission status on the server */
   submitState: TFinishSubmitState;
 };
 
-/** FINISH! + время до модалки результатов */
+/** How long FINISH! + time shows before the results modal */
 const FINISH_OVERLAY_DELAY_MS = 4000;
 
-/** Страница заезда: 3D-сцена, HUD, пауза, отправка результата */
+/** Race page: 3D scene, HUD, pause, result submission */
 export const RacePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -68,7 +68,7 @@ export const RacePage = () => {
   const track = tracks?.find((item) => item.slug === trackSlug) ?? null;
   const trackId = track?.id;
   const config = track ? getTrackConfig(track.slug) : null;
-  // Только статус и время финиша: шаг обратного отсчета и круги не должны перерисовывать страницу с 3D-сценой.
+  // Only status and finish time: countdown step and laps must not re-render the page with the 3D scene.
   const hudStatus = useRaceHudSelector((snapshot) => snapshot.status);
   const hudFinishMs = useRaceHudSelector((snapshot) =>
     snapshot.status === 'finished' ? snapshot.timeMs : 0,
@@ -89,12 +89,12 @@ export const RacePage = () => {
   const submittedRef = useRef(false);
   const toastTimerRef = useRef<number | null>(null);
 
-  // Прогревает GLB до монтирования Canvas.
+  // Warms up the GLB before Canvas mounts.
   useEffect(() => {
     preloadVehicleModel();
   }, []);
 
-  // Взводит mount 3D-сцены на следующий кадр после отрисовки лоадера: монтирование тяжелое и блокирует main thread.
+  // Arms the 3D scene mount on the next frame after the loader renders: mounting is heavy and blocks the main thread.
   useEffect(() => {
     if (canvasArmed || !config) {
       return;
@@ -109,7 +109,7 @@ export const RacePage = () => {
     };
   }, [canvasArmed, config]);
 
-  // Скрывает лоадер после первого представленного кадра сцены.
+  // Hides the loader after the scene's first presented frame.
   const handleFirstFrame = useCallback(() => {
     setSceneReady(true);
   }, []);
@@ -147,7 +147,7 @@ export const RacePage = () => {
     muted: false,
   });
 
-  // Рестарт заезда: сброс сессии, canvas и toast
+  // Race restart: resets session, canvas and toast
   const restart = useCallback(() => {
     if (!trackId || !config) {
       return;
@@ -158,7 +158,7 @@ export const RacePage = () => {
     setResetNonce((value) => value + 1);
     resetCameraShake();
     resetRaceSession(trackId, config.checkpoints.length);
-    // Поза = спавн сразу, чтобы миникарта не держала позицию прошлого заезда.
+    // Set pose to spawn right away so the minimap doesn't keep the previous race position.
     setVehiclePose(config.spawnPosition[0], config.spawnPosition[2], config.spawnRotationY);
     setRestartToast(true);
     if (toastTimerRef.current !== null) {
@@ -170,12 +170,12 @@ export const RacePage = () => {
     }, 2000);
   }, [config, trackId]);
 
-  // Переключение фоновой музыки (эффекты всегда слышны)
+  // Toggle background music (sound effects are always audible)
   const toggleMute = useCallback(() => {
     setMusicMuted((value) => !value);
   }, []);
 
-  // Выход в меню трасс: сброс сессии, чтобы музыка/статус не протекали
+  // Exit to track menu: reset session so music/status don't leak
   const exitToTracks = useCallback(() => {
     if (trackId && config) {
       resetRaceSession(trackId, config.checkpoints.length);
@@ -183,7 +183,7 @@ export const RacePage = () => {
     void navigate('/tracks');
   }, [config, navigate, trackId]);
 
-  // Финиш: фиксирует время и отправляет результат (если авторизован)
+  // Finish: locks in the time and submits the result (if authenticated)
   const onFinished = useCallback(() => {
     if (!trackId || !trackSlug || submittedRef.current) {
       return;
@@ -218,15 +218,15 @@ export const RacePage = () => {
       });
   }, [createResult, trackId, trackSlug, user]);
 
-  // Сбрасывает сессию и следы при смене трассы/конфига и при уходе со страницы.
+  // Resets session and skid marks on track/config change and on leaving the page.
   useEffect(() => {
     if (!trackId || !config) {
       return;
     }
     submittedRef.current = false;
     resetRaceSession(trackId, config.checkpoints.length);
-    // Поза = спавн сразу: иначе до первого физического кадра миникарта
-    // проецирует нулевую позу и маркер «прыгает» на старт при прогрузке трассы.
+    // Pose = spawn right away: otherwise, before the first physics frame the minimap
+    // projects a zero pose and the marker "jumps" to the start while the track loads.
     setVehiclePose(config.spawnPosition[0], config.spawnPosition[2], config.spawnRotationY);
     resetSkidMarks();
     resetCameraMode();
@@ -239,7 +239,7 @@ export const RacePage = () => {
     };
   }, [config, trackId]);
 
-  // Биндит клавиатуру: рестарт и пауза.
+  // Binds the keyboard: restart and pause.
   useEffect(() => {
     return bindRaceInput({
       onRestart: restart,
@@ -249,7 +249,7 @@ export const RacePage = () => {
     });
   }, [restart]);
 
-  // Чистит таймер toast при размонтировании.
+  // Clears the toast timer on unmount.
   useEffect(() => {
     return () => {
       if (toastTimerRef.current !== null) {
@@ -258,17 +258,17 @@ export const RacePage = () => {
     };
   }, []);
 
-  // После финиша показывает overlay с задержкой.
+  // Shows the finish overlay with a delay after finishing.
   useEffect(() => {
     if (hudStatus !== 'finished') {
       return;
     }
-    // Всегда даем сыграть finish-moment (FINISH! → время); CSS сам глушит motion
+    // Always let the finish-moment play (FINISH! → time); CSS itself dampens motion
     const id = window.setTimeout(() => setShowFinishOverlay(true), FINISH_OVERLAY_DELAY_MS);
     return () => window.clearTimeout(id);
   }, [hudStatus]);
 
-  // E2E: вешает __finishRaceForTest на window.
+  // E2E: attaches __finishRaceForTest to window.
   useEffect(() => {
     if (!trackId || !trackSlug) {
       return;

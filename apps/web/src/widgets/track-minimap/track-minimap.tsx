@@ -8,15 +8,15 @@ import {
 } from './minimap-projection';
 
 type TTrackMinimapProps = {
-  /** Конфиг трассы для отрисовки плана */
+  /** Track config to render the plan view from */
   config: TTrackConfig;
-  /** CSS-класс корневого SVG */
+  /** CSS class of the root SVG */
   className?: string;
-  /** Дополнительная SVG-начинка поверх плана (например, маркер машины) */
+  /** Extra SVG content on top of the plan (e.g. the vehicle marker) */
   children?: ReactNode;
 };
 
-/** SVG-план трассы видом сверху */
+/** Top-down SVG plan view of the track */
 export const TrackMinimap = ({ config, className, children }: TTrackMinimapProps) => {
   const points = config.centerline;
   if (points.length < 2) {
@@ -25,7 +25,7 @@ export const TrackMinimap = ({ config, className, children }: TTrackMinimapProps
 
   const projection = createMinimapProjection(config);
 
-  // Мировые XZ → координаты viewBox SVG
+  // World XZ → SVG viewBox coordinates
   const toSvg = (x: number, z: number): string => {
     const p = projection.project(x, z);
     return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;

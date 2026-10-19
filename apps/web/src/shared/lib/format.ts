@@ -1,4 +1,4 @@
-/** Считает время заезда в миллисекундах и приводит к виду mm:ss.ms */
+/** Formats a race time in milliseconds as mm:ss.ms */
 export const formatRaceTime = (ms: number): string => {
   const safeMs = Math.max(0, Math.floor(ms));
   const minutes = Math.floor(safeMs / 60_000);

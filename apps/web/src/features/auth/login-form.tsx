@@ -6,7 +6,7 @@ import { Button, TextField } from '@/shared/ui';
 import { useLoginMutation } from './api';
 import { isValidNickname, isValidPassword } from './validation';
 
-/** Форма входа с клиентской валидацией и ошибками API */
+/** Login form with client-side validation and API errors */
 export const LoginForm = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ export const LoginForm = () => {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Валидация и вызов login mutation
+  // Validation and login mutation call
   const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     const nextNicknameError = isValidNickname(nickname) ? null : t('auth.invalidNickname');

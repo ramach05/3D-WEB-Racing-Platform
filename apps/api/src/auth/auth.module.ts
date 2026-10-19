@@ -5,7 +5,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
-/** Модуль аутентификации. Класс — требование Nest Module. */
+/** Authentication module. Class is a Nest Module requirement. */
 @Module({
   imports: [
     JwtModule.registerAsync({

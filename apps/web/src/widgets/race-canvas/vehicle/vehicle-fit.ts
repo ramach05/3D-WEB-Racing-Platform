@@ -1,25 +1,25 @@
-/** Целевая длина кузова по капсуле (2 × COLLIDER_HALF_Z) */
+/** Target body length per capsule (2 × COLLIDER_HALF_Z) */
 export const VEHICLE_TARGET_LENGTH = 3.3;
-/** Целевая ширина кузова по капсуле (2 × COLLIDER_HALF_X) */
+/** Target body width per capsule (2 × COLLIDER_HALF_X) */
 export const VEHICLE_TARGET_WIDTH = 1.64;
 
 export type TVehicleBounds = {
-  /** Габариты AABB модели */
+  /** Model AABB dimensions */
   size: { x: number; y: number; z: number };
-  /** Минимум AABB */
+  /** AABB minimum */
   min: { x: number; y: number; z: number };
-  /** Центр AABB */
+  /** AABB center */
   center: { x: number; y: number; z: number };
 };
 
 export type TVehicleFit = {
-  /** Равномерный масштаб под целевую длину */
+  /** Uniform scale for the target length */
   scale: number;
-  /** Смещение: центр xz в 0, низ колес на y=0 */
+  /** Offset: center xz at 0, wheel bottoms at y=0 */
   offset: { x: number; y: number; z: number };
 };
 
-/** Считает scale/offset, чтобы длина модели ≈ targetLength, низ AABB лежал на y=0, центр xz — в начале координат. */
+/** Computes scale/offset so model length ≈ targetLength, AABB bottom rests on y=0, center xz at the origin. */
 export const computeVehicleFit = (
   bounds: TVehicleBounds,
   targetLength: number = VEHICLE_TARGET_LENGTH,
@@ -36,10 +36,10 @@ export const computeVehicleFit = (
   };
 };
 
-/** Ширина после fit (для проверки против капсулы) */
+/** Width after fit (for checking against the capsule) */
 export const fittedWidth = (bounds: TVehicleBounds, fit: TVehicleFit): number =>
   bounds.size.x * fit.scale;
 
-/** Длина после fit */
+/** Length after fit */
 export const fittedLength = (bounds: TVehicleBounds, fit: TVehicleFit): number =>
   bounds.size.z * fit.scale;

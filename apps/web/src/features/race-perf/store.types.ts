@@ -1,8 +1,8 @@
 export type TRacePerfSnapshot = {
-  /** Кадры в секунду за окно выборки */
+  /** Frames per second over the sampling window */
   fps: number;
-  /** Доля времени кадра от wall-time, % */
+  /** Frame work time share of wall time, % */
   cpuPercent: number;
-  /** JS-куча в МБ (Chrome); null без performance.memory */
+  /** JS heap in MB (Chrome); null without performance.memory */
   memMb: number | null;
 };

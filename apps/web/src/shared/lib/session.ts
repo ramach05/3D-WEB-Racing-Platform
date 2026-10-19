@@ -4,7 +4,7 @@ const LEGACY_AUTH_STORAGE_KEY = 'racing-auth';
 
 let accessTokenMemory: string | null = null;
 
-/** Читает access JWT из памяти (refresh — только httpOnly cookie) */
+/** Reads the access JWT from memory (refresh lives only in the httpOnly cookie) */
 export const readAuthSession = (): TAuthSession | null => {
   if (!accessTokenMemory) {
     return null;
@@ -12,12 +12,12 @@ export const readAuthSession = (): TAuthSession | null => {
   return { accessToken: accessTokenMemory };
 };
 
-/** Пишет access JWT в память */
+/** Stores the access JWT in memory */
 export const writeAuthSession = (session: TAuthSession): void => {
   accessTokenMemory = session.accessToken;
 };
 
-/** Удаляет access JWT из памяти и старый localStorage-ключ */
+/** Clears the access JWT from memory and removes the legacy localStorage key */
 export const clearAuthSession = (): void => {
   accessTokenMemory = null;
   try {

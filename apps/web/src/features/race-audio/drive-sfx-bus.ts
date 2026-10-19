@@ -1,31 +1,31 @@
 export type TDriveSfxSample = {
-  /** SFX-слой активен (racing + grounded path) */
+  /** SFX layer is active (racing + grounded path) */
   active: boolean;
-  /** Горизонтальная скорость, м/с */
+  /** Horizontal speed, m/s */
   speedMs: number;
-  /** Газ 0…1 */
+  /** Throttle 0…1 */
   throttle: number;
-  /** Тормоз 0…1 */
+  /** Brake 0…1 */
   brake: number;
-  /** Ручник 0…1 */
+  /** Handbrake 0…1 */
   handbrake: number;
-  /** Визг шин / масло-skid 0…1 */
+  /** Tire screech / oil-skid 0…1 */
   skidIntensity: number;
-  /** Сила масла 0…1 */
+  /** Oil strength 0…1 */
   oilStrength: number;
-  /** Число колес на луже 0…4 */
+  /** Wheels on an oil puddle 0…4 */
   wheelsOnOil: number;
-  /** Сила оффроуда 0…1 */
+  /** Off-road strength 0…1 */
   offRoadStrength: number;
-  /** Rumble поребрика 0…1 */
+  /** Kerb rumble 0…1 */
   kerbRumble: number;
-  /** Скрежет о стену 0…1 */
+  /** Wall scrape 0…1 */
   wallScrape: number;
-  /** Касание асфальта */
+  /** Touching the asphalt */
   grounded: boolean;
 };
 
-/** Нулевой sample — тишина */
+/** Zero sample — silence */
 export const IDLE_DRIVE_SFX_SAMPLE: TDriveSfxSample = {
   active: false,
   speedMs: 0,
@@ -45,15 +45,15 @@ let sample: TDriveSfxSample = { ...IDLE_DRIVE_SFX_SAMPLE };
 let pendingImpact = 0;
 let pendingOilSlap = 0;
 
-/** Пишет per-frame snapshot для SFX (без React) */
+/** Writes the per-frame snapshot for SFX (no React) */
 export const tickDriveSfxSample = (next: TDriveSfxSample): void => {
   sample = next;
 };
 
-/** Текущий snapshot для audio tick */
+/** Current snapshot for the audio tick */
 export const getDriveSfxSample = (): TDriveSfxSample => sample;
 
-/** Ставит one-shot удар (берется max с уже ожидающим) */
+/** Queues a one-shot impact (max with an already pending one) */
 export const pulseDriveImpact = (intensity: number): void => {
   const clamped = Math.min(1, Math.max(0, intensity));
   if (clamped > pendingImpact) {
@@ -61,14 +61,14 @@ export const pulseDriveImpact = (intensity: number): void => {
   }
 };
 
-/** Забирает и обнуляет ожидающий удар; 0 если нет */
+/** Takes and zeroes the pending impact; 0 if none */
 export const consumeDriveImpact = (): number => {
   const value = pendingImpact;
   pendingImpact = 0;
   return value;
 };
 
-/** One-shot «шлеп» при въезде на масло */
+/** One-shot slap when driving onto oil */
 export const pulseDriveOilSlap = (intensity: number): void => {
   const clamped = Math.min(1, Math.max(0, intensity));
   if (clamped > pendingOilSlap) {
@@ -76,14 +76,14 @@ export const pulseDriveOilSlap = (intensity: number): void => {
   }
 };
 
-/** Забирает oil-slap из очереди */
+/** Takes the oil-slap from the queue */
 export const consumeDriveOilSlap = (): number => {
   const value = pendingOilSlap;
   pendingOilSlap = 0;
   return value;
 };
 
-/** Сброс snapshot и очереди ударов */
+/** Resets the snapshot and impact queue */
 export const resetDriveSfx = (): void => {
   sample = { ...IDLE_DRIVE_SFX_SAMPLE };
   pendingImpact = 0;

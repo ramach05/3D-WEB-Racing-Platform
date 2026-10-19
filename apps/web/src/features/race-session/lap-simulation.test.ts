@@ -21,7 +21,7 @@ import {
 
 type TPoint = { x: number; z: number };
 
-/** Симуляция пути в направлении заезда (против роста индекса centerline), как `spawnRotationY` / стрелки — см. `race-direction.ts`. */
+/** Simulates driving in the race direction (against increasing centerline index), like `spawnRotationY` / arrows — see `race-direction.ts`. */
 const driveOffsetPath = (
   config: typeof coastalOvalTrack,
   lateralOffset: number,
@@ -59,7 +59,7 @@ const driveOffsetPath = (
   }
 };
 
-/** Симуляция как в CheckpointDetector. */
+/** Simulation mirroring CheckpointDetector. */
 const simulateRaceLaps = (
   config: typeof coastalOvalTrack,
   lapTotal: number,
@@ -247,7 +247,7 @@ describe('multi-lap race simulation', () => {
     expect(getTrackLineLocalCoords(after.x, after.z, line).lz).toBeGreaterThan(0);
     expect(getTrackLineLocalCoords(before.x, before.z, line).lz).toBeLessThan(0);
 
-    // Обратный проезд: -lz → +lz
+    // Reverse crossing: -lz → +lz
     const crossed = passedFinishLineForward(before.x, before.z, after.x, after.z, line);
     expect(crossed).toBe(false);
     expect(canRegisterLapCrossing(crossed, lapCooldown, lapTravel)).toBe(false);

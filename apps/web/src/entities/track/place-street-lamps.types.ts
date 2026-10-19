@@ -1,19 +1,19 @@
 import type { TTrackConfig } from './config.types';
 
 export type TPlacedStreetLamp = {
-  /** Мировая X */
+  /** World X */
   x: number;
-  /** Мировая Z */
+  /** World Z */
   z: number;
-  /** Поворот вокруг Y (рад): локальная +X кронштейна смотрит на дорогу. */
+  /** Rotation around Y (rad): local +X of the bracket faces the road. */
   rotationY: number;
-  /** +1 — внешняя сторона стадиона, −1 — внутренняя */
+  /** +1 — outer stadium side, −1 — inner */
   sideSign: 1 | -1;
 };
 
 export type TPlaceStreetLampsOptions = {
-  /** Конфиг трассы */
+  /** Track config */
   config: TTrackConfig;
-  /** Шаг вдоль centerline (м) */
+  /** Spacing along the centerline (m) */
   spacing?: number;
 };

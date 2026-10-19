@@ -1,20 +1,20 @@
 export type TVehiclePose = {
-  /** Мировая X */
+  /** World X */
   x: number;
-  /** Мировая Z */
+  /** World Z */
   z: number;
-  /** Курс вокруг Y, рад (0 = +Z) */
+  /** Heading around Y, rad (0 = +Z) */
   yaw: number;
 };
 
 const pose: TVehiclePose = { x: 0, z: 0, yaw: 0 };
 
-/** Пишет позу машины из useFrame без событий React (паттерн tickRace) */
+/** Writes the vehicle pose from useFrame without React events (tickRace pattern) */
 export const setVehiclePose = (x: number, z: number, yaw: number): void => {
   pose.x = x;
   pose.z = z;
   pose.yaw = yaw;
 };
 
-/** Читает последнюю позу машины (для миникарты, вне React-рендера) */
+/** Reads the latest vehicle pose (for the minimap, outside React renders) */
 export const getVehiclePose = (): TVehiclePose => pose;

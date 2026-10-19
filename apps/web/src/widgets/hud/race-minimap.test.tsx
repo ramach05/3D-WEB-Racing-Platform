@@ -20,7 +20,7 @@ const parseTranslate = (transform: string): { x: number; y: number } => {
   return { x: Number(x), y: Number(y) };
 };
 
-/** Точка centerline Coastal Oval (t=0 → эллипс 58×36) */
+/** Coastal Oval centerline point (t=0 → ellipse 58×36) */
 const ON_CENTERLINE = { x: 58, z: 0 };
 
 describe('RaceMinimap', () => {
@@ -61,9 +61,9 @@ describe('RaceMinimap', () => {
     });
     const center = parseTranslate(getTransform(container));
 
-    // Машина сместилась поперек дороги (нормаль в этой точке — вдоль X). Точка на
-    // миникарте обязана остаться на centerline: сдвиг не больше микро-погрешности
-    // кривизны, а не полной ширины полосы.
+    // The car shifted across the road (the normal at this point is along X). The minimap
+    // point must stay on the centerline: the shift is at most a micro-error of curvature,
+    // not the full lane width.
     setVehiclePose(ON_CENTERLINE.x - 6, ON_CENTERLINE.z, 0);
     act(() => {
       vi.advanceTimersByTime(16);

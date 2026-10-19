@@ -2,7 +2,7 @@ import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import type { TApiErrorBody } from '@racing/shared';
 import { flattenApiMessage } from '@racing/shared';
 
-/** Достает текст ошибки RTK Query для форм */
+/** Extracts RTK Query error text for forms */
 export const getRtkErrorMessage = (error: FetchBaseQueryError): string => {
   if (
     error.status === 'FETCH_ERROR' ||

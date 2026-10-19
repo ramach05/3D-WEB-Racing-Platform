@@ -11,7 +11,7 @@ const MAX_TREES_COASTAL = 120;
 const MAX_TREES_NIGHT = 100;
 const BANDS = [10, 18, 28, 36] as const;
 
-/** Детерминированный PRNG (mulberry32) */
+/** Deterministic PRNG (mulberry32) */
 const createRng = (seed: number): (() => number) => {
   let state = seed >>> 0;
   return () => {
@@ -23,7 +23,7 @@ const createRng = (seed: number): (() => number) => {
   };
 };
 
-/** Хэш slug трассы → seed для RNG */
+/** Track slug hash → RNG seed */
 const hashSlug = (slug: string): number => {
   let hash = 2166136261;
   for (let i = 0; i < slug.length; i += 1) {
@@ -33,7 +33,7 @@ const hashSlug = (slug: string): number => {
   return hash >>> 0;
 };
 
-/** Квадрат расстояния до ближайшей точки centerline */
+/** Squared distance to the nearest centerline point */
 const distanceToCenterlineSq = (x: number, z: number, centerline: TLoopPoint[]): number => {
   if (centerline.length === 0) {
     return Infinity;
@@ -59,7 +59,7 @@ const distanceToCenterlineSq = (x: number, z: number, centerline: TLoopPoint[]):
   return best;
 };
 
-/** Точка внутри любой из exclusion-зон */
+/** Point inside any of the exclusion zones */
 const isInsideAnyZone = (x: number, z: number, zones: TOrientedBox[]): boolean => {
   for (const zone of zones) {
     if (isInsideCheckpoint(x, z, zone)) {
@@ -69,7 +69,7 @@ const isInsideAnyZone = (x: number, z: number, zones: TOrientedBox[]): boolean =
   return false;
 };
 
-/** Достаточно ли далеко от уже поставленных деревьев */
+/** Whether the point is far enough from already placed trees */
 const isFarEnough = (x: number, z: number, placed: TPlacedTree[], minDist: number): boolean => {
   const minSq = minDist * minDist;
   for (const tree of placed) {
@@ -82,7 +82,7 @@ const isFarEnough = (x: number, z: number, placed: TPlacedTree[], minDist: numbe
   return true;
 };
 
-/** Внешняя нормаль (от центра овала/стадиона) в точке centerline. */
+/** Outward normal (away from the oval/stadium center) at a centerline point. */
 const outwardNormalAt = (
   points: TLoopPoint[],
   index: number,
@@ -98,7 +98,7 @@ const outwardNormalAt = (
   const len = Math.hypot(dx, dz) || 1;
   let nx = -dz / len;
   let nz = dx / len;
-  // Внешняя сторона: нормаль, направленная от (0,0)
+  // Outer side: normal pointing away from (0,0)
   const midX = (current.x + next.x) / 2;
   const midZ = (current.z + next.z) / 2;
   if (nx * midX + nz * midZ < 0) {
@@ -108,7 +108,7 @@ const outwardNormalAt = (
   return { nx, nz, px: midX, pz: midZ };
 };
 
-/** Расставляет деревья снаружи трассы: отсев по коридору, зоне трибун и минимальному шагу. */
+/** Places trees outside the track: filtered by corridor, grandstand zone and minimum spacing. */
 export const placeTrackTrees = ({
   config,
   maxTrees,
@@ -149,7 +149,7 @@ export const placeTrackTrees = ({
         rotationY: rng() * Math.PI * 2,
       });
 
-      // Иногда кучка из 2–3 деревьев рядом
+      // Sometimes a cluster of 2–3 trees nearby
       if (rng() < 0.28) {
         const clusterCount = 1 + Math.floor(rng() * 2);
         for (let c = 0; c < clusterCount; c += 1) {
@@ -167,7 +167,7 @@ export const placeTrackTrees = ({
     }
   }
 
-  // Перемешиваем кандидатов детерминированно
+  // Shuffle candidates deterministically
   for (let i = candidates.length - 1; i > 0; i -= 1) {
     const j = Math.floor(rng() * (i + 1));
     const tmp = candidates[i]!;
@@ -202,7 +202,7 @@ export const placeTrackTrees = ({
   return placed;
 };
 
-/** Экспорт констант для тестов */
+/** Constants exported for tests */
 export const TREE_PLACEMENT_LIMITS = {
   coastalMax: MAX_TREES_COASTAL,
   nightMax: MAX_TREES_NIGHT,

@@ -23,7 +23,7 @@ describe('HomePage', () => {
 
     expect(screen.queryByRole('link', { name: /вход|log in/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /регистрация|sign up/i })).not.toBeInTheDocument();
-    // RU-локализация CTA — «ЖМИ START» (латиница), EN — «PRESS START»
+    // RU-locale CTA text is latin "START", EN is "PRESS START"
     expect(screen.getByRole('link', { name: /старт|start/i })).toBeInTheDocument();
   });
 

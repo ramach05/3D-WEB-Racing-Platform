@@ -16,18 +16,18 @@ import {
 } from '@/widgets/race-canvas/lib/tree-geometry';
 
 type TTrackTreeCollidersProps = {
-  /** Конфиг трассы — тот же список деревьев, что у визуала */
+  /** Track config — same tree list as the visuals */
   config: TTrackConfig;
 };
 
 type TTreeColliderProps = {
-  /** Размещенное дерево */
+  /** Placed tree */
   tree: TPlacedTree;
-  /** Индекс для ключа */
+  /** Index used in the key */
   index: number;
 };
 
-/** Fixed-тело одного дерева: ствол + аппроксимация кроны */
+/** Fixed body of one tree: trunk + crown approximation */
 const TreeCollider = ({ tree, index }: TTreeColliderProps) => {
   const { x, z, groundY, scale, kind } = tree;
   const kindScale = TRUNK_KIND_SCALE[kind];
@@ -72,7 +72,7 @@ const TreeCollider = ({ tree, index }: TTreeColliderProps) => {
   );
 };
 
-/** Fixed-коллайдеры деревьев внутри Physics (ствол + крона). Визуал остается в TrackTrees вне Physics. */
+/** Fixed tree colliders inside Physics (trunk + crown). Visuals stay in TrackTrees outside Physics. */
 export const TrackTreeColliders = ({ config }: TTrackTreeCollidersProps) => {
   const trees = useMemo(() => placeTrackTreesWithGround(config), [config]);
 

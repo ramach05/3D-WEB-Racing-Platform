@@ -3,22 +3,22 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/ui';
 
 type TRacePauseMenuProps = {
-  /** Показать меню паузы */
+  /** Show the pause menu */
   open: boolean;
-  /** Продолжить заезд */
+  /** Resume the race */
   onResume: () => void;
-  /** Рестарт заезда */
+  /** Restart the race */
   onRestart: () => void;
-  /** Выход к списку трасс */
+  /** Exit to the track list */
   onExit: () => void;
 };
 
-/** Модалка паузы: Esc, ловушка фокуса на кнопках */
+/** Pause modal: Esc, focus trap on the buttons */
 export const RacePauseMenu = ({ open, onResume, onRestart, onExit }: TRacePauseMenuProps) => {
   const { t } = useTranslation();
   const firstButton = useRef<HTMLButtonElement>(null);
 
-  // Фокус на первую кнопку при открытии паузы.
+  // Focus the first button when the pause opens.
   useEffect(() => {
     if (open) {
       firstButton.current?.focus();

@@ -4,7 +4,7 @@ import { useAuthHydrated, useAuthUser, useGetMeQuery } from '@/features/auth';
 import { formatRaceTime, readAuthSession } from '@/shared/lib';
 import { PageShell, ProfilePageSkeleton, StatusText } from '@/shared/ui';
 
-/** Личный кабинет: профиль и лучшие времена */
+/** Account page: profile and best times */
 export const ProfilePage = () => {
   const { t } = useTranslation();
   const user = useAuthUser();

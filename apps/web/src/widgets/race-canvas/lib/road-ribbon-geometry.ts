@@ -1,16 +1,16 @@
 import { BufferAttribute, BufferGeometry } from 'three';
 import type { TLoopPoint } from '@/entities/track';
 
-/** Верх асфальта (y поверхности) */
+/** Top of asphalt (surface y) */
 export const ROAD_TOP_Y = 0.1;
 
-/** Толщина дорожного объема */
+/** Thickness of the road volume */
 export const ROAD_THICKNESS = 0.2;
 
 export type TRoadRibbonResult = {
-  /** Непрерывный меш дороги без копланарных пересечений */
+  /** Continuous road mesh without coplanar intersections */
   geometry: BufferGeometry;
-  /** Длина centerline по петле (м) — для тайлинга текстуры */
+  /** Centerline length along the loop (m) — for texture tiling */
   pathLength: number;
 };
 
@@ -19,7 +19,7 @@ type TEdgeNormal = {
   nz: number;
 };
 
-/** Нормаль влево относительно направления ребра a→b */
+/** Left normal relative to the a→b edge direction */
 const edgeNormal = (ax: number, az: number, bx: number, bz: number): TEdgeNormal => {
   const dx = bx - ax;
   const dz = bz - az;
@@ -28,9 +28,9 @@ const edgeNormal = (ax: number, az: number, bx: number, bz: number): TEdgeNormal
 };
 
 /**
- * Непрерывная лента асфальта по замкнутому centerline.
- * Одна поверхность вместо overlapping box-сегментов — без z-fighting.
- * Поддерживает per-point Y (elevated sections) и per-point roadWidth.
+ * Continuous asphalt ribbon along a closed centerline.
+ * A single surface instead of overlapping box segments — no z-fighting.
+ * Supports per-point Y (elevated sections) and per-point roadWidth.
  */
 export const buildRoadRibbonGeometry = (
   centerline: readonly TLoopPoint[],
@@ -120,7 +120,7 @@ export const buildRoadRibbonGeometry = (
   rightX[n] = rightX[0]!;
   rightZ[n] = rightZ[0]!;
 
-  /** 4 вершины на станцию: topL, topR, botL, botR */
+  /** 4 vertices per station: topL, topR, botL, botR */
   const vertsPerStation = 4;
   const vertexCount = stationCount * vertsPerStation;
   const positions = new Float32Array(vertexCount * 3);
@@ -153,7 +153,7 @@ export const buildRoadRibbonGeometry = (
     setVertex(i, 3, rightX[i]!, yBot + yOff, rightZ[i]!, 1, v);
   }
 
-  /** На сегмент: top + bottom + left + right = 8 треугольников */
+  /** Per segment: top + bottom + left + right = 8 triangles */
   const indices = new Uint32Array(n * 8 * 3);
   let indexWrite = 0;
   const pushQuad = (a: number, b: number, c: number, d: number) => {

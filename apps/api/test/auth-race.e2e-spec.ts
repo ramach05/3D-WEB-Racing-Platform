@@ -27,7 +27,7 @@ type TTrackBody = {
   isAvailable: boolean;
 };
 
-/** Достаёт Set-Cookie пару name=value для refresh */
+/** Extracts the Set-Cookie name=value pair for the refresh cookie */
 const pickRefreshCookie = (res: request.Response): string => {
   const header = res.headers['set-cookie'];
   const cookies = Array.isArray(header) ? header : header ? [header] : [];
@@ -36,7 +36,7 @@ const pickRefreshCookie = (res: request.Response): string => {
   return (match ?? '').split(';')[0] ?? '';
 };
 
-/** Поднимает приложение с отдельной SQLite и прогоняет критичный путь API */
+/** Boots the app on a dedicated SQLite and exercises the critical API path */
 describe('API e2e', () => {
   let app: INestApplication;
   let server: ReturnType<INestApplication['getHttpServer']>;
@@ -157,7 +157,7 @@ describe('API e2e', () => {
       .expect(201);
     const oldCookie = pickRefreshCookie(login);
 
-    // Refresh с cookie, но без CSRF-заголовка — 403 (защита кросс-сайтовых POST)
+    // Refresh with a cookie but without the CSRF header — 403 (cross-site POST protection)
     await request(server).post('/auth/refresh').set('Cookie', oldCookie).expect(403);
 
     const refreshed = await request(server)
@@ -171,17 +171,17 @@ describe('API e2e', () => {
 
     await request(server).get('/auth/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
 
-    // Старый refresh после ротации больше недействителен
+    // The old refresh token is invalid after rotation
     await request(server)
       .post('/auth/refresh')
       .set('Cookie', oldCookie)
       .set('X-Requested-With', 'XMLHttpRequest')
       .expect(401);
 
-    // Запрос вообще без cookie — молчаливый 204 (гость), а не 401
+    // Request without any cookie — silent 204 (guest), not 401
     await request(server).post('/auth/refresh').expect(204);
 
-    // Logout отзывает текущую сессию и чистит cookie
+    // Logout revokes the current session and clears the cookie
     await request(server)
       .post('/auth/logout')
       .set('Cookie', newCookie)

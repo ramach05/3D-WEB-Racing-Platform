@@ -7,7 +7,7 @@ import { getRaceHudSnapshot } from '@/features/race-session';
 const RAIN_COUNT = 5000;
 const RAIN_HEIGHT = 42;
 const RAIN_RADIUS = 26;
-/** Скорость падения (м/сек) — ливень */
+/** Fall speed (m/s) — downpour */
 const RAIN_FALL_SPEED = 48;
 
 const offsets = new Float32Array(RAIN_COUNT);
@@ -18,7 +18,7 @@ for (let i = 0; i < RAIN_COUNT; i += 1) {
 const tmpCamPos = new Vector3();
 const tmpRot = new Matrix4();
 
-/** Система дождевых частиц: куб следует за камерой, наклон от ветра */
+/** Rain particle system: cube follows the camera, tilted by wind */
 export const RainSystem = () => {
   const meshRef = useRef<InstancedMesh>(null);
   const { camera } = useThree();
@@ -26,24 +26,24 @@ export const RainSystem = () => {
   const windZ = useRef(0);
 
   useFrame(() => {
-    // Пауза только в меню-pause; на countdown/finished дождь продолжает идти.
+    // Pause only in the pause menu; rain keeps falling on countdown/finished.
     if (getRaceHudSnapshot().status === 'paused') return;
     const mesh = meshRef.current;
     if (!mesh) return;
 
-    // Копируем позицию камеры (дождь следует за видимой областью)
+    // Copy camera position (rain follows the visible area)
     camera.getWorldPosition(tmpCamPos);
     const camX = tmpCamPos.x;
     const camZ = tmpCamPos.z;
 
-    // Ветер медленно дрейфует
+    // Wind drifts slowly
     windX.current += 0.004;
     windZ.current += 0.005;
     const wX = Math.sin(windX.current * 0.3) * 3.2;
     const wZ = Math.cos(windZ.current * 0.2) * 2.4;
 
-    // Billboard: все плоскости разворачиваются к камере общим поворотом, иначе
-    // квады стоят в мире XY и при взгляде вдоль оси Z превращаются в невидимую кромку
+    // Billboard: all quads share the camera rotation, otherwise
+    // XY-oriented quads become an invisible edge when viewed along Z
     tmpRot.extractRotation(camera.matrixWorld);
     const r = tmpRot.elements;
     const array = mesh.instanceMatrix.array as Float32Array;
@@ -59,7 +59,7 @@ export const RainSystem = () => {
       const sx = 0.02;
       const sy = 0.5 + y * 0.012;
       const o = i * 16;
-      // M = T * R * S: столбцы матрицы = столбцы поворота, умноженные на scale
+      // M = T * R * S: matrix columns = rotation columns scaled by scale
       array[o] = r[0]! * sx;
       array[o + 1] = r[1]! * sx;
       array[o + 2] = r[2]! * sx;

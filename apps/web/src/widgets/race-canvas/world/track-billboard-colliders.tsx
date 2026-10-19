@@ -11,20 +11,20 @@ import {
 } from '@/widgets/race-canvas/lib/billboard';
 
 type TTrackBillboardCollidersProps = {
-  /** Конфиг трассы — тот же список щитов, что у визуала */
+  /** Track config — same billboard list as the visuals */
   config: TTrackConfig;
 };
 
 type TBillboardColliderProps = {
-  /** Размещенный щит */
+  /** Placed billboard */
   billboard: TPlacedBillboard;
-  /** Индекс для ключа */
+  /** Index used in the key */
   index: number;
 };
 
 const FRICTION = 0.4;
 
-/** Fixed-тело одного щита: два столба + панель */
+/** Fixed body of one billboard: two posts + panel */
 const BillboardCollider = ({ billboard, index }: TBillboardColliderProps) => {
   const postCenterY = BILLBOARD_POST_HEIGHT / 2;
 
@@ -76,7 +76,7 @@ const BillboardCollider = ({ billboard, index }: TBillboardColliderProps) => {
   );
 };
 
-/** Fixed-коллайдеры рекламных щитов внутри Physics. Визуал остается в TrackBillboards вне Physics. */
+/** Fixed billboard colliders inside Physics. Visuals stay in TrackBillboards outside Physics. */
 export const TrackBillboardColliders = ({ config }: TTrackBillboardCollidersProps) => {
   const billboards = useMemo(() => placeBillboards({ config }), [config]);
 

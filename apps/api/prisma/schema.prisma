@@ -16,7 +16,7 @@ model User {
   refreshSessions RefreshSession[]
 }
 
-/** Серверная refresh-сессия: в БД только hash opaque-токена */
+/** Server-side refresh session: the DB stores only the opaque token hash */
 model RefreshSession {
   id           String    @id @default(cuid())
   userId       String

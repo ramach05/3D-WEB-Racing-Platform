@@ -1,23 +1,23 @@
 import type { TTrackConfig } from '@/entities/track';
 
-/** Ширина viewBox миникарты */
+/** Minimap viewBox width */
 export const MINIMAP_VIEW_WIDTH = 200;
 
-/** Высота viewBox миникарты */
+/** Minimap viewBox height */
 export const MINIMAP_VIEW_HEIGHT = 120;
 
 export type TMinimapProjection = {
-  /** Мировые XZ → координаты viewBox SVG */
+  /** World XZ → SVG viewBox coordinates */
   project: (x: number, z: number) => { x: number; y: number };
   /**
-   * Мировые XZ → viewBox, но точка сначала притягивается к ближайшему месту на
-   * centerline. Убирает боковой сдвиг машины поперек дороги: маркер едет только
-   * вдоль трассы (лонгитюда) и зависит лишь от курса, а не от полосовой позиции.
+   * World XZ → viewBox, but the point is first snapped to the nearest place on the
+   * centerline. Removes the car's lateral offset across the road: the marker travels only
+   * along the track (longitudinally) and depends on heading only, not on lane position.
    */
   projectOnCenterline: (x: number, z: number) => { x: number; y: number };
 };
 
-/** Строит проекцию мир→viewBox по centerline и ширине дороги трассы */
+/** Builds the world→viewBox projection from the track centerline and road width */
 export const createMinimapProjection = (config: TTrackConfig): TMinimapProjection => {
   const points = config.centerline;
   const xs = points.map((point) => point.x);
@@ -37,7 +37,7 @@ export const createMinimapProjection = (config: TTrackConfig): TMinimapProjectio
 
   const pointCount = points.length;
 
-  // Ближайшая точка на замкнутой полилинии centerline: проекция на каждый отрезок.
+  // Nearest point on the closed centerline polyline: projection onto each segment.
   const nearestOnCenterline = (x: number, z: number): { x: number; z: number } => {
     if (pointCount < 2) {
       return { x: points[0]?.x ?? x, z: points[0]?.z ?? z };

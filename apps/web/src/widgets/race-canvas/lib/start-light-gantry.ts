@@ -2,7 +2,7 @@ import type { TCountdownStep, TRaceStatus } from '@/features/race-session';
 
 export const START_LAMP_COUNT = 5;
 
-/** Геометрия F1-gantry — визуал и коллайдеры из одних чисел */
+/** F1-gantry geometry — visuals and colliders derived from the same numbers */
 export const GANTRY_ROAD_TOP_Y = 0.1;
 export const GANTRY_POST_OUTSET = 0.55;
 export const GANTRY_POST_WIDTH = 0.28;
@@ -14,72 +14,72 @@ export const GANTRY_PANEL_WIDTH = 3.6;
 export const GANTRY_PANEL_HEIGHT = 0.85;
 export const GANTRY_PANEL_DEPTH = 0.28;
 
-/** Геометрия одной F1 lamp bay (козырек, ниша, bezel, диск линзы). Коллайдеры панели не меняются — только визуал. */
+/** Geometry of one F1 lamp bay (hood, recess, bezel, lens disc). Panel colliders stay unchanged — visual only. */
 export const START_LAMP_BAY = {
-  /** Радиус светящегося диска линзы */
+  /** Radius of the glowing lens disc */
   lensRadius: 0.2,
-  /** Внешний радиус металлического кольца */
+  /** Outer radius of the metal ring */
   bezelOuterRadius: 0.255,
-  /** Глубина кольца по Z */
+  /** Ring depth along Z */
   bezelDepth: 0.055,
-  /** Глубина темной ниши в корпусе */
+  /** Depth of the dark recess in the housing */
   recessDepth: 0.07,
-  /** Радиус ниши (чуть больше bezel) */
+  /** Recess radius (slightly larger than bezel) */
   recessRadius: 0.27,
-  /** Шаг между центрами ламп по X */
+  /** Spacing between lamp centers along X */
   spacing: 0.62,
-  /** Вынос лицевой плоскости от передней грани панели */
+  /** Face plane outset from the panel front face */
   faceOutset: 0.02,
   hood: {
     width: 0.52,
     height: 0.06,
     depth: 0.22,
-    /** Смещение центра козырька вверх от центра линзы */
+    /** Hood center offset upward from the lens center */
     offsetY: 0.28,
-    /** Вынос козырька вперед от плоскости линзы */
+    /** Hood outset forward from the lens plane */
     offsetZ: 0.08,
   },
-  /** Emissive выключенной линзы (еле видимая LED-сетка) */
+  /** Emissive of an unlit lens (barely visible LED grid) */
   idleEmissiveIntensity: 0.08,
-  /** Emissive включенной линзы — ярко днем без Bloom */
+  /** Emissive of a lit lens — bright in daylight without Bloom */
   litEmissiveIntensity: 6.5,
 } as const;
 
 /**
- * Stadium-прожекторы на столбах gantry (Night City).
- * Крепление на внутренней грани столба: пластина → кронштейн → корпус.
- * 2 шт. (лево/право); aim — на линию финиша; Spot из линзы.
- * Важно: Group.lookAt направляет +Z на цель (не −Z, как у Camera).
+ * Stadium floodlights on the gantry posts (Night City).
+ * Mounted on the inner face of the post: plate → bracket → housing.
+ * 2 pcs (left/right); aim — at the finish line; Spot from the lens.
+ * Important: Group.lookAt points +Z at the target (not −Z like Camera).
  */
 export const GANTRY_FLOOD = {
-  /** Опускание узла крепления от центра балки (под низом балки) */
+  /** Mount node drop from the beam center (below the beam bottom) */
   mountDropY: 0.22,
-  /** Смещение пластины по |Z| от оси столба (чуть к спавну) */
+  /** Plate offset along |Z| from the post axis (slightly toward spawn) */
   mountZOffset: 0.03,
-  /** Пластина на внутренней грани столба (к полотну) */
+  /** Plate on the inner face of the post (toward the panel) */
   mountPlate: {
     width: 0.08,
     height: 0.1,
     depth: 0.025,
   },
-  /** Короткий кронштейн к полотну */
+  /** Short bracket toward the panel */
   arm: {
     radius: 0.012,
     length: 0.12,
   },
-  /** Вилка (yoke) на конце кронштейна */
+  /** Yoke at the bracket end */
   yoke: {
     width: 0.07,
     height: 0.032,
     depth: 0.028,
   },
-  /** Компактный корпус прожектора */
+  /** Compact flood housing */
   housing: {
     width: 0.11,
     height: 0.065,
     depth: 0.13,
   },
-  /** Козырек над линзой */
+  /** Hood above the lens */
   hood: {
     width: 0.12,
     height: 0.014,
@@ -87,32 +87,32 @@ export const GANTRY_FLOOD = {
     offsetY: 0.032,
     offsetZ: 0.02,
   },
-  /** Линза / Spot на передней грани (+Z после Group.lookAt). Диск, не сфера — свечение только со стороны трассы. */
+  /** Lens / Spot on the front face (+Z after Group.lookAt). Disc, not sphere — glow only from the track side. */
   lens: {
     localY: -0.005,
     localZ: 0.068,
     radius: 0.026,
   },
-  /** Aim |Z| на линии финиша (шахматка ≈ 0) */
+  /** Aim |Z| at the finish line (checker ≈ 0) */
   aimZ: 0.08,
-  /** Aim |X| — середина своей половины полотна */
+  /** Aim |X| — middle of its own half of the panel */
   aimXFraction: 0.22,
-  /** Emissive линзы под Bloom */
+  /** Lens emissive for Bloom */
   lensEmissiveIntensity: 1.6,
 } as const;
 
-/** SpotLight: пятно на линии финиша */
+/** SpotLight: pool of light on the finish line */
 export const GANTRY_FLOOD_SPOT = {
   intensity: 85,
   distance: 18,
-  /** ~35° — компактное пятно на шахматку */
+  /** ~35° — compact pool on the checker */
   angle: 0.62,
   penumbra: 0.75,
   decay: 2,
 } as const;
 
 /**
- * Spill у столбов убран — засвечивал столб вместо трассы.
+ * Spill at the posts was removed — it lit the post instead of the track.
  * @deprecated
  */
 export const GANTRY_FLOOD_POINT = {
@@ -121,13 +121,13 @@ export const GANTRY_FLOOD_POINT = {
   decay: 2,
 } as const;
 
-/** 2 прожектора: левый/правый столб */
+/** 2 floods: left/right post */
 export const GANTRY_FLOOD_PLACEMENTS = [
   { sideX: -1, sideZ: 1 },
   { sideX: 1, sideZ: 1 },
 ] as const;
 
-/** Сколько крайних ламп горят на шаге countdown (3→2→1); 0 = все гаснут (GO) */
+/** How many edge lamps are lit at each countdown step (3→2→1); 0 = all go dark (GO) */
 const LIT_BY_COUNTDOWN_STEP: Record<TCountdownStep, number> = {
   3: 2,
   2: 4,
@@ -135,10 +135,10 @@ const LIT_BY_COUNTDOWN_STEP: Record<TCountdownStep, number> = {
   0: 0,
 };
 
-/** Полный цикл мигания финишных огней (с): 0.5 on + 0.5 off */
+/** Full finish-lamp blink cycle (s): 0.5 on + 0.5 off */
 export const FINISH_LAMP_BLINK_PERIOD_S = 1;
 
-/** Число горящих крайних ламп по HUD-статусу (симметрично от краев к центру). */
+/** Number of lit edge lamps by HUD status (symmetric from the edges toward the center). */
 export const litCountForHud = (
   status: TRaceStatus,
   countdownStep: TCountdownStep | null,
@@ -149,7 +149,7 @@ export const litCountForHud = (
   return 0;
 };
 
-/** Лампа index (0..n-1) горит, если litCount крайних включены. */
+/** Lamp index (0..n-1) is lit if it is among the litCount edge lamps. */
 export const isLampLit = (
   index: number,
   litCount: number,
@@ -165,7 +165,7 @@ export const isLampLit = (
   return index < half || index >= lampCount - half;
 };
 
-/** Square-wave мигание финишных огней (~1 Гц, 50% duty). Без sin — как у реальных реле/светофоров. */
+/** Square-wave blink of the finish lamps (~1 Hz, 50% duty). No sin — like real relays/traffic lights. */
 export const isFinishLampBlinkOn = (
   elapsedSeconds: number,
   periodS = FINISH_LAMP_BLINK_PERIOD_S,

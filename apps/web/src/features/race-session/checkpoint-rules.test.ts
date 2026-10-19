@@ -111,7 +111,7 @@ describe('passedFinishLine', () => {
 });
 
 describe('passedFinishLineForward', () => {
-  // Заезд: lz + → − (от спавна); обратное — не круг. См. race-direction.ts.
+  // Race direction: lz + → − (away from spawn); the reverse is not a lap. See race-direction.ts.
   it('accepts race-direction crossing (+lz → -lz)', () => {
     const line = coastalOvalTrack.startFinishLine;
     const sin = Math.sin(line.rotationY);

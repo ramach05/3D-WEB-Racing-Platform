@@ -1,28 +1,28 @@
 /**
- * Направление заезда относительно centerline.
+ * Race direction relative to the centerline.
  *
- * Centerline — замкнутый полилайн; `ratio` растет с индексом точек (0 → 1).
- * Машина на старте смотрит ПРОТИВ роста индекса: `spawnRotationY = atan2(dx, dz) + π`.
- * Стрелки на разметке и респавн задают то же направление.
+ * The centerline is a closed polyline; `ratio` grows with point index (0 → 1).
+ * The car at the start faces AGAINST index growth: `spawnRotationY = atan2(dx, dz) + π`.
+ * Track-painting arrows and respawn use the same direction.
  *
- * В локальных координатах финиша (`getTrackLineLocalCoords`):
- * - спавн на стороне `lz > 0`;
- * - круг засчитывается только при проезде `lz: + → −` (от спавна через линию);
- * - travel круга копится при УБЫВАЮЩЕМ `ratio` (см. `accumulateLapTravel`).
+ * In finish-line local coordinates (`getTrackLineLocalCoords`):
+ * - spawn is on the `lz > 0` side;
+ * - a lap counts only when crossing `lz: + → −` (from spawn through the line);
+ * - lap travel accumulates with a DECREASING `ratio` (see `accumulateLapTravel`).
  *
- * Не путать «вперед по centerline» (рост ratio) с «вперед по заезду» (падение ratio).
+ * Do not confuse "forward along the centerline" (ratio growth) with "forward in the race" (ratio decrease).
  */
 
-/** Разница yaw: касательная centerline → нос машины на старте. */
+/** Yaw difference: centerline tangent → car nose at the start. */
 export const CENTERLINE_TO_RACE_YAW_OFFSET = Math.PI;
 
-/** Yaw вдоль сегмента centerline (рост индекса). */
+/** Yaw along a centerline segment (index growth). */
 export const yawAlongCenterline = (dx: number, dz: number): number => Math.atan2(dx, dz);
 
-/** Yaw в направлении заезда / респавна (против роста индекса centerline). */
+/** Yaw facing the race / respawn direction (against centerline index growth). */
 export const yawFacingRaceDirection = (dx: number, dz: number): number =>
   yawAlongCenterline(dx, dz) + CENTERLINE_TO_RACE_YAW_OFFSET;
 
-/** После засчета круга ratio ≈ 1; cooldown снимаем, когда уехали от финиша в сторону убывающего ratio (типичный путь заезда). */
+/** After a lap counts, ratio ≈ 1; the cooldown clears once the car left the finish toward decreasing ratio (typical race path). */
 export const isRaceLapCooldownCleared = (ratio: number, cooldownRatio: number): boolean =>
   ratio < 1 - cooldownRatio;

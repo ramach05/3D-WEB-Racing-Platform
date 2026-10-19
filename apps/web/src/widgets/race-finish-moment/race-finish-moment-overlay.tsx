@@ -6,17 +6,17 @@ import { formatRaceTime } from '@/shared/lib';
 type TFinishMomentPhase = 'finish' | 'time';
 
 type TRaceFinishMomentOverlayProps = {
-  /** Показывать момент (до модалки результатов) */
+  /** Whether to show the moment (before the results modal) */
   active: boolean;
-  /** Время заезда, мс */
+  /** Race time, ms */
   timeMs: number;
-  /** Новый личный рекорд */
+  /** New personal best */
   isNewBest: boolean;
 };
 
 const FINISH_PHASE_MS = 1800;
 
-/** SEGA-момент финиша: FINISH! → время (и NEW BEST) перед модалкой результатов */
+/** SEGA finish moment: FINISH! → time (and NEW BEST) before the results modal */
 export const RaceFinishMomentOverlay = ({
   active,
   timeMs,
@@ -35,7 +35,7 @@ export const RaceFinishMomentOverlay = ({
     }
   }
 
-  // После фазы FINISH! переключает на показ времени.
+  // Switches to showing the time after the FINISH! phase.
   useEffect(() => {
     if (!visible) {
       return;

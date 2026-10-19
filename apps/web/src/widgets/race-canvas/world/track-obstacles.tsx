@@ -18,34 +18,34 @@ import {
 } from '@/widgets/race-canvas/lib/tire-hit-throttle';
 
 type TTrackObstaclesProps = {
-  /** Список препятствий (стопки шин / бочки) */
+  /** Obstacle list (tire stacks / barrels) */
   obstacles: TTrackObstacle[];
-  /** Счетчик рестарта — сбрасывает позу препятствий */
+  /** Restart counter — resets obstacle poses */
   resetNonce: number;
 };
 
-/** Грузовая трассовая покрышка (усредненная 315/80R22.5): внешний диаметр ~1.2 м, сечение ~0.32 м, посадочное отверстие ~0.56 м (рим 22.5") */
+/** Track tire (averaged 315/80R22.5): outer diameter ~1.2 m, section ~0.32 m, bore ~0.56 m (22.5" rim) */
 const TIRE_RADIUS = 0.44;
 const TIRE_TUBE = 0.16;
-/** Узкая светлая полоса на внешнем борту (чуть крупнее основного тора) */
+/** Narrow light band on the outer sidewall (slightly larger than the main torus) */
 const TIRE_SIDEWALL_RADIUS = TIRE_RADIUS + 0.025;
 const TIRE_SIDEWALL_TUBE = 0.06;
 const TIRE_STACK_MASS = 12;
 const TIRE_MASS = TIRE_STACK_MASS / 3;
 const TIRE_TIER_COUNT = 3;
-/** Шаг ярусов = ширина лежащей плашмя шины (2 × tube) с легким контактным сжатием */
+/** Tier spacing = flat tire width (2 × tube) with slight contact compression */
 const TIRE_TIER_SPACING = 0.35;
-/** Центр нижней шины от центра стопки (stack height 1.05, нижняя шина лежит на земле) */
+/** Bottom tire center from stack center (stack height 1.05, bottom tire rests on the ground) */
 const TIRE_BASE_Y = 0.16 - 1.05 / 2;
 /**
- * Коллайдер одной шины — цилиндр по внешнему габариту тора. Куб выступал углами за
- * видимый круг на ~25 см: машина цепляла невидимые углы и дрожала при задевании стопки.
+ * Single tire collider — cylinder over the torus outer extent. A cuboid stuck its corners
+ * ~25 cm past the visible circle: the car caught invisible corners and jittered on grazes.
  */
 const TIRE_COLLIDER_RADIUS = TIRE_RADIUS + TIRE_TUBE;
 const TIRE_COLLIDER_HALF_HEIGHT = 0.17;
-/** Скорость машины ниже этого порога — не удар, а касание: только «сход» препятствия с бампера */
+/** Below this car speed it is a graze, not an impact: only push the obstacle off the bumper */
 const HIT_MIN_SPEED = 0.5;
-/** Номинальная скорость слабого касания для импульса схода шины, м/с */
+/** Nominal slow-graze speed for the tire push-off impulse, m/s */
 const TIRE_TOUCH_IMPULSE_SPEED = 6;
 const TIRE_HIT_FACTOR = 0.8;
 const TIRE_IMPULSE_SCALE = 0.2;
@@ -64,14 +64,14 @@ const TIRE_TIER_OFFSETS = Array.from(
   (_, tier) => TIRE_BASE_Y + tier * TIRE_TIER_SPACING,
 );
 
-/** Одна шина — mesh без физики */
+/** One tire — mesh without physics */
 const TireVisual = () => (
   <group rotation={[Math.PI / 2, 0, 0]}>
     <mesh castShadow receiveShadow>
       <torusGeometry args={[TIRE_RADIUS, TIRE_TUBE, 10, 18]} />
       <meshStandardMaterial color={TIRE_RUBBER} roughness={0.86} metalness={0} />
     </mesh>
-    {/* Sidewall без cast — силуэт дает основной тор, меньше work в shadow passes */}
+    {/* Sidewall without cast — the main torus gives the silhouette, less work in shadow passes */}
     <mesh>
       <torusGeometry args={[TIRE_SIDEWALL_RADIUS, TIRE_SIDEWALL_TUBE, 8, 18]} />
       <meshStandardMaterial color={TIRE_SIDEWALL} roughness={0.88} metalness={0} />
@@ -79,14 +79,14 @@ const TireVisual = () => (
   </group>
 );
 
-/** Визуал топливной бочки — стандартная евробочка: ⌀0.6 × 0.9 м, обкатные обручи у верхнего и нижнего днищ */
+/** Fuel barrel visual — standard euro barrel: ⌀0.6 × 0.9 m, rolling hoops near top and bottom heads */
 const FuelBarrelVisual = () => (
   <group>
     <mesh castShadow receiveShadow position={[0, 0, 0]}>
       <cylinderGeometry args={[0.29, 0.29, 0.9, 16]} />
       <meshStandardMaterial color={BARREL_BODY} roughness={0.55} metalness={0.45} />
     </mesh>
-    {/* Обручи и крышка без cast — корпус дает читаемый силуэт */}
+    {/* Hoops and lid without cast — the body already reads as a clear silhouette */}
     <mesh position={[0, 0.27, 0]}>
       <cylinderGeometry args={[0.305, 0.305, 0.09, 16]} />
       <meshStandardMaterial color={BARREL_BAND} roughness={0.7} metalness={0.2} />
@@ -103,22 +103,22 @@ const FuelBarrelVisual = () => (
 );
 
 type TObstacleHit = {
-  /** Тело машины */
+  /** Vehicle body */
   vehicleBody: RapierRigidBody;
-  /** Тело препятствия */
+  /** Obstacle body */
   obstacleBody: RapierRigidBody;
-  /** Скорость машины в плоскости XZ, м/с (при касании — номинальная для импульса схода) */
+  /** Car speed in the XZ plane, m/s (on a graze — nominal, for the push-off impulse) */
   speed: number;
-  /** Единичное направление движения машины */
+  /** Unit car travel direction */
   dirX: number;
   dirZ: number;
 };
 
 /**
- * Общая часть удара: звук, тряска и штраф скорости. На малой скорости — не null,
- * а «касание»: направление «машина -> препятствие», чтобы шина/бочка сходила с бампера
- * и не стопорила машину (импульс считается от minImpulseSpeed).
- * null — столкновение не с машиной или вырожденное направление.
+ * Common hit part: sound, shake, speed penalty. At low speed it is not null but a "graze":
+ * direction "car -> obstacle" so the tire/barrel rolls off the bumper instead of stalling
+ * the car (impulse computed from minImpulseSpeed).
+ * null — collision not with the car, or degenerate direction.
  */
 const beginObstacleHit = (
   payload: CollisionEnterPayload,
@@ -136,7 +136,7 @@ const beginObstacleHit = (
 
   const vel = vehicleBody.linvel();
   const speed = Math.hypot(vel.x, vel.z);
-  // Повторный вход того же тела в churn-окне: только импульс схода, без штрафа/тряски
+  // Re-entry of the same body within the churn window: push-off impulse only, no penalty/shake
   if (!isObstacleHitThrottled(obstacleBody.handle, performance.now())) {
     registerTireHit(TIRE_HIT_FACTOR);
     const impact = mapImpactFromSpeed(speed);
@@ -159,7 +159,7 @@ const beginObstacleHit = (
   return { vehicleBody, obstacleBody, speed: minImpulseSpeed, dirX: dirX / len, dirZ: dirZ / len };
 };
 
-/** Не даем машине взлететь от реакции столкновения */
+/** Keep the car from flying up on collision reaction */
 const pinVehicleToGround = (vehicleBody: RapierRigidBody): void => {
   const vel = vehicleBody.linvel();
   if (vel.y > 0) {
@@ -167,7 +167,7 @@ const pinVehicleToGround = (vehicleBody: RapierRigidBody): void => {
   }
 };
 
-/** Удар по шине: разброс по ярусам, верхние подбрасываются сильнее */
+/** Tire hit: per-tier scatter, upper tiers tossed harder */
 const handleTireHit = (payload: CollisionEnterPayload, tier: number): void => {
   const hit = beginObstacleHit(payload, TIRE_TOUCH_IMPULSE_SPEED);
   if (!hit) {
@@ -180,7 +180,7 @@ const handleTireHit = (payload: CollisionEnterPayload, tier: number): void => {
   let impulseX = dirX * impulse;
   let impulseZ = dirZ * impulse;
 
-  // Верхние шины подбрасываем сильнее; легкий боковой разброс по ярусу
+  // Upper tires get tossed harder; slight lateral scatter within the tier
   const tierNorm = tier / (TIRE_TIER_COUNT - 1);
   const impulseY = impulse * TIRE_UP_IMPULSE_SCALE * (0.35 + tierNorm);
   const side = tier % 2 === 0 ? 1 : -1;
@@ -198,11 +198,11 @@ const handleTireHit = (payload: CollisionEnterPayload, tier: number): void => {
     true,
   );
 
-  // Шина под кузовом (машина перекатывается через стопку) — не пиним: решатель должен
-  // вытолкнуть корпус наверх, иначе машина вжимается в шины и трясется/зависает.
+  // Tire under the chassis (car rolling over the stack) — do not push: the solver should
+  // lift the body up, otherwise the car is pressed into the tires and jitters/hangs.
   const carPos = hit.vehicleBody.translation();
   const q = hit.vehicleBody.rotation();
-  // Форвард кузова = q * (0,0,1), проекция на XZ
+  // Body forward = q * (0,0,1), projected onto XZ
   const fx = 2 * (q.x * q.z + q.w * q.y);
   const fz = 1 - 2 * (q.x * q.x + q.y * q.y);
   if (
@@ -217,10 +217,10 @@ const handleTireHit = (payload: CollisionEnterPayload, tier: number): void => {
 };
 
 /**
- * Удар по бочке: отскок считается явно (см. lib/barrel-impact). Боковая скорость
- * уводит бочку из-под бампера, плечо импульса дает кувырок, цилиндрический коллайдер —
- * качение. Без боковой составляющей бочка прилипает к бамперу: машина каждый кадр
- * получает целевую скорость, то есть для решателя она нематериальна.
+ * Barrel hit: bounce is computed explicitly (see lib/barrel-impact). Lateral velocity
+ * pulls the barrel out from under the bumper, the impulse lever arm produces a tumble,
+ * the cylindrical collider gives rolling. Without the lateral component the barrel sticks
+ * to the bumper: the car gets a target speed every frame, i.e. it is weightless to the solver.
  */
 const handleBarrelHit = (payload: CollisionEnterPayload, sideBias: 1 | -1): void => {
   const hit = beginObstacleHit(payload, HIT_MIN_SPEED);
@@ -252,15 +252,15 @@ const handleBarrelHit = (payload: CollisionEnterPayload, sideBias: 1 | -1): void
 };
 
 type TTireStackProps = {
-  /** Центр стопки в мире */
+  /** Stack center in world space */
   position: TVec3;
-  /** Поворот вокруг Y */
+  /** Yaw rotation */
   rotationY: number;
-  /** Индекс препятствия для ключей */
+  /** Obstacle index for keys */
   stackIndex: number;
 };
 
-/** Три независимые шины — при ударе рассыпаются */
+/** Three independent tires — scatter on impact */
 const TireStack = ({ position, rotationY, stackIndex }: TTireStackProps) => (
   <group position={position} rotation={[0, rotationY, 0]}>
     {TIRE_TIER_OFFSETS.map((offsetY, tier) => (
@@ -292,9 +292,9 @@ const TireStack = ({ position, rotationY, stackIndex }: TTireStackProps) => (
   </group>
 );
 
-/** Препятствия у стенок — dynamic, отлетают при ударе */
+/** Obstacles near the walls — dynamic, knock away on impact */
 export const TrackObstacles = ({ obstacles, resetNonce }: TTrackObstaclesProps) => {
-  // Рестарт пересоздает тела — окна троттлинга по старым handle не нужны
+  // Restart recreates bodies — throttle windows for stale handles are not needed
   useEffect(() => {
     resetObstacleHitThrottle();
   }, [resetNonce]);
@@ -334,8 +334,8 @@ export const TrackObstacles = ({ obstacles, resetNonce }: TTrackObstaclesProps) 
             collisionGroups={TIRE_GROUPS}
             onCollisionEnter={(payload) => handleBarrelHit(payload, index % 2 === 0 ? 1 : -1)}
           >
-            {/* Масса на коллайдере: на RigidBody она не применяется, а инерция
-                вращения считается из формы — иначе бочка почти невесома */}
+            {/* Mass goes on the collider: on RigidBody it is not applied, and rotational
+                inertia is derived from the shape — otherwise the barrel is nearly weightless */}
             <CylinderCollider
               args={[obstacle.size[1] / 2, obstacle.size[0] / 2]}
               mass={BARREL_MASS}

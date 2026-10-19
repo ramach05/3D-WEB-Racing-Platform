@@ -14,7 +14,7 @@ const prisma = new PrismaClient({ adapter });
 
 const TEST_PASSWORD = '1234';
 
-/** Демо-ники для заполнения таблицы лидеров */
+/** Demo nicknames to populate the leaderboard */
 const DEMO_NICKNAMES = [
   'rival_racer',
   'neon_fox',
@@ -28,7 +28,7 @@ const DEMO_NICKNAMES = [
   'blaze_nova',
 ] as const;
 
-/** Лучшие времена на Coastal Oval */
+/** Best times on Coastal Oval */
 const COASTAL_TIMES_MS = [
   27_450, // rival_racer
   27_980, // neon_fox
@@ -42,7 +42,7 @@ const COASTAL_TIMES_MS = [
   44_700, // test_user
 ] as const;
 
-/** Лучшие времена на Night City */
+/** Best times on Night City */
 const NIGHT_TIMES_MS = [
   44_840, // neon_fox
   45_120, // rival_racer
@@ -53,7 +53,7 @@ const NIGHT_TIMES_MS = [
   61_900, // test_user
 ] as const;
 
-/** Лучшие времена на Storm Eight */
+/** Best times on Storm Eight */
 const STORM_TIMES_MS = [
   33_200, // drift_king
   33_780, // chrome_dash
@@ -63,7 +63,7 @@ const STORM_TIMES_MS = [
   52_800, // test_user
 ] as const;
 
-/** Даты для Storm Eight */
+/** Dates for Storm Eight */
 const STORM_DATES = [
   '2026-02-10T14:30:00.000Z', // drift_king
   '2026-03-18T16:20:00.000Z', // chrome_dash
@@ -73,7 +73,7 @@ const STORM_DATES = [
   '2026-09-01T12:00:00.000Z', // test_user
 ] as const;
 
-/** Фиксированные даты демо-заездов (январь–август 2026) */
+/** Fixed demo race dates (January–August 2026) */
 const COASTAL_DATES = [
   '2026-01-14T11:20:00.000Z', // rival_racer
   '2026-02-03T16:45:00.000Z', // neon_fox
@@ -97,7 +97,7 @@ const NIGHT_DATES = [
   '2026-09-01T12:00:00.000Z', // test_user
 ] as const;
 
-/** Заполняет локальную БД трассами, тестовыми пользователями и результатами лидеров */
+/** Fills the local DB with tracks, test users and leaderboard results */
 const seed = async (): Promise<void> => {
   const passwordHash = await bcrypt.hash(TEST_PASSWORD, 10);
 

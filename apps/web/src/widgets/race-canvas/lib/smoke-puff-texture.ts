@@ -1,9 +1,9 @@
 import { CanvasTexture, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace } from 'three';
 
-/** Разрешение soft-puff текстуры дыма (степень двойки) */
+/** Resolution of the soft-puff smoke texture (power of two) */
 const SMOKE_PUFF_SIZE = 64;
 
-/** Создает мягкую радиальную текстуру дыма (белый RGB + мягкая альфа). Одна shared texture на весь InstancedMesh. */
+/** Creates a soft radial smoke texture (white RGB + soft alpha). One shared texture for the whole InstancedMesh. */
 export const createSmokePuffTexture = (): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = SMOKE_PUFF_SIZE;

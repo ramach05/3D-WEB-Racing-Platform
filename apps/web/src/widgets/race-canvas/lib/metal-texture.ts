@@ -6,12 +6,12 @@ import {
   SRGBColorSpace,
 } from 'three';
 
-/** Мировой размер одного тайла профнастила (метры) */
+/** World size of one corrugated sheet tile (meters) */
 export const METAL_TILE_SIZE = 1.1;
 
 type TRng = () => number;
 
-/** LCG-генератор 0..1 из seed */
+/** LCG generator producing 0..1 from a seed */
 const createRng = (seedInit: number): TRng => {
   let seed = seedInit >>> 0;
   return () => {
@@ -20,14 +20,14 @@ const createRng = (seedInit: number): TRng => {
   };
 };
 
-/** Детерминированный хэш 2D-координат в 0..1 */
+/** Deterministic hash of 2D coordinates into 0..1 */
 const hash2 = (x: number, y: number, seed: number): number => {
   let n = (x * 374761393 + y * 668265263 + seed) | 0;
   n = (n ^ (n >>> 13)) * 1274126177;
   return ((n ^ (n >>> 16)) >>> 0) / 0xffffffff;
 };
 
-/** Value-noise 0..1 с билинейной интерполяцией */
+/** Value noise 0..1 with bilinear interpolation */
 const valueNoise = (x: number, y: number, seed: number): number => {
   const x0 = Math.floor(x);
   const y0 = Math.floor(y);
@@ -42,7 +42,7 @@ const valueNoise = (x: number, y: number, seed: number): number => {
   return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
 };
 
-/** Оцинкованный профнастил для навеса трибуны: ребра + легкий шум. albedo mid-gray — тинт через material.color. */
+/** Galvanized corrugated sheet for the grandstand canopy: ribs + light noise. Mid-gray albedo — tint via material.color. */
 export const createCorrugatedMetalTexture = (size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -61,14 +61,14 @@ export const createCorrugatedMetalTexture = (size = 256): CanvasTexture => {
       const u = x / size;
       const v = y / size;
 
-      // Гофры вдоль V (поперек навеса)
+      // Ripples along V (across the canopy)
       const ribs = 0.5 + 0.5 * Math.sin(u * Math.PI * 18);
       const micro = valueNoise(u * 40, v * 12, 41);
       const stain = valueNoise(u * 3, v * 5, 83);
       const grit = (next() - 0.5) * 8;
 
       let tone = 168 + (ribs - 0.5) * 48 + (micro - 0.5) * 16 + (stain - 0.5) * 12 + grit;
-      // Легкие царапины вдоль листа
+      // Light scratches along the sheet
       if (next() < 0.012) {
         tone += 10 + next() * 14;
       }
@@ -98,7 +98,7 @@ export const createCorrugatedMetalTexture = (size = 256): CanvasTexture => {
 
 let sharedMetalTexture: CanvasTexture | null = null;
 
-/** Один CanvasTexture металла на трибуны (без дублирования VRAM). Не dispose из компонентов — живет на время сессии гонки. */
+/** One shared metal CanvasTexture for grandstands (no duplicated VRAM). Do not dispose from components — lives for the race session. */
 export const getSharedCorrugatedMetalTexture = (size = 256): CanvasTexture => {
   if (!sharedMetalTexture) {
     sharedMetalTexture = createCorrugatedMetalTexture(size);

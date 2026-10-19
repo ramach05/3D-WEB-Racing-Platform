@@ -1,25 +1,25 @@
 export type TRaceStatus = 'ready' | 'countdown' | 'racing' | 'finished' | 'paused';
 
-/** Шаг отсчета: 3→2→1→0(GO), null вне countdown */
+/** Countdown step: 3→2→1→0(GO), null outside countdown */
 export type TCountdownStep = 3 | 2 | 1 | 0;
 
 export type TRaceHudSnapshot = {
-  /** Время текущего заезда, мс */
+  /** Current race time, ms */
   timeMs: number;
-  /** Лучшее время гостя на трассе, мс */
+  /** Guest's best time on the track, ms */
   bestMs: number | null;
-  /** Фаза заезда */
+  /** Race phase */
   status: TRaceStatus;
-  /** Активный шаг 3-2-1-GO во время countdown */
+  /** Active 3-2-1-GO step during countdown */
   countdownStep: TCountdownStep | null;
-  /** Скорость машины, км/ч */
+  /** Vehicle speed, km/h */
   speedKmh: number;
-  /** Индекс следующего чекпоинта */
+  /** Index of the next checkpoint */
   checkpointIndex: number;
-  /** Число чекпоинтов на круге */
+  /** Number of checkpoints per lap */
   checkpointTotal: number;
-  /** 0-based индекс текущего круга */
+  /** 0-based index of the current lap */
   lapIndex: number;
-  /** Всего кругов в заезде */
+  /** Total laps in the race */
   lapTotal: number;
 };

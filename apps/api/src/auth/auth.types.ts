@@ -9,16 +9,16 @@ export type TJwtPayload = {
 };
 
 export const ACCESS_TOKEN_EXPIRES = '15m';
-/** TTL opaque refresh-сессии */
+/** TTL of the opaque refresh session */
 export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** Алгоритм access-токена: фиксируется при подписи и проверке (против alg-confusion) */
+/** Access token algorithm: fixed at signing and verification (prevents alg-confusion) */
 export const JWT_ALGORITHM = 'HS256';
 export const JWT_ISSUER = 'racing-api';
 export const JWT_AUDIENCE = 'racing-web';
 
-/** Мертвые refresh-сессии удаляются спустя сутки после фактического истечения */
+/** Dead refresh sessions are deleted a day after actual expiry */
 export const REFRESH_PURGE_GRACE_MS = 24 * 60 * 60 * 1000;
 
-/** Заголовок-маркер «своего» XHR: обязателен на refresh/logout (защита от CSRF при sameSite=none) */
+/** "Own XHR" marker header: required on refresh/logout (CSRF protection when sameSite=none) */
 export const CSRF_HEADER_NAME = 'x-requested-with';

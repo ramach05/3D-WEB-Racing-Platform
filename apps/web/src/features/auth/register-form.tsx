@@ -6,7 +6,7 @@ import { Button, TextField } from '@/shared/ui';
 import { useRegisterMutation } from './api';
 import { isValidNickname, isValidPassword } from './validation';
 
-/** Форма регистрации с клиентской валидацией и ошибками API */
+/** Registration form with client-side validation and API errors */
 export const RegisterForm = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ export const RegisterForm = () => {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Валидация и вызов register mutation
+  // Validation and register mutation call
   const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     const nextNicknameError = isValidNickname(nickname) ? null : t('auth.invalidNickname');

@@ -2,7 +2,7 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { PrismaClient } from '../generated/prisma/client';
 
-/** Prisma-клиент как Nest-провайдер с SQLite driver adapter (Prisma 7). */
+/** Prisma client as a Nest provider with a SQLite driver adapter (Prisma 7). */
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
@@ -11,12 +11,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     super({ adapter });
   }
 
-  /** Открывает соединение при старте приложения */
+  /** Opens the connection on application startup */
   async onModuleInit(): Promise<void> {
     await this.$connect();
   }
 
-  /** Закрывает соединение при остановке */
+  /** Closes the connection on shutdown */
   async onModuleDestroy(): Promise<void> {
     await this.$disconnect();
   }

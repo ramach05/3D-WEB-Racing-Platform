@@ -1,93 +1,93 @@
 /**
- * Тюнинг отскока топливных бочек при ударе машиной.
+ * Fuel barrel bounce tuning when hit by the car.
  *
- * Машина каждый кадр получает целевую скорость через setLinvel, поэтому в решателе
- * она работает как стена с бесконечной массой. Сама решатель может только разогнать
- * бочку до скорости машины и вести ее перед собой: без направленного отскока бочка
- * «прилипает» к бамперу и не отлетает. Поэтому удар считается явно: бочке сообщается
- * боковая скорость от оси машины плюс небольшая продольная и вертикальная, а кувырок
- * дает плечо точки приложения импульса.
+ * The car gets a target speed every frame via setLinvel, so in the solver it acts like a
+ * wall with infinite mass. The solver itself can only accelerate the barrel up to the car
+ * speed and drag it along: without a directed bounce the barrel "sticks" to the bumper and
+ * never flies off. So the impact is computed explicitly: the barrel gets a lateral velocity
+ * away from the car axis plus a small longitudinal and vertical component, and the tumble
+ * comes from the lever arm of the impulse application point.
  *
- * Приращения задаются в м/с, а не в н·с: масса сокращается, поэтому значения означают
- * «какую скорость получает бочка» и не зависят от массы.
+ * Deltas are given in m/s, not N·s: mass cancels out, so the values mean "what speed the
+ * barrel gains" and do not depend on mass.
  *
- * Настройки подобраны так, чтобы отскок бочки был сопоставим с разлетом шин и чуть
- * слабее его: пик скорости бочки ~1.7-1.8 скорости машины против ~1.9-2.0 у верхнего яруса
- * стопки шин (замерено headless-симуляцией на тех же параметрах решателя).
+ * The settings are tuned so the barrel bounce is comparable to tire scatter and slightly
+ * weaker: barrel peak speed ~1.7-1.8 of car speed vs ~1.9-2.0 for the top tier of a tire
+ * stack (measured with a headless simulation on the same solver parameters).
  */
 
-/** Масса пустой стальной евробочки ⌀0.6 × 0.9 м, кг */
+/** Mass of an empty steel euro barrel ⌀0.6 × 0.9 m, kg */
 export const BARREL_MASS = 25;
 
-/** Продольная доля скорости машины, передаваемая бочке (ведет ее по курсу) */
+/** Longitudinal share of car speed transferred to the barrel (drags it along the heading) */
 export const BARREL_FORWARD_SCALE = 0.24;
 
-/** Боковая доля скорости машины — основной вклад в отскок */
+/** Lateral share of car speed — the main contribution to the bounce */
 export const BARREL_SIDE_SCALE = 1.0;
 
-/** Боковая прибавка к отскоку на малых скоростях, м/с */
+/** Lateral bounce bonus at low speeds, m/s */
 export const BARREL_SIDE_BASE_SPEED = 2.6;
 
-/** Вертикальная доля скорости машины (подброс) */
+/** Vertical share of car speed (pop-up) */
 export const BARREL_POP_SCALE = 0.1;
 
-/** Вертикальная прибавка на малых скоростях, м/с */
+/** Vertical bonus at low speeds, m/s */
 export const BARREL_POP_BASE_SPEED = 0.8;
 
-/** Плечо точки приложения импульса от центра бочки, м: выше центра — кувырок */
+/** Lever arm of the impulse application point from the barrel center, m: above center — tumble */
 export const BARREL_HIT_LEVER = 0.1;
 
-/** Эквивалентное плечо подкрутки, м: задает бочке начальное качение вдоль отскока, дальше кувырок развивает трение о землю и бампер */
+/** Equivalent spin lever arm, m: gives the barrel initial rolling along the bounce; friction with the ground and bumper develops the tumble further */
 export const BARREL_ROLL_ARM = 0.005;
 
-/** Страховочный потолок: доля скорости машины */
+/** Safety cap: share of car speed */
 export const BARREL_SPEED_HEADROOM = 1.75;
 
-/** Страховочный потолок: прибавка, м/с */
+/** Safety cap: additive, m/s */
 export const BARREL_SPEED_BASE = 2.5;
 
-/** Потолок скорости бочки вверх, м/с; падающую бочку не ограничиваем */
+/** Barrel upward speed cap, m/s; a falling barrel is not limited */
 export const BARREL_MAX_UP_SPEED = 6;
 
-/** Потолок угловой скорости бочки, рад/с */
+/** Barrel angular velocity cap, rad/s */
 export const BARREL_MAX_SPIN = 20;
 
-/** Минимальное смещение бочки от оси машины, м: меньше — боковое направление вырождается (удар «в лоб» в центр бампера), сторона берется из sideBias */
+/** Minimum barrel offset from the car axis, m: below it the lateral direction degenerates (dead-center hit into the bumper), side is taken from sideBias */
 export const BARREL_SIDE_DEGENERATE_EPS = 0.05;
 
-/** Точка или вектор в плоскости XZ либо в пространстве */
+/** Point or vector in the XZ plane or in space */
 export type TBarrelVec3 = { x: number; y: number; z: number };
 
-/** Вектор в плоскости дороги */
+/** Vector in the road plane */
 export type TBarrelVec2 = { x: number; z: number };
 
-/** Параметры удара машины о бочку */
+/** Parameters of the car hitting a barrel */
 export type TBarrelStrike = {
-  /** Центр машины */
+  /** Car center */
   carPosition: TBarrelVec3;
-  /** Скорость машины в плоскости дороги */
+  /** Car velocity in the road plane */
   carVelocity: TBarrelVec2;
-  /** Скорость машины по модулю, м/с (>= HIT_MIN_SPEED) */
+  /** Car speed magnitude, m/s (>= HIT_MIN_SPEED) */
   carSpeed: number;
-  /** Центр бочки */
+  /** Barrel center */
   barrelPosition: TBarrelVec3;
-  /** Сторона отскока при вырожденном смещении: 1 вправо по курсу, -1 влево */
+  /** Bounce side when the offset is degenerate: 1 right of the heading, -1 left */
   sideBias: 1 | -1;
 };
 
-/** Результат удара: что приложить к телу бочки и каким потолком ограничить */
+/** Impact result: what to apply to the barrel body and with which cap to limit it */
 export type TBarrelBounce = {
-  /** Импульс, н·с */
+  /** Impulse, N·s */
   impulse: TBarrelVec3;
-  /** Точка приложения импульса в мире */
+  /** Impulse application point in world space */
   point: TBarrelVec3;
-  /** Импульс момента для начального качения, н·м·с */
+  /** Torque impulse for initial rolling, N·m·s */
   torqueImpulse: TBarrelVec3;
-  /** Страховочный потолок горизонтальной скорости после удара, м/с */
+  /** Safety cap for horizontal speed after the impact, m/s */
   speedCap: number;
 };
 
-/** Направление отскока: перпендикуляр к курсу машины, направленный от ее оси к бочке. Прицентральном ударе смещение вырождается — тогда сторона из sideBias. */
+/** Bounce direction: perpendicular to the car heading, pointing from its axis toward the barrel. On a dead-center hit the offset degenerates — then the side comes from sideBias. */
 export const computeBarrelSideDirection = (
   carVelocity: TBarrelVec2,
   carSpeed: number,
@@ -98,7 +98,7 @@ export const computeBarrelSideDirection = (
   if (carSpeed <= 0) {
     return { x: sideBias, z: 0 };
   }
-  // перпендикуляр к курсу в плоскости дороги
+  // perpendicular to the heading in the road plane
   let sideX = carVelocity.z / carSpeed;
   let sideZ = -carVelocity.x / carSpeed;
   const offset =
@@ -113,7 +113,7 @@ export const computeBarrelSideDirection = (
   return { x: sideX, z: sideZ };
 };
 
-/** Приращения скорости бочки при ударе: продольное, боковое и вертикальное, м/с */
+/** Barrel velocity deltas on impact: longitudinal, lateral and vertical, m/s */
 export const computeBarrelDeltaV = (
   carSpeed: number,
 ): { forward: number; side: number; up: number } => {
@@ -125,14 +125,14 @@ export const computeBarrelDeltaV = (
   };
 };
 
-/** Страховочный потолок горизонтальной скорости бочки, м/с. Заведомо выше скорости машины: потолок ниже скорости машины снова «приклеил» бы бочку к бамперу. */
+/** Safety cap for the barrel's horizontal speed, m/s. Clearly above car speed: a cap below car speed would "stick" the barrel to the bumper again. */
 export const computeBarrelSpeedCap = (carSpeed: number): number =>
   BARREL_SPEED_HEADROOM * Math.max(0, carSpeed) + BARREL_SPEED_BASE;
 
 /**
- * Потолок скорости бочки после удара: горизонталь — потолком с сохранением
- * направления, вертикаль — только вверх (падающая бочка подчиняется гравитации),
- * угловая скорость — потолком с сохранением оси вращения.
+ * Barrel speed cap after the impact: horizontal — capped with direction preserved,
+ * vertical — upward only (a falling barrel obeys gravity), angular velocity — capped
+ * with the rotation axis preserved.
  */
 export const clampBarrelVelocity = (
   linvel: TBarrelVec3,
@@ -157,7 +157,7 @@ export const clampBarrelVelocity = (
   };
 };
 
-/** Отскок бочки от машины: импульс в корпус чуть выше центра (кувырок), боковая составляющая уводит бочку из-под бампера, подкрутка задает начальное качение. */
+/** Barrel bounce off the car: impulse applied slightly above center (tumble), lateral component moves the barrel out from under the bumper, spin gives initial rolling. */
 export const computeBarrelBounce = ({
   carPosition,
   carVelocity,
@@ -176,14 +176,14 @@ export const computeBarrelBounce = ({
   const forwardZ = carSpeed > 0 ? carVelocity.z / carSpeed : 1;
   const { forward, side: sideSpeed, up } = computeBarrelDeltaV(carSpeed);
 
-  // направление фактического вылета — вдоль него бочка начинает катиться
+  // actual launch direction — the barrel starts rolling along it
   const escapeX = forwardX * forward + side.x * sideSpeed;
   const escapeZ = forwardZ * forward + side.z * sideSpeed;
   const escape = Math.hypot(escapeX, escapeZ) || 1;
 
   const impulseX = BARREL_MASS * escapeX;
   const impulseZ = BARREL_MASS * escapeZ;
-  // ось качения горизонтальна и перпендикулярна вылету: знак дает качение, а не юл
+  // rolling axis is horizontal and perpendicular to the launch: the sign yields rolling, not a spin
   const rollX = (escapeZ / escape) * BARREL_MASS * BARREL_ROLL_ARM * Math.max(0, carSpeed);
   const rollZ = (-escapeX / escape) * BARREL_MASS * BARREL_ROLL_ARM * Math.max(0, carSpeed);
 

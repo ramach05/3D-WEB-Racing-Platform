@@ -15,9 +15,9 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
-/** Максимум повторов GET при сетевом сбое (бэк стартует или перезапускается) */
+/** Max GET retries on network failure (backend booting or restarting) */
 const NETWORK_RETRIES = 4;
-/** Базовая задержка backoff */
+/** Base backoff delay */
 const NETWORK_RETRY_BASE_MS = 300;
 
 const delay = (ms: number): Promise<void> => {
@@ -26,12 +26,12 @@ const delay = (ms: number): Promise<void> => {
   });
 };
 
-/** Сетевой сбой (сервер не отвечает), в отличие от HTTP-статуса ошибки */
+/** Network failure (server not responding), as opposed to an HTTP error status */
 const isNetworkFailure = (result: Awaited<ReturnType<typeof rawBaseQuery>>): boolean => {
   return result.error?.status === 'FETCH_ERROR';
 };
 
-/** Повторяет только GET при сетевом сбое с backoff: идемпотентные запросы переживают старт/рестарт API, мутации не отправляются повторно. */
+/** Retries only GET on network failure with backoff: idempotent requests survive API start/restart, mutations are never re-sent. */
 const rawBaseQueryWithRetry: typeof rawBaseQuery = async (args, api, extraOptions) => {
   const method = typeof args === 'string' ? 'GET' : (args.method ?? 'GET');
   const isRetryable = method.toUpperCase() === 'GET';
@@ -45,23 +45,23 @@ const rawBaseQueryWithRetry: typeof rawBaseQuery = async (args, api, extraOption
   }
 };
 
-/** Маркер «своего» XHR для refresh/logout: сервер требует его как CSRF-защиту cookie-эндпоинтов */
+/** Marker for "own" XHR for refresh/logout: the server requires it as CSRF protection for cookie endpoints */
 const CSRF_HEADERS = { 'X-Requested-With': 'XMLHttpRequest' };
 
-/** Сырой POST /auth/refresh без дедупликации */
+/** Raw POST /auth/refresh without deduplication */
 const runRefresh = (
   api: Parameters<typeof rawBaseQuery>[1],
   extraOptions: Parameters<typeof rawBaseQuery>[2],
 ) =>
   rawBaseQuery({ url: '/auth/refresh', method: 'POST', headers: CSRF_HEADERS }, api, extraOptions);
 
-/** Результат одного refresh-запроса (та же форма, что у baseQuery) */
+/** Result of a single refresh request (same shape as baseQuery's) */
 type TRefreshResult = Awaited<ReturnType<typeof runRefresh>>;
 
 /**
- * Единый in-flight refresh: параллельные вызовы дают один HTTP-запрос.
- * Сервер ротирует refresh-токен и отзывает все сессии при повторном использовании
- * старого токена, поэтому второй параллельный refresh разлогинивал пользователя.
+ * Single in-flight refresh: parallel calls yield one HTTP request.
+ * The server rotates the refresh token and revokes all sessions on reuse of
+ * an old token, so a second parallel refresh would log the user out.
  */
 let refreshInFlight: Promise<TRefreshResult> | null = null;
 
@@ -87,13 +87,13 @@ const refreshOnce = (
   return inFlight;
 };
 
-/** Повторяет запрос после refresh cookie, если access истек */
+/** Repeats the request after refreshing the cookie when the access token expired */
 const baseQueryWithReauth: typeof rawBaseQuery = async (args, api, extraOptions) => {
   const url = typeof args === 'string' ? args : args.url;
   const isAuthCall =
     url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/logout');
 
-  // Любой refresh (мутация или reauth ниже) идет через single-flight
+  // Any refresh (mutation or the reauth below) goes through single-flight
   if (url.includes('/auth/refresh')) {
     return refreshOnce(api, extraOptions);
   }
@@ -119,7 +119,7 @@ const baseQueryWithReauth: typeof rawBaseQuery = async (args, api, extraOptions)
   return result;
 };
 
-/** Базовый API RTK Query: теги слайсов навешиваются через injectEndpoints */
+/** Base RTK Query API: slice tags are attached via injectEndpoints */
 export const racingApi = createApi({
   reducerPath: 'racingApi',
   baseQuery: baseQueryWithReauth,

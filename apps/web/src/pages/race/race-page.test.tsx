@@ -13,7 +13,7 @@ import { mockQueryResult } from '@/test/mock-query-result';
 import { createTestStore } from '@/test/render';
 
 const mocks = vi.hoisted(() => ({
-  /** Колбэк onFirstFrame, который тест дергает вручную вместо реального рендера сцены */
+  /** onFirstFrame callback the test fires manually instead of a real scene render */
   firstFrame: null as null | (() => void),
 }));
 
@@ -106,14 +106,14 @@ describe('RacePage', () => {
     );
   });
 
-  it('показывает лоадер трассы и скрывает его после первого кадра сцены', async () => {
+  it('shows the track loader and hides it after the first scene frame', async () => {
     renderPage(<RacePage />);
 
     expect(screen.getByText(/готовим трассу/i)).toBeInTheDocument();
     expect(screen.queryByTestId('race-canvas')).not.toBeInTheDocument();
 
     await waitFor(() => expect(screen.getByTestId('race-canvas')).toBeInTheDocument());
-    // Canvas смонтирован, но первого кадра еще не было: лоадер и HUD-гейт на месте.
+    // Canvas is mounted but there is no first frame yet: loader and HUD gate are still in place.
     expect(screen.getByText(/готовим трассу/i)).toBeInTheDocument();
 
     act(() => {

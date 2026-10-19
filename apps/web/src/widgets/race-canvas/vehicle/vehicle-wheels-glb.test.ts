@@ -28,22 +28,22 @@ import {
 } from './vehicle-wheel-rig';
 
 /*
- * Интеграция с реальными GLB колес (scirocco / juke / hatchback-CarConcept).
+ * Integration with real GLB wheels (scirocco / juke / hatchback-CarConcept).
  *
- * Проверяет:
- *  1) normalizeVehicleGltf маппит ровно по одному узлу на каждое из 4 имен колес,
- *     при этом колесо — компактная деталь, а не «весь автомобиль»;
- *  2) замеренную ось шины (measureWheelAxle) + toe-коррекцию (computeToeYawCorrection)
- *     по реальной геометрии каждой модели (у Juke перед ~20°, у CarConcept ~30°);
- *  3) математику buildWheelRig без мутаций дерева: align обнуляет toe, spin крутит
- *     вокруг замеренной оси шины, steer — вокруг мировой вертикали (в т.ч. под
- *     повернутым родителем BodyUnderside −90° по X у CarConcept).
+ * Checks:
+ *  1) normalizeVehicleGltf maps exactly one node per each of the 4 wheel names,
+ *     with the wheel being a compact part, not "the whole car";
+ *  2) the measured tire axis (measureWheelAxle) + toe correction (computeToeYawCorrection)
+ *     from each model's real geometry (Juke front ~20°, CarConcept ~30°);
+ *  3) buildWheelRig math without tree mutations: align zeroes toe, spin rotates
+ *     around the measured tire axis, steer — around world vertical (incl. under
+ *     the rotated BodyUnderside parent −90° around X on CarConcept).
  *
- * Зависимости окружения:
- *  - GLTFLoader.parse требует ArrayBuffer из «своего» рилма (см. load ниже);
- *  - текстуры грузятся через fake createImageBitmap; чтобы их blob-фетчи не долетали
- *    до MSW (включенного setup.ts в режиме onUnhandledRequest: 'error'), in beforeAll
- *    этого файла globalThis.fetch временно подменяется стабом с пустым blob.
+ * Environment dependencies:
+ *  - GLTFLoader.parse needs an ArrayBuffer from "its own" realm (see load below);
+ *  - textures load via fake createImageBitmap; so their blob fetches don't reach
+ *    MSW (enabled by setup.ts in onUnhandledRequest: 'error' mode), in this file's
+ *    beforeAll globalThis.fetch is temporarily replaced with a stub returning an empty blob.
  */
 
 (globalThis as { self?: object }).self = globalThis;
@@ -68,9 +68,9 @@ class FakeImageBitmap {
 (globalThis as { createImageBitmap?: object }).createImageBitmap = async () =>
   new FakeImageBitmap();
 
-// Оригинальный fetch до того, как MSW заменит его своим перехватчиком в setup beforeAll.
-// В этом файле мы вернем собственный стаб (см. beforeAll в describe ниже), чтобы
-// blob-фетчи текстур из ImageBitmapLoader не долетали до MSW.
+// Original fetch before MSW replaces it with its interceptor in setup beforeAll.
+// In this file we install our own stub (see beforeAll in the describe below) so
+// texture blob fetches from ImageBitmapLoader never reach MSW.
 const ORIGINAL_FETCH = globalThis.fetch;
 
 const FIXTURE_DIR = [
@@ -84,8 +84,8 @@ const WHEEL_NAMES = ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] a
 
 const load = async (fileName: string) => {
   const buf = readFileSync(join(FIXTURE_DIR, fileName));
-  // Кросс-рилм: Buffer.buffer может не пройти `instanceof ArrayBuffer` в jsdom-рилме vitest.
-  // Копируем байты в типизированный массив текущего рилма, чтобы GLTFLoader распарсил GLB как бинарный.
+  // Cross-realm: Buffer.buffer may fail `instanceof ArrayBuffer` in vitest's jsdom realm.
+  // Copy the bytes into a typed array of the current realm so GLTFLoader parses the GLB as binary.
   const bytes = new Uint8Array(buf.byteLength);
   bytes.set(buf);
   const data: ArrayBuffer = bytes.buffer;
@@ -95,7 +95,7 @@ const load = async (fileName: string) => {
 
 const isSkinned = (o: Object3D): o is SkinnedMesh => (o as SkinnedMesh).isSkinnedMesh === true;
 
-/** Выборка мировых точек геометрии: обычный matrixWorld или с учетом bindMatrix (rest-поза SkinnedMesh). */
+/** Sample of world geometry points: plain matrixWorld or with bindMatrix (SkinnedMesh rest pose). */
 const samplePts = (wheel: Object3D, useBind: boolean): Vector3[] => {
   const out: Vector3[] = [];
   let budget = 4096;
@@ -171,7 +171,7 @@ const centerOf = (pts: readonly Vector3[]): { x: number; z: number } => {
 
 const bearingDeg = (x: number, z: number): number => (Math.atan2(z, x) * 180) / Math.PI;
 
-/** Разница азимутов в градусах, приведенная к (−180; 180]. */
+/** Bearing difference in degrees, normalized to (−180; 180]. */
 const bearingDelta = (a: number, b: number): number => {
   let d = (b - a) % 360;
   if (d > 180) {
@@ -257,7 +257,7 @@ const wheelDiag = (root: Group, name: string): TWheelDiag => {
   info.centerRaw = `(${cRaw.x.toFixed(2)}, ${cRaw.z.toFixed(2)})`;
   info.centerBind = `(${cBind.x.toFixed(2)}, ${cBind.z.toFixed(2)})`;
 
-  // Цепочка родителей: имя + мировой quaternion на участках с поворотом.
+  // Parent chain: name + world quaternion on the rotated segments.
   const chain: string[] = [];
   let cursor: Object3D | null = w.parent;
   while (cursor && chain.length < 5) {
@@ -282,7 +282,7 @@ const wheelDiag = (root: Group, name: string): TWheelDiag => {
 const FRONT_WHEEL_NAMES = ['WheelFrontL', 'WheelFrontR'] as const;
 const REAR_WHEEL_NAMES = ['WheelRearL', 'WheelRearR'] as const;
 
-/** Запеченный toe передней оси в authored-позе (градусы) по реальным GLB. */
+/** Baked front-axle toe in the authored pose (degrees) from real GLBs. */
 const FRONT_YAW_DEG: Record<string, number | undefined> = {
   scirocco: 0,
   juke: 20,
@@ -300,9 +300,9 @@ describe('real glb wheel integration', () => {
     ['pickup', 'ram.glb'],
   ] as const;
 
-  // setup.ts включает MSW с onUnhandledRequest: 'error'. Текстуры грузятся через
-  // ImageBitmapLoader → fetch; подменяем fetch стабом с пустым blob, чтобы запросы
-  // текстур не долетали до MSW (createImageBitmap из шапки файла сырой blob не читает).
+  // setup.ts enables MSW with onUnhandledRequest: 'error'. Textures load via
+  // ImageBitmapLoader → fetch; replace fetch with a stub returning an empty blob so
+  // texture requests never reach MSW (createImageBitmap from the file header can't read a raw blob).
   beforeAll(() => {
     const stub = async (): Promise<Response> =>
       new Response(new Blob([new Uint8Array(0)], { type: 'image/png' }), {
@@ -370,14 +370,14 @@ describe('real glb wheel integration', () => {
       normalizeVehicleGltf(root, vehicleId);
       root.updateMatrixWorld(true);
 
-      // fit.scale = целевая длина / длина AABB кузова — как в prepareVehicleRoot.
+      // fit.scale = target length / body AABB length — as in prepareVehicleRoot.
       const bodySize = new Box3().setFromObject(root).getSize(new Vector3());
       const fitScale = VEHICLE_TARGET_LENGTH / Math.max(bodySize.z, 1e-6);
 
-      // Реплика measureWheelRadius (vehicle-model.tsx): радиус БЕЗ клампа 0.12 в модельных
-      // единицах. Старый кламп ломал мини-масштабированные модели: у ram.glb (вся машина
-      // ~0.06, диаметр колеса ~0.009) он давал 0.12 × fitScale(≈55) = ~6.6 м — spin в ~24
-      // раза медленнее. Безопасный нижний предел ставится на МИРОВОМ радиусе в spin-расчете.
+      // Replica of measureWheelRadius (vehicle-model.tsx): radius WITHOUT the 0.12 clamp in model
+      // units. The old clamp broke mini-scaled models: ram.glb (whole car
+      // ~0.06, wheel diameter ~0.009) gave 0.12 × fitScale(≈55) = ~6.6 m — spin ~24
+      // times slower. The safe lower bound is set on the WORLD radius in the spin calc.
       const wheel = root.getObjectByName('WheelFrontL') ?? root.getObjectByName('WheelRearL');
       expect(wheel, 'wheel pivot exists').toBeTruthy();
       if (!wheel) {
@@ -394,7 +394,7 @@ describe('real glb wheel integration', () => {
         );
       }
 
-      // Физичный радиус колеса после фита: ~15–45 см. Пикап до фикса давал 6.6 м.
+      // Physical wheel radius after fit: ~15–45 cm. The pickup gave 6.6 m before the fix.
       expect(effectiveRadius, `${vehicleId}: effective wheel radius realistic`).toBeGreaterThan(
         0.12,
       );
@@ -440,7 +440,7 @@ describe('real glb wheel integration', () => {
     it(`${vehicleId}: attaching rig pivots keeps rest pose & axle (skinned-safe)`, async () => {
       const gltf = await load(file);
 
-      // Эталон до мутаций: свежая нормализованная копия.
+      // Reference before mutations: a fresh normalized copy.
       const rootPre = cloneSkinned(gltf.scene) as Group;
       normalizeVehicleGltf(rootPre, vehicleId);
       rootPre.updateMatrixWorld(true);
@@ -455,8 +455,8 @@ describe('real glb wheel integration', () => {
         });
       }
 
-      // Повторяем продакшн-цепочку: pivot-иерархия + spinPivot.attach(wheel),
-      // мерим ось после attach, ДО применения квитерниона align.
+      // Repeat the production chain: pivot hierarchy + spinPivot.attach(wheel),
+      // measure the axis after attach, BEFORE applying the align quaternion.
       const rootRig = cloneSkinned(gltf.scene) as Group;
       normalizeVehicleGltf(rootRig, vehicleId);
       rootRig.updateMatrixWorld(true);
@@ -522,7 +522,7 @@ describe('real glb wheel integration', () => {
         }
         if (mats.some((m) => m.name === 'Matte__FF2') && !object.name.endsWith('_TireFill')) {
           const tireSize = new Box3().setFromObject(mesh).getSize(new Vector3());
-          // Покрышка не шире колеса: лохматые meshmerger-слэбы (x≈0.58) здесь быть не должно
+          // Tire not wider than the wheel: shaggy meshmerger slabs (x≈0.58) must not be here
           expect(tireSize.x, `${name}/${mesh.name} tire not a slab`).toBeLessThan(0.52);
           tireMeshes.push(mesh);
           authoredTireCount += 1;
@@ -532,12 +532,12 @@ describe('real glb wheel integration', () => {
         }
       });
       expect(hasRim, `${name} has metallic rim`).toBe(true);
-      // 2 компактные боковины + куски слитых шеллов, нарезанные по колесам
+      // 2 compact sidewalls + pieces of merged shells sliced per wheel
       expect(authoredTireCount, `${name} authored tire shells on pivot`).toBeGreaterThanOrEqual(2);
-      // Синхронность: bearing оси каждой шины == bearing оси диска (без доворота
-      // разница = baked-toe ~20°: «покрышка всегда повернута в сторону»).
-      // Осколки слитых шеллов (_TireShell) сохраняют authored-позу относительно
-      // диска; скан bearing по осколку недостоверен — их проверяет floatingTire ниже
+      // Sync: each tire's axis bearing == the rim's axis bearing (without extra rotation
+      // the difference = baked-toe ~20°: "the tire always points sideways").
+      // Fragments of merged shells (_TireShell) keep the authored pose relative to
+      // the rim; a bearing scan on a fragment is unreliable — floatingTire below checks them
       const pivotAxle = measureWheelAxle(pivot!);
       const pivotBearing = bearingDeg(pivotAxle.x, pivotAxle.z);
       for (const tireMesh of tireMeshes) {
@@ -556,7 +556,7 @@ describe('real glb wheel integration', () => {
       const size = new Box3().setFromObject(pivot!).getSize(new Vector3());
       expect(size.y, `${name} tire height`).toBeGreaterThan(0.45);
       expect(size.z, `${name} tire depth`).toBeGreaterThan(0.45);
-      // С toe спереди bbox шире диаметра; порог лишь отсекает «весь кузов»
+      // With toe in front the bbox is wider than the diameter; the threshold only cuts off "the whole body"
       expect(size.x, `${name} stays a wheel`).toBeLessThan(1.25);
       expect(size.z, `${name} stays a wheel`).toBeLessThan(1.25);
     }
@@ -596,7 +596,7 @@ describe('real glb wheel integration', () => {
     const gltf = await load('juke.glb');
     const root = cloneSkinned(gltf.scene) as Group;
     normalizeVehicleGltf(root, 'juke');
-    // Порядок prepareVehicleRoot: резина на пивоты ДО rig (align крутит узел целиком)
+    // prepareVehicleRoot order: tires onto pivots BEFORE rig (align rotates the whole assembly)
     attachJukeTiresToRimPose(root);
     attachJukeProceduralTires(root);
     for (const name of WHEEL_NAMES) {
@@ -610,7 +610,7 @@ describe('real glb wheel integration', () => {
       const steerPivot = root.getObjectByName(`${name}_steer`) as Group;
       const alignPivot = root.getObjectByName(`${name}_align`) as Group;
 
-      // buildWheelRig: align-квитернион по axle всего узла (диск+резина, один фрейм)
+      // buildWheelRig: align quaternion from the whole assembly's axle (rim+tire, one frame)
       const axle = measureWheelAxle(pivot);
       alignPivot.quaternion.setFromAxisAngle(new Vector3(0, 1, 0), computeToeYawCorrection(axle));
       root.updateMatrixWorld(true);
@@ -622,7 +622,7 @@ describe('real glb wheel integration', () => {
       if (!(FRONT_WHEEL_NAMES as readonly string[]).includes(name)) {
         continue;
       }
-      // applyWheelAnimation: steerPivot вокруг world-up — узел с резиной косит целиком
+      // applyWheelAnimation: steerPivot around world-up — tilts the whole assembly incl. tire
       steerPivot.quaternion.setFromAxisAngle(new Vector3(0, 1, 0), (MAX_STEER_DEG * Math.PI) / 180);
       root.updateMatrixWorld(true);
       const steeredToe = Math.abs(renderedToeDeg(pivot));
@@ -707,7 +707,7 @@ describe('real glb wheel integration', () => {
     const tmp = new Vector3();
     const line = new Vector3();
 
-    /** Максимальная радиальная удаленность вершин мешей с указанными материалами от оси (o, a). */
+    /** Max radial distance of vertices of meshes with the given materials from the axis (o, a). */
     const maxRadial = (pivot: Object3D, o: Vector3, a: Vector3, matNames: string[]): number => {
       let rMax = 0;
       pivot.traverse((object) => {
@@ -746,7 +746,7 @@ describe('real glb wheel integration', () => {
       const axle = measureWheelAxle(pivot);
       pivot.getWorldPosition(origin);
       const rimR = maxRadial(pivot, origin, axle, ['wheel1']);
-      // wheel2 = хром (передний «тормозной диск»), wheel3 = красная скоба
+      // wheel2 = chrome (front "brake disc"), wheel3 = red caliper
       const accentR = maxRadial(pivot, origin, axle, ['wheel2', 'wheel3']);
       const delta = accentR - rimR;
       if (DEBUG) {
@@ -755,7 +755,7 @@ describe('real glb wheel integration', () => {
         );
       }
       if ((FRONT_WHEEL_NAMES as readonly string[]).includes(name)) {
-        // Диск не должен выпирать за наружный радиус обода (эксцентриситет ~0.04).
+        // The disc must not bulge past the rim's outer radius (eccentricity ~0.04).
         expect(
           delta,
           `${name}: chrome disc within rim radius (accentR ${accentR.toFixed(3)} vs rimR ${rimR.toFixed(3)})`,
@@ -770,7 +770,7 @@ describe('real glb wheel integration', () => {
     normalizeVehicleGltf(root, 'scirocco'); // Sport = scirocco
     root.updateMatrixWorld(true);
 
-    // Тот же максимальный угол, что в vehicle-model.tsx (MAX_STEER_ANGLE ≈ 32°).
+    // Same max angle as in vehicle-model.tsx (MAX_STEER_ANGLE ≈ 32°).
     const MAX_STEER = 0.56;
 
     type TRigged = {
@@ -786,13 +786,13 @@ describe('real glb wheel integration', () => {
       if (!wheel) {
         continue;
       }
-      // Родитель до attach — именно его фрейм использует buildWheelRig для steerAxisLocal.
+      // Parent before attach — its exact frame is what buildWheelRig uses for steerAxisLocal.
       const anchor = wheel.parent;
       expect(anchor, `parent ${name}`).toBeTruthy();
       if (!anchor) {
         continue;
       }
-      // Продакшн-цепочка: steer → align → spin → attach.
+      // Production chain: steer → align → spin → attach.
       expect(attachRigPivots(wheel)).toBe(true);
       root.updateMatrixWorld(true);
       const steerPivot = root.getObjectByName(`${name}_steer`) as Group;
@@ -812,7 +812,7 @@ describe('real glb wheel integration', () => {
       before[name] = rigs[name]!.bearing();
     }
 
-    // Рулим только передними пивотами — как applyWheelAnimation (isFront).
+    // Steer only the front pivots — like applyWheelAnimation (isFront).
     for (const name of FRONT_WHEEL_NAMES) {
       const rig = rigs[name]!;
       rig.steerPivot.quaternion.setFromAxisAngle(rig.steerAxisLocal, MAX_STEER);
@@ -853,7 +853,7 @@ describe('real glb wheel integration', () => {
   }, 30000);
 
   it('scirocco (Sport): rendered front-wheel toe follows the steer pivot', async () => {
-    // Видимое руление по мировым точкам геометрии (после bake — обычный Mesh).
+    // Visible steering from world geometry points (after bake — a plain Mesh).
     const gltf = await load('scirocco.glb');
     const root = cloneSkinned(gltf.scene) as Group;
     normalizeVehicleGltf(root, 'scirocco');
@@ -905,7 +905,7 @@ describe('real glb wheel integration', () => {
   }, 30000);
 
   it('scirocco (Sport): rendered wheel geometry spins about the measured axle', async () => {
-    // После bone-world bake колеса — обычный Mesh: spin вокруг центра и оси шины.
+    // After bone-world bake wheels are plain Meshes: spin around the center and tire axis.
     const gltf = await load('scirocco.glb');
     const root = cloneSkinned(gltf.scene) as Group;
     normalizeVehicleGltf(root, 'scirocco');
@@ -1009,14 +1009,14 @@ describe('real glb wheel integration', () => {
       normalizeVehicleGltf(root, vehicleId);
       root.updateMatrixWorld(true);
       const size = new Box3().setFromObject(root).getSize(new Vector3());
-      // target из каталога (реальная длина × шкала мира), default как в measureFit
+      // target from the catalog (real length × world scale), default as in measureFit
       const target = getVehicleFitTargetLength(vehicleId) ?? VEHICLE_TARGET_LENGTH;
       const length = size.z * (target / Math.max(size.z, 1e-6));
       fittedLengths.set(vehicleId, length);
       expect(length, `${vehicleId}: fitted length equals target`).toBeCloseTo(target, 5);
     }
     const at = (id: string) => fittedLengths.get(id)!;
-    // Реальная иерархия классов: TRX (5.71 м) крупнее всех, Juke (4.14) — самый компактный
+    // Real class hierarchy: TRX (5.71 m) is the largest, Juke (4.14) — the most compact
     for (const [vehicleId, length] of fittedLengths) {
       if (vehicleId !== 'pickup') {
         expect(at('pickup'), `pickup longer than ${vehicleId}`).toBeGreaterThan(length);
@@ -1025,7 +1025,7 @@ describe('real glb wheel integration', () => {
     expect(at('sedan'), 'Logan 4.35 > Juke 4.14').toBeGreaterThan(at('juke'));
     expect(at('sedan'), 'Logan 4.35 > hatch 4.2').toBeGreaterThan(at('hatchback'));
     expect(at('scirocco'), 'Scirocco 4.26 > Juke 4.14').toBeGreaterThan(at('juke'));
-    // Никто не уехал далеко от прежнего мирового масштаба (3.3): трасса под него
+    // Nobody drifted far from the previous world scale (3.3): the track is built for it
     for (const [vehicleId, length] of fittedLengths) {
       expect(length, `${vehicleId}: near track scale`).toBeGreaterThan(2.5);
       expect(length, `${vehicleId}: near track scale`).toBeLessThan(4.0);
@@ -1033,7 +1033,7 @@ describe('real glb wheel integration', () => {
   }, 60000);
 });
 
-/** Воспроизводит математику buildWheelRig без мутаций дерева: возвращает эффекты в мировых осях. */
+/** Reproduces buildWheelRig math without tree mutations: returns effects in world axes. */
 const projectWheelRig = (wheel: Object3D) => {
   const parent = wheel.parent;
   if (!parent) {
@@ -1052,8 +1052,8 @@ const projectWheelRig = (wheel: Object3D) => {
   const yawCorr = computeToeYawCorrection(axleWorld);
   const axleLocal = computeAxleLocal(axleWorld, parentQ);
 
-  // align поворот (yawCorr) выполняется вокруг steerAxisLocal в локальном фрейме пивота;
-  // в мировых осях это поворот вокруг (0,1,0).
+  // the align rotation (yawCorr) runs around steerAxisLocal in the pivot's local frame;
+  // in world axes that's a rotation around (0,1,0).
   const alignedWorld = axleWorld.clone().applyAxisAngle(new Vector3(0, 1, 0), yawCorr);
   const spinWorld = axleLocal.clone().applyQuaternion(parentQ).normalize();
   const steerAxisWorld = steerAxisLocal.clone().applyQuaternion(parentQ).normalize();
@@ -1069,9 +1069,9 @@ const projectWheelRig = (wheel: Object3D) => {
 };
 
 /**
- * Воспроизводит продакшн-цепочку buildWheelRig (steer → align → spin → attach)
- * БЕЗ применения align-квитерниона: только сборка пивотов и spinPivot.attach(wheel),
- * как в vehicle-model.tsx. Используется для проверки, что attach не сдвигает rest-позу.
+ * Reproduces the production buildWheelRig chain (steer → align → spin → attach)
+ * WITHOUT applying the align quaternion: only pivot assembly and spinPivot.attach(wheel),
+ * as in vehicle-model.tsx. Used to check that attach doesn't shift the rest pose.
  */
 const attachRigPivots = (wheel: Object3D): boolean => {
   const parent = wheel.parent;
@@ -1102,7 +1102,7 @@ const attachRigPivots = (wheel: Object3D): boolean => {
   return true;
 };
 
-/** Видимый toe (азимут оси «тонкости» в XZ) по мировым точкам геометрии, град. */
+/** Visible toe (bearing of the "thinness" axis in XZ) from world geometry points, degrees. */
 const renderedToeDeg = (wheel: Object3D): number => {
   const pts = samplePts(wheel, false);
   const c = centerOf(pts);

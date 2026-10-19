@@ -4,17 +4,17 @@ import type { RapierRigidBody } from '@react-three/rapier';
 import { AdditiveBlending, Color, IcosahedronGeometry, Matrix4, Quaternion, Vector3 } from 'three';
 import type { InstancedMesh } from 'three';
 
-/** Бюджет частиц брызг (инстансов) — держим низким ради FPS */
+/** Wheel-spray particle budget (instances) — kept low for FPS */
 const SPRAY_COUNT = 120;
 const GRAVITY = 9.81;
-/** Задние колеса (local): нос машины +Z, задние на -Z */
+/** Rear wheels (local): car nose is +Z, rear wheels at -Z */
 const REAR_WHEELS: readonly [number, number, number][] = [
   [-0.72, 0.12, -1.05],
   [0.72, 0.12, -1.05],
 ];
-/** м/сек порога, ниже — брызг нет */
+/** m/s threshold, below it there is no spray */
 const MIN_SPRAY_SPEED = 4;
-/** Частиц в секунду на 1 м/сек скорости */
+/** Particles per second per 1 m/s of speed */
 const RATE_PER_MS = 3;
 
 const tmpPos = new Vector3();
@@ -52,16 +52,16 @@ const makePool = (): TParticle[] =>
   }));
 
 type TWheelSprayProps = {
-  /** Физическое тело машины — источник позиции/скорости */
+  /** Physical car body — source of position/velocity */
   bodyRef: RefObject<RapierRigidBody | null>;
-  /** Показывать только на дождливых трассах */
+  /** Show only on rainy tracks */
   enabled: boolean;
 };
 
 /**
- * Брызги воды из-за задних колес: скорость-зависимый emission,
- * фонтан назад-вверх + водная пыль, короткая жизнь, аддитивное затухание.
- * Пул инстансов без аллокаций в кадре; вне дождя/стоя — mesh скрыт.
+ * Water spray behind the rear wheels: speed-dependent emission,
+ * rearward-upward jet + water mist, short life, additive fade.
+ * Instance pool without per-frame allocations; mesh hidden outside rain/at standstill.
  */
 export const WheelSpray = ({ bodyRef, enabled }: TWheelSprayProps) => {
   const meshRef = useRef<InstancedMesh>(null);
@@ -156,7 +156,7 @@ export const WheelSpray = ({ bodyRef, enabled }: TWheelSprayProps) => {
       dummy.makeScale(grow, grow, grow);
       dummy.setPosition(p.x, p.y, p.z);
       mesh.setMatrixAt(i, dummy);
-      // Затухание яркости (аддитивно → прозрачность)
+      // Brightness fade (additive → transparency)
       mesh.setColorAt(i, tmpColor.setScalar((1 - k) * 0.18));
     }
     mesh.instanceMatrix.needsUpdate = true;

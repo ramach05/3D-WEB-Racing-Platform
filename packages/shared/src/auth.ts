@@ -1,39 +1,39 @@
-/** Публичный пользователь без секретов */
+/** Public user without secrets */
 export type TUserPublic = {
   id: string;
   nickname: string;
   createdAt: string;
 };
 
-/** Тело регистрации */
+/** Register request body */
 export type TRegisterRequest = {
   nickname: string;
   password: string;
 };
 
-/** Тело логина */
+/** Login request body */
 export type TLoginRequest = {
   nickname: string;
   password: string;
 };
 
-/** Access JWT в JSON; refresh только в httpOnly cookie */
+/** Access JWT in JSON; refresh goes in an httpOnly cookie only */
 export type TAuthTokens = {
   accessToken: string;
 };
 
-/** Ответ login/register */
+/** Login/register response */
 export type TAuthResponse = {
   user: TUserPublic;
   tokens: TAuthTokens;
 };
 
-/** Ответ refresh */
+/** Refresh response */
 export type TRefreshResponse = {
   tokens: TAuthTokens;
 };
 
-/** Лучший результат пользователя по одной трассе */
+/** Best user result on a single track */
 export type TUserBestResult = {
   trackId: string;
   trackSlug: string;
@@ -42,7 +42,7 @@ export type TUserBestResult = {
   createdAt: string;
 };
 
-/** Профиль текущего пользователя */
+/** Current user profile */
 export type TMeResponse = {
   user: TUserPublic;
   bestResults: TUserBestResult[];

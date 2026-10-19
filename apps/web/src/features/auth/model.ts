@@ -8,7 +8,7 @@ const initialState: TAuthState = {
   hydrated: false,
 };
 
-/** Сессия пользователя в Redux. Access JWT — в памяти (shared/lib/session); refresh — httpOnly cookie. */
+/** User session in Redux. Access JWT lives in memory (shared/lib/session); refresh is an httpOnly cookie. */
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -30,17 +30,17 @@ export const { setUser, logout, setHydrated } = authSlice.actions;
 export const authReducer = authSlice.reducer;
 
 type TAuthRoot = {
-  /** Слайс авторизации в корневом store */
+  /** Auth slice in the root store */
   auth: TAuthState;
 };
 
-/** Текущий пользователь или null */
+/** Current user or null */
 export const selectUser = (state: TAuthRoot): TUserPublic | null => state.auth.user;
 
-/** Завершена ли гидрация сессии при старте приложения */
+/** Whether session hydration completed at app startup */
 export const selectHydrated = (state: TAuthRoot): boolean => state.auth.hydrated;
 
-/** Сохраняет access JWT в памяти */
+/** Stores the access JWT in memory */
 export const persistAccessToken = (accessToken: string): void => {
   writeAuthSession({ accessToken });
 };

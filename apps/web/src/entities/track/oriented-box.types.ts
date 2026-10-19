@@ -1,6 +1,6 @@
 export type TCheckpointLocalCoords = {
-  /** Локальная X относительно бокса */
+  /** Local X relative to the box */
   lx: number;
-  /** Локальная Z относительно бокса */
+  /** Local Z relative to the box */
   lz: number;
 };

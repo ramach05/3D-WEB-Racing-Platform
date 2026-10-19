@@ -1,21 +1,21 @@
-/** Множитель целевой скорости после удара о шину (1 = без штрафа) */
+/** Target speed multiplier after hitting a tire (1 = no penalty) */
 let tireHitDamping = 1;
 
 const HIT_RECOVERY_PER_SEC = 3;
 
-/** Зафиксировать штраф скорости (берется минимум с текущим) */
+/** Record a speed penalty (takes the minimum with the current one) */
 export const registerTireHit = (factor: number) => {
   tireHitDamping = Math.min(tireHitDamping, Math.max(0, factor));
 };
 
-/** Плавно вернуть damping к 1; возвращает текущий множитель */
+/** Smoothly returns damping toward 1; returns the current multiplier */
 export const tickTireHitDamping = (dt: number): number => {
   const current = tireHitDamping;
   tireHitDamping = Math.min(1, tireHitDamping + HIT_RECOVERY_PER_SEC * dt);
   return current;
 };
 
-/** Сбрасывает штраф скорости после удара о шину */
+/** Resets the speed penalty after hitting a tire */
 export const resetTireHitDamping = () => {
   tireHitDamping = 1;
 };

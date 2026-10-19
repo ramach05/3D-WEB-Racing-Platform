@@ -16,7 +16,7 @@ import {
 import { createSmokePuffTexture } from '@/widgets/race-canvas/lib/smoke-puff-texture';
 
 const MARKING_Y = ROAD_TOP_Y + 0.002;
-/** Светло-серый rubber smoke */
+/** Light-gray rubber smoke */
 const SMOKE_COLOR = '#c4c0bc';
 const tmpMatrix = new Matrix4();
 const tmpPosition = new Vector3();
@@ -30,7 +30,7 @@ const smokeBaseColor = new Color(SMOKE_COLOR);
 const Y_AXIS = new Vector3(0, 1, 0);
 const Z_AXIS = new Vector3(0, 0, 1);
 
-/** Следы резины на асфальте + billboard-дым при срыве шин */
+/** Tire marks on the asphalt + billboard smoke when the tires break traction */
 export const SkidMarks = () => {
   const marksRef = useRef<InstancedMesh>(null);
   const smokeRef = useRef<InstancedMesh>(null);
@@ -77,7 +77,7 @@ export const SkidMarks = () => {
         tmpYaw.setFromAxisAngle(Y_AXIS, segment.yaw);
         tmpQuat.copy(tmpYaw).multiply(tmpFlat);
         tmpPosition.set(segment.x, MARKING_Y, segment.z);
-        // После flatten: local X = ширина, local Y = длина вдоль yaw
+        // After flatten: local X = width, local Y = length along yaw
         tmpScale.set(segment.width, segment.length, 1);
         tmpMatrix.compose(tmpPosition, tmpQuat, tmpScale);
         marksMesh.setMatrixAt(i, tmpMatrix);
@@ -105,7 +105,7 @@ export const SkidMarks = () => {
 
         const fade = skidSmokeOpacity(progress, 1);
         const grow = particle.size * (0.9 + progress * 2.6);
-        // Dissolve в конце жизни (NormalBlending: альфа map, не additive glow)
+        // Dissolve at end of life (NormalBlending: alpha map, not additive glow)
         const dissolve = progress > 0.4 ? Math.max(0, 1 - (progress - 0.4) / 0.6) : 1;
         tmpSpin.setFromAxisAngle(Z_AXIS, particle.spin + progress * 0.4);
         tmpQuat.copy(camQuat).multiply(tmpSpin);

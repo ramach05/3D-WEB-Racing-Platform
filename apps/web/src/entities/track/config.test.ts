@@ -13,7 +13,7 @@ import {
   tribuneSideSign,
 } from './tribune-layout';
 
-/** Максимальный разрыв между соседними точками centerline (включая замыкание). */
+/** Maximum gap between adjacent centerline points (including the closing segment). */
 const maxCenterlineGap = (centerline: TLoopPoint[]): number => {
   let maxGap = 0;
   for (let i = 0; i < centerline.length; i += 1) {
@@ -24,7 +24,7 @@ const maxCenterlineGap = (centerline: TLoopPoint[]): number => {
   return maxGap;
 };
 
-/** Средний шаг вдоль centerline. */
+/** Mean step along the centerline. */
 const meanCenterlineGap = (centerline: TLoopPoint[]): number => {
   if (centerline.length === 0) {
     return 0;
@@ -38,7 +38,7 @@ const meanCenterlineGap = (centerline: TLoopPoint[]): number => {
   return sum / centerline.length;
 };
 
-/** Максимальный |Δheading| между соседними сегментами (рад). */
+/** Maximum |Δheading| between adjacent segments (rad). */
 const maxCenterlineTurn = (centerline: TLoopPoint[]): number => {
   let maxTurn = 0;
   const n = centerline.length;
@@ -71,14 +71,14 @@ describe('track config geometry', () => {
       const mean = meanCenterlineGap(config.centerline);
       const maxGap = maxCenterlineGap(config.centerline);
       expect(mean).toBeGreaterThan(0);
-      // Разрыв не больше ~2.5 средних шагов (раньше Night City имел ~27м при среднем ~4м)
+      // Gap no larger than ~2.5 mean steps (Night City used to have ~27m at a ~4m mean)
       expect(maxGap).toBeLessThan(mean * 2.5);
     }
   });
 
   it('keeps centerline heading changes smooth', () => {
     for (const config of getAllTrackConfigs()) {
-      // Раньше Night City давал ~49° изломы; плавная трасса укладывается в ~25°
+      // Night City used to produce ~49° kinks; a smooth track stays within ~25°
       expect(maxCenterlineTurn(config.centerline)).toBeLessThan((25 * Math.PI) / 180);
     }
   });
@@ -145,10 +145,10 @@ describe('track config geometry', () => {
     for (const config of getAllTrackConfigs()) {
       const line = config.startFinishLine;
       const rotY = line.rotationY;
-      // Направление заезда противоположно касательной centerline (race-direction.ts)
+      // Race direction is opposite to the centerline tangent (race-direction.ts)
       const forwardX = -Math.sin(rotY);
       const forwardZ = -Math.cos(rotY);
-      // Левая сторона машины = up × forward
+      // Car's left side = up × forward
       const leftX = forwardZ;
       const leftZ = -forwardX;
 
@@ -158,7 +158,7 @@ describe('track config geometry', () => {
       const sideExpect = config.startTribuneSide === 'left' ? 1 : -1;
       expect(sideExpect * (toZoneX * leftX + toZoneZ * leftZ)).toBeGreaterThan(0);
 
-      // Ни одна точка трассы не попадает в пятно трибуны (локаль финишной линии)
+      // No track point falls inside the grandstand footprint (finish-line local frame)
       const sign = tribuneSideSign(config.startTribuneSide);
       const innerX = sign * (config.roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);
       const backX = innerX + sign * TRIBUNE_ROWS * ROW_DEPTH;
@@ -180,7 +180,7 @@ describe('track config geometry', () => {
   it('places obstacles on both tracks', () => {
     expect(coastalOvalTrack.obstacles.length).toBeGreaterThan(0);
     expect(nightCityTrack.obstacles.length).toBeGreaterThan(0);
-    // Night City: 4 ряда × несколько банков — плотнее Coastal (3 ряда)
+    // Night City: 4 rows × several banks — denser than Coastal (3 rows)
     expect(nightCityTrack.obstacles.length).toBeGreaterThan(coastalOvalTrack.obstacles.length);
   });
 
@@ -228,7 +228,7 @@ describe('track config geometry', () => {
     expect(distance).toBeGreaterThan(60);
     expect(distance).toBeLessThan(80);
 
-    // Подход заезда: сторона спавна (+lz), не «после» линии (−lz)
+    // Race approach: spawn side (+lz), not "after" the line (−lz)
     const sin = Math.sin(finish.rotationY);
     const cos = Math.cos(finish.rotationY);
     const slickLz = dx * sin + dz * cos;
@@ -282,9 +282,9 @@ describe('track config geometry', () => {
       });
       return m;
     };
-    // Мост на втором посещении узла (~0.625) поднят
+    // The bridge at the second node visit (~0.625) is raised
     expect(maxYAt(0.6, 0.66)).toBeGreaterThan(3.5);
-    // Единственная возвышенная зона: ровно один восход над 0.5 м по замкнутому кольцу
+    // Single elevated zone: exactly one rise above 0.5 m around the closed loop
     const raised = pts.map((p) => (p.y ?? 0) > 0.5);
     let rises = 0;
     for (let i = 0; i < raised.length; i += 1) {
@@ -297,17 +297,17 @@ describe('track config geometry', () => {
 
   it('supports the storm-eight bridge deck with piers under the road', () => {
     const piers = stormEightTrack.piers ?? [];
-    // Мост ~50 м при шаге 6 м: минимум несколько колонн + ростверки
+    // Bridge is ~50 m at a 6 m step: at least a few columns + cap beams
     expect(piers.length).toBeGreaterThanOrEqual(6);
     const halfRoad = stormEightTrack.roadWidth / 2;
     const columns = piers.filter((p) => p.size[0] <= stormEightTrack.roadWidth);
     const caps = piers.filter((p) => p.size[0] > stormEightTrack.roadWidth);
-    // Есть и колонны, и поперечные ростверки под декой
+    // Both columns and transverse cap beams exist under the deck
     expect(columns.length).toBeGreaterThanOrEqual(4);
     expect(caps.length).toBeGreaterThanOrEqual(2);
 
     for (const pier of piers) {
-      // Опора ПОД полотном, а не рядом: ближайшая точка centerline не дальше половины дороги
+      // Pier is UNDER the roadway, not beside it: nearest centerline point no farther than half the road
       let nearest = Infinity;
       for (const p of stormEightTrack.centerline) {
         nearest = Math.min(nearest, Math.hypot(p.x - pier.position[0], p.z - pier.position[2]));
@@ -315,15 +315,15 @@ describe('track config geometry', () => {
       expect(nearest).toBeLessThanOrEqual(halfRoad);
     }
     for (const col of columns) {
-      // Колонна от земли до низа деки
+      // Column runs from the ground up to the deck underside
       expect(col.size[1]).toBeGreaterThan(0.5);
-      // Колонна держит именно деку: поднятая точка моста прямо над ней
+      // The column holds exactly that deck: a raised bridge point right above it
       const underDeck = stormEightTrack.centerline.some(
         (p) =>
           (p.y ?? 0) > 0.9 && Math.hypot(p.x - col.position[0], p.z - col.position[2]) <= halfRoad,
       );
       expect(underDeck).toBe(true);
-      // Колонна не стоит на нижней проезжей части (под мостом)
+      // Column does not stand on the lower road (under the bridge)
       let nearestLow = Infinity;
       for (const p of stormEightTrack.centerline) {
         if ((p.y ?? 0) < 0.5) {
@@ -335,11 +335,11 @@ describe('track config geometry', () => {
       }
       expect(nearestLow).toBeGreaterThan(halfRoad);
     }
-    // Ростверк лежит под низом деки, а не на уровне асфальта
+    // Cap beam lies below the deck underside, not at asphalt level
     for (const cap of caps) {
       expect(cap.position[1]).toBeLessThan(3.9);
     }
-    // Плоские трассы без эстакады — без опор
+    // Flat tracks without an elevated deck — no piers
     expect(coastalOvalTrack.piers ?? []).toHaveLength(0);
     expect(nightCityTrack.piers ?? []).toHaveLength(0);
   });

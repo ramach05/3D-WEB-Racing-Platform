@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { HealthController } from './health.controller';
 
-/** Модуль проверки живости API. Класс — требование Nest Module. */
+/** API liveness module. Class is a Nest Module requirement. */
 @Module({
   controllers: [HealthController],
 })

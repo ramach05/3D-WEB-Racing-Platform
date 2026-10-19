@@ -75,7 +75,7 @@ describe('buildTribuneTreeExclusionZone', () => {
 
     const tribuneDepth = TRIBUNE_ROWS * ROW_DEPTH;
     const expectedCenterX = roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN + tribuneDepth / 2;
-    // Заезд против centerline → в локале финиша машина смотрит в −Z, ее левая сторона = −X
+    // Race runs against the centerline → in the finish local frame the car looks toward −Z, its left side = −X
     expect(zone.position[0]).toBeCloseTo(-expectedCenterX, 5);
     expect(zone.position[2]).toBeCloseTo(0, 5);
   });
@@ -120,7 +120,7 @@ describe('buildTribuneBackRails', () => {
   it('builds open tube rails instead of a solid wall', () => {
     const rails = buildTribuneBackRails(8, 1);
     expect(rails.length).toBeGreaterThan(3);
-    // Все части тонкие — нет сплошного листа
+    // All parts are thin — no solid sheet
     for (const part of rails) {
       expect(Math.min(part.size[0], part.size[1], part.size[2])).toBeLessThan(0.08);
     }
@@ -146,9 +146,9 @@ describe('buildTribuneStairs', () => {
     expect(firstB).toBeDefined();
     expect(firstA!.position[2]).toBeLessThan(0);
     expect(firstB!.position[2]).toBeGreaterThan(0);
-    // Нижняя грань первой ступени на земле
+    // Bottom face of the first step is on the ground
     expect(firstA!.position[1] - firstA!.size[1] / 2).toBeCloseTo(0, 5);
-    // Высота растет с рядом
+    // Height grows with the row
     expect(endA[TRIBUNE_ROWS - 1]!.size[1]).toBeGreaterThan(firstA!.size[1]);
   });
 });
@@ -162,7 +162,7 @@ describe('buildTribuneStairRails', () => {
     for (const part of inclined) {
       expect(part.rotation![2]).not.toBeCloseTo(0, 2);
     }
-    // Нет длинной горизонтальной «палки» вдоль всей глубины на средней высоте
+    // No long horizontal "stick" along the whole depth at mid height
     const floatingBar = rails.find(
       (r) => r.rotation == null && r.size[0] > TRIBUNE_ROWS * ROW_DEPTH * 0.8 && r.size[1] < 0.1,
     );

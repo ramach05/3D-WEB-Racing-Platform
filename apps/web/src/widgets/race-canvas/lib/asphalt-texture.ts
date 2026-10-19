@@ -7,15 +7,15 @@ import {
   type Texture,
 } from 'three';
 
-/** Мировой размер одного тайла асфальта (метры) — мельче = плотнее зерно */
+/** World size of one asphalt tile (meters) — smaller = denser grain */
 export const ASPHALT_TILE_SIZE = 2.2;
 
-/** Мировой размер тайла грунта */
+/** World size of the ground tile */
 export const GROUND_TILE_SIZE = 10;
 
 type TRng = () => number;
 
-/** LCG-генератор 0..1 из seed */
+/** LCG generator producing 0..1 from a seed */
 const createRng = (seedInit: number): TRng => {
   let seed = seedInit >>> 0;
   return () => {
@@ -24,14 +24,14 @@ const createRng = (seedInit: number): TRng => {
   };
 };
 
-/** Детерминированный хэш 2D-координат в 0..1 */
+/** Deterministic hash of 2D coordinates into 0..1 */
 const hash2 = (x: number, y: number, seed: number): number => {
   let n = (x * 374761393 + y * 668265263 + seed) | 0;
   n = (n ^ (n >>> 13)) * 1274126177;
   return ((n ^ (n >>> 16)) >>> 0) / 0xffffffff;
 };
 
-/** Value-noise 0..1 с билинейной интерполяцией */
+/** Value noise 0..1 with bilinear interpolation */
 const valueNoise = (x: number, y: number, seed: number): number => {
   const x0 = Math.floor(x);
   const y0 = Math.floor(y);
@@ -46,7 +46,7 @@ const valueNoise = (x: number, y: number, seed: number): number => {
   return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
 };
 
-/** Fractional Brownian motion: сумма октав value-noise */
+/** Fractional Brownian motion: sum of value-noise octaves */
 const fbm = (x: number, y: number, seed: number, octaves: number): number => {
   let amp = 0.5;
   let freq = 1;
@@ -61,7 +61,7 @@ const fbm = (x: number, y: number, seed: number, octaves: number): number => {
   return sum / norm;
 };
 
-/** Собирает CanvasTexture с repeat/anisotropy из canvas */
+/** Builds a CanvasTexture with repeat/anisotropy from a canvas */
 const finishTexture = (canvas: HTMLCanvasElement, colorSpace = true): CanvasTexture => {
   const texture = new CanvasTexture(canvas);
   if (colorSpace) {
@@ -76,7 +76,7 @@ const finishTexture = (canvas: HTMLCanvasElement, colorSpace = true): CanvasText
   return texture;
 };
 
-/** Реалистичный асфальт: многооктавный шум + мелкий гравий, без крупных кругов. albedo mid-light gray — тинт через material.color (palette.road). */
+/** Realistic asphalt: multi-octave noise + fine gravel, no large blobs. Mid-light gray albedo — tint via material.color (palette.road). */
 export const createAsphaltTexture = (size = 512): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -95,18 +95,18 @@ export const createAsphaltTexture = (size = 512): CanvasTexture => {
       const u = x / size;
       const v = y / size;
 
-      // Крупная неоднородность покрытия (стертые / свежие зоны)
+      // Coarse surface heterogeneity (worn / fresh zones)
       const macro = fbm(u * 3.5, v * 3.5, 11, 3);
-      // Средний щебень
+      // Mid-size gravel
       const mid = fbm(u * 28, v * 28, 47, 4);
-      // Мелкое зерно
+      // Fine grain
       const fine = fbm(u * 120, v * 120, 91, 2);
-      // Пиксельный гравий
+      // Per-pixel grit
       const grit = (next() - 0.5) * 22;
 
       let tone = 155 + (macro - 0.5) * 32 + (mid - 0.5) * 36 + (fine - 0.5) * 28 + grit;
 
-      // Редкие мелкие камешки (1–2 px), не пятна
+      // Rare small pebbles (1–2 px), not stains
       if (next() < 0.012) {
         tone += 28 + next() * 35;
       } else if (next() < 0.018) {
@@ -114,7 +114,7 @@ export const createAsphaltTexture = (size = 512): CanvasTexture => {
       }
 
       const gray = Math.max(90, Math.min(220, tone));
-      // Нейтрально-теплый оттенок дневного асфальта (щебень)
+      // Neutral-warm tint of daytime asphalt (gravel)
       const idx = (y * size + x) * 4;
       data[idx] = Math.min(255, gray * 1.0);
       data[idx + 1] = gray * 0.99;
@@ -127,7 +127,7 @@ export const createAsphaltTexture = (size = 512): CanvasTexture => {
   return finishTexture(canvas);
 };
 
-/** Roughness-карта асфальта: зерно + вариация блеска */
+/** Asphalt roughness map: grain + gloss variation */
 export const createAsphaltRoughnessMap = (size = 512): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -145,11 +145,11 @@ export const createAsphaltRoughnessMap = (size = 512): CanvasTexture => {
     for (let x = 0; x < size; x++) {
       const u = x / size;
       const v = y / size;
-      // Крупные пятна свежего / стертого асфальта
+      // Large patches of fresh / worn asphalt
       const macro = fbm(u * 4.5, v * 4.5, 117, 4);
       const n = fbm(u * 40, v * 40, 203, 3);
       const grit = next() * 0.15;
-      // 0.48–0.98 в linear: выше = матовее; макро сдвигает целые зоны
+      // 0.48–0.98 in linear: higher = matte; macro shifts whole zones
       const r = Math.max(0, Math.min(255, (0.55 + macro * 0.22 + n * 0.2 + grit) * 255));
       const idx = (y * size + x) * 4;
       data[idx] = r;
@@ -163,7 +163,7 @@ export const createAsphaltRoughnessMap = (size = 512): CanvasTexture => {
   return finishTexture(canvas, false);
 };
 
-/** Грунт / земля за пределами трассы: dirt noise, тинт через palette.ground. */
+/** Ground / dirt outside the track: dirt noise, tint via palette.ground. */
 export const createGroundTexture = (size = 512): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -205,7 +205,7 @@ export const createGroundTexture = (size = 512): CanvasTexture => {
   return finishTexture(canvas);
 };
 
-/** Клонирует карту и выставляет repeat под мировой размер */
+/** Clones the map and sets repeat to match the world size */
 export const cloneMapForSize = (
   source: Texture,
   worldWidth: number,
@@ -220,7 +220,7 @@ export const cloneMapForSize = (
   return map;
 };
 
-/** Клон асфальта с тайлом ASPHALT_TILE_SIZE */
+/** Asphalt clone with ASPHALT_TILE_SIZE tiling */
 export const cloneAsphaltMapForSegment = (
   source: Texture,
   width: number,

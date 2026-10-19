@@ -5,11 +5,11 @@ import type { TCarSkin } from '@/entities/track';
 import { uiPalette } from '@/shared/config';
 import { VEHICLE_TARGET_LENGTH } from '@/widgets/race-canvas/vehicle/vehicle-fit';
 
-/** Акценты Sega (dark) — совпадают с --sega-cyan / --sega-magenta */
+/** Sega (dark) accents — match --sega-cyan / --sega-magenta */
 export const FALLBACK_ACCENT_CYAN = uiPalette.dark['sega-cyan'];
 export const FALLBACK_ACCENT_MAGENTA = uiPalette.dark['sega-magenta'];
 
-/** Габариты кузова ghost-car (метры) */
+/** Ghost-car body dimensions (meters) */
 export const FALLBACK_BODY = {
   width: VEHICLE_TARGET_LENGTH * 0.48,
   height: 0.32,
@@ -17,7 +17,7 @@ export const FALLBACK_BODY = {
   y: 0.42,
 } as const;
 
-/** Кабина поверх кузова */
+/** Cabin on top of the body */
 export const FALLBACK_CABIN = {
   width: VEHICLE_TARGET_LENGTH * 0.4,
   height: 0.26,
@@ -26,7 +26,7 @@ export const FALLBACK_CABIN = {
   z: -0.12,
 } as const;
 
-/** Колеса: радиус, толщина диска, колея и база */
+/** Wheels: radius, rim thickness, track and wheelbase */
 export const FALLBACK_WHEEL = {
   radius: 0.28,
   thickness: 0.1,
@@ -34,7 +34,7 @@ export const FALLBACK_WHEEL = {
   wheelbase: VEHICLE_TARGET_LENGTH * 0.55,
 } as const;
 
-/** Позиции центров колес [x, y, z] — FL, FR, RL, RR */
+/** Wheel center positions [x, y, z] — FL, FR, RL, RR */
 export const FALLBACK_WHEEL_POSITIONS: ReadonlyArray<readonly [number, number, number]> = [
   [FALLBACK_WHEEL.track / 2, FALLBACK_WHEEL.radius, FALLBACK_WHEEL.wheelbase / 2],
   [-FALLBACK_WHEEL.track / 2, FALLBACK_WHEEL.radius, FALLBACK_WHEEL.wheelbase / 2],
@@ -46,14 +46,14 @@ const FILL_OPACITY = 0.38;
 const WIRE_OPACITY = 0.72;
 const PULSE_LO = 0.25;
 const PULSE_HI = 0.95;
-/** Частота stepped-пульса (Гц половин цикла → полный ~1 Гц) */
+/** Stepped pulse frequency (Hz of half cycle → full ~1 Hz) */
 const PULSE_HZ = 2;
 
 type TVehicleModelFallbackProps = {
   carSkin: TCarSkin;
 };
 
-/** Low-poly «призрачный» силуэт машины, пока грузится GLB. Полупрозрачный кузов + wireframe-акценты Sega с пульсацией emissive. */
+/** Low-poly "ghost" car silhouette while the GLB loads. Translucent body + Sega wireframe accents with pulsing emissive. */
 export const VehicleModelFallback = ({ carSkin }: TVehicleModelFallbackProps) => {
   const bodyFillRef = useRef<MeshStandardMaterial>(null);
   const bodyWireRef = useRef<MeshStandardMaterial>(null);

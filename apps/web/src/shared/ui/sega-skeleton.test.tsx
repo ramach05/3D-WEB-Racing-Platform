@@ -27,7 +27,7 @@ describe('page skeletons', () => {
       screen.getByRole('status', { name: /загружаем трассы|loading tracks/i }),
     ).toBeInTheDocument();
     expect(container.querySelectorAll('.sega-panel')).toHaveLength(TRACK_SLUGS.length);
-    // layout совпадает с реальным списком TracksPage (в т.ч. lg-колонки в ряд)
+    // layout matches the real TracksPage list (incl. lg columns in a row)
     expect(container.querySelector('ul')).toHaveClass('lg:grid-flow-col', 'lg:auto-cols-fr');
   });
 

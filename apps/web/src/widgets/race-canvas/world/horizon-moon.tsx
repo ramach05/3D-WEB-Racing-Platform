@@ -9,7 +9,7 @@ import {
 } from 'three';
 import { horizonMoonStops, type TRadialColorStop } from '@/shared/config';
 
-/** Рисует радиальный градиент в CanvasTexture */
+/** Draws a radial gradient into a CanvasTexture */
 const createRadialGradientTexture = (
   stops: readonly TRadialColorStop[],
   size = 256,
@@ -36,17 +36,17 @@ const createRadialGradientTexture = (
 };
 
 type TMoonPatch = {
-  /** Нормализованная X на диске */
+  /** Normalized X on the disk */
   x: number;
-  /** Нормализованная Y на диске */
+  /** Normalized Y on the disk */
   y: number;
-  /** Радиус пятна (доля размера) */
+  /** Patch radius (size fraction) */
   r: number;
-  /** Затемнение 0..1 */
+  /** Darkening 0..1 */
   shade: number;
 };
 
-/** Фиксированные «моря» и кратеры — стабильный вид при каждом рендере */
+/** Fixed maria and craters — stable look on every render */
 const MOON_MARIA: TMoonPatch[] = [
   { x: 0.38, y: 0.42, r: 0.18, shade: 0.22 },
   { x: 0.58, y: 0.55, r: 0.14, shade: 0.18 },
@@ -63,7 +63,7 @@ const MOON_CRATERS: TMoonPatch[] = [
   { x: 0.42, y: 0.72, r: 0.018, shade: 0.16 },
 ];
 
-/** Рисует диск луны с морями и кратерами */
+/** Draws the moon disk with maria and craters */
 const createMoonDiskTexture = (size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -88,7 +88,7 @@ const createMoonDiskTexture = (size = 256): CanvasTexture => {
   ctx.arc(center, center, radius, 0, Math.PI * 2);
   ctx.fill();
 
-  /** Рисует пятно/кратер на диске луны */
+  /** Draws a patch/crater on the moon disk */
   const drawPatch = (patch: TMoonPatch, alpha: number) => {
     const x = patch.x * size;
     const y = patch.y * size;
@@ -125,17 +125,17 @@ const createMoonDiskTexture = (size = 256): CanvasTexture => {
 };
 
 type TMoonLayerProps = {
-  /** Текстура слоя */
+  /** Layer texture */
   map: Texture;
-  /** Размер плоскости */
+  /** Plane size */
   size: number;
-  /** Порядок отрисовки */
+  /** Draw order */
   renderOrder: number;
   /** Additive blending (glow) */
   additive?: boolean;
 };
 
-/** Один billboard-слой луны */
+/** One moon billboard layer */
 const MoonLayer = ({ map, size, renderOrder, additive = true }: TMoonLayerProps) => (
   <mesh renderOrder={renderOrder}>
     <planeGeometry args={[size, size]} />
@@ -152,11 +152,11 @@ const MoonLayer = ({ map, size, renderOrder, additive = true }: TMoonLayerProps)
 );
 
 type THorizonMoonProps = {
-  /** Мировая позиция луны */
+  /** Moon world position */
   position: [number, number, number];
 };
 
-/** Луна на горизонте: billboard с кратерами и мягким лунным свечением */
+/** Horizon moon: billboard with craters and soft lunar glow */
 export const HorizonMoon = ({ position }: THorizonMoonProps) => {
   const textures = useMemo(
     () => ({
@@ -167,7 +167,7 @@ export const HorizonMoon = ({ position }: THorizonMoonProps) => {
     [],
   );
 
-  // Освобождает текстуры луны при размонтировании.
+  // Disposes moon textures on unmount.
   useEffect(
     () => () => {
       textures.disk.dispose();

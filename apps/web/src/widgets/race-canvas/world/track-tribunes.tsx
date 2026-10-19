@@ -55,15 +55,15 @@ import { getSharedWoodTexture } from '@/widgets/race-canvas/lib/wood-texture';
 import { buildSpectatorSeats, SpectatorCrowd } from './spectator-crowd';
 
 type TTrackTribunesProps = {
-  /** Ориентированный бокс линии старт/финиш */
+  /** Oriented box of the start/finish line */
   line: TOrientedBox;
-  /** Ширина дороги */
+  /** Road width */
   roadWidth: number;
-  /** Палитра трассы */
+  /** Track palette */
   palette: TTrackPalette;
-  /** Сторона трибуны относительно старта */
+  /** Tribune side relative to the start */
   side: TStartTribuneSide;
-  /** Ночной режим освещения */
+  /** Night lighting mode */
   isNight: boolean;
 };
 
@@ -81,47 +81,47 @@ type TTribuneMaterials = {
 };
 
 type TTribuneSectionProps = {
-  /** Z-центр секции */
+  /** Section Z center */
   sectionZ: number;
-  /** Индекс секции в SECTION_Z_OFFSETS */
+  /** Section index within SECTION_Z_OFFSETS */
   sectionIndex: number;
-  /** Внутренний X трибуны */
+  /** Tribune inner X */
   tribuneInnerX: number;
-  /** Знак стороны (−1 / +1) */
+  /** Side sign (−1 / +1) */
   sideSign: number;
-  /** Палитра трассы */
+  /** Track palette */
   palette: TTrackPalette;
-  /** Ночной режим */
+  /** Night mode */
   isNight: boolean;
-  /** Shared-материалы секции */
+  /** Shared section materials */
   materials: TTribuneMaterials;
 };
 
 type TTribuneRowAccentsProps = {
-  /** Внутренний X трибуны */
+  /** Tribune inner X */
   tribuneInnerX: number;
-  /** Знак стороны (−1 / +1) */
+  /** Side sign (−1 / +1) */
   sideSign: number;
-  /** Z-центр секции */
+  /** Section Z center */
   sectionZ: number;
-  /** Accent-цвет неона */
+  /** Neon accent color */
   accent: string;
-  /** Ночной glow лент */
+  /** Night glow of the strips */
   isOn: boolean;
 };
 
 type TTribuneEdgeFloodProps = {
-  /** Внутренний X трибуны */
+  /** Tribune inner X */
   tribuneInnerX: number;
-  /** Знак стороны (−1 / +1) */
+  /** Side sign (−1 / +1) */
   sideSign: number;
-  /** Знак края крыши по Z */
+  /** Roof edge Z sign */
   zSign: number;
-  /** Горит ли прожектор (ночь) */
+  /** Whether the floodlight is on (night) */
   isOn: boolean;
 };
 
-/** Один краевой прожектор: корпус всегда; SpotLight только при isOn */
+/** One edge floodlight: housing always; SpotLight only when isOn */
 const TribuneEdgeFlood = ({ tribuneInnerX, sideSign, zSign, isOn }: TTribuneEdgeFloodProps) => {
   const spotRef = useRef<SpotLight>(null);
   const targetRef = useRef<Object3D>(null);
@@ -133,7 +133,7 @@ const TribuneEdgeFlood = ({ tribuneInnerX, sideSign, zSign, isOn }: TTribuneEdge
   const aimY = tribuneEdgeAimY();
   const aimZ = tribuneEdgeAimZ(zSign);
 
-  // Привязывает Spot к точке на средних рядах (внутрь от края).
+  // Binds the Spot to a point on the middle rows (inward from the edge).
   useLayoutEffect(() => {
     if (!isOn) {
       return;
@@ -190,7 +190,7 @@ const TribuneEdgeFlood = ({ tribuneInnerX, sideSign, zSign, isOn }: TTribuneEdge
   );
 };
 
-/** Neon-ленты рядов: днем видны как accent, ночью — emissive */
+/** Row neon strips: visible as accent by day, emissive at night */
 const TribuneRowAccents = ({
   tribuneInnerX,
   sideSign,
@@ -223,15 +223,15 @@ const TribuneRowAccents = ({
 );
 
 type TTribuneEdgeFloodsProps = {
-  /** Внутренний X трибуны */
+  /** Tribune inner X */
   tribuneInnerX: number;
-  /** Знак стороны (−1 / +1) */
+  /** Side sign (−1 / +1) */
   sideSign: number;
-  /** Горят ли прожекторы */
+  /** Whether the floodlights are on */
   isOn: boolean;
 };
 
-/** Два светильника на ±Z краях крыши (корпус всегда; свет — только isOn) */
+/** Two fixtures on the ±Z roof edges (housing always; light only when isOn) */
 const TribuneEdgeFloods = ({ tribuneInnerX, sideSign, isOn }: TTribuneEdgeFloodsProps) => (
   <group position={[0, ROAD_TOP_Y, 0]}>
     {TRIBUNE_EDGE_Z_SIGNS.map((zSign) => (
@@ -254,13 +254,13 @@ type TInstancedBoxItem = {
 };
 
 type TInstancedBoxesProps = {
-  /** Центры и размеры боксов */
+  /** Box centers and sizes */
   items: ReadonlyArray<TInstancedBoxItem>;
-  /** Фиксированный размер XZ для стоек (высота из item.height) */
+  /** Fixed XZ size for posts (height from item.height) */
   fixedSizeXZ?: number;
-  /** Материал */
+  /** Material */
   material: MeshStandardMaterial;
-  /** Тень */
+  /** Shadow */
   castShadow?: boolean;
 };
 
@@ -269,7 +269,7 @@ const _instQuat = new Quaternion();
 const _instScale = new Vector3();
 const _instEuler = new Euler();
 
-/** Один InstancedMesh из списка боксов (поддержка Euler-поворота) */
+/** One InstancedMesh from a box list (Euler rotation supported) */
 const InstancedBoxes = ({
   items,
   fixedSizeXZ,
@@ -323,7 +323,7 @@ const InstancedBoxes = ({
   );
 };
 
-/** Открытая секция грандстенда: бетон, дерево, сталь — без торцевых стен */
+/** Open grandstand section: concrete, wood, steel — no end walls */
 const TribuneSection = ({
   sectionZ,
   sectionIndex,
@@ -519,7 +519,7 @@ const TribuneSection = ({
   );
 };
 
-/** Открытые трибуны у старт/финиш (визуал; коллайдеры — TrackTribuneColliders) */
+/** Open grandstands at start/finish (visuals; colliders — TrackTribuneColliders) */
 export const TrackTribunes = ({ line, roadWidth, palette, side, isNight }: TTrackTribunesProps) => {
   const sideSign = tribuneSideSign(side);
   const tribuneInnerX = sideSign * (roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);
@@ -600,7 +600,7 @@ export const TrackTribunes = ({ line, roadWidth, palette, side, isNight }: TTrac
     isNight,
   ]);
 
-  // Освобождает материалы (текстуры — singleton, не dispose).
+  // Disposes materials (textures are singletons, not disposed).
   useEffect(
     () => () => {
       materials.platform.dispose();

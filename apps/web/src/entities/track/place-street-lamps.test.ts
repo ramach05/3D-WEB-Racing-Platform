@@ -78,9 +78,9 @@ describe('placeStreetLamps', () => {
     const lamps = placeStreetLamps({ config: nightCityTrack });
     expect(lamps.length).toBeGreaterThan(4);
 
-    // На тесном уличном контуре (шпильки + MIN_LAMP_SPACING) внутренние столбы
-    // физически не умещаются рядом с внешними, поэтому законные позиции — внешние.
-    // Проверяем не «обе стороны», а что свет покрывает весь периметр.
+    // On a tight street circuit (hairpins + MIN_LAMP_SPACING) inner poles
+    // physically don't fit next to outer ones, so valid positions are outer.
+    // Check not "both sides", but that light covers the whole perimeter.
     const bx = nightCityTrack.centerline.map((p) => p.x);
     const bz = nightCityTrack.centerline.map((p) => p.z);
     const trackSpanX = Math.max(...bx) - Math.min(...bx);

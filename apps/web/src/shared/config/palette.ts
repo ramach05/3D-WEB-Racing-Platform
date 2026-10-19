@@ -16,7 +16,7 @@ import type {
   TVehiclePalette,
 } from './palette.types';
 
-/** UI-токены (мапятся в CSS-переменные --bg, --fg, …) */
+/** UI tokens (mapped to CSS variables --bg, --fg, …) */
 export const uiPalette = {
   light: {
     bg: '#f4f0ff',
@@ -50,14 +50,14 @@ export const uiPalette = {
   },
 } as const satisfies TUiPalette;
 
-/** Доп. UI-цвета, не зависящие от light/dark */
+/** Extra UI colors independent of light/dark */
 export const uiChrome = {
   onYellow: '#120018',
   finishWipeDark: '#111',
   finishWipeLight: '#f5f5f5',
 } as const satisfies TUiChrome;
 
-/** Палитры трасс (shape совместим с TTrackPalette) */
+/** Track palettes (shape compatible with TTrackPalette) */
 export const trackPalettes = {
   coastal: {
     sky: '#4db4ff',
@@ -82,7 +82,7 @@ export const trackPalettes = {
     minimapBg: '#1c1234',
   },
   storm: {
-    /** Светлое пасмурное небо дождливого дня: серо-голубое, с просветами, не гроза */
+    /** Light overcast sky of a rainy day: grey-blue with bright patches, not a storm */
     sky: '#aebfcd',
     fog: '#a5b4c1',
     ground: '#6f6757',
@@ -95,7 +95,7 @@ export const trackPalettes = {
   },
 } as const satisfies TTrackPalettes;
 
-/** Окраска машины по трассе (shape совместим с TCarSkin) */
+/** Car paint per track (shape compatible with TCarSkin) */
 export const carSkins = {
   coastal: { body: '#ffe600', cabin: '#1a1208', wheel: '#222222' },
   night: { body: '#00e5ff', cabin: '#120018', wheel: '#ff2bd6' },
@@ -189,10 +189,10 @@ export const vehiclePalette = {
   headlight: '#fff8e0',
   glass: '#88ccff',
   brake: '#ff3333',
-  /** Темно-красный поликарбонат линзы (выкл.) — не smoked-black и не «краска» */
+  /** Dark-red polycarbonate lens (off) — not smoked-black and not "paint" */
   brakeGlass: '#24080a',
   brakeEmissive: '#ff0a0a',
-  /** Темно-янтарная линза поворотника */
+  /** Dark amber turn-signal lens */
   signalGlass: '#3d200a',
   reverseEmissive: '#f2f5ff',
   headlamp: '#ffffcc',
@@ -201,23 +201,23 @@ export const vehiclePalette = {
 } as const satisfies TVehiclePalette;
 
 export const startLightPalette = {
-  /** Темное smoked glass с красным undertone (выкл.) */
+  /** Dark smoked glass with a red undertone (off) */
   idle: '#14080a',
-  /** Насыщенный красный LED (countdown) */
+  /** Saturated red LED (countdown) */
   red: '#ff1428',
   amber: '#ffcc00',
   green: '#33ff66',
-  /** Матовый порошковый черный каркас (реальный F1 gantry) */
+  /** Matte powder-coated black frame (real F1 gantry) */
   steel: '#1a1c20',
   steelDark: '#0c0d10',
-  /** Корпус панели ламп */
+  /** Lamp panel housing */
   housing: '#101216',
-  /** Кольцо ниши — чуть светлее корпуса */
+  /** Recess ring — slightly lighter than the housing */
   bezel: '#3a3e46',
   floodLight: '#fff2d6',
 } as const satisfies TStartLightPalette;
 
-/** Муниципальный LED-фонарь (~3000K теплый белый) */
+/** Municipal LED street lamp (~3000K warm white) */
 export const streetLampPalette = {
   pole: '#2a2e36',
   arm: '#15181e',
@@ -277,7 +277,7 @@ export const horizonMoonStops = {
   ],
 } as const satisfies THorizonMoonStops;
 
-/** Нейтрали и one-off сцены */
+/** Scene neutrals and one-off colors */
 export const scenePalette = {
   white: '#ffffff',
   black: '#000000',
@@ -289,13 +289,13 @@ export const scenePalette = {
   skidMark: '#1c1c1e',
 } as const satisfies TScenePalette;
 
-/** Красно-белые поребрики */
+/** Red-and-white kerbs */
 export const kerbPalette = {
   red: '#d62828',
   white: '#f5f5f5',
 } as const satisfies TKerbPalette;
 
-/** Придорожные рекламные щиты (бумажный короб + gooseneck-подсветка) */
+/** Roadside billboards (paper face + gooseneck floodlights) */
 export const billboardPalette = {
   pole: '#3a404a',
   frame: '#c9c4b8',

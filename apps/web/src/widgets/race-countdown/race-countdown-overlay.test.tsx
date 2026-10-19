@@ -5,7 +5,7 @@ import { RaceCountdownOverlay } from './race-countdown-overlay';
 
 describe('RaceCountdownOverlay', () => {
   beforeEach(() => {
-    // Уведомления HUD в сторе отложены на ближайший rAF — таймер его не догонит.
+    // HUD notifications in the store are deferred to the next rAF — a timer won't catch it.
     vi.useFakeTimers({
       toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame'],
     });
@@ -14,7 +14,7 @@ describe('RaceCountdownOverlay', () => {
 
   afterEach(() => {
     resetRaceSession('countdown-test', 4, 3);
-    // Догоняем отложенный flush, чтобы флаг уведомления не «залип» на снятых фейковых таймерах.
+    // Catch up with the deferred flush so the notification flag doesn't stick after fake timers are removed.
     act(() => {
       vi.advanceTimersByTime(100);
     });
@@ -27,7 +27,7 @@ describe('RaceCountdownOverlay', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  // Шаг таймера + ближайший rAF, в котором стор уведомляет подписчиков.
+  // Timer step + the nearest rAF in which the store notifies subscribers.
   const advance = (ms: number) => {
     act(() => {
       vi.advanceTimersByTime(ms + 32);

@@ -6,14 +6,14 @@ import {
   SRGBColorSpace,
 } from 'three';
 
-/** Горизонтальных повторов коры вокруг ствола */
+/** Horizontal bark repeats around the trunk */
 export const BARK_WRAP_U = 2.4;
-/** Вертикальных повторов коры по высоте ствола */
+/** Vertical bark repeats along the trunk height */
 export const BARK_WRAP_V = 3.2;
 
 type TRng = () => number;
 
-/** LCG-генератор 0..1 из seed */
+/** LCG generator producing 0..1 from a seed */
 const createRng = (seedInit: number): TRng => {
   let seed = seedInit >>> 0;
   return () => {
@@ -22,14 +22,14 @@ const createRng = (seedInit: number): TRng => {
   };
 };
 
-/** Детерминированный хэш 2D-координат в 0..1 */
+/** Deterministic hash of 2D coordinates into 0..1 */
 const hash2 = (x: number, y: number, seed: number): number => {
   let n = (x * 374761393 + y * 668265263 + seed) | 0;
   n = (n ^ (n >>> 13)) * 1274126177;
   return ((n ^ (n >>> 16)) >>> 0) / 0xffffffff;
 };
 
-/** Value-noise 0..1 с билинейной интерполяцией */
+/** Value noise 0..1 with bilinear interpolation */
 const valueNoise = (x: number, y: number, seed: number): number => {
   const x0 = Math.floor(x);
   const y0 = Math.floor(y);
@@ -59,7 +59,7 @@ const fbm = (x: number, y: number, seed: number, octaves: number): number => {
   return norm > 0 ? sum / norm : 0;
 };
 
-/** Кора ствола: вертикальные трещины + mottling. Mid-gray albedo — тинт через material.color. */
+/** Trunk bark: vertical cracks + mottling. Mid-gray albedo — tint via material.color. */
 export const createBarkTexture = (size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -78,22 +78,22 @@ export const createBarkTexture = (size = 256): CanvasTexture => {
       const u = x / size;
       const v = y / size;
 
-      // Трещины вытянуты по высоте ствола (V)
+      // Cracks stretched along the trunk height (V)
       const rift = fbm(u * 14, v * 2.2, 17, 4);
       const plate = fbm(u * 5.5 + rift * 0.35, v * 3.5, 41, 3);
       const lichen = valueNoise(u * 22, v * 18, 83);
       const grit = (next() - 0.5) * 14;
 
       let tone = 128 + (plate - 0.5) * 42 + (rift - 0.5) * 55 + grit;
-      // Глубокие вертикальные расщелины
+      // Deep vertical crevices
       if (rift < 0.28) {
         tone -= (0.28 - rift) * 120;
       }
-      // Светлые чешуйки коры
+      // Light bark scales
       if (plate > 0.72) {
         tone += (plate - 0.72) * 70;
       }
-      // Редкий лишайник
+      // Rare lichen
       if (lichen > 0.88) {
         tone += 18;
       }
@@ -123,7 +123,7 @@ export const createBarkTexture = (size = 256): CanvasTexture => {
 
 let sharedBarkTexture: CanvasTexture | null = null;
 
-/** Один CanvasTexture коры на сессию (без дублирования VRAM). Не dispose из компонентов. */
+/** One shared bark CanvasTexture per session (no duplicated VRAM). Do not dispose from components. */
 export const getSharedBarkTexture = (size = 256): CanvasTexture => {
   if (!sharedBarkTexture) {
     sharedBarkTexture = createBarkTexture(size);

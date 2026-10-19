@@ -5,15 +5,15 @@ type TButtonVariant = 'primary' | 'ghost' | 'danger';
 type TButtonSize = 'md' | 'sm';
 
 type TButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  /** Визуальный вариант */
+  /** Visual variant */
   variant?: TButtonVariant;
-  /** Размер */
+  /** Size */
   size?: TButtonSize;
-  /** Подпись / иконка */
+  /** Label / icon */
   children: ReactNode;
 };
 
-/** Кнопка в стиле SEGA с видимым фокусом */
+/** SEGA-style button with visible focus */
 export const Button = forwardRef<HTMLButtonElement, TButtonProps>(
   ({ variant = 'primary', size = 'md', className, type = 'button', children, ...rest }, ref) => {
     return (

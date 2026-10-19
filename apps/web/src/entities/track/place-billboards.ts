@@ -11,23 +11,23 @@ import { placeStreetLamps } from './place-street-lamps';
 import type { TPlacedStreetLamp } from './place-street-lamps.types';
 
 const WALL_THICKNESS = 0.25;
-/** Отступ каркаса за внешней гранью стены (щит крупнее фонаря) */
+/** Frame outset beyond the outer wall face (billboards are bigger than lamps) */
 const WALL_OUTSET = 3.2;
-/** Не ставить щиты слишком близко к гантри / старту */
+/** Do not place billboards too close to the gantry / start */
 const START_FINISH_CLEARANCE = 18;
-/** Минимальный зазор между щитами */
+/** Minimum gap between billboards */
 const MIN_BILLBOARD_SPACING = 22;
-/** Минимальный зазор до уличного фонаря (чтобы столб не перекрывал панель) */
+/** Minimum clearance to a street lamp (so the pole does not block the panel) */
 const MIN_LAMP_CLEARANCE = 5.5;
-/** Сдвиги вдоль касательной, если станция попала за столб. Сначала +T (навстречу заезду / «перед столбом»), затем −T. */
+/** Shifts along the tangent when a station lands behind a pole. First +T (toward the race / "before the pole"), then −T. */
 const TANGENT_NUDGES_M = [5, 7, 9, 11, -5, -7, -9] as const;
-/** Сколько щитов на трассу по умолчанию */
+/** Default number of billboards per track */
 const DEFAULT_TARGET_COUNT = 5;
-/** Индекс слота с «Место для вашей рекламы» */
+/** Slot index holding the "for rent" ad */
 const FOR_RENT_SLOT = 2;
-/** Night City: сдвиг for-rent вдоль заезда по дуге centerline (м). Заезд против роста индекса → target = stationDist − offset. */
+/** Night City: for-rent shift along the race direction over the centerline arc (m). The race runs against index growth → target = stationDist − offset. */
 const FOR_RENT_NIGHT_CITY_ALONG_TRACK_M = 15;
-/** Night City: щиты, которые ставим на сторону, противоположную обычному чередованию */
+/** Night City: billboards placed on the side opposite the usual alternation */
 const NIGHT_CITY_FLIP_SIDE_ADS = new Set<TBillboardAdId>(['for-rent', 'apex-tires']);
 
 const isInsideAnyZone = (x: number, z: number, zones: TOrientedBox[]): boolean => {
@@ -72,7 +72,7 @@ const frameAtEdge = (
   return { px, pz, nx, nz, tx, tz };
 };
 
-/** Кадр (точка + нормаль + касательная) на дуговой длине вдоль centerline (с wrap) */
+/** Frame (point + normal + tangent) at an arc distance along the centerline (with wrap) */
 const frameAtArcDistance = (
   points: TLoopPoint[],
   arcDistance: number,
@@ -122,7 +122,7 @@ const isFarEnough = (
   return true;
 };
 
-/** yaw так, чтобы локальная +X смотрела в (towardX, towardZ) на плоскости XZ */
+/** yaw so that local +X faces (towardX, towardZ) on the XZ plane */
 const yawToward = (towardX: number, towardZ: number): number => Math.atan2(-towardZ, towardX);
 
 const perimeterOf = (points: TLoopPoint[]): number => {
@@ -166,18 +166,18 @@ const canPlaceAt = (
   return true;
 };
 
-/** Детерминированный adId для слота: ровно один for-rent */
+/** Deterministic adId for a slot: exactly one for-rent */
 const adIdForSlot = (slotIndex: number, targetCount: number): TBillboardAdId => {
   const brandAds = BILLBOARD_AD_IDS.filter((id) => id !== 'for-rent');
   if (slotIndex === Math.min(FOR_RENT_SLOT, targetCount - 1)) {
     return 'for-rent';
   }
-  // Смещаем индекс бренда, если слот после for-rent
+  // Shift the brand index when the slot comes after for-rent
   const brandIndex = slotIndex < FOR_RENT_SLOT ? slotIndex : slotIndex - 1;
   return brandAds[brandIndex % brandAds.length]!;
 };
 
-/** Один проход вдоль centerline с заданным шагом станций */
+/** Single pass along the centerline with the given station spacing */
 const collectAlongCenterline = (
   config: TTrackConfig,
   spacing: number,
@@ -213,14 +213,14 @@ const collectAlongCenterline = (
       let frame = frameAtEdge(points, i, t);
       const slotIndex = placed.length;
       const isForRentSlot = slotIndex === Math.min(FOR_RENT_SLOT, targetCount - 1);
-      /** Night City for-rent: сдвиг по дуге centerline в сторону заезда (−T) */
+      /** Night City for-rent: shift along the centerline arc toward the race (−T) */
       if (frame && isForRentSlot && config.slug === TRACK_SLUG_NIGHT_CITY) {
         frame = frameAtArcDistance(points, nextDist - FOR_RENT_NIGHT_CITY_ALONG_TRACK_M, perimeter);
       }
       if (frame) {
         const { px, pz, nx, nz, tx, tz } = frame;
         const adId = adIdForSlot(slotIndex, targetCount);
-        // Night City: отдельные щиты на стороне напротив обычного чередования
+        // Night City: certain billboards on the side opposite the usual alternation
         let preferOuter = stationIndex % 2 === 0;
         if (config.slug === TRACK_SLUG_NIGHT_CITY && NIGHT_CITY_FLIP_SIDE_ADS.has(adId)) {
           preferOuter = !preferOuter;
@@ -251,8 +251,8 @@ const collectAlongCenterline = (
             if (!canPlaceAt(x, z, config, placed, startFinishClearanceSq, lamps)) {
               continue;
             }
-            // Нормаль панели = касательная centerline (рост индекса).
-            // Заезд идет против роста индекса → щит смотрит навстречу машинам.
+            // Panel normal = centerline tangent (index growth).
+            // The race runs against index growth → the billboard faces the oncoming cars.
             placed.push({
               x,
               z,
@@ -276,7 +276,7 @@ const collectAlongCenterline = (
   }
 };
 
-/** Расставляет придорожные рекламные щиты вдоль трассы. Работает и днем, и ночью; целевое число — около 5, один из них for-rent. */
+/** Places roadside billboards along the track. Works day and night; target count is around 5, one of them for-rent. */
 export const placeBillboards = ({
   config,
   targetCount = DEFAULT_TARGET_COUNT,
@@ -295,7 +295,7 @@ export const placeBillboards = ({
   const placed: TPlacedBillboard[] = [];
   const lamps = placeStreetLamps({ config });
 
-  // Основной проход + более плотный запасной, если exclusion / фонари съели слоты
+  // Main pass + a denser fallback in case exclusion zones / lamps ate the slots
   const primarySpacing = perimeter / (targetCount + 0.35);
   collectAlongCenterline(
     config,
@@ -323,7 +323,7 @@ export const placeBillboards = ({
   return placed;
 };
 
-/** Экспорт констант для тестов */
+/** Constants exported for tests */
 export const BILLBOARD_PLACEMENT = {
   defaultTargetCount: DEFAULT_TARGET_COUNT,
   wallOutset: WALL_OUTSET,

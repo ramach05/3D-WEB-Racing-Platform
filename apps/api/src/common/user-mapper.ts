@@ -6,7 +6,7 @@ type TUserRow = {
   createdAt: Date;
 };
 
-/** Убирает хеш пароля и приводит дату к ISO */
+/** Strips the password hash and converts the date to ISO */
 export const toUserPublic = (user: TUserRow): TUserPublic => {
   return {
     id: user.id,

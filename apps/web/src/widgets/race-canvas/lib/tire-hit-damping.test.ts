@@ -34,7 +34,7 @@ describe('tireHitDamping', () => {
   it('recovers toward one over time', () => {
     registerTireHit(0.5);
 
-    // HIT_RECOVERY_PER_SEC = 3: за 0.1 с возврат 0.5 → 0.8
+    // HIT_RECOVERY_PER_SEC = 3: over 0.1 s it recovers 0.5 → 0.8
     const during = tickTireHitDamping(0.1);
     const after = tickTireHitDamping(0);
 

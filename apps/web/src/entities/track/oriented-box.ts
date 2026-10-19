@@ -1,7 +1,7 @@
 import type { TOrientedBox } from './config.types';
 import type { TCheckpointLocalCoords } from './oriented-box.types';
 
-/** Локальные координаты чекпоинта (совпадают с ориентацией зоны детекции). */
+/** Checkpoint local coordinates (aligned with the detection zone orientation). */
 export const getCheckpointLocalCoords = (
   x: number,
   z: number,
@@ -17,7 +17,7 @@ export const getCheckpointLocalCoords = (
   };
 };
 
-/** Проверяет, находится ли точка внутри ориентированного чекпоинта (XZ). */
+/** Checks whether a point is inside an oriented checkpoint (XZ). */
 export const isInsideCheckpoint = (x: number, z: number, checkpoint: TOrientedBox): boolean => {
   const { lx, lz } = getCheckpointLocalCoords(x, z, checkpoint);
   return Math.abs(lx) <= checkpoint.size[0] / 2 && Math.abs(lz) <= checkpoint.size[2] / 2;

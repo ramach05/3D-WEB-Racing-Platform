@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 
-/** Глобальный доступ к Prisma. Класс — требование Nest Module. */
+/** Global Prisma access. Class is a Nest Module requirement. */
 @Global()
 @Module({
   providers: [PrismaService],

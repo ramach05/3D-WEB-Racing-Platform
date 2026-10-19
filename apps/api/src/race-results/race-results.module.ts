@@ -3,7 +3,7 @@ import { AuthModule } from '../auth/auth.module';
 import { RaceResultsController } from './race-results.controller';
 import { RaceResultsService } from './race-results.service';
 
-/** Модуль результатов заезда. Класс — требование Nest Module. */
+/** Race results module. Class is a Nest Module requirement. */
 @Module({
   imports: [AuthModule],
   controllers: [RaceResultsController],

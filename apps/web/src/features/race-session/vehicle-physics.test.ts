@@ -193,23 +193,23 @@ describe('ground slope following', () => {
   });
 
   it('clamps the climb rate so a steep normal cannot launch the car', () => {
-    const theta = (19 * Math.PI) / 180; // под порогом 20° — еще «земля», но крутая
+    const theta = (19 * Math.PI) / 180; // just under the 20° threshold — still "ground", but steep
     const vy = computeGroundFollowVy(0, Math.cos(theta), -Math.sin(theta), 0, 25);
-    // 25 * tan(19°) ≈ 8.6 > MAX_CLIMB_VY → зажато
+    // 25 * tan(19°) ≈ 8.6 > MAX_CLIMB_VY → clamped
     expect(vy).toBeLessThanOrEqual(MAX_CLIMB_VY);
     expect(vy).toBeGreaterThan(MAX_CLIMB_VY - 1.5);
   });
 
   it('keeps the old clamp on flat ground and climb', () => {
-    // равнина: вертикаль всегда обнуляется, вверх не подпускает
+    // flat ground: vertical is always zeroed, never allowed upward
     expect(resolveGroundFollowVy(0, -2)).toBe(0);
     expect(resolveGroundFollowVy(0, 3)).toBe(0);
-    // подъем: цель = скорость скольжения вдоль плоскости
+    // climb: target = slide velocity along the plane
     expect(resolveGroundFollowVy(2.5, -1)).toBe(2.5);
   });
 
   it('descends along the slope instead of waiting for gravity to build up', () => {
-    // деки убегают вниз со -3 м/с, гравитация за кадры набежала только на -0.4
+    // the deck runs downhill at -3 m/s, gravity has only built up -0.4 over the frames
     expect(resolveGroundFollowVy(-3, -0.4)).toBe(-3);
   });
 
@@ -221,7 +221,7 @@ describe('ground slope following', () => {
     const one60 = smoothVyToward(0, -3, 1 / 60);
     expect(one60).toBeLessThan(0);
     expect(one60).toBeGreaterThan(-3);
-    // два шага по 1/30 эквивалентны одному по 1/15
+    // two 1/30 steps are equivalent to one 1/15 step
     expect(smoothVyToward(smoothVyToward(0, -3, 1 / 30), -3, 1 / 30)).toBeCloseTo(
       smoothVyToward(0, -3, 1 / 15),
       6,
@@ -229,16 +229,16 @@ describe('ground slope following', () => {
   });
 
   it('sticks the body to the equilibrium height (descent and crest overshoot)', () => {
-    // цель = равновесная высота покоя + запас
+    // target = equilibrium rest height + margin
     expect(computeGroundStickY(2.5, 2.6)).toBeCloseTo(2.5 + GROUND_STICK_MARGIN, 6);
-    // перебор над равновесием больше лимита — снижение за кадр не больше MaxDrop
+    // overshoot above equilibrium beyond the limit — per-frame drop capped at MaxDrop
     expect(computeGroundStickY(4.08, 4.35)).toBeCloseTo(4.35 - GROUND_STICK_MAX_DROP, 6);
   });
 
   it('raises the rest height on a slope: the flat capsule digs its tail into the deck', () => {
-    // равнина: без смещения
+    // flat ground: no offset
     expect(computeGroundRestY(2, 0, 1, 0, 1.65)).toBeCloseTo(2, 6);
-    // уклон 10% по x (n=(0.0995,0.995,0)): кузов стоит на halfLen*tanθ выше деки
+    // 10% grade along x (n=(0.0995,0.995,0)): the body sits halfLen*tanθ above the deck
     const ny = 0.995;
     const nx = Math.sqrt(1 - ny * ny);
     expect(computeGroundRestY(2, nx, ny, 0, 1.65)).toBeCloseTo(2 + 1.65 * (nx / ny), 10);
@@ -246,32 +246,32 @@ describe('ground slope following', () => {
 
   it('does not stick when the body is within the margin or below the equilibrium', () => {
     expect(computeGroundStickY(3, 3.01)).toBeNull();
-    // кузов ниже цели — вверх не поднимаем
+    // body below the target — never lift it
     expect(computeGroundStickY(3.5, 3.1)).toBeNull();
   });
 
   it('derives the visual pitch from the ground normal, not from speed', () => {
-    // подъем вперед (+Z): нормаль отклонена к -Z → нос вверх (отрицательный угол)
+    // climbing forward (+Z): normal tilts toward -Z → nose up (negative angle)
     const up = computeSlopePitchFromNormal(0, Math.cos(0.1), -Math.sin(0.1), 0, 1);
     expect(up).toBeLessThan(0);
     expect(up).toBeCloseTo(-0.1, 3);
-    // спуск вперед → положительный
+    // descending forward → positive
     const down = computeSlopePitchFromNormal(0, Math.cos(0.1), Math.sin(0.1), 0, 1);
     expect(down).toBeGreaterThan(0);
-    // равнина → 0 независимо от скорости
+    // flat ground → 0 regardless of speed
     expect(computeSlopePitchFromNormal(0, 1, 0, 0, 1)).toBe(0);
   });
 
   it('keeps the slope pitch independent of heading (no turn spike)', () => {
-    // тот же продольный склон, но курс вбок — уклон не вдоль forward → 0
+    // same longitudinal slope but heading sideways — grade not along forward → 0
     const sideways = computeSlopePitchFromNormal(0, Math.cos(0.1), -Math.sin(0.1), 1, 0);
     expect(sideways).toBeCloseTo(0, 6);
   });
 
   it('treats a wall normal as flat and caps the tilt at the max grade', () => {
-    // ny = 0.5 < cos(20°) → это стена, а не дорога → без наклона
+    // ny = 0.5 < cos(20°) → a wall, not a road → no tilt
     expect(computeSlopePitchFromNormal(0, 0.5, -Math.sqrt(0.75), 0, 1)).toBe(0);
-    // самый крутой разрешенный уклон = ровно SLOPE_MAX_GRADE
+    // steepest allowed grade = exactly SLOPE_MAX_GRADE
     const border = computeSlopePitchFromNormal(
       0,
       Math.cos(SLOPE_MAX_GRADE),
@@ -288,8 +288,8 @@ describe('ground slope following', () => {
     let angle = 0;
     for (let i = 0; i < 120; i += 1) {
       const next = smoothAngleToward(angle, target, dt);
-      expect(next).toBeLessThanOrEqual(target + 1e-9); // не перелетает цель
-      expect(next).toBeGreaterThanOrEqual(angle - 1e-9); // монотонно снизу
+      expect(next).toBeLessThanOrEqual(target + 1e-9); // never overshoots the target
+      expect(next).toBeGreaterThanOrEqual(angle - 1e-9); // monotonic from below
       angle = next;
     }
     expect(angle).toBeCloseTo(target, 2);
@@ -297,7 +297,7 @@ describe('ground slope following', () => {
 
   it('rate-limits the per-frame visual angle step', () => {
     const dt = 1 / 60;
-    const step = smoothAngleToward(0, 1, dt); // большой разрыв → потолок MAX_RATE*dt
+    const step = smoothAngleToward(0, 1, dt); // large gap → capped at MAX_RATE*dt
     expect(step).toBeCloseTo(ANGLE_SMOOTH_MAX_RATE * dt, 6);
   });
 });

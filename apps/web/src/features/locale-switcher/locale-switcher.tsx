@@ -5,16 +5,16 @@ import type { TAppLocale } from '@/shared/config';
 import { Select } from '@/shared/ui';
 
 type TLocaleSwitcherProps = {
-  /** Размер триггера селекта */
+  /** Select trigger size */
   size?: 'md' | 'sm';
 };
 
-/** Дропдаун языка ru/en */
+/** ru/en language dropdown */
 export const LocaleSwitcher = ({ size = 'md' }: TLocaleSwitcherProps) => {
   const { t, i18n } = useTranslation();
   const locale = (i18n.language === 'en' ? 'en' : 'ru') as TAppLocale;
 
-  /** Меняет язык i18n и сохраняет в storage */
+  /** Changes the i18n language and persists it to storage */
   const onChange = useCallback(
     (next: TAppLocale) => {
       persistLocale(next);

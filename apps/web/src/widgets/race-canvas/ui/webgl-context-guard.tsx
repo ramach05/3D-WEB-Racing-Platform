@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
 
-/** Дает браузеру шанс восстановить WebGL после context lost (HMR, смена вкладки, давление на GPU). Без preventDefault контекст мертв навсегда. */
+/** Gives the browser a chance to restore WebGL after context lost (HMR, tab switch, GPU pressure). Without preventDefault the context is dead forever. */
 export const WebGlContextGuard = () => {
   const gl = useThree((state) => state.gl);
 

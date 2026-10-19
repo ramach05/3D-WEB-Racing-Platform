@@ -1,12 +1,12 @@
-/** Форма process.env для fail-fast валидации; неизвестные ключи пробрасываются как есть */
+/** process.env shape for fail-fast validation; unknown keys pass through as-is */
 type TEnvRecord = Record<string, string | undefined>;
 
-/** Плейсхолдеры, с которыми в production запускаться нельзя */
+/** Placeholders that must not be used to boot in production */
 const INSECURE_SECRETS = new Set(['replace-me-access-secret', 'changeme', 'secret']);
 
 const read = (env: TEnvRecord, key: string): string => env[key]?.trim() ?? '';
 
-/** Валидирует обязательные переменные и возвращает нормализованный набор для ConfigService */
+/** Validates required variables and returns a normalized set for ConfigService */
 export const validateEnv = (env: TEnvRecord): TEnvRecord => {
   const nodeEnv = read(env, 'NODE_ENV') || 'development';
   const isProd = nodeEnv === 'production';
@@ -14,37 +14,37 @@ export const validateEnv = (env: TEnvRecord): TEnvRecord => {
 
   const jwtSecret = read(env, 'JWT_SECRET');
   if (!jwtSecret) {
-    errors.push('JWT_SECRET обязателен');
+    errors.push('JWT_SECRET is required');
   } else if (isProd) {
     if (INSECURE_SECRETS.has(jwtSecret)) {
-      errors.push('JWT_SECRET в production не может быть плейсхолдером');
+      errors.push('JWT_SECRET cannot be a placeholder in production');
     }
     if (jwtSecret.length < 32) {
-      errors.push('JWT_SECRET в production должен быть не короче 32 символов');
+      errors.push('JWT_SECRET must be at least 32 characters long in production');
     }
   }
 
   const dbUrl = read(env, 'DATABASE_URL');
   if (!dbUrl) {
-    errors.push('DATABASE_URL обязателен');
+    errors.push('DATABASE_URL is required');
   }
 
   const sameSite = read(env, 'COOKIE_SAME_SITE') || 'lax';
   if (!['lax', 'strict', 'none'].includes(sameSite)) {
-    errors.push('COOKIE_SAME_SITE должен быть lax | strict | none');
+    errors.push('COOKIE_SAME_SITE must be one of lax | strict | none');
   }
 
   const cookieSecure = read(env, 'COOKIE_SECURE') === 'true';
   if (isProd && !cookieSecure) {
-    errors.push('В production обязателен COOKIE_SECURE=true (refresh-cookie только по HTTPS)');
+    errors.push('COOKIE_SECURE=true is required in production (refresh cookie over HTTPS only)');
   }
   if (sameSite === 'none' && !cookieSecure) {
-    errors.push('COOKIE_SAME_SITE=none требует COOKIE_SECURE=true (требование браузеров)');
+    errors.push('COOKIE_SAME_SITE=none requires COOKIE_SECURE=true (browser requirement)');
   }
 
   const corsOrigin = read(env, 'CORS_ORIGIN');
   if (isProd && !corsOrigin) {
-    errors.push('В production задай явный CORS_ORIGIN (без дефолта на localhost)');
+    errors.push('Set an explicit CORS_ORIGIN in production (no localhost default)');
   }
 
   if (errors.length > 0) {

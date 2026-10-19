@@ -4,20 +4,20 @@ import { buildKerbRibbonGeometry } from '@/widgets/race-canvas/lib/kerb-ribbon-g
 import { createKerbTexture } from '@/widgets/race-canvas/lib/kerb-texture';
 
 type TTrackKerbsProps = {
-  /** Конфиг трассы */
+  /** Track config */
   config: TTrackConfig;
 };
 
 type TKerbEdgeProps = {
-  /** Centerline трассы */
+  /** Track centerline */
   centerline: TTrackConfig['centerline'];
-  /** Ширина дороги */
+  /** Road width */
   roadWidth: number;
   /** +1 left / −1 right */
   sideSign: 1 | -1;
 };
 
-/** Один край поребрика */
+/** One kerb edge */
 const KerbEdge = ({ centerline, roadWidth, sideSign }: TKerbEdgeProps) => {
   const { geometry } = useMemo(
     () => buildKerbRibbonGeometry(centerline, roadWidth, sideSign),
@@ -52,7 +52,7 @@ const KerbEdge = ({ centerline, roadWidth, sideSign }: TKerbEdgeProps) => {
   );
 };
 
-/** Красно-белые поребрики по обоим краям асфальта */
+/** Red-white kerbs along both asphalt edges */
 export const TrackKerbs = ({ config }: TTrackKerbsProps) => (
   <group>
     <KerbEdge centerline={config.centerline} roadWidth={config.roadWidth} sideSign={1} />

@@ -5,21 +5,21 @@ import { Select } from '@/shared/ui';
 import { applyTheme, readStoredTheme } from './model';
 
 type TThemeSwitcherProps = {
-  /** Размер триггера селекта */
+  /** Select trigger size */
   size?: 'md' | 'sm';
 };
 
-/** Дропдаун светлая/темная тема с сохранением в localStorage */
+/** Light/dark theme dropdown persisted to localStorage */
 export const ThemeSwitcher = ({ size = 'md' }: TThemeSwitcherProps) => {
   const { t } = useTranslation();
   const [theme, setTheme] = useState<TThemeMode>(readStoredTheme);
 
-  // Синхронизируем CSS-переменные и class dark с выбранной темой
+  // Sync CSS variables and the dark class with the selected theme
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
-  // Применяет выбранную тему и сохраняет в state
+  // Applies the selected theme and keeps it in state
   const onChange = useCallback((value: TThemeMode) => {
     setTheme(value);
     applyTheme(value);

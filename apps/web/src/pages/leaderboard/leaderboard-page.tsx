@@ -12,7 +12,7 @@ import {
 } from '@/shared/ui';
 import { LeaderboardTable } from '@/widgets/leaderboard-table';
 
-/** Глобальная таблица лидеров с фильтром по трассе */
+/** Global leaderboard with a per-track filter */
 export const LeaderboardPage = () => {
   const { t } = useTranslation();
   const user = useAuthUser();
@@ -30,7 +30,7 @@ export const LeaderboardPage = () => {
     skip: !selectedSlug,
   });
 
-  // Переключение трассы стрелками / Home / End
+  // Switch tracks with arrows / Home / End
   const onTrackKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (!tracks || tracks.length === 0) {
       return;

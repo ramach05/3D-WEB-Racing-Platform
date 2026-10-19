@@ -3,7 +3,7 @@ import type { TRacePerfSnapshot } from './store.types';
 type TListener = () => void;
 
 type TPerformanceMemory = {
-  /** Использованная JS-куча, байты */
+  /** Used JS heap, bytes */
   usedJSHeapSize: number;
 };
 
@@ -14,7 +14,7 @@ let lastSampleAt = 0;
 let lastNotifyAt = 0;
 const listeners = new Set<TListener>();
 
-/** Подписка HUD на снимок производительности */
+/** HUD subscription to the performance snapshot */
 export const subscribeRacePerf = (listener: TListener): (() => void) => {
   listeners.add(listener);
   return () => {
@@ -22,10 +22,10 @@ export const subscribeRacePerf = (listener: TListener): (() => void) => {
   };
 };
 
-/** Текущий снимок производительности */
+/** Current performance snapshot */
 export const getRacePerfSnapshot = (): TRacePerfSnapshot => snapshot;
 
-/** Получить используемую память в МБ */
+/** Get used memory in MB */
 const readMemMb = (): number | null => {
   const memory = (performance as Performance & { memory?: TPerformanceMemory }).memory;
   if (!memory) {
@@ -34,7 +34,7 @@ const readMemMb = (): number | null => {
   return Math.round(memory.usedJSHeapSize / (1024 * 1024));
 };
 
-/** Уведомляет подписчиков perf HUD не чаще ~250 мс */
+/** Notifies perf HUD subscribers at most every ~250 ms */
 const emit = (): void => {
   const now = performance.now();
   if (now - lastNotifyAt < 250) {
@@ -44,7 +44,7 @@ const emit = (): void => {
   listeners.forEach((listener) => listener());
 };
 
-/** Тик кадра из FramePerfTracker (work time кадра). Не дергает React каждый кадр. */
+/** Frame tick from FramePerfTracker (frame work time). Does not poke React every frame. */
 export const tickFrame = (workMs: number): void => {
   frameCount += 1;
   accumulatedWorkMs += workMs;

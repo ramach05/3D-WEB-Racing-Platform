@@ -3,17 +3,17 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { BackSide, MeshBasicMaterial, type Mesh } from 'three';
 import { getSharedStormCloudTexture } from '@/widgets/race-canvas/lib/storm-clouds';
 
-/** Радиус купола меньше camera.far (500) — купол всегда в frustum */
+/** Dome radius is below camera.far (500) — dome always stays in frustum */
 const DOME_RADIUS = 420;
 
 type TStormSkyProps = {
-  /** Цвет тонировки облаков (palette.sky) */
+  /** Cloud tint color (palette.sky) */
   color: string;
-  /** Скорость прокрутки облаков по UV/сек */
+  /** Cloud UV scroll speed per second */
   drift?: number;
 };
 
-/** Темное облачное пасмурное небо шторма: купол с тайловой текстурой облаков. Следует за камерой (радиус < far), не засвечен (basic), вне тумана. */
+/** Dark overcast storm sky: dome with tiling cloud texture. Follows the camera (radius < far), unlit (basic), fog-excluded. */
 export const StormSky = ({ color, drift = 0.004 }: TStormSkyProps) => {
   const texture = useMemo(() => getSharedStormCloudTexture(512), []);
   const meshRef = useRef<Mesh>(null);
@@ -32,7 +32,7 @@ export const StormSky = ({ color, drift = 0.004 }: TStormSkyProps) => {
     [texture, color],
   );
 
-  // Купол центрируется на камере; дрейф облаков — медленным поворотом купола.
+  // Dome is centered on the camera; clouds drift via slow dome rotation.
   useFrame((_state, delta) => {
     const mesh = meshRef.current;
     if (mesh) {
@@ -41,7 +41,7 @@ export const StormSky = ({ color, drift = 0.004 }: TStormSkyProps) => {
     }
   });
 
-  // Не dispose: текстура — синглтон, материал освобождаем при unmount.
+  // No texture dispose: it is a singleton; material is released on unmount.
   useEffect(() => () => material.dispose(), [material]);
 
   return (

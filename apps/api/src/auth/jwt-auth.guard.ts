@@ -14,7 +14,7 @@ type TIncomingRequest = {
   user?: TJwtUser;
 };
 
-/** Проверяет Bearer access JWT. Класс нужен Nest Guard; метод canActivate — прототип, иначе декоратор контекста не сработает. */
+/** Verifies the Bearer access JWT. Class is required by Nest Guard; canActivate must be a prototype method, otherwise the context decorator won't work. */
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
@@ -26,7 +26,7 @@ export class JwtAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<TIncomingRequest>();
     const header = request.headers.authorization;
     if (!header || !header.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Нужен Bearer-токен');
+      throw new UnauthorizedException('Bearer token required');
     }
 
     const token = header.slice('Bearer '.length);
@@ -40,7 +40,7 @@ export class JwtAuthGuard implements CanActivate {
       request.user = { userId: payload.sub, nickname: payload.nickname };
       return true;
     } catch {
-      throw new UnauthorizedException('Токен недействителен');
+      throw new UnauthorizedException('Token is invalid');
     }
   }
 }

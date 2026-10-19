@@ -1,39 +1,39 @@
-/** Hex-цвет (#rgb / #rrggbb / #rrggbbaa) */
+/** Hex color (#rgb / #rrggbb / #rrggbbaa) */
 export type THexColor = `#${string}`;
 
-/** rgb() / rgba() — стопы градиентов горизонта */
+/** rgb() / rgba() — horizon gradient stops */
 export type TRgbaColor = `rgb(${string})` | `rgba(${string})`;
 
-/** CSS-цвет для UI-токенов и 3D-материалов */
+/** CSS color for UI tokens and 3D materials */
 export type TCssColor = THexColor | TRgbaColor;
 
-/** Стоп радиального градиента (canvas / horizon) */
+/** Radial gradient stop (canvas / horizon) */
 export type TRadialColorStop = {
-  /** Позиция стопа 0..1 */
+  /** Stop position 0..1 */
   stop: number;
-  /** Цвет стопа */
+  /** Stop color */
   color: TCssColor;
 };
 
-/** UI-токены одной темы (мапятся в CSS-переменные --bg, --fg, …) */
+/** UI tokens of one theme (mapped to CSS variables --bg, --fg, …) */
 export type TUiThemeColors = {
-  /** Фон страницы */
+  /** Page background */
   bg: TCssColor;
-  /** Основной текст */
+  /** Main text */
   fg: TCssColor;
-  /** Приглушенный текст */
+  /** Muted text */
   muted: TCssColor;
-  /** Поверхность карточек/панелей */
+  /** Card/panel surface */
   surface: TCssColor;
-  /** Hover поверхности */
+  /** Surface hover */
   'surface-hover': TCssColor;
-  /** Границы */
+  /** Borders */
   border: TCssColor;
-  /** Акцент */
+  /** Accent */
   accent: TCssColor;
-  /** Текст на accent */
+  /** Text on accent */
   'accent-fg': TCssColor;
-  /** Ошибки / danger */
+  /** Errors / danger */
   danger: TCssColor;
   /** SEGA cyan */
   'sega-cyan': TCssColor;
@@ -48,43 +48,43 @@ export type TUiThemeColors = {
 export type TUiColorToken = keyof TUiThemeColors;
 
 export type TUiPalette = {
-  /** Светлая тема */
+  /** Light theme */
   light: TUiThemeColors;
-  /** Темная тема */
+  /** Dark theme */
   dark: TUiThemeColors;
 };
 
-/** Доп. UI-цвета, не зависящие от light/dark */
+/** Extra UI colors independent of light/dark */
 export type TUiChrome = {
-  /** Текст на желтом активном табе */
+  /** Text on the yellow active tab */
   onYellow: TCssColor;
-  /** Полосы finish wipe (темная) */
+  /** Finish wipe stripes (dark) */
   finishWipeDark: TCssColor;
-  /** Полосы finish wipe (светлая) */
+  /** Finish wipe stripes (light) */
   finishWipeLight: TCssColor;
 };
 
 export type TUiChromeToken = keyof TUiChrome;
 
-/** Палитра материалов трассы (shape совместим с TTrackPalette) */
+/** Track material palette (shape compatible with TTrackPalette) */
 export type TTrackPaletteColors = {
-  /** Цвет неба / clearColor */
+  /** Sky color / clearColor */
   sky: TCssColor;
-  /** Цвет тумана */
+  /** Fog color */
   fog: TCssColor;
-  /** Грунт вокруг трассы */
+  /** Ground around the track */
   ground: TCssColor;
-  /** Асфальт */
+  /** Asphalt */
   road: TCssColor;
-  /** Стены */
+  /** Walls */
   wall: TCssColor;
-  /** Акцент разметки / неона */
+  /** Road-marking / neon accent */
   accent: TCssColor;
-  /** Дорога на миникарте */
+  /** Road on the minimap */
   minimapRoad: TCssColor;
-  /** Стены на миникарте */
+  /** Walls on the minimap */
   minimapWall: TCssColor;
-  /** Фон миникарты */
+  /** Minimap background */
   minimapBg: TCssColor;
 };
 
@@ -93,13 +93,13 @@ export type TTrackPaletteId = 'coastal' | 'night' | 'storm';
 
 export type TTrackPalettes = Record<TTrackPaletteId, TTrackPaletteColors>;
 
-/** Окраска машины (shape совместим с TCarSkin) */
+/** Car paint (shape compatible with TCarSkin) */
 export type TCarSkinColors = {
-  /** Кузов */
+  /** Body */
   body: TCssColor;
-  /** Кабина */
+  /** Cabin */
   cabin: TCssColor;
-  /** Шины */
+  /** Tires */
   wheel: TCssColor;
 };
 
@@ -107,221 +107,221 @@ export type TCarSkinToken = keyof TCarSkinColors;
 export type TCarSkins = Record<TTrackPaletteId, TCarSkinColors>;
 
 export type TTreeTimeOfDayColors = {
-  /** Ствол / кора */
+  /** Trunk / bark */
   trunk: TCssColor;
-  /** Средний ярус хвои */
+  /** Mid-tier pine foliage */
   pine: TCssColor;
-  /** Нижний ярус хвои (темнее) */
+  /** Lower pine tier (darker) */
   pineDark: TCssColor;
-  /** Верхний ярус хвои (светлее) */
+  /** Upper pine tier (lighter) */
   pineLight: TCssColor;
-  /** Основная крона лиственного */
+  /** Main broadleaf crown */
   broadleaf: TCssColor;
-  /** Светлые lobes лиственного */
+  /** Light lobes of broadleaf */
   broadleafLight: TCssColor;
 };
 
 export type TTreePaletteToken = keyof TTreeTimeOfDayColors;
 
 export type TTreePalette = {
-  /** Дневные цвета деревьев */
+  /** Daytime tree colors */
   day: TTreeTimeOfDayColors;
-  /** Ночные цвета деревьев */
+  /** Night tree colors */
   night: TTreeTimeOfDayColors;
 };
 
 export type TCrowdPalette = {
-  /** Футболки днем */
+  /** Shirts by day */
   shirtDay: readonly TCssColor[];
-  /** Футболки ночью */
+  /** Shirts at night */
   shirtNight: readonly TCssColor[];
-  /** Оттенки кожи */
+  /** Skin tones */
   skin: readonly TCssColor[];
-  /** Штаны днем */
+  /** Pants by day */
   pantsDay: readonly TCssColor[];
-  /** Штаны ночью */
+  /** Pants at night */
   pantsNight: readonly TCssColor[];
-  /** Волосы / темные кепки */
+  /** Hair / dark caps */
   hair: readonly TCssColor[];
-  /** Кепки (гоночные цвета) */
+  /** Caps (racing colors) */
   cap: readonly TCssColor[];
-  /** Базовый цвет меша до instanceColor */
+  /** Base mesh color before instanceColor */
   meshBase: TCssColor;
-  /** Выключенный emissive */
+  /** Emissive off */
   emissiveOff: TCssColor;
-  /** Emissive кожи ночью */
+  /** Skin emissive at night */
   skinEmissiveNight: TCssColor;
 };
 
 export type TTribuneDayColors = {
-  /** Каркас трибуны */
+  /** Grandstand frame */
   structure: TCssColor;
-  /** Ступени */
+  /** Steps */
   step: TCssColor;
-  /** Платформа */
+  /** Platform */
   platform: TCssColor;
-  /** Планки сидений */
+  /** Seat slats */
   seat: TCssColor;
-  /** Металл перил */
+  /** Handrail metal */
   metal: TCssColor;
 };
 
 export type TTribuneNightColors = TTribuneDayColors & {
-  /** Перила / навес ночью */
+  /** Handrails / canopy at night */
   rail: TCssColor;
 };
 
 export type TTribunePalette = {
-  /** Дневные цвета трибуны */
+  /** Daytime grandstand colors */
   day: TTribuneDayColors;
-  /** Ночные цвета трибуны */
+  /** Night grandstand colors */
   night: TTribuneNightColors;
-  /** Выключенный emissive */
+  /** Emissive off */
   emissiveOff: TCssColor;
 };
 
 export type TVehiclePalette = {
-  /** Цвет света фар */
+  /** Headlight beam color */
   headlight: TCssColor;
-  /** Стекло кабины */
+  /** Cabin glass */
   glass: TCssColor;
-  /** Стоп-сигналы */
+  /** Brake lights */
   brake: TCssColor;
-  /** Темно-красный поликарбонат линзы стопов (выкл.) */
+  /** Dark-red brake lens polycarbonate (off) */
   brakeGlass: TCssColor;
-  /** Emissive стоп-сигналов */
+  /** Brake light emissive */
   brakeEmissive: TCssColor;
-  /** Темно-янтарная линза поворотников */
+  /** Dark amber turn-signal lenses */
   signalGlass: TCssColor;
-  /** Emissive фонарей заднего хода */
+  /** Reverse light emissive */
   reverseEmissive: TCssColor;
-  /** Корпус фары */
+  /** Headlamp housing */
   headlamp: TCssColor;
-  /** Emissive фары */
+  /** Headlamp emissive */
   headlampEmissive: TCssColor;
-  /** Диски */
+  /** Rims */
   rim: TCssColor;
 };
 
 export type TVehiclePaletteToken = keyof TVehiclePalette;
 
 export type TStartLightPalette = {
-  /** Лампа выключена (smoked glass) */
+  /** Lamp off (smoked glass) */
   idle: TCssColor;
-  /** Красный (countdown F1) */
+  /** Red (F1 countdown) */
   red: TCssColor;
-  /** Желтый (финишное мигание) */
+  /** Amber (finish flash) */
   amber: TCssColor;
-  /** Зеленый (зарезервирован; старт F1 = гашение красных) */
+  /** Green (reserved; F1 start = reds out) */
   green: TCssColor;
-  /** Металл столбов и балки gantry */
+  /** Metal of gantry posts and beam */
   steel: TCssColor;
-  /** Темный металл / emissive базы конструкции */
+  /** Dark metal / structural emissive base */
   steelDark: TCssColor;
-  /** Корпус панели ламп */
+  /** Lamp panel housing */
   housing: TCssColor;
-  /** Ободок ниши лампы */
+  /** Lamp recess bezel */
   bezel: TCssColor;
-  /** Цвет stadium-прожекторов на gantry (Spot / Point / линза) */
+  /** Stadium floodlight color on the gantry (Spot / Point / lens) */
   floodLight: TCssColor;
 };
 
 export type TStartLightToken = keyof TStartLightPalette;
 
 export type TStreetLampPalette = {
-  /** Ствол столба */
+  /** Pole trunk */
   pole: TCssColor;
-  /** Кронштейн */
+  /** Bracket arm */
   arm: TCssColor;
-  /** Корпус плафона */
+  /** Lantern housing */
   housing: TCssColor;
-  /** Стекло / линза */
+  /** Glass / lens */
   lens: TCssColor;
-  /** Цвет SpotLight / PointLight */
+  /** SpotLight / PointLight color */
   light: TCssColor;
 };
 
 export type TStreetLampToken = keyof TStreetLampPalette;
 
 export type THorizonSunStops = {
-  /** Ядро солнца */
+  /** Sun core */
   core: readonly TRadialColorStop[];
-  /** Корона */
+  /** Corona */
   corona: readonly TRadialColorStop[];
-  /** Внешнее свечение */
+  /** Outer glow */
   glow: readonly TRadialColorStop[];
 };
 
 export type THorizonMoonStops = {
-  /** Диск луны */
+  /** Moon disk */
   disk: readonly TRadialColorStop[];
-  /** Край диска */
+  /** Disk edge */
   limb: readonly TRadialColorStop[];
-  /** Внешнее свечение */
+  /** Outer glow */
   glow: readonly TRadialColorStop[];
-  /** Ореол */
+  /** Halo */
   halo: readonly TRadialColorStop[];
 };
 
 export type TScenePalette = {
-  /** Белый (разметка) */
+  /** White (road markings) */
   white: TCssColor;
-  /** Черный */
+  /** Black */
   black: TCssColor;
-  /** Темная клетка шахматки */
+  /** Dark checker square */
   checkerDark: TCssColor;
-  /** Цвет дневного солнца */
+  /** Daytime sun color */
   sunDay: TCssColor;
-  /** Цвет ночного света */
+  /** Night light color */
   sunNight: TCssColor;
-  /** Холодный свет невидимого солнца в штормовой дождь */
+  /** Cold light of the invisible sun in storm rain */
   sunRain: TCssColor;
-  /** Цвет препятствий (шины) */
+  /** Obstacle color (tires) */
   obstacle: TCssColor;
-  /** Следы резины на асфальте */
+  /** Rubber marks on the asphalt */
   skidMark: TCssColor;
 };
 
 export type TScenePaletteToken = keyof TScenePalette;
 
 export type TKerbPalette = {
-  /** Красная полоса поребрика */
+  /** Red kerb stripe */
   red: TCssColor;
-  /** Белая полоса поребрика */
+  /** White kerb stripe */
   white: TCssColor;
 };
 
 export type TBillboardAdColors = {
-  /** Фон панели */
+  /** Panel background */
   background: TCssColor;
-  /** Основной текст / бренд */
+  /** Main text / brand */
   foreground: TCssColor;
-  /** Акцент (полоса, логотип-пятно) */
+  /** Accent (stripe, logo blob) */
   accent: TCssColor;
-  /** Вторичный текст / слоган */
+  /** Secondary text / slogan */
   muted: TCssColor;
 };
 
 export type TBillboardPalette = {
-  /** Стальные столбы */
+  /** Steel poles */
   pole: TCssColor;
-  /** Рамка панели (светлый короб бумажного щита) */
+  /** Panel frame (light box of the paper billboard) */
   frame: TCssColor;
-  /** Тыльная сторона панели */
+  /** Panel back side */
   panelBack: TCssColor;
-  /** Крепеж / болты */
+  /** Fasteners / bolts */
   bolt: TCssColor;
-  /** Труба кронштейна подсветки */
+  /** Floodlight bracket pipe */
   floodArm: TCssColor;
-  /** Корпус прожектора */
+  /** Floodlight housing */
   floodHousing: TCssColor;
-  /** Колба выключена */
+  /** Bulb off */
   floodBulbOff: TCssColor;
-  /** Колба включена */
+  /** Bulb on */
   floodBulbOn: TCssColor;
-  /** Цвет SpotLight */
+  /** SpotLight color */
   floodLight: TCssColor;
-  /** Цвета макетов по adId */
+  /** Mockup colors by adId */
   ads: {
     'torque-cola': TBillboardAdColors;
     'apex-tires': TBillboardAdColors;

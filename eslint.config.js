@@ -8,29 +8,29 @@ import tseslint from 'typescript-eslint';
 
 const noAnyUnknown = {
   selector: 'TSAnyKeyword',
-  message: 'Запрещён any — опиши конкретный тип.',
+  message: 'any is banned — describe a concrete type.',
 };
 
 const noUnknown = {
   selector: 'TSUnknownKeyword',
-  message: 'Запрещён unknown — опиши конкретный union или type.',
+  message: 'unknown is banned — describe a concrete union or type.',
 };
 
 const noFunctionDeclaration = {
   selector: 'FunctionDeclaration',
-  message: 'Используй стрелочные функции (const fn = () => {}).',
+  message: 'Use arrow functions (const fn = () => {}).',
 };
 
 const noDefaultExport = {
   selector: 'ExportDefaultDeclaration',
-  message: 'Используй named export (export const …), не default export.',
+  message: 'Use named exports (export const …), not default export.',
 };
 
 const fsdDeepImportBan = {
   group: [
-    // app: запрет deep-файлов (@/app/i18n), public API — только @/app
+    // app: deep files banned (@/app/i18n), public API — @/app only
     '@/app/*',
-    // slices: запрет внутренностей (@/pages/home/X), public API — @/pages/home
+    // slices: internals banned (@/pages/home/X), public API — @/pages/home
     '@/pages/*/*',
     '@/pages/*/**',
     '@/widgets/*/*',
@@ -39,29 +39,29 @@ const fsdDeepImportBan = {
     '@/features/*/**',
     '@/entities/*/*',
     '@/entities/*/**',
-    // shared segments: запрет @/shared/ui/button, public API — @/shared/ui
+    // shared segments: @/shared/ui/button banned, public API — @/shared/ui
     '@/shared/*/*',
     '@/shared/*/**',
   ],
-  message: 'Импортируй только public API слайса (index.ts), не внутренние файлы.',
+  message: 'Import only the public API of a slice (index.ts), not internal files.',
 };
 
 const fsdRelativeParentBan = {
   group: ['../*', '../**'],
-  message: 'Не используй относительные импорты через родителя. Нужен алиас @/.',
+  message: 'Relative imports through the parent are banned. Use the @/ alias.',
 };
 
-/** Снаружи слайса — только public API; родительские относительные пути запрещены */
+/** Outside a slice only the public API; parent-relative paths are banned */
 const fsdPublicApiPatterns = [fsdDeepImportBan, fsdRelativeParentBan];
 
-/** Внутри race-canvas разрешены deep-импорты своего слайса через @/; чужие слайсы и родительские относительные пути запрещены */
+/** Inside race-canvas deep imports of its own slice via @/ are allowed; foreign slices and parent-relative paths are banned */
 const raceCanvasInternalPatterns = [
   {
     group: [
       '@/app/*',
       '@/pages/*/*',
       '@/pages/*/**',
-      // чужие widgets — только public API; свой слайс (@/widgets/race-canvas/...) разрешен
+      // foreign widgets — public API only; own slice (@/widgets/race-canvas/...) is allowed
       '@/widgets/!(race-canvas)/*',
       '@/widgets/!(race-canvas)/**',
       '@/features/*/*',
@@ -71,12 +71,12 @@ const raceCanvasInternalPatterns = [
       '@/shared/*/*',
       '@/shared/*/**',
     ],
-    message: 'Импортируй только public API слайса (index.ts), не внутренние файлы.',
+    message: 'Import only the public API of a slice (index.ts), not internal files.',
   },
   fsdRelativeParentBan,
 ];
 
-/** JSDoc обязателен для публичных функций, хуков и компонентов */
+/** JSDoc is required for public functions, hooks and components */
 const jsdocPublicRules = {
   ...jsdoc.configs['flat/recommended-typescript'].rules,
   'jsdoc/require-param-type': 'off',
@@ -114,7 +114,7 @@ const jsdocPublicRules = {
   ],
 };
 
-/** Общие правила стиля кода для всего monorepo */
+/** Shared code-style rules for the whole monorepo */
 const sharedRules = {
   eqeqeq: ['error', 'always', { null: 'ignore' }],
   'no-console': ['error', { allow: ['warn', 'error'] }],
@@ -140,7 +140,7 @@ const sharedRules = {
       format: ['PascalCase'],
       prefix: ['I'],
     },
-    // Хуки: useAuthUser, useRaceHud (без type-aware lint — только по имени)
+    // Hooks: useAuthUser, useRaceHud (no type-aware lint — by name only)
     {
       selector: 'variable',
       filter: {
@@ -219,7 +219,7 @@ export default tseslint.config(
       ...sharedRules,
     },
   },
-  // Тесты и моки: JSDoc / console не требуем
+  // Tests and mocks: JSDoc / console not required
   {
     files: [
       '**/*.{test,spec}.{ts,tsx}',
@@ -274,7 +274,7 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/no-extraneous-class': 'off',
       '@typescript-eslint/consistent-type-imports': 'off',
-      // Nest: классы/методы вместо стрелок — исключение из общего стиля
+      // Nest: classes/methods instead of arrows — an exception to the general style
       'no-restricted-syntax': ['error', noAnyUnknown, noUnknown, noDefaultExport],
       'jsdoc/require-jsdoc': 'off',
     },

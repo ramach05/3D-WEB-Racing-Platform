@@ -1,4 +1,4 @@
-/** Склеивает className без лишних пробелов */
+/** Joins className parts without extra spaces */
 export const cx = (...parts: Array<string | false | null | undefined>): string => {
   return parts
     .filter((part): part is string => typeof part === 'string' && part.length > 0)

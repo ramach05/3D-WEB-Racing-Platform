@@ -1,16 +1,16 @@
-/** Легкий подсвет линзы днем в покое — глубина поликарбоната, не «включенные» габариты */
+/** Slight lens backlight by day at rest — polycarbonate depth, not "switched on" running lights */
 export const REAR_LIGHT_EMISSIVE_IDLE = 0.28;
-/** Габариты на ночной трассе (headlightsOn) — читаемее idle */
+/** Running lights on a night track (headlightsOn) — brighter than idle */
 export const REAR_LIGHT_EMISSIVE_NIGHT_IDLE = 1.6;
 export const REAR_LIGHT_EMISSIVE_BRAKE = 5.5;
 export const REAR_LIGHT_EMISSIVE_REVERSE = 4.5;
 
-/** Порог м/с: ниже — режим фонарей заднего хода */
+/** Threshold in m/s: below it — reverse light mode */
 export const REVERSE_LIGHT_SPEED_THRESHOLD = -0.2;
 
 export type TRearLightMode = 'idle' | 'brake' | 'reverse';
 
-/** Режим задних огней по педали тормоза и продольной скорости. При движении назад — белый reverse; иначе при brake — красные стопы. */
+/** Rear light mode from the brake pedal and forward speed. Reversing — white reverse; otherwise with brake — red brakes. */
 export const resolveRearLightMode = (brake: number, forwardSpeed: number): TRearLightMode => {
   if (forwardSpeed < REVERSE_LIGHT_SPEED_THRESHOLD) {
     return 'reverse';
@@ -21,7 +21,7 @@ export const resolveRearLightMode = (brake: number, forwardSpeed: number): TRear
   return 'idle';
 };
 
-/** Целевая emissiveIntensity для режима; headlightsOn — ночная трасса: габариты ярче в idle */
+/** Target emissiveIntensity for a mode; headlightsOn — night track: running lights are brighter at idle */
 export const rearLightEmissiveIntensity = (
   mode: TRearLightMode,
   brake: number,

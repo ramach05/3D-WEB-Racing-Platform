@@ -47,7 +47,7 @@ export {
 };
 
 type TTrackTreesProps = {
-  /** Конфиг трассы для расстановки деревьев */
+  /** Track config for tree placement */
   config: TTrackConfig;
 };
 
@@ -58,14 +58,14 @@ const tmpQuat = new Quaternion();
 const tmpMatrix = new Matrix4();
 const tmpColor = new Color();
 
-/** Детерминированный 0..1 от мировых координат */
+/** Deterministic 0..1 from world coordinates */
 const hash01 = (x: number, z: number): number => {
   let n = Math.imul(Math.floor(x * 12.9898 + z * 78.233) | 0, 1597334677);
   n = (n ^ (n >>> 16)) >>> 0;
   return n / 4294967296;
 };
 
-/** Легкий разброс оттенка кроны от позиции */
+/** Slight crown hue variation driven by position */
 const foliageInstanceColor = (tree: TPlacedTree, baseHex: string): Color => {
   const t = hash01(tree.x, tree.z);
   tmpColor.set(baseHex);
@@ -76,7 +76,7 @@ const foliageInstanceColor = (tree: TPlacedTree, baseHex: string): Color => {
   return tmpColor;
 };
 
-/** Записывает instanceColor для кроны */
+/** Writes instanceColor for the crown */
 const applyFoliageColors = (mesh: InstancedMesh, trees: TPlacedTree[], baseHex: string): void => {
   for (let i = 0; i < trees.length; i += 1) {
     mesh.setColorAt(i, foliageInstanceColor(trees[i]!, baseHex));
@@ -94,7 +94,7 @@ type TTrunkLayerProps = {
   map: CanvasTexture;
 };
 
-/** Instanced стволы с корой; scale зависит от kind */
+/** Instanced trunks with bark; scale depends on kind */
 const TrunkLayer = ({ trees, color, map }: TTrunkLayerProps) => {
   const meshRef = useRef<InstancedMesh>(null);
 
@@ -147,7 +147,7 @@ type TPineTierLayerProps = {
   castShadow: boolean;
 };
 
-/** Один ярус конусов сосны */
+/** One pine cone tier */
 const PineTierLayer = ({
   trees,
   color,
@@ -209,7 +209,7 @@ type TBroadleafLobeLayerProps = {
   castShadow: boolean;
 };
 
-/** Один lobe кроны лиственного */
+/** One broadleaf crown lobe */
 const BroadleafLobeLayer = ({
   trees,
   color,
@@ -271,11 +271,11 @@ const BroadleafLobeLayer = ({
   );
 };
 
-/** Цвет палитры по ключу tint */
+/** Palette color by tint key */
 const paletteTint = (colors: TTreeTimeOfDayColors, tint: keyof TTreeTimeOfDayColors): string =>
   colors[tint];
 
-/** Многослойные процедурные деревья (визуал; коллайдеры — TrackTreeColliders) */
+/** Layered procedural trees (visuals; colliders — TrackTreeColliders) */
 export const TrackTrees = ({ config }: TTrackTreesProps) => {
   const trees = useMemo(() => placeTrackTreesWithGround(config), [config]);
   const isNight = config.timeOfDay === 'night';

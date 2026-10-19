@@ -3,13 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { cx } from '@/shared/lib';
 
 type TSegaLoaderProps = {
-  /** Подпись; по умолчанию common.loading */
+  /** Label; defaults to common.loading */
   label?: ReactNode;
-  /** Доп. классы обертки */
+  /** Extra wrapper classes */
   className?: string;
 };
 
-/** Аркадный индикатор загрузки (LOADING + blink dots) */
+/** Arcade loading indicator (LOADING + blink dots) */
 export const SegaLoader = ({ label, className }: TSegaLoaderProps) => {
   const { t } = useTranslation();
   const text = label ?? t('common.loading');

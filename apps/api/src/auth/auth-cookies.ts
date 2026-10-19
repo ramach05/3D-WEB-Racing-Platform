@@ -3,7 +3,7 @@ import { REFRESH_TOKEN_TTL_MS } from './auth.types';
 
 export const REFRESH_COOKIE_NAME = 'refresh_token';
 
-/** Опции httpOnly refresh-cookie (path ограничен /auth) */
+/** httpOnly refresh-cookie options (path limited to /auth) */
 export const getRefreshCookieOptions = (): CookieOptions => {
   const secure = process.env.COOKIE_SECURE === 'true';
   const sameSiteEnv = process.env.COOKIE_SAME_SITE;
@@ -21,12 +21,12 @@ export const getRefreshCookieOptions = (): CookieOptions => {
   };
 };
 
-/** Ставит opaque refresh в httpOnly cookie */
+/** Stores the opaque refresh token in an httpOnly cookie */
 export const setRefreshCookie = (res: Response, refreshToken: string): void => {
   res.cookie(REFRESH_COOKIE_NAME, refreshToken, getRefreshCookieOptions());
 };
 
-/** Сбрасывает refresh-cookie */
+/** Clears the refresh cookie */
 export const clearRefreshCookie = (res: Response): void => {
   res.clearCookie(REFRESH_COOKIE_NAME, {
     ...getRefreshCookieOptions(),

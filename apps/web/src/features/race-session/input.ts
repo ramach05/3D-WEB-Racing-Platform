@@ -9,7 +9,7 @@ const state: TDriveInput = {
 
 const pressed = new Set<string>();
 
-/** Оси от touch-кнопок (OR с клавиатурой в syncAxes) */
+/** Axes from touch buttons (OR-ed with the keyboard in syncAxes) */
 const touch = {
   throttle: false,
   brake: false,
@@ -20,7 +20,7 @@ const touch = {
 
 export type TTouchAxis = keyof typeof touch;
 
-/** true, если фокус в поле ввода — клавиши гонки не трогаем */
+/** true when focus is inside an input field — race keys are left alone */
 const isTypingTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) {
     return false;
@@ -42,7 +42,7 @@ const RACE_KEYS = new Set([
   'KeyR',
 ]);
 
-/** Пересчитывает оси ввода по клавиатуре и touch */
+/** Recomputes input axes from keyboard and touch */
 const syncAxes = (): void => {
   const up = pressed.has('KeyW') || pressed.has('ArrowUp') || touch.throttle;
   const down = pressed.has('KeyS') || pressed.has('ArrowDown') || touch.brake;
@@ -55,16 +55,16 @@ const syncAxes = (): void => {
   state.steer = (left ? 1 : 0) + (right ? -1 : 0);
 };
 
-/** Текущий ввод машины */
+/** Current vehicle input */
 export const getDriveInput = (): TDriveInput => state;
 
-/** Включает/выключает ось touch-пада */
+/** Turns a touch-pad axis on/off */
 export const setTouchAxis = (axis: TTouchAxis, active: boolean): void => {
   touch[axis] = active;
   syncAxes();
 };
 
-/** Сбрасывает все touch-оси (unmount / pointercancel) */
+/** Clears all touch axes (unmount / pointercancel) */
 export const clearTouchAxes = (): void => {
   touch.throttle = false;
   touch.brake = false;
@@ -75,19 +75,19 @@ export const clearTouchAxes = (): void => {
 };
 
 type TInputHandlers = {
-  /** Рестарт заезда (R) */
+  /** Race restart (R) */
   onRestart: () => void;
-  /** Пауза / снятие паузы (Escape) */
+  /** Pause / resume (Escape) */
   onTogglePause: () => void;
-  /** Переключение режима камеры (C) */
+  /** Camera mode cycling (C) */
   onCycleCamera: () => void;
-  /** true, пока можно принимать WASD/стрелки */
+  /** true while WASD/arrow keys may be accepted */
   isRaceActive: () => boolean;
 };
 
-/** Подписывается на клавиши гонки. preventDefault только на WASD/стрелках во время заезда. */
+/** Subscribes to race keys. preventDefault only on WASD/arrows during a race. */
 export const bindRaceInput = (handlers: TInputHandlers): (() => void) => {
-  // keydown: оси, Escape, рестарт, камера
+  // keydown: axes, Escape, restart, camera
   const onKeyDown = (event: KeyboardEvent): void => {
     if (event.repeat) {
       return;
@@ -123,7 +123,7 @@ export const bindRaceInput = (handlers: TInputHandlers): (() => void) => {
     syncAxes();
   };
 
-  // keyup: сброс нажатой клавиши
+  // keyup: release of a pressed key
   const onKeyUp = (event: KeyboardEvent): void => {
     if (!RACE_KEYS.has(event.code)) {
       return;

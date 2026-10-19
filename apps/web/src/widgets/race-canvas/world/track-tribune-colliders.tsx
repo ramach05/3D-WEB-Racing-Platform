@@ -26,31 +26,31 @@ import {
 import { WORLD_GROUPS } from '@/widgets/race-canvas/lib/collision-groups';
 
 type TTrackTribuneCollidersProps = {
-  /** Ориентированный бокс линии старт/финиш */
+  /** Oriented box of the start/finish line */
   line: TOrientedBox;
-  /** Ширина дороги */
+  /** Road width */
   roadWidth: number;
-  /** Сторона трибуны относительно старта */
+  /** Tribune side relative to the start */
   side: TStartTribuneSide;
 };
 
 const ROAD_TOP_Y = 0.1;
 const FRICTION = 0.4;
-/** Зазор под навесом, чтобы кубы зрителей не пересекали крышу */
+/** Clearance under the canopy so spectator cubes do not poke through the roof */
 const CANOPY_CLEARANCE = 0.06;
 
 type TTribuneSectionCollidersProps = {
-  /** Z-центр секции */
+  /** Section Z center */
   sectionZ: number;
-  /** Внутренний X трибуны */
+  /** Tribune inner X */
   tribuneInnerX: number;
-  /** Знак стороны (−1 / +1) */
+  /** Side sign (−1 / +1) */
   sideSign: number;
-  /** Индекс секции для имени тела */
+  /** Section index used in the body name */
   sectionIndex: number;
 };
 
-/** Fixed-коллайдеры открытой секции: цоколь, ступени, задние стойки, лестницы, навес */
+/** Fixed colliders of an open section: foundation, steps, rear posts, stairs, canopy */
 const TribuneSectionColliders = ({
   sectionZ,
   tribuneInnerX,
@@ -180,7 +180,7 @@ const TribuneSectionColliders = ({
   );
 };
 
-/** Fixed-коллайдеры открытых трибун (цоколь, ступени, задние стойки, лестницы, навес). Визуал остается в TrackTribunes вне Physics. */
+/** Fixed colliders of open grandstands (foundation, steps, rear posts, stairs, canopy). Visuals stay in TrackTribunes outside Physics. */
 export const TrackTribuneColliders = ({ line, roadWidth, side }: TTrackTribuneCollidersProps) => {
   const sideSign = tribuneSideSign(side);
   const tribuneInnerX = sideSign * (roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);

@@ -1,11 +1,11 @@
 const NICKNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 
-/** Проверяет ник по правилам приложения */
+/** Validates a nickname against app rules */
 export const isValidNickname = (nickname: string): boolean => {
   return NICKNAME_RE.test(nickname.trim());
 };
 
-/** Проверяет пароль (минимум 4 символа) */
+/** Validates password (minimum 4 characters) */
 export const isValidPassword = (password: string): boolean => {
   return password.length >= 4;
 };

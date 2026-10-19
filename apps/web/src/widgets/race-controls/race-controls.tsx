@@ -2,11 +2,11 @@ import { useTranslation } from 'react-i18next';
 import type { TCameraMode } from '@/widgets/race-canvas';
 
 type TRaceControlsProps = {
-  /** Текущий режим камеры для подписи в списке */
+  /** Current camera mode for the label in the list */
   cameraMode: TCameraMode;
 };
 
-/** Постоянная панель горячих клавиш в левом нижнем углу */
+/** Persistent hotkey panel in the bottom-left corner */
 export const RaceControls = ({ cameraMode }: TRaceControlsProps) => {
   const { t } = useTranslation();
 

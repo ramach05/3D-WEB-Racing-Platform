@@ -2,7 +2,7 @@ import { type KeyboardEvent, useCallback, useEffect, useId, useRef, useState } f
 import { cx } from '@/shared/lib';
 import type { TSelectProps } from './select.types';
 
-/** Доступный пиксельный дропдаун в стиле SEGA */
+/** Accessible SEGA-style pixel dropdown */
 export const Select = <T extends string>({
   label,
   value,
@@ -18,14 +18,14 @@ export const Select = <T extends string>({
 
   const selected = options.find((option) => option.value === value) ?? options[0];
 
-  // Закрывает выпадающий список
+  // Closes the dropdown
   const close = useCallback(() => {
     setOpen(false);
   }, []);
 
-  // Закрытие по клику вне списка
+  // Close on click outside the list
   useEffect(() => {
-    // pointerdown вне корня → закрыть
+    // pointerdown outside the root → close
     const onPointerDown = (event: MouseEvent): void => {
       if (!rootRef.current?.contains(event.target as Node)) {
         close();
@@ -35,13 +35,13 @@ export const Select = <T extends string>({
     return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [close]);
 
-  // Выбор опции и закрытие меню
+  // Pick an option and close the menu
   const pick = (next: T): void => {
     onChange(next);
     close();
   };
 
-  // Клавиатура: открытие, стрелки, Enter, Escape
+  // Keyboard: open, arrows, Enter, Escape
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>): void => {
     if (!open) {
       if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {

@@ -5,22 +5,22 @@ import { createOilSlickTexture } from '@/widgets/race-canvas/lib/oil-slick-textu
 import { ROAD_TOP_Y } from '@/widgets/race-canvas/lib/road-ribbon-geometry';
 
 type TTrackOilSlicksProps = {
-  /** Конфиг трассы с зонами масла */
+  /** Track config with oil slick zones */
   config: TTrackConfig;
 };
 
 type TOilSlickMeshProps = {
-  /** Одна лужа */
+  /** One slick */
   slick: TOrientedBox;
-  /** Общий материал всех луж на трассе */
+  /** Material shared by all slicks on the track */
   material: MeshStandardMaterial;
 };
 
-/** Одна лужа: plane поверх асфальта, без castShadow */
+/** One slick: plane over the asphalt, no castShadow */
 const OilSlickMesh = ({ slick, material }: TOilSlickMeshProps) => {
   const width = slick.size[0];
   const length = slick.size[2];
-  // Чуть выше дорожной разметки/следов, без z-fight со стенами
+  // Slightly above road markings/skid marks, no z-fight with walls
   const y = ROAD_TOP_Y + 0.004;
 
   return (
@@ -38,7 +38,7 @@ const OilSlickMesh = ({ slick, material }: TOilSlickMeshProps) => {
   );
 };
 
-/** Визуал луж масла вне Physics. Одна shared texture + material на все пятна трассы. */
+/** Oil slick visuals outside Physics. One shared texture + material for all track slicks. */
 export const TrackOilSlicks = ({ config }: TTrackOilSlicksProps) => {
   const shared = useMemo(() => {
     const map: CanvasTexture = createOilSlickTexture(256);

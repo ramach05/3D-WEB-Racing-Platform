@@ -46,10 +46,10 @@ describe('vehicle catalog', () => {
       expect(vehicle.realLengthMeters, `${vehicle.id}: real length set`).toBeGreaterThan(0);
     }
     const target = (id: string) => getVehicleFitTargetLength(id)!;
-    // Якорь шкалы: Ram TRX 5.71 м → 3.8 ед. мира
+    // Scale anchor: Ram TRX 5.71 m → 3.8 world units
     expect(target('pickup')).toBeCloseTo(3.8, 5);
     expect(VEHICLE_UNITS_PER_METER).toBeCloseTo(3.8 / 5.71, 10);
-    // Реальная иерархия классов: TRX > Logan > Scirocco > hatch > Juke
+    // Real class hierarchy: TRX > Logan > Scirocco > hatch > Juke
     expect(target('pickup')).toBeGreaterThan(target('sedan'));
     expect(target('sedan')).toBeGreaterThan(target('scirocco'));
     expect(target('scirocco')).toBeGreaterThan(target('hatchback'));

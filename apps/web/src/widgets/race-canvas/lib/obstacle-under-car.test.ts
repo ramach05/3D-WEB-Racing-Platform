@@ -19,7 +19,7 @@ describe('isObstacleUnderCar', () => {
   });
 
   it('uses car axes when the car is turned', () => {
-    // курс вдоль X: препятствие в метре по X от машины — под кузовом
+    // heading along X: an obstacle one meter along X from the car is under the body
     expect(
       isObstacleUnderCar({
         carPosition: CAR,
@@ -27,7 +27,7 @@ describe('isObstacleUnderCar', () => {
         obstaclePosition: { x: 1, y: 0.3, z: 0 },
       }),
     ).toBe(true);
-    // а в метре по Z (боком) — уже за габаритом ширины
+    // but one meter along Z (from the side) — already outside the width footprint
     expect(
       isObstacleUnderCar({
         carPosition: CAR,

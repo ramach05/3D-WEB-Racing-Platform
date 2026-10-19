@@ -31,17 +31,17 @@ const normalizeNickname = (nickname: string): string => nickname.trim().toLowerC
 const hashRefreshToken = (token: string): string =>
   createHash('sha256').update(token).digest('hex');
 
-/** Фиктивный bcrypt-хеш: сравнение с ним выполняется, когда юзер не найден, чтобы время ответа не отличалось от случая «юзер есть, пароль неверный». */
+/** Dummy bcrypt hash compared against when the user is not found, so response time matches the "user exists, wrong password" case. */
 const DUMMY_PASSWORD_HASH = bcrypt.hashSync('timing-equalization-dummy', 10);
 
-/** Внутренняя выдача: access в JSON, refresh уходит только в cookie */
+/** Internal token issuance result: access in JSON, refresh goes to the cookie only */
 export type TIssuedAuth = {
   user: TUserPublic;
   accessToken: string;
   refreshToken: string;
 };
 
-/** Регистрация, логин и JWT access + opaque refresh-сессии в БД. Класс нужен Nest DI; методы без HTTP-декораторов можно писать стрелками. */
+/** Registration, login, JWT access and opaque refresh sessions in DB. Class is required by Nest DI; methods without HTTP decorators may be arrow functions. */
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -56,7 +56,7 @@ export class AuthService {
     const nickname = normalizeNickname(dto.nickname);
     const existing = await this.prisma.user.findUnique({ where: { nickname } });
     if (existing) {
-      throw new ConflictException('Ник уже занят');
+      throw new ConflictException('Nickname is already taken');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -69,9 +69,9 @@ export class AuthService {
         },
       });
     } catch (error) {
-      // Unique-конфликт: два конкурентных register на один ник — второй получит 409, а не 500
+      // Unique constraint hit: two concurrent registrations on one nickname — the second gets 409, not 500
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('Ник уже занят');
+        throw new ConflictException('Nickname is already taken');
       }
       throw error;
     }
@@ -87,14 +87,14 @@ export class AuthService {
   login = async (dto: LoginDto): Promise<TIssuedAuth> => {
     const nickname = normalizeNickname(dto.nickname);
     const user = await this.prisma.user.findUnique({ where: { nickname } });
-    // Сравнение всегда идет по реальному bcrypt: при отсутствии юзера — по фиктивному хешу,
-    // иначе по времени ответа можно отличить «нет такого ника» от «неверный пароль».
+    // Always compare with real bcrypt: when the user is missing — against the dummy hash,
+    // otherwise response timing would leak "no such nickname" vs "wrong password".
     const matches = await bcrypt.compare(
       dto.password,
       user ? user.passwordHash : DUMMY_PASSWORD_HASH,
     );
     if (!user || !matches) {
-      throw new UnauthorizedException('Неверный ник или пароль');
+      throw new UnauthorizedException('Invalid nickname or password');
     }
 
     const tokens = await this.issueTokens({ sub: user.id, nickname: user.nickname });
@@ -107,14 +107,14 @@ export class AuthService {
 
   refresh = async (refreshToken: string | undefined): Promise<TIssuedAuth> => {
     if (!refreshToken) {
-      throw new UnauthorizedException('Refresh-токен недействителен');
+      throw new UnauthorizedException('Refresh token is invalid');
     }
 
     const tokenHash = hashRefreshToken(refreshToken);
     const session = await this.prisma.refreshSession.findUnique({ where: { tokenHash } });
 
     if (!session) {
-      throw new UnauthorizedException('Refresh-токен недействителен');
+      throw new UnauthorizedException('Refresh token is invalid');
     }
 
     if (session.revokedAt) {
@@ -124,7 +124,7 @@ export class AuthService {
           data: { revokedAt: new Date() },
         });
       }
-      throw new UnauthorizedException('Refresh-токен недействителен');
+      throw new UnauthorizedException('Refresh token is invalid');
     }
 
     if (session.expiresAt.getTime() <= Date.now()) {
@@ -132,20 +132,20 @@ export class AuthService {
         where: { id: session.id },
         data: { revokedAt: new Date() },
       });
-      throw new UnauthorizedException('Refresh-токен недействителен');
+      throw new UnauthorizedException('Refresh token is invalid');
     }
 
     const user = await this.prisma.user.findUnique({ where: { id: session.userId } });
     if (!user) {
-      throw new UnauthorizedException('Пользователь не найден');
+      throw new UnauthorizedException('User not found');
     }
 
     const tokens = await this.issueTokens(
       { sub: user.id, nickname: user.nickname },
       { rotateFromSessionId: session.id },
     );
-    // Housekeeping: протухшие сессии (в т.ч. отозванные) все равно невалидны — чистим БД.
-    // Ошибка чистки не должна ломать выдачу токенов.
+    // Housekeeping: expired sessions (incl. revoked) are invalid anyway — clean the DB.
+    // A purge failure must not break token issuance.
     void this.prisma.refreshSession
       .deleteMany({
         where: { expiresAt: { lt: new Date(Date.now() - REFRESH_PURGE_GRACE_MS) } },
@@ -160,7 +160,7 @@ export class AuthService {
     };
   };
 
-  /** Идемпотентный revoke refresh-сессии (logout) */
+  /** Idempotent refresh-session revoke (logout) */
   logout = async (refreshToken: string | undefined): Promise<void> => {
     if (!refreshToken) {
       return;
@@ -182,7 +182,7 @@ export class AuthService {
       include: { raceResults: { include: { track: true }, orderBy: { timeMs: 'asc' } } },
     });
     if (!user) {
-      throw new NotFoundException('Пользователь не найден');
+      throw new NotFoundException('User not found');
     }
 
     const bestByTrack = new Map<
@@ -213,7 +213,7 @@ export class AuthService {
     };
   };
 
-  /** Access JWT + opaque refresh в БД (hash). При ротации помечает старую сессию revoked и ставит replacedById. */
+  /** Access JWT + opaque refresh in DB (hash). On rotation marks the old session revoked and sets replacedById. */
   private issueTokens = async (
     payload: TJwtPayload,
     options?: { rotateFromSessionId?: string },
