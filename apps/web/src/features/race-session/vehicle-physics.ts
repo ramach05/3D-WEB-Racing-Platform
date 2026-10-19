@@ -6,37 +6,22 @@ export const VEHICLE_LATERAL_GRIP = 11;
 /** Пик силы руля после разгона; ниже — слабее, чтобы не крутиться на месте */
 export const VEHICLE_LOW_SPEED_STEER = 0.58;
 export const VEHICLE_HIGH_SPEED_STEER = 0.42;
-/**
- * До этой скорости (м/с) сила руля растёт с нуля.
- * Выше прежнего 1.4 — на ползучей скорости yaw не разворачивает машину на месте.
- */
+/** До этой скорости (м/с) сила руля растет с нуля. Выше прежнего 1.4 — на ползучей скорости yaw не разворачивает машину на месте. */
 export const VEHICLE_STEER_ENGAGE_SPEED = 5;
 
-/**
- * Целевая угловая скорость (рад/с) при полной силе руля (strength=1).
- * Ближе к arcade-базе (~4.32), всё ещё чуть спокойнее.
- */
+/** Целевая угловая скорость (рад/с) при полной силе руля (strength=1). Ближе к arcade-базе (~4.32), все еще чуть спокойнее. */
 export const VEHICLE_STEER_YAW_RATE = 3.6;
 
-/**
- * Скорость сходимости yaw к цели (1/с).
- * Ближе к arcade (0.75) отклику на кадре 1/60.
- */
+/** Скорость сходимости yaw к цели (1/с). Ближе к arcade (0.75) отклику на кадре 1/60. */
 export const VEHICLE_YAW_FOLLOW = -Math.log(0.78) * 60;
 
-/**
- * Затухание yaw на месте (1/с).
- * Согласовано с прежним `angvel * 0.12` на кадре 1/60: -ln(0.12)*60.
- */
+/** Затухание yaw на месте (1/с). Согласовано с прежним `angvel * 0.12` на кадре 1/60: -ln(0.12)*60. */
 export const VEHICLE_YAW_STOP = -Math.log(0.12) * 60;
 
 /** Замедление ручника (м/с²) — слабее ножного тормоза, но без долгого выбега */
 export const HANDBRAKE_DECEL = 40;
 
-/**
- * Доля газа при зажатом ручнике.
- * 0.35 * ACCEL − HANDBRAKE_DECEL ≈ −23 м/с² — дрифт с заметным падением скорости.
- */
+/** Доля газа при зажатом ручнике: 0.35 * ACCEL − HANDBRAKE_DECEL ≈ −23 м/с² — дрифт с падением скорости */
 export const HANDBRAKE_THROTTLE_FACTOR = 0.35;
 
 /** Боковой grip при ручнике без газа */
@@ -55,10 +40,7 @@ export type TDriveLongitudinalInput = {
   dt: number;
 };
 
-/**
- * Интегрирует продольную скорость: ручник приоритетнее ножного тормоза
- * и гасит скорость к нулю с обеих сторон; без ручника — тормоз/реверс как раньше.
- */
+/** Интегрирует продольную скорость: ручник приоритетнее ножного тормоза и гасит скорость к нулю с обеих сторон; без ручника — тормоз/реверс как раньше. */
 export const integrateDriveForward = (
   forwardSpeed: number,
   input: TDriveLongitudinalInput,
@@ -124,10 +106,7 @@ export const computeSteerStrength = (forwardSpeed: number, handbrake = 0): numbe
   return handbrake > 0 ? base * HANDBRAKE_STEER_BOOST : base;
 };
 
-/**
- * Новый yaw (рад/с), независимый от FPS.
- * Раньше `* 0.75` за кадр на тяжёлых сценах (Night City) давал почти вдвое больший отклик.
- */
+/** Новый yaw (рад/с), независимый от FPS. Раньше `* 0.75` за кадр на тяжелых сценах (Night City) давал почти вдвое больший отклик. */
 export const integrateSteerYaw = (
   currentYaw: number,
   steerInput: number,
@@ -256,11 +235,7 @@ export const ANGLE_SMOOTH_TAU = 0.12;
 /** Потолок скорости доворота визуального угла (рад/с) */
 export const ANGLE_SMOOTH_MAX_RATE = 3;
 
-/**
- * Новое значение визуального угла (рад) при сходимости к target за dt: экспоненциально
- * (FPS-независимо) с потолком шага — без перерегулирования при резкой смене цели
- * (гребень эстакады, съезд на бордюр).
- */
+/** Визуальный угол (рад) после сходимости к target за dt: экспоненциально (FPS-независимо) с потолком шага — без перерегулирования на резкой смене цели */
 export const smoothAngleToward = (current: number, target: number, dt: number): number => {
   const follow = 1 - Math.exp(-dt / ANGLE_SMOOTH_TAU);
   const step = (target - current) * follow;

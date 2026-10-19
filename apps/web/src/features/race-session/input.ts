@@ -87,7 +87,7 @@ type TInputHandlers = {
 
 /** Подписывается на клавиши гонки. preventDefault только на WASD/стрелках во время заезда. */
 export const bindRaceInput = (handlers: TInputHandlers): (() => void) => {
-  /** keydown: оси, Escape, рестарт, камера */
+  // keydown: оси, Escape, рестарт, камера
   const onKeyDown = (event: KeyboardEvent): void => {
     if (event.repeat) {
       return;
@@ -123,7 +123,7 @@ export const bindRaceInput = (handlers: TInputHandlers): (() => void) => {
     syncAxes();
   };
 
-  /** keyup: сброс нажатой клавиши */
+  // keyup: сброс нажатой клавиши
   const onKeyUp = (event: KeyboardEvent): void => {
     if (!RACE_KEYS.has(event.code)) {
       return;

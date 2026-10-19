@@ -41,10 +41,7 @@ type TAuthedCookieRequest = Request & {
   cookies?: Record<string, string | undefined>;
 };
 
-/**
- * HTTP-слой auth.
- * Класс и методы прототипа нужны Nest для декораторов маршрутов.
- */
+/** HTTP-слой auth. Класс и методы прототипа нужны Nest для декораторов маршрутов. */
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {

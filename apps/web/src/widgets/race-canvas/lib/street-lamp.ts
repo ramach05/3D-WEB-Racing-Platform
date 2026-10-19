@@ -16,19 +16,13 @@ export const STREET_LAMP_ARM_REACH = 1.85;
 export const STREET_LAMP_ARM_RADIUS = 0.055;
 /** Высота локтя кронштейна над верхом столба */
 export const STREET_LAMP_ARM_RISE = 0.35;
-/**
- * Перекрытие сегментов кронштейна в суставах (убирает визуальные щели
- * между цилиндрами при повороте).
- */
+/** Перекрытие сегментов кронштейна в суставах (убирает визуальные щели между цилиндрами при повороте). */
 export const STREET_LAMP_ARM_JOINT_OVERLAP = STREET_LAMP_ARM_RADIUS * 2.2;
 
 /** Y верха столба (над асфальтом) */
 export const STREET_LAMP_POLE_TOP_Y = STREET_LAMP_ROAD_TOP_Y + STREET_LAMP_POLE_HEIGHT;
 
-/**
- * Суставы cobra-arm в локальных XY (столб в X=0).
- * 0 — верх столба, 1 — локоть, 2 — плафон.
- */
+/** Суставы cobra-arm в локальных XY (столб в X=0). 0 — верх столба, 1 — локоть, 2 — плафон. */
 export const STREET_LAMP_ARM_JOINTS = [
   { x: 0, y: STREET_LAMP_POLE_TOP_Y },
   { x: STREET_LAMP_ARM_REACH * 0.4, y: STREET_LAMP_POLE_TOP_Y + STREET_LAMP_ARM_RISE },
@@ -58,16 +52,10 @@ export const STREET_LAMP_LUMINAIRE_Y = STREET_LAMP_ARM_JOINTS[2].y;
 /** Локальный X плафона (к дороге) */
 export const STREET_LAMP_LUMINAIRE_LOCAL_X = STREET_LAMP_ARM_JOINTS[2].x;
 
-/**
- * Aim SpotLight на асфальт (локальный X от плафона дальше к полосе).
- * Реальные cobra-head льют основное пятно на проезжую часть, не под столб.
- */
+/** Aim SpotLight на асфальт (локальный X от плафона дальше к полосе). Реальные cobra-head льют основное пятно на проезжую часть, не под столб. */
 export const STREET_LAMP_SPOT_AIM_LOCAL_X = STREET_LAMP_LUMINAIRE_LOCAL_X + 3.4;
 
-/**
- * SpotLight: яркий LED-конус на дорогу.
- * Intensity сопоставима с фарами машины; активны только у ближайших K столбов.
- */
+/** SpotLight: яркий LED-конус на дорогу. Intensity сопоставима с фарами машины; активны только у ближайших K столбов. */
 export const STREET_LAMP_SPOT = {
   intensity: 110,
   distance: 30,
@@ -77,10 +65,7 @@ export const STREET_LAMP_SPOT = {
   decay: 2,
 } as const;
 
-/**
- * Бюджет Night City: Spot только у K ближайших фонарей (дальние — emissive-линза).
- * Shadow map — у одного ближайшего среди активных.
- */
+/** Бюджет Night City: Spot только у K ближайших фонарей (дальние — emissive-линза). Shadow map — у одного ближайшего среди активных. */
 export const STREET_LAMP_ACTIVE_SPOTS = {
   /** Сколько SpotLight монтировать одновременно */
   count: 4,
@@ -88,9 +73,7 @@ export const STREET_LAMP_ACTIVE_SPOTS = {
   switchHysteresis: 8,
 } as const;
 
-/**
- * Shadow map только у одного ближайшего Spot (бюджет Night City ≤3 passes).
- */
+/** Shadow map только у одного ближайшего Spot (бюджет Night City ≤3 passes). */
 export const STREET_LAMP_SPOT_SHADOW = {
   mapSize: 256,
   bias: -0.0001,

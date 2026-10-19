@@ -9,10 +9,7 @@ export const OIL_THROTTLE_FACTOR = 0.9;
 /** Время затухания residual после выезда с лужи (с) */
 export const OIL_RESIDUAL_SEC = 0.8;
 
-/**
- * Добавка yaw (рад/с) при полном руле на масле при ~top speed.
- * Заметный рыск, без мгновенного разворота.
- */
+/** Добавка yaw (рад/с) при полном руле на масле при ~top speed. Заметный рыск, без мгновенного разворота. */
 export const OIL_STEER_YAW_KICK = 0.55;
 
 /** Добавка yaw от уже имеющегося бокового сноса (на |lateral|=8) */
@@ -27,13 +24,10 @@ export const OIL_SKID_SPEED_FULL = 24;
 /** Пик intensity следа от масла (слабее торможения) */
 export const OIL_SKID_INTENSITY_PEAK = 0.55;
 
-/** Сила масляного покрытия шин 0…1 (доля колёс на масле / residual) */
+/** Сила масляного покрытия шин 0…1 (доля колес на масле / residual) */
 let oilStrength = 0;
 
-/**
- * Обновить силу масла.
- * `contactFraction` — доля колёс на луже (0…1); 0 = выехали, residual гаснет.
- */
+/** Обновить силу масла. `contactFraction` — доля колес на луже (0…1); 0 = выехали, residual гаснет. */
 export const tickOilGrip = (contactFraction: number, dt: number): number => {
   const clamped = Math.max(0, Math.min(1, contactFraction));
   if (clamped > 0) {
@@ -61,9 +55,7 @@ export const resolveOilSurfaceGrip = (strength: number): number | undefined => {
   return OIL_LATERAL_GRIP + (VEHICLE_LATERAL_GRIP - OIL_LATERAL_GRIP) * t;
 };
 
-/**
- * Смягчает прирост продольной скорости от газа на масле (инерция вперёд сохраняется).
- */
+/** Смягчает прирост продольной скорости от газа на масле (инерция вперед сохраняется). */
 export const applyOilThrottleFactor = (
   forwardSpeed: number,
   targetForward: number,
@@ -81,9 +73,7 @@ export const applyOilThrottleFactor = (
   return forwardSpeed + delta * factor;
 };
 
-/**
- * Дополнительный рыск на масле: от руля и от уже имеющегося lateral.
- */
+/** Дополнительный рыск на масле: от руля и от уже имеющегося lateral. */
 export const computeOilYawKick = (
   strength: number,
   steer: number,

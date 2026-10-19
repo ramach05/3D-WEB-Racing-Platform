@@ -25,7 +25,7 @@ import { computeVehicleFit } from './vehicle-fit';
 import { describe, expect, it } from 'vitest';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-/** Стенд CarConcept-подобных имён для хэтчбека / Киберпанка */
+/** Стенд CarConcept-подобных имен для хэтчбека / Киберпанка */
 const buildHatchStub = (): Group => {
   const root = new Group();
   const paint = new MeshStandardMaterial({ name: 'Paint 1 Carmine', color: '#cc0000' });
@@ -103,7 +103,7 @@ const buildSedanStub = (): Group => {
   panel('Bamper_zad_1_low_Kuzov1_0', 0, 0.8, -2.5, 3.0, 0.35, 0.25);
   panel('Bamper_zad_2_low_Kuzov1_0', 0, 0.55, -2.5, 3.0, 0.2, 0.2);
 
-  // Светильники: стёкла фар отдельными мешами, фонарь — единая полноширинная плашка
+  // Светильники: стекла фар отдельными мешами, фонарь — единая полноширинная плашка
   const hl = new Mesh(new BoxGeometry(0.15, 0.1, 0.1), glass);
   hl.name = 'Fara_1_low_glass_0';
   hl.position.set(-0.2, 1.3, 2.55);
@@ -135,7 +135,7 @@ const buildSedanStub = (): Group => {
   windshield.position.set(0, 1.7, 0.9);
   root.add(windshield);
 
-  // Колёса — combined-меши шин и дисков на все 4 колеса (как в реальном GLB)
+  // Колеса — combined-меши шин и дисков на все 4 колеса (как в реальном GLB)
   const wheelSpots: Array<[number, number, number]> = [
     [0.9, 0.43, 1.7],
     [-0.9, 0.43, 1.7],
@@ -379,10 +379,7 @@ const makeSkinnedTire = (material: MeshStandardMaterial, x: number, z: number): 
   return mesh;
 };
 
-/**
- * Scirocco как в прод-GLB: колёса — SkinnedMesh по материалам tire/wheel,
- * без групп wheel.smd* (fallback-ветка normalizeScirocco).
- */
+/** Scirocco как в прод-GLB: колеса — SkinnedMesh по материалам tire/wheel, без групп wheel.smd* (fallback-ветка normalizeScirocco). */
 const buildSciroccoSkinnedStub = (): Group => {
   const root = new Group();
   const paint = new MeshStandardMaterial({ name: 'skin_0.001', color: '#334455' });
@@ -467,7 +464,7 @@ describe('normalizeVehicleGltf', () => {
     expect(bodyMat.map).toBeNull();
     expect(bodyMat.name).not.toBe('Kuzov1');
 
-    // Бамперы красятся в цвет кузова — иначе атлас даёт красный низ
+    // Бамперы красятся в цвет кузова — иначе атлас дает красный низ
     for (const bumper of ['Bamper_pered_1_low_Kuzov1_0', 'Bamper_zad_1_low_Kuzov1_0']) {
       const bumperMat = (root.getObjectByName(bumper) as Mesh).material as MeshStandardMaterial;
       expect(bumperMat.name).toBe('SedanBodyPaint');
@@ -475,7 +472,7 @@ describe('normalizeVehicleGltf', () => {
       expect(bumperMat.map).toBeNull();
     }
 
-    // То, что краситься не должно (шины/диски на пивотах), остаётся в атласе
+    // То, что краситься не должно (шины/диски на пивотах), остается в атласе
     let tireMat: MeshStandardMaterial | null = null;
     root.getObjectByName('WheelFrontL')!.traverse((o) => {
       if (!tireMat && (o as Mesh).isMesh) {
@@ -486,7 +483,7 @@ describe('normalizeVehicleGltf', () => {
     expect(tireMat!.color.getHex()).not.toBe(SEDAN_BODY_COLOR);
     expect(tireMat!.map).not.toBeNull();
 
-    // Стёкла/корпуса света получают пониженный metalness (emissive читается ночью)
+    // Стекла/корпуса света получают пониженный metalness (emissive читается ночью)
     const hlMat = (root.getObjectByName('Fara_1_low_glass_0') as Mesh)
       .material as MeshStandardMaterial;
     expect(hlMat.metalness).toBeLessThanOrEqual(0.2);
@@ -623,7 +620,7 @@ describe('normalizeVehicleGltf', () => {
     });
     expect(matteOutsideVisible, 'no free-floating visible Matte tires').toBe(0);
 
-    // Слитый meш glass6 разрезан: перед → Headlight, зад → Brakelight
+    // Слитый меш glass6 разрезан: перед → Headlight, зад → Brakelight
     expect(root.getObjectByName('MergedLightGlass')).toBeFalsy();
     const frontGlass = root.getObjectByName('MergedLightGlass_Headlight');
     const rearGlass = root.getObjectByName('MergedLightGlass_Brakelight');

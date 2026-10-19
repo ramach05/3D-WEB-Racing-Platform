@@ -20,24 +20,17 @@ const PREVIEW_SKIN = carSkins.coastal;
 /** Фон превью (ближе к --bg, без прозрачности WebGL) */
 const PREVIEW_CLEAR = '#ebe7f2';
 
-/** Скорость лёгкого вращения превью (рад/с) */
+/** Скорость легкого вращения превью (рад/с) */
 const PREVIEW_SPIN = 0.35;
 
-/**
- * Демо-руление превью: передние колёса качаются влево-вправо через продакшн-риг
- * (steer → steerPivot), как в заезде. Без этого превью всегда кормит steer=0, и
- * колёса («steer and spin garage wheels from measured axle») не поворачиваются.
- */
+/** Амплитуда демо-руления превью: колеса качаются через продакшн-риг (steer → steerPivot), без этого превью всегда кормит steer=0 */
 const PREVIEW_STEER_SWING = 0.55;
 /** Плавный размах руля (рад/с): полный влево-вправо ≈ 2π / 0.65 ≈ 9.7 с */
 const PREVIEW_STEER_SPEED = 0.65;
-/** Небольшая продольная скорость (м/с), чтобы колёса медленно вращались */
+/** Небольшая продольная скорость (м/с), чтобы колеса медленно вращались */
 const PREVIEW_SPIN_SPEED = 1.1;
 
-/**
- * Стартовый ракурс ~¾ + 180° только для превью гаража (на гонку не влияет).
- * Все кузова после normalize смотрят в +Z — крутим одинаково.
- */
+/** Стартовый ракурс ~¾ + 180° только для превью гаража (на гонку не влияет). Все кузова после normalize смотрят в +Z — крутим одинаково. */
 const INITIAL_YAW = Math.PI * 0.72 + Math.PI;
 
 /** Точка взгляда камеры — примерно центр кузова после fit */
@@ -70,8 +63,8 @@ const PreviewScene = ({ vehicleId }: TPreviewSceneProps) => {
     timeRef.current += dt;
     turntableRef.current.rotation.y += dt * PREVIEW_SPIN;
 
-    // Демо-руление: front-колёса качаются влево-вправо (steer → steerPivot) и все
-    // колёса медленно вращаются (spin от forwardSpeed) — через тот же продакшн-путь,
+    // Демо-руление: front-колеса качаются влево-вправо (steer → steerPivot) и все
+    // колеса медленно вращаются (spin от forwardSpeed) — через тот же продакшн-путь,
     // что в заезде. Так «steer and spin garage wheels» виден в самих превью гаража.
     driveVisualRef.current.steer =
       Math.sin(timeRef.current * PREVIEW_STEER_SPEED) * PREVIEW_STEER_SWING;

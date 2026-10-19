@@ -61,7 +61,7 @@ type TGantryFloodLightProps = {
 };
 
 const CHECKER_COUNT = 10;
-/** Дистанции стрелок на стороне спавна (+local Z / +lz); заезд идёт к линии и в −lz. */
+/** Дистанции стрелок на стороне спавна (+local Z / +lz); заезд идет к линии и в −lz. */
 const ARROW_DISTANCES = [2, 4, 6] as const;
 const MARKING_Y = GANTRY_ROAD_TOP_Y + 0.002;
 
@@ -73,9 +73,7 @@ const LAMP_XS = Array.from({ length: START_LAMP_COUNT }, (_, i) => {
 /** Reused for housing.lookAt — не аллоцировать в layout-effect */
 const floodAimWorld = new Vector3();
 
-/**
- * Stadium-прожектор: Group.lookAt → +Z на финиш; линза и Spot на передней грани.
- */
+/** Stadium-прожектор: Group.lookAt → +Z на финиш; линза и Spot на передней грани. */
 const GantryFloodLight = ({ postX, sideZ, beamY, roadWidth, isOn }: TGantryFloodLightProps) => {
   const spotRef = useRef<SpotLight>(null);
   const targetRef = useRef<Object3D>(null);
@@ -260,7 +258,7 @@ export const TrackStartFinishLine = ({
   const lamp4MatRef = useRef<MeshStandardMaterial>(null);
   const pulseRef = useRef(0);
 
-  // Обновляет стартовые лампы и лёгкий пульс конструкции по HUD-статусу.
+  // Обновляет стартовые лампы и легкий пульс конструкции по HUD-статусу.
   useFrame((_, dt) => {
     const hud = getRaceHudSnapshot();
     pulseRef.current += dt;
@@ -294,7 +292,7 @@ export const TrackStartFinishLine = ({
       }
       const on = isLampLit(i, litCount);
       if (on) {
-        // Белый albedo + красный emissive: весь диск ярко читается днём
+        // Белый albedo + красный emissive: весь диск ярко читается днем
         mat.color.set('#ffffff');
         mat.emissive.set(startLightPalette.red);
         mat.emissiveIntensity = START_LAMP_BAY.litEmissiveIntensity * countdownPulse;
@@ -400,7 +398,7 @@ export const TrackStartFinishLine = ({
 
       {LAMP_XS.map((x, index) => (
         <group key={`start-lamp-${index}`} position={[x, panelY, lampFaceZ]}>
-          {/* Козырёк от солнца */}
+          {/* Козырек от солнца */}
           <mesh position={[0, START_LAMP_BAY.hood.offsetY, START_LAMP_BAY.hood.offsetZ]} castShadow>
             <boxGeometry
               args={[
@@ -416,7 +414,7 @@ export const TrackStartFinishLine = ({
             />
           </mesh>
 
-          {/* Тёмная ниша в корпусе */}
+          {/* Темная ниша в корпусе */}
           <mesh
             position={[0, 0, -START_LAMP_BAY.recessDepth * 0.35]}
             rotation={[Math.PI / 2, 0, 0]}

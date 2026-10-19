@@ -11,10 +11,7 @@ type TNoiseLayer = {
   gain: GainNode;
 };
 
-/**
- * Procedural driving SFX без непрерывного звука езды:
- * визг шин, скрежет, удары, oil-slap, gravel и kerb tick.
- */
+/** Procedural driving SFX без непрерывного звука езды: визг шин, скрежет, удары, oil-slap, gravel и kerb tick. */
 export class DrivingSfxEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -109,7 +106,7 @@ export class DrivingSfxEngine {
     node.gain.setTargetAtTime(value <= 0.00005 ? 0.0001 : value, when, tau);
   };
 
-  /** Строит граф непрерывных слоёв */
+  /** Строит граф непрерывных слоев */
   private buildGraph = (ctx: AudioContext): void => {
     this.compressor = ctx.createDynamicsCompressor();
     this.compressor.threshold.value = -20;

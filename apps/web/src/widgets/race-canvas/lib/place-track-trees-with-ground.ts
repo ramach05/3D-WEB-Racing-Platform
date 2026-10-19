@@ -5,10 +5,7 @@ import {
   terrainSeedForSlug,
 } from '@/widgets/race-canvas/lib/terrain-height';
 
-/**
- * Расстановка деревьев с высотой рельефа (groundY по sampleTerrainHeight).
- * Один источник списка для визуала и коллайдеров.
- */
+/** Расстановка деревьев с высотой рельефа (groundY по sampleTerrainHeight). Один источник списка для визуала и коллайдеров. */
 export const placeTrackTreesWithGround = (config: TTrackConfig): TPlacedTree[] => {
   const seed = terrainSeedForSlug(config.slug);
   return placeTrackTrees({

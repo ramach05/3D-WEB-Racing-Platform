@@ -5,7 +5,7 @@ import { cx } from '@/shared/lib';
 type TSegaLoaderProps = {
   /** Подпись; по умолчанию common.loading */
   label?: ReactNode;
-  /** Доп. классы обёртки */
+  /** Доп. классы обертки */
   className?: string;
 };
 

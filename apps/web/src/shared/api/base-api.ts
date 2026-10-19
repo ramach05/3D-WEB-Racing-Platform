@@ -31,10 +31,7 @@ const isNetworkFailure = (result: Awaited<ReturnType<typeof rawBaseQuery>>): boo
   return result.error?.status === 'FETCH_ERROR';
 };
 
-/**
- * Повторяет только GET при сетевом сбое с backoff: идемпотентные запросы
- * переживают старт/рестарт API, мутации не отправляются повторно.
- */
+/** Повторяет только GET при сетевом сбое с backoff: идемпотентные запросы переживают старт/рестарт API, мутации не отправляются повторно. */
 const rawBaseQueryWithRetry: typeof rawBaseQuery = async (args, api, extraOptions) => {
   const method = typeof args === 'string' ? 'GET' : (args.method ?? 'GET');
   const isRetryable = method.toUpperCase() === 'GET';
@@ -90,7 +87,7 @@ const refreshOnce = (
   return inFlight;
 };
 
-/** Повторяет запрос после refresh cookie, если access истёк */
+/** Повторяет запрос после refresh cookie, если access истек */
 const baseQueryWithReauth: typeof rawBaseQuery = async (args, api, extraOptions) => {
   const url = typeof args === 'string' ? args : args.url;
   const isAuthCall =

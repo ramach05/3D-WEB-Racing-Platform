@@ -180,10 +180,7 @@ const TribuneSectionColliders = ({
   );
 };
 
-/**
- * Fixed-коллайдеры открытых трибун (цоколь, ступени, задние стойки, лестницы, навес).
- * Визуал остаётся в TrackTribunes вне Physics.
- */
+/** Fixed-коллайдеры открытых трибун (цоколь, ступени, задние стойки, лестницы, навес). Визуал остается в TrackTribunes вне Physics. */
 export const TrackTribuneColliders = ({ line, roadWidth, side }: TTrackTribuneCollidersProps) => {
   const sideSign = tribuneSideSign(side);
   const tribuneInnerX = sideSign * (roadWidth / 2 + WALL_OFFSET + TRIBUNE_MARGIN);

@@ -21,10 +21,7 @@ import {
 
 type TPoint = { x: number; z: number };
 
-/**
- * Симуляция пути в направлении заезда (против роста индекса centerline),
- * как `spawnRotationY` / стрелки — см. `race-direction.ts`.
- */
+/** Симуляция пути в направлении заезда (против роста индекса centerline), как `spawnRotationY` / стрелки — см. `race-direction.ts`. */
 const driveOffsetPath = (
   config: typeof coastalOvalTrack,
   lateralOffset: number,

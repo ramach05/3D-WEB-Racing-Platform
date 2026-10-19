@@ -20,14 +20,11 @@ import {
 type TTrackObstaclesProps = {
   /** Список препятствий (стопки шин / бочки) */
   obstacles: TTrackObstacle[];
-  /** Счётчик рестарта — сбрасывает позу препятствий */
+  /** Счетчик рестарта — сбрасывает позу препятствий */
   resetNonce: number;
 };
 
-/**
- * Грузовая трассовая покрышка (усредненная 315/80R22.5):
- * внешний диаметр ~1.2 м, сечение ~0.32 м, посадочное отверстие ~0.56 м (рим 22.5")
- */
+/** Грузовая трассовая покрышка (усредненная 315/80R22.5): внешний диаметр ~1.2 м, сечение ~0.32 м, посадочное отверстие ~0.56 м (рим 22.5") */
 const TIRE_RADIUS = 0.44;
 const TIRE_TUBE = 0.16;
 /** Узкая светлая полоса на внешнем борту (чуть крупнее основного тора) */
@@ -74,7 +71,7 @@ const TireVisual = () => (
       <torusGeometry args={[TIRE_RADIUS, TIRE_TUBE, 10, 18]} />
       <meshStandardMaterial color={TIRE_RUBBER} roughness={0.86} metalness={0} />
     </mesh>
-    {/* Sidewall без cast — силуэт даёт основной тор, меньше work в shadow passes */}
+    {/* Sidewall без cast — силуэт дает основной тор, меньше work в shadow passes */}
     <mesh>
       <torusGeometry args={[TIRE_SIDEWALL_RADIUS, TIRE_SIDEWALL_TUBE, 8, 18]} />
       <meshStandardMaterial color={TIRE_SIDEWALL} roughness={0.88} metalness={0} />
@@ -82,17 +79,14 @@ const TireVisual = () => (
   </group>
 );
 
-/**
- * Визуал топливной бочки — стандартная евробочка: ⌀0.6 × 0.9 м,
- * обкатные обручи у верхнего и нижнего днищ
- */
+/** Визуал топливной бочки — стандартная евробочка: ⌀0.6 × 0.9 м, обкатные обручи у верхнего и нижнего днищ */
 const FuelBarrelVisual = () => (
   <group>
     <mesh castShadow receiveShadow position={[0, 0, 0]}>
       <cylinderGeometry args={[0.29, 0.29, 0.9, 16]} />
       <meshStandardMaterial color={BARREL_BODY} roughness={0.55} metalness={0.45} />
     </mesh>
-    {/* Обручи и крышка без cast — корпус даёт читаемый силуэт */}
+    {/* Обручи и крышка без cast — корпус дает читаемый силуэт */}
     <mesh position={[0, 0.27, 0]}>
       <cylinderGeometry args={[0.305, 0.305, 0.09, 16]} />
       <meshStandardMaterial color={BARREL_BAND} roughness={0.7} metalness={0.2} />
@@ -300,7 +294,7 @@ const TireStack = ({ position, rotationY, stackIndex }: TTireStackProps) => (
 
 /** Препятствия у стенок — dynamic, отлетают при ударе */
 export const TrackObstacles = ({ obstacles, resetNonce }: TTrackObstaclesProps) => {
-  // Рестарт пересоздаёт тела — окна троттлинга по старым handle не нужны
+  // Рестарт пересоздает тела — окна троттлинга по старым handle не нужны
   useEffect(() => {
     resetObstacleHitThrottle();
   }, [resetNonce]);

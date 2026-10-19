@@ -38,10 +38,7 @@ const OilSlickMesh = ({ slick, material }: TOilSlickMeshProps) => {
   );
 };
 
-/**
- * Визуал луж масла вне Physics.
- * Одна shared texture + material на все пятна трассы.
- */
+/** Визуал луж масла вне Physics. Одна shared texture + material на все пятна трассы. */
 export const TrackOilSlicks = ({ config }: TTrackOilSlicksProps) => {
   const shared = useMemo(() => {
     const map: CanvasTexture = createOilSlickTexture(256);

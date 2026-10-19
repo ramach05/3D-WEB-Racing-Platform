@@ -25,7 +25,7 @@ export const BILLBOARD_POST = {
 export const BILLBOARD_POST_HEIGHT =
   BILLBOARD_ROAD_TOP_Y + 1.35 + BILLBOARD_PANEL_HEIGHT + BILLBOARD_FRAME_THICKNESS * 2;
 
-/** Y низа панели (над землёй) */
+/** Y низа панели (над землей) */
 export const BILLBOARD_PANEL_BOTTOM_Y = BILLBOARD_ROAD_TOP_Y + 1.35;
 
 /** Y центра панели */
@@ -35,7 +35,7 @@ export const BILLBOARD_PANEL_CENTER_Y = BILLBOARD_PANEL_BOTTOM_Y + BILLBOARD_PAN
 export const BILLBOARD_POST_HALF_SPAN =
   BILLBOARD_PANEL_WIDTH / 2 + BILLBOARD_FRAME_THICKNESS + BILLBOARD_POST.width * 0.15;
 
-/** Смещение панели вперёд (лицо панели, локальный +X) */
+/** Смещение панели вперед (лицо панели, локальный +X) */
 export const BILLBOARD_PANEL_FORWARD_X =
   BILLBOARD_POST.depth / 2 + BILLBOARD_PANEL_DEPTH / 2 + 0.02;
 
@@ -59,7 +59,7 @@ export const BILLBOARD_FLOOD = {
   },
   /** Высота вертикальной стойки над рамой */
   riserHeight: 0.18,
-  /** Длина основного вылета вперёд */
+  /** Длина основного вылета вперед */
   armLength: 1.05,
   /** Наклон вылета вниз (рад), от горизонтали */
   armPitch: 0.28,
@@ -79,20 +79,14 @@ export const BILLBOARD_FLOOD = {
   bulbRadius: 0.038,
 } as const;
 
-/**
- * Позиция корпуса gooseneck в корне FloodLight (для визуала).
- * X — вынос перед лицом, Y — чуть выше рамы.
- */
+/** Позиция корпуса gooseneck в корне FloodLight (для визуала). X — вынос перед лицом, Y — чуть выше рамы. */
 export const BILLBOARD_FLOOD_LIGHT_LOCAL = {
   x: 0.82,
   y: 0.06,
   z: 0,
 } as const;
 
-/**
- * Мягкая заливка лица через RectAreaLight (без конусных «кругов» SpotLight).
- * Один area-wash на щит — как рассеянный свет от пары flood на треке.
- */
+/** Мягкая заливка лица через RectAreaLight (без конусных «кругов» SpotLight). Один area-wash на щит — как рассеянный свет от пары flood на треке. */
 export const BILLBOARD_FACE_WASH = {
   /** Вынос источника перед лицом панели */
   standoff: 0.9,
@@ -101,10 +95,7 @@ export const BILLBOARD_FACE_WASH = {
   intensity: 2.8,
 } as const;
 
-/**
- * Бюджет Night City: RectAreaLight только у K ближайших щитов.
- * Дальние — слабый emissive-fallback лица.
- */
+/** Бюджет Night City: RectAreaLight только у K ближайших щитов. Дальние — слабый emissive-fallback лица. */
 export const BILLBOARD_ACTIVE_WASH = {
   /** Сколько RectAreaLight монтировать одновременно */
   count: 2,
@@ -112,9 +103,7 @@ export const BILLBOARD_ACTIVE_WASH = {
   switchHysteresis: 10,
 } as const;
 
-/**
- * Ночные emissive: колба всегда; лицо — только fallback без активного wash.
- */
+/** Ночные emissive: колба всегда; лицо — только fallback без активного wash. */
 export const BILLBOARD_NIGHT_FACE = {
   /** Целевая линейная яркость лица вдалеке: одинаковая воспринимаемая яркость у всех макетов */
   faceGlowTargetLuma: 0.14,
@@ -125,10 +114,7 @@ export const BILLBOARD_NIGHT_FACE = {
   bulbEmissive: 1.4,
 } as const;
 
-/**
- * EmissiveIntensity лица вдалеке: нормировка по средней яркости текстуры.
- * Без нее константа одинаково «лайтбокс» для светлого for-rent и «чернота» для apex-tires.
- */
+/** EmissiveIntensity лица вдалеке: нормировка по средней яркости текстуры. Без нее константа одинаково «лайтбокс» для светлого for-rent и «чернота» для apex-tires. */
 export const faceGlowIntensity = (avgLuminance: number): number => {
   const raw = BILLBOARD_NIGHT_FACE.faceGlowTargetLuma / Math.max(avgLuminance, 1e-4);
   return Math.min(

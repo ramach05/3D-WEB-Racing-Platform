@@ -21,7 +21,7 @@ export type TUiThemeColors = {
   bg: TCssColor;
   /** Основной текст */
   fg: TCssColor;
-  /** Приглушённый текст */
+  /** Приглушенный текст */
   muted: TCssColor;
   /** Поверхность карточек/панелей */
   surface: TCssColor;
@@ -50,15 +50,15 @@ export type TUiColorToken = keyof TUiThemeColors;
 export type TUiPalette = {
   /** Светлая тема */
   light: TUiThemeColors;
-  /** Тёмная тема */
+  /** Темная тема */
   dark: TUiThemeColors;
 };
 
 /** Доп. UI-цвета, не зависящие от light/dark */
 export type TUiChrome = {
-  /** Текст на жёлтом активном табе */
+  /** Текст на желтом активном табе */
   onYellow: TCssColor;
-  /** Полосы finish wipe (тёмная) */
+  /** Полосы finish wipe (темная) */
   finishWipeDark: TCssColor;
   /** Полосы finish wipe (светлая) */
   finishWipeLight: TCssColor;
@@ -131,17 +131,17 @@ export type TTreePalette = {
 };
 
 export type TCrowdPalette = {
-  /** Футболки днём */
+  /** Футболки днем */
   shirtDay: readonly TCssColor[];
   /** Футболки ночью */
   shirtNight: readonly TCssColor[];
   /** Оттенки кожи */
   skin: readonly TCssColor[];
-  /** Штаны днём */
+  /** Штаны днем */
   pantsDay: readonly TCssColor[];
   /** Штаны ночью */
   pantsNight: readonly TCssColor[];
-  /** Волосы / тёмные кепки */
+  /** Волосы / темные кепки */
   hair: readonly TCssColor[];
   /** Кепки (гоночные цвета) */
   cap: readonly TCssColor[];
@@ -187,11 +187,11 @@ export type TVehiclePalette = {
   glass: TCssColor;
   /** Стоп-сигналы */
   brake: TCssColor;
-  /** Тёмно-красный поликарбонат линзы стопов (выкл.) */
+  /** Темно-красный поликарбонат линзы стопов (выкл.) */
   brakeGlass: TCssColor;
   /** Emissive стоп-сигналов */
   brakeEmissive: TCssColor;
-  /** Тёмно-янтарная линза поворотников */
+  /** Темно-янтарная линза поворотников */
   signalGlass: TCssColor;
   /** Emissive фонарей заднего хода */
   reverseEmissive: TCssColor;
@@ -210,13 +210,13 @@ export type TStartLightPalette = {
   idle: TCssColor;
   /** Красный (countdown F1) */
   red: TCssColor;
-  /** Жёлтый (финишное мигание) */
+  /** Желтый (финишное мигание) */
   amber: TCssColor;
-  /** Зелёный (зарезервирован; старт F1 = гашение красных) */
+  /** Зеленый (зарезервирован; старт F1 = гашение красных) */
   green: TCssColor;
   /** Металл столбов и балки gantry */
   steel: TCssColor;
-  /** Тёмный металл / emissive базы конструкции */
+  /** Темный металл / emissive базы конструкции */
   steelDark: TCssColor;
   /** Корпус панели ламп */
   housing: TCssColor;
@@ -266,9 +266,9 @@ export type THorizonMoonStops = {
 export type TScenePalette = {
   /** Белый (разметка) */
   white: TCssColor;
-  /** Чёрный */
+  /** Черный */
   black: TCssColor;
-  /** Тёмная клетка шахматки */
+  /** Темная клетка шахматки */
   checkerDark: TCssColor;
   /** Цвет дневного солнца */
   sunDay: TCssColor;
@@ -309,7 +309,7 @@ export type TBillboardPalette = {
   frame: TCssColor;
   /** Тыльная сторона панели */
   panelBack: TCssColor;
-  /** Крепёж / болты */
+  /** Крепеж / болты */
   bolt: TCssColor;
   /** Труба кронштейна подсветки */
   floodArm: TCssColor;

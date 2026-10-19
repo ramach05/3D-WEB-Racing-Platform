@@ -1,6 +1,6 @@
 export type TRaceStatus = 'ready' | 'countdown' | 'racing' | 'finished' | 'paused';
 
-/** Шаг отсчёта: 3→2→1→0(GO), null вне countdown */
+/** Шаг отсчета: 3→2→1→0(GO), null вне countdown */
 export type TCountdownStep = 3 | 2 | 1 | 0;
 
 export type TRaceHudSnapshot = {

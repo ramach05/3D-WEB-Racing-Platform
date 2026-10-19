@@ -1,13 +1,10 @@
 /** Ниже этой продольной скорости (м/с) следов от торможения нет */
 export const SKID_SPEED_MIN = 12;
 
-/** При этой скорости (м/с) база brake-intensity ≈ 1 до учёта lateral */
+/** При этой скорости (м/с) база brake-intensity ≈ 1 до учета lateral */
 export const SKID_SPEED_FULL = 28;
 
-/**
- * До этой скорости (м/с) launch-wheelspin на полной тяге максимален.
- * Дальше след ослабевает — шины «цепляются».
- */
+/** До этой скорости (м/с) launch-wheelspin на полной тяге максимален. Дальше след ослабевает — шины «цепляются». */
 export const LAUNCH_SPEED_PEAK = 2.5;
 
 /** Выше этой скорости (м/с) следов от разгона уже нет (~50 км/ч) */
@@ -16,7 +13,7 @@ export const LAUNCH_SPEED_END = 14;
 /** Ниже этой скорости следов от ручника почти нет (если нет сильного lateral) */
 export const HANDBRAKE_SKID_SPEED_MIN = 7;
 
-/** При этой скорости база handbrake-intensity ≈ 1 до учёта lateral */
+/** При этой скорости база handbrake-intensity ≈ 1 до учета lateral */
 export const HANDBRAKE_SKID_SPEED_FULL = 24;
 
 /** |lateral| (м/с), при котором боковой бонус максимален */
@@ -47,7 +44,7 @@ export type TSkidIntensityInput = {
   forwardSpeed: number;
   /** Боковая скорость (м/с) */
   lateral: number;
-  /** Есть контакт колёс с землёй */
+  /** Есть контакт колес с землей */
   grounded: boolean;
 };
 
@@ -56,10 +53,7 @@ export type TSkidIntensityResult = {
   intensity: number;
   /** Нужен короткий дымок */
   smoking: boolean;
-  /**
-   * Какие колёса оставляют след:
-   * блокировка при торможении — все 4; wheelspin / дрифт — задняя ось (RWD).
-   */
+  /** Какие колеса оставляют след: блокировка при торможении — все 4; wheelspin / дрифт — задняя ось (RWD). */
   wheels: TSkidWheels;
 };
 
@@ -81,7 +75,7 @@ const blendWithLateral = (driveFactor: number, lateral: number, lateralWeight: n
 
 /**
  * Эвристика следов для arcade-физики:
- * - резкий тормоз на скорости → блокировка, все колёса;
+ * - резкий тормоз на скорости → блокировка, все колеса;
  * - ручник / дрифт → срыв задней оси;
  * - резкий разгон с места / малой скорости → wheelspin задней оси.
  */

@@ -65,7 +65,7 @@ const hash01 = (x: number, z: number): number => {
   return n / 4294967296;
 };
 
-/** Лёгкий разброс оттенка кроны от позиции */
+/** Легкий разброс оттенка кроны от позиции */
 const foliageInstanceColor = (tree: TPlacedTree, baseHex: string): Color => {
   const t = hash01(tree.x, tree.z);
   tmpColor.set(baseHex);

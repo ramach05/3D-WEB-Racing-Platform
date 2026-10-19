@@ -20,10 +20,7 @@ export const pulseCameraShake = (intensity: number): void => {
   }
 };
 
-/**
- * Затухает импульс и возвращает суммарную силу 0…1
- * (`continuous` — oil/skid/scrape уже в 0…1).
- */
+/** Затухает импульс и возвращает суммарную силу 0…1 (`continuous` — oil/skid/scrape уже в 0…1). */
 export const tickCameraShake = (dt: number, continuous = 0): number => {
   const safeDt = Math.max(0, dt);
   impulse *= Math.exp(-CAMERA_SHAKE_DECAY * safeDt);
@@ -42,10 +39,7 @@ export const resetCameraShake = (): void => {
   impulse = 0;
 };
 
-/**
- * Непрерывная составляющая 0…1 из drive-SFX sample.
- * oil полный вес, skid половина, scrape 0.35.
- */
+/** Непрерывная составляющая 0…1 из drive-SFX sample. oil полный вес, skid половина, scrape 0.35. */
 export const mapContinuousShake = (
   oilStrength: number,
   skidIntensity: number,

@@ -16,7 +16,7 @@ type TCheckpointDetectorProps = {
   config: TTrackConfig;
   /** Ref физического тела машины */
   bodyRef: RefObject<RapierRigidBody | null>;
-  /** Счётчик рестарта — сбрасывает прогресс круга */
+  /** Счетчик рестарта — сбрасывает прогресс круга */
   resetNonce: number;
   /** Колбэк при завершении гонки */
   onFinished: () => void;

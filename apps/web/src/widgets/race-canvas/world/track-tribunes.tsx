@@ -190,7 +190,7 @@ const TribuneEdgeFlood = ({ tribuneInnerX, sideSign, zSign, isOn }: TTribuneEdge
   );
 };
 
-/** Neon-ленты рядов: днём видны как accent, ночью — emissive */
+/** Neon-ленты рядов: днем видны как accent, ночью — emissive */
 const TribuneRowAccents = ({
   tribuneInnerX,
   sideSign,

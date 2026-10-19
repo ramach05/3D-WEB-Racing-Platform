@@ -1,4 +1,4 @@
-/** Доля скорости, потеря которой даёт scrape=1 */
+/** Доля скорости, потеря которой дает scrape=1 */
 export const WALL_SCRAPE_FULL_LOSS = 0.45;
 /** Скорость полного ударного звука (м/с) */
 export const IMPACT_FULL_MS = 18;

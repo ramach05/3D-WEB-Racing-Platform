@@ -19,7 +19,7 @@ type TRaceTouchControlsProps = {
   footer?: ReactNode;
   /** Звук выключен (для состояния кнопки) */
   muted?: boolean;
-  /** Переключение звука; без неё кнопка не рендерится */
+  /** Переключение звука; без нее кнопка не рендерится */
   onToggleMute?: () => void;
 };
 
@@ -39,7 +39,7 @@ const AxisButton = ({ axis, symbol, label, className }: TAxisButtonProps) => {
   const [pressed, setPressed] = useState(false);
   const pressedRef = useRef(false);
 
-  /** Сбрасывает ось, если кнопка ещё считалась нажатой */
+  // Сбрасывает ось, если кнопка еще считалась нажатой
   const release = (): void => {
     if (!pressedRef.current) {
       return;
@@ -49,7 +49,7 @@ const AxisButton = ({ axis, symbol, label, className }: TAxisButtonProps) => {
     setTouchAxis(axis, false);
   };
 
-  /** pointerdown: захват и активация оси */
+  // pointerdown: захват и активация оси
   const onPointerDown = (event: ReactPointerEvent<HTMLButtonElement>): void => {
     event.preventDefault();
     if (typeof event.currentTarget.setPointerCapture === 'function') {

@@ -17,7 +17,7 @@ export const RaceMarquee = ({ text }: TRaceMarqueeProps) => {
     const measure = measureRef.current;
     if (!viewport || !measure) return;
 
-    /** Пересчёт копий при ресайзе */
+    // Пересчет копий при ресайзе
     const update = () => {
       const viewportWidth = viewport.clientWidth;
       const unitWidth = measure.getBoundingClientRect().width;

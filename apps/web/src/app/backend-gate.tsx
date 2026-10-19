@@ -37,11 +37,7 @@ type TBackendGateProps = {
   children: ReactNode;
 };
 
-/**
- * Гейт доступности API: до первого ответа /health вместо контента лоадер,
- * поэтому запросы страниц не падают на старте dev-скрипта.
- * При последующей потере связи контент остается смонтированным, сверху — плашка.
- */
+/** Гейт доступности API: до первого /health — лоадер; при последующей потере связи контент смонтирован, сверху плашка */
 export const BackendGate = ({ children }: TBackendGateProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();

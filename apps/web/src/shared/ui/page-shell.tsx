@@ -4,11 +4,11 @@ import { cx } from '@/shared/lib';
 type TPageShellProps = {
   /** Контент страницы */
   children: ReactNode;
-  /** Доп. классы внутренней обёртки */
+  /** Доп. классы внутренней обертки */
   className?: string;
 };
 
-/** Обёртка основной области: full-bleed scanlines + узкий контент */
+/** Обертка основной области: full-bleed scanlines + узкий контент */
 export const PageShell = ({ children, className }: TPageShellProps) => {
   return (
     <div className="sega-scanlines relative min-h-0 w-full flex-1 overflow-hidden">

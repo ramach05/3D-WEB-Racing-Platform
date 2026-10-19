@@ -3,9 +3,9 @@ import type { TLoopPoint } from '@/entities/track';
 
 /** Толщина стены — совпадает с place-trees / buildLoopTrack */
 const WALL_THICKNESS = 0.5;
-/** Runoff за стеной, где рельеф ещё плоский */
+/** Runoff за стеной, где рельеф еще плоский */
 const RUNOFF_CLEARANCE = 6;
-/** Ширина плавного подъёма от чаши к холмам (м) */
+/** Ширина плавного подъема от чаши к холмам (м) */
 const BASIN_BLEND_WIDTH = 16;
 /** Базовая амплитуда крупных холмов (м) */
 const HILL_AMPLITUDE = 9;
@@ -123,10 +123,7 @@ export type TSampleTerrainHeightOptions = {
   seed?: number;
 };
 
-/**
- * Высота визуального рельефа в точке (x,z).
- * Внутри дорожного коридора ≈ 0; снаружи — мягкие холмы 2–12 м.
- */
+/** Высота визуального рельефа в точке (x,z). Внутри дорожного коридора ≈ 0; снаружи — мягкие холмы 2–12 м. */
 export const sampleTerrainHeight = (
   x: number,
   z: number,
@@ -143,7 +140,7 @@ export const sampleTerrainHeight = (
     return 0;
   }
 
-  // Крупные волны ~50–80 м + средняя деталь + лёгкая рябь
+  // Крупные волны ~50–80 м + средняя деталь + легкая рябь
   const macro = fbm(x / 72, z / 72, seed, 4);
   const mid = fbm(x / 28, z / 28, seed + 47, 3);
   const detail = fbm(x / 11, z / 11, seed + 91, 2);

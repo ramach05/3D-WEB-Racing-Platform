@@ -14,7 +14,7 @@ type TTrackStreetLightCollidersProps = {
 };
 
 type TStreetLampColliderProps = {
-  /** Размещённый фонарь */
+  /** Размещенный фонарь */
   lamp: TPlacedStreetLamp;
   /** Индекс для ключа */
   index: number;
@@ -51,10 +51,7 @@ const StreetLampCollider = ({ lamp, index }: TStreetLampColliderProps) => {
   );
 };
 
-/**
- * Fixed-коллайдеры столбов фонарей внутри Physics.
- * Визуал остаётся в TrackStreetLights вне Physics.
- */
+/** Fixed-коллайдеры столбов фонарей внутри Physics. Визуал остается в TrackStreetLights вне Physics. */
 export const TrackStreetLightColliders = ({ config }: TTrackStreetLightCollidersProps) => {
   const lamps = useMemo(() => placeStreetLamps({ config }), [config]);
 

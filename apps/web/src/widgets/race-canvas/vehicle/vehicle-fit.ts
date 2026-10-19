@@ -15,14 +15,11 @@ export type TVehicleBounds = {
 export type TVehicleFit = {
   /** Равномерный масштаб под целевую длину */
   scale: number;
-  /** Смещение: центр xz в 0, низ колёс на y=0 */
+  /** Смещение: центр xz в 0, низ колес на y=0 */
   offset: { x: number; y: number; z: number };
 };
 
-/**
- * Считает scale/offset, чтобы длина модели ≈ targetLength,
- * низ AABB лежал на y=0, центр xz — в начале координат.
- */
+/** Считает scale/offset, чтобы длина модели ≈ targetLength, низ AABB лежал на y=0, центр xz — в начале координат. */
 export const computeVehicleFit = (
   bounds: TVehicleBounds,
   targetLength: number = VEHICLE_TARGET_LENGTH,

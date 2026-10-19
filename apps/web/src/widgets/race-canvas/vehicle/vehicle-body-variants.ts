@@ -23,10 +23,7 @@ import {
   sampleWheelWorldPoints,
 } from '@/widgets/race-canvas/vehicle/vehicle-wheel-rig';
 
-/**
- * Bust useMemo clone cache when normalize logic changes (HMR).
- * Bump when shipping visual fixes for garage bodies.
- */
+/** Bust useMemo clone cache when normalize logic changes (HMR). Bump when shipping visual fixes for garage bodies. */
 export const VEHICLE_VARIANT_REV = 76;
 
 const WHEEL_PIVOT_NAMES = ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR'] as const;
@@ -52,15 +49,15 @@ const SEDAN_LIGHT_RULES = [
   { pattern: /^Povorotnik_low_/i, materialName: 'Signallight' },
 ] as const;
 
-/** Logan: combined-меши колёс (все 4 колеса в одном меше) */
+/** Logan: combined-меши колес (все 4 колеса в одном меше) */
 const SEDAN_WHEEL_MESH_NAMES = ['Rezina_low_Kuzov1_0', 'Disk_low_Kuzov1_0'] as const;
 
 const JUKE_WHEEL_MATERIAL_NAMES = new Set(['wheel1', 'wheel2', 'wheel3']);
 /** Combined juke wheel layers span ~full track width — hide them when using compact wheels */
 const JUKE_COMBINED_WHEEL_XZ_SPAN = 1.2;
 /**
- * Sketchfab: чёрная резина Matte__FF2 лежит отдельно от металлических дисков wheel1.
- * Без привязки к пивоту резина не крутится → «два колеса»; без неё остаются голые диски.
+ * Sketchfab: черная резина Matte__FF2 лежит отдельно от металлических дисков wheel1.
+ * Без привязки к пивоту резина не крутится → «два колеса»; без нее остаются голые диски.
  */
 const JUKE_TIRE_MATERIAL = 'Matte__FF2';
 /** Высота покрышки/диска тормоза (м) */
@@ -126,10 +123,7 @@ const skinnedVertexWorld = (skinned: SkinnedMesh, index: number, target: Vector3
   return target.copy(tmpBakeAcc);
 };
 
-/**
- * Запекает wheel-SkinnedMesh в обычный Mesh в видимой (bone-skinned) позе.
- * Иначе measureWheelAxle/spin крутят сырую bind-геометрию мимо реальной оси шины.
- */
+/** Запекает wheel-SkinnedMesh в обычный Mesh в видимой (bone-skinned) позе. Иначе measureWheelAxle/spin крутят сырую bind-геометрию мимо реальной оси шины. */
 const bakeSkinnedWheelMesh = (skinned: SkinnedMesh): Mesh | null => {
   const parent = skinned.parent;
   if (!parent) {
@@ -230,7 +224,7 @@ const prepareEmissiveLightMaterials = (root: Object3D): void => {
         continue;
       }
       if (material.name === 'Brakelight') {
-        // Глянцевая линза: низкий roughness даёт блики вместо плоской «краски»
+        // Глянцевая линза: низкий roughness дает блики вместо плоской «краски»
         material.color.set(vehiclePalette.brakeGlass);
         material.map = null;
         material.metalness = 0.12;
@@ -281,7 +275,7 @@ const quadrantName = (x: number, z: number, midX: number, midZ: number): TWheelP
 
 /**
  * Строит новый Mesh из выбранных треугольников исходного меша (переиндексация атрибутов).
- * Геометрия остаётся в local space исходного меша, transform копируется 1-в-1.
+ * Геометрия остается в local space исходного меша, transform копируется 1-в-1.
  */
 const sliceMeshTriangles = (mesh: Mesh, triIndices: number[], suffix: string): Mesh | null => {
   if (triIndices.length === 0) {
@@ -334,10 +328,7 @@ const sliceMeshTriangles = (mesh: Mesh, triIndices: number[], suffix: string): M
   return part;
 };
 
-/**
- * Режет один меш «все 4 колеса» на до 4 мешей по квадрантам XZ (по центроиду треугольника).
- * Геометрия остаётся в local space исходного меша.
- */
+/** Режет один меш «все 4 колеса» на до 4 мешей по квадрантам XZ (по центроиду треугольника). Геометрия остается в local space исходного меша. */
 const splitMeshByXzQuadrants = (
   mesh: Mesh,
   midX: number,
@@ -440,10 +431,7 @@ const recenterPivots = (root: Object3D, pivots: Record<TWheelPivotName, Group>):
   }
 };
 
-/**
- * Делит combined wheel-меши на 4 пивота; исходные меши удаляет.
- * midX/midZ — центр кузова в world (обычно ~0).
- */
+/** Делит combined wheel-меши на 4 пивота; исходные меши удаляет. midX/midZ — центр кузова в world (обычно ~0). */
 const buildWheelPivotsFromCombinedMeshes = (
   root: Object3D,
   sourceMeshes: Mesh[],
@@ -477,9 +465,7 @@ const buildWheelPivotsFromCombinedMeshes = (
   recenterPivots(root, pivots);
 };
 
-/**
- * Вешает уже отдельные сборки колёс (группы/меши) на 4 пивота по world-квадранту.
- */
+/** Вешает уже отдельные сборки колес (группы/меши) на 4 пивота по world-квадранту. */
 const buildWheelPivotsFromAssemblies = (
   root: Object3D,
   assemblies: Object3D[],
@@ -502,7 +488,7 @@ const buildWheelPivotsFromAssemblies = (
   recenterPivots(root, pivots);
 };
 
-/** Пустые зеркальные пивоты для отсутствующих задних колёс (симметрия rig) */
+/** Пустые зеркальные пивоты для отсутствующих задних колес (симметрия rig) */
 const ensureMissingWheelPivots = (root: Object3D): void => {
   const frontL = root.getObjectByName('WheelFrontL');
   const frontR = root.getObjectByName('WheelFrontR');
@@ -523,10 +509,7 @@ const ensureMissingWheelPivots = (root: Object3D): void => {
   }
 };
 
-/**
- * Физика едет вдоль +Z. Если фары сзади стопов — крутим кузов на 180°,
- * чтобы нос смотрел вперёд (колёса вешаем уже после этого).
- */
+/** Физика едет вдоль +Z. Если фары сзади стопов — крутим кузов на 180°, чтобы нос смотрел вперед (колеса вешаем уже после этого). */
 const ensureNoseTowardPlusZ = (root: Object3D): void => {
   root.updateMatrixWorld(true);
   const headZs: number[] = [];
@@ -579,7 +562,7 @@ const splitSedanMeshesByLightRule = (root: Object3D): void => {
       }
       const clone = material.clone();
       clone.name = rule.materialName;
-      // Атлас Kuzov1 затемняет линзы — цвет задаёт prepareEmissiveLightMaterials
+      // Атлас Kuzov1 затемняет линзы — цвет задает prepareEmissiveLightMaterials
       clone.map = null;
       return clone;
     });
@@ -621,7 +604,7 @@ const paintSedanBodyBlue = (root: Object3D): void => {
 /**
  * Logan (Sketchfab «Renault Logan 2004»): один атлас-материал Kuzov1 на кузов,
  * светильники — отдельные меши по имени. Картируем их на контракт, красим
- * панели и бамперы в синий, combined-колёса (Rezina/Disk) режем на 4 пивота как у пикапа.
+ * панели и бамперы в синий, combined-колеса (Rezina/Disk) режем на 4 пивота как у пикапа.
  */
 const normalizeSedan = (root: Object3D) => {
   splitSedanMeshesByLightRule(root);
@@ -797,7 +780,7 @@ const relabelMeshMaterial = (mesh: Mesh, role: string): void => {
 /**
  * Juke: материал glass6 — один слитый меш, где и стекло фар (нос, +Z),
  * и стекло задних фонарей (корма, −Z). Режем по наибольшему мировому Z-зазору:
- * перед → Headlight, зад → Brakelight, чтобы задние фонари не светили жёлтым
+ * перед → Headlight, зад → Brakelight, чтобы задние фонари не светили желтым
  * (как фары), а горели красным вместе с material_15.
  */
 const splitJukeGlass6 = (root: Object3D): void => {
@@ -1108,7 +1091,7 @@ const pivotHasAuthoredTire = (pivot: Group): boolean => {
 /**
  * Тор-покрышка по оси диска. Диаметр — от size.y (toe не раздувает Y);
  * ширина (2·tube) — истинный осевой размах точек геометрии вдоль оси
- * (проекция AABB раздувается toe передних колёс ~20°);
+ * (проекция AABB раздувается toe передних колес ~20°);
  * наружный радиус тора = rimR, чтобы резина не выпирала за колесо GLB.
  * Fallback: ставится только на пивоты без авторской покрышки (attachJukeAuthoredTires).
  * Вызывать после buildWheelRig.
@@ -1136,8 +1119,8 @@ export const attachJukeProceduralTires = (root: Object3D): void => {
     roughness: 0.82,
     side: DoubleSide,
   });
-  // В GLB Juke нет ротора — сквозь разрежённые спицы виден белый фендер кузова
-  // (читается как «белый диск»). Компенсируем его матовым ТЁМНЫМ диском-фоновкой:
+  // В GLB Juke нет ротора — сквозь разреженные спицы виден белый фендер кузова
+  // (читается как «белый диск»). Компенсируем его матовым ТЕМНЫМ диском-фоновкой:
   // metalness 0 (не бликует белым под ярким светом превью), радиус доходит до
   // хромового кольца (wheel2, r≈0.202), чтобы закрыть ВСЕ щели между спицами.
   const discMat = new MeshStandardMaterial({
@@ -1181,7 +1164,7 @@ export const attachJukeProceduralTires = (root: Object3D): void => {
     const rimR = Math.max(tmpSize.y * 0.5, 0.22);
     const axleWorld = measureWheelAxle(pivot);
     // Истинная ширина вдоль оси: проекция реальных точек геометрии на ось.
-    // Мировой AABB передних колёс раздут toe (~20°): 0.534·sin20° даёт ~0.18 лишних,
+    // Мировой AABB передних колес раздут toe (~20°): 0.534·sin20° дает ~0.18 лишних,
     // проекция AABB выходила ~0.59 вместо фактических 0.25.
     let rawWidth = Number.NaN;
     const sampled = sampleWheelWorldPoints(pivot);
@@ -1263,10 +1246,7 @@ export const attachJukeProceduralTires = (root: Object3D): void => {
   }
 };
 
-/**
- * Режет combined wheel2/wheel3 (хром/акценты диска) на пивоты — иначе прячем весь слой
- * и остаётся один «голый» wheel1 без обода.
- */
+/** Режет combined wheel2/wheel3 (хром/акценты диска) на пивоты — иначе прячем весь слой и остается один «голый» wheel1 без обода. */
 const attachJukeCombinedRimLayers = (
   root: Object3D,
   midX: number,
@@ -1312,10 +1292,10 @@ const attachJukeCombinedRimLayers = (
 const normalizeJuke = (root: Object3D) => {
   // Стекло фар и задних фонарей слито в один меш glass6 — режем по Z-зазору
   splitJukeGlass6(root);
-  // material_15 — красные задние стёкла (Object_54..56)
+  // material_15 — красные задние стекла (Object_54..56)
   renameMaterials(root, 'material_15', 'Brakelight');
-  // orange — передняя янтарная полоса DRL (Object_52): тёплый свет фар,
-  // а не красный — красный свет вперёд нереалистичен
+  // orange — передняя янтарная полоса DRL (Object_52): теплый свет фар,
+  // а не красный — красный свет вперед нереалистичен
   renameMaterials(root, 'orange', 'Headlight');
   prepareEmissiveLightMaterials(root);
   root.updateMatrixWorld(true);
@@ -1430,7 +1410,7 @@ export type THeadlightLamps = {
   right: [number, number, number];
 };
 
-/** Сдвиг источника чуть вперёд от стекла, чтобы луч не стартовал внутри кузова */
+/** Сдвиг источника чуть вперед от стекла, чтобы луч не стартовал внутри кузова */
 const HEADLIGHT_FORWARD_NUDGE = 0.05;
 /** Игнор «противотуманок» ниже основных фар (модель-единицы до fit) */
 const HEADLIGHT_BUMPER_Y_SLACK = 0.35;

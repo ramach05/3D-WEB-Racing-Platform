@@ -13,10 +13,7 @@ type TStormSkyProps = {
   drift?: number;
 };
 
-/**
- * Темное облачное пасмурное небо шторма: купол с тайловой текстурой облаков.
- * Следует за камерой (радиус < far), не засвечен (basic), вне тумана.
- */
+/** Темное облачное пасмурное небо шторма: купол с тайловой текстурой облаков. Следует за камерой (радиус < far), не засвечен (basic), вне тумана. */
 export const StormSky = ({ color, drift = 0.004 }: TStormSkyProps) => {
   const texture = useMemo(() => getSharedStormCloudTexture(512), []);
   const meshRef = useRef<Mesh>(null);

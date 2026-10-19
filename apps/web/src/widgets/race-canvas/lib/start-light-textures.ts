@@ -40,10 +40,7 @@ const finishTexture = (canvas: HTMLCanvasElement, srgb = true): CanvasTexture =>
   return texture;
 };
 
-/**
- * Круглая F1-линза: smoked glass + LED-сетка.
- * emissiveMap — почти весь диск яркий (с LED-hotspots), чтобы лампа читалась днём.
- */
+/** Круглая F1-линза: smoked glass + LED-сетка. emissiveMap — почти весь диск яркий (с LED-hotspots), чтобы лампа читалась днем. */
 export const createStartLightLensTextures = (size = 256): TLensTextures => {
   const mapCanvas = document.createElement('canvas');
   mapCanvas.width = size;
@@ -126,9 +123,7 @@ export const createStartLightLensTextures = (size = 256): TLensTextures => {
   };
 };
 
-/**
- * Лёгкий matte-шум для панели (без швов/заклёпок — иначе «непонятная текстура»).
- */
+/** Легкий matte-шум для панели (без швов/заклепок — иначе «непонятная текстура»). */
 export const createStartLightHousingTexture = (size = 128): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;

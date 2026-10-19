@@ -31,10 +31,7 @@ const normalizeNickname = (nickname: string): string => nickname.trim().toLowerC
 const hashRefreshToken = (token: string): string =>
   createHash('sha256').update(token).digest('hex');
 
-/**
- * Фиктивный bcrypt-хеш: сравнение с ним выполняется, когда юзер не найден,
- * чтобы время ответа не отличалось от случая «юзер есть, пароль неверный».
- */
+/** Фиктивный bcrypt-хеш: сравнение с ним выполняется, когда юзер не найден, чтобы время ответа не отличалось от случая «юзер есть, пароль неверный». */
 const DUMMY_PASSWORD_HASH = bcrypt.hashSync('timing-equalization-dummy', 10);
 
 /** Внутренняя выдача: access в JSON, refresh уходит только в cookie */
@@ -44,10 +41,7 @@ export type TIssuedAuth = {
   refreshToken: string;
 };
 
-/**
- * Регистрация, логин и JWT access + opaque refresh-сессии в БД.
- * Класс нужен Nest DI; методы без HTTP-декораторов можно писать стрелками.
- */
+/** Регистрация, логин и JWT access + opaque refresh-сессии в БД. Класс нужен Nest DI; методы без HTTP-декораторов можно писать стрелками. */
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -93,7 +87,7 @@ export class AuthService {
   login = async (dto: LoginDto): Promise<TIssuedAuth> => {
     const nickname = normalizeNickname(dto.nickname);
     const user = await this.prisma.user.findUnique({ where: { nickname } });
-    // Сравнение всегда идёт по реальному bcrypt: при отсутствии юзера — по фиктивному хешу,
+    // Сравнение всегда идет по реальному bcrypt: при отсутствии юзера — по фиктивному хешу,
     // иначе по времени ответа можно отличить «нет такого ника» от «неверный пароль».
     const matches = await bcrypt.compare(
       dto.password,
@@ -150,7 +144,7 @@ export class AuthService {
       { sub: user.id, nickname: user.nickname },
       { rotateFromSessionId: session.id },
     );
-    // Housekeeping: протухшие сессии (в т.ч. отозванные) всё равно невалидны — чистим БД.
+    // Housekeeping: протухшие сессии (в т.ч. отозванные) все равно невалидны — чистим БД.
     // Ошибка чистки не должна ломать выдачу токенов.
     void this.prisma.refreshSession
       .deleteMany({
@@ -219,10 +213,7 @@ export class AuthService {
     };
   };
 
-  /**
-   * Access JWT + opaque refresh в БД (hash).
-   * При ротации помечает старую сессию revoked и ставит replacedById.
-   */
+  /** Access JWT + opaque refresh в БД (hash). При ротации помечает старую сессию revoked и ставит replacedById. */
   private issueTokens = async (
     payload: TJwtPayload,
     options?: { rotateFromSessionId?: string },

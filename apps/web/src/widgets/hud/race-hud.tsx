@@ -87,7 +87,7 @@ export const RaceHud = ({ trackName, bestMs = null }: TRaceHudProps) => {
         Math.max(trackName.length, statusSlotCh, TIME_SLOT_CH, speedValueCh, lapValueCh),
     ) + CH_PAD;
 
-  // Пишет time/speed в DOM без React — иначе Chrome дёргает всю страницу ~12 Гц.
+  // Пишет time/speed в DOM без React — иначе Chrome дергает всю страницу ~12 Гц.
   useEffect(() => {
     let raf = 0;
     let lastTimeText = '';

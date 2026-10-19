@@ -56,7 +56,7 @@ describe('computeAckermannScale', () => {
   });
 });
 
-/** Строит «запечённое» колесо: ось цилиндра (тонкая) направлена по (cos yaw, 0, sin yaw). */
+/** Строит «запеченное» колесо: ось цилиндра (тонкая) направлена по (cos yaw, 0, sin yaw). */
 const makeWheel = (yawDeg: number, wheelX = 0, wheelZ = 0): Group => {
   const geometry = new CylinderGeometry(0.35, 0.35, 0.25, 24);
   geometry.rotateZ(Math.PI / 2); // ось Y → −X
@@ -137,16 +137,16 @@ describe('computeAxleLocal', () => {
   });
 
   it('round-trips a non-trivial world axle under BodyUnderside (−90° X)', () => {
-    // −90° вокруг X: тот же quat, что у родителя колёс CarConcept
+    // −90° вокруг X: тот же quat, что у родителя колес CarConcept
     const parentQ = new Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
-    // ось вдоль Z ловит «забытый» inverse: без него локальная ось остаётся мировым (0,0,1),
+    // ось вдоль Z ловит «забытый» inverse: без него локальная ось остается мировым (0,0,1),
     // и мировая ось вращения после пивота уезжает в (0,±1,0) — spin не совпадает с осью шины.
     const axleWorld = new Vector3(0, 0, 1);
     const local = computeAxleLocal(axleWorld, parentQ);
     expect(local.x).toBeCloseTo(0, 5);
     expect(local.y).toBeCloseTo(-1, 5);
     expect(local.z).toBeCloseTo(0, 5);
-    // а в мировых осях спин идёт ровно вокруг исходной оси
+    // а в мировых осях спин идет ровно вокруг исходной оси
     const worldUsed = local.clone().applyQuaternion(parentQ).normalize();
     expect(Math.abs(worldUsed.dot(axleWorld))).toBeCloseTo(1, 5);
   });

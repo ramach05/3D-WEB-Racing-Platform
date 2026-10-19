@@ -148,7 +148,7 @@ describe('buildTribuneStairs', () => {
     expect(firstB!.position[2]).toBeGreaterThan(0);
     // Нижняя грань первой ступени на земле
     expect(firstA!.position[1] - firstA!.size[1] / 2).toBeCloseTo(0, 5);
-    // Высота растёт с рядом
+    // Высота растет с рядом
     expect(endA[TRIBUNE_ROWS - 1]!.size[1]).toBeGreaterThan(firstA!.size[1]);
   });
 });

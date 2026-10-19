@@ -21,11 +21,11 @@ export const SURFACE_FX_SPEED_FULL = 22;
 export type TTrackSurfaceKind = 'asphalt' | 'kerb' | 'offroad';
 
 export type TWheelSurfaceFractions = {
-  /** Доля колёс на чистом асфальте 0…1 */
+  /** Доля колес на чистом асфальте 0…1 */
   asphalt: number;
-  /** Доля колёс на поребрике 0…1 */
+  /** Доля колес на поребрике 0…1 */
   kerb: number;
-  /** Доля колёс за краем дороги 0…1 */
+  /** Доля колес за краем дороги 0…1 */
   offroad: number;
 };
 
@@ -91,7 +91,7 @@ export const sampleTrackSurfaceKind = (
   return 'asphalt';
 };
 
-/** Считает доли asphalt / kerb / offroad по набору колёс */
+/** Считает доли asphalt / kerb / offroad по набору колес */
 export const aggregateWheelSurfaces = (kinds: TTrackSurfaceKind[]): TWheelSurfaceFractions => {
   const total = kinds.length;
   if (total === 0) {
@@ -116,10 +116,7 @@ export const aggregateWheelSurfaces = (kinds: TTrackSurfaceKind[]): TWheelSurfac
   };
 };
 
-/**
- * Микро-вариация grip асфальта 0.92…1.05 по мировым XZ.
- * Детерминированный value-noise без аллокаций.
- */
+/** Микро-вариация grip асфальта 0.92…1.05 по мировым XZ. Детерминированный value-noise без аллокаций. */
 export const sampleAsphaltMicroGrip = (x: number, z: number): number => {
   const nx = Math.floor(x * 0.35);
   const nz = Math.floor(z * 0.35);
@@ -160,9 +157,7 @@ export const combineSurfaceGrip = (
   return grip;
 };
 
-/**
- * Смягчает прирост продольной скорости на оффроуде (доля колёс 0…1).
- */
+/** Смягчает прирост продольной скорости на оффроуде (доля колес 0…1). */
 export const applyOffroadThrottleFactor = (
   forwardSpeed: number,
   targetForward: number,
@@ -181,7 +176,7 @@ export const applyOffroadThrottleFactor = (
   return forwardSpeed + delta * factor;
 };
 
-/** Сила оффроуд-эффектов 0…1 от доли колёс и скорости */
+/** Сила оффроуд-эффектов 0…1 от доли колес и скорости */
 export const computeOffroadFxStrength = (offroadFrac: number, forwardSpeed: number): number => {
   const frac = Math.max(0, Math.min(1, offroadFrac));
   if (frac <= 0) {

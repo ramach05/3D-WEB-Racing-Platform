@@ -9,7 +9,7 @@ type TThemeSwitcherProps = {
   size?: 'md' | 'sm';
 };
 
-/** Дропдаун светлая/тёмная тема с сохранением в localStorage */
+/** Дропдаун светлая/темная тема с сохранением в localStorage */
 export const ThemeSwitcher = ({ size = 'md' }: TThemeSwitcherProps) => {
   const { t } = useTranslation();
   const [theme, setTheme] = useState<TThemeMode>(readStoredTheme);
@@ -19,7 +19,7 @@ export const ThemeSwitcher = ({ size = 'md' }: TThemeSwitcherProps) => {
     applyTheme(theme);
   }, [theme]);
 
-  /** Применяет выбранную тему и сохраняет в state */
+  // Применяет выбранную тему и сохраняет в state
   const onChange = useCallback((value: TThemeMode) => {
     setTheme(value);
     applyTheme(value);

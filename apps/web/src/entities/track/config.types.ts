@@ -48,10 +48,7 @@ export type TTrackConfig = {
   slug: TTrackSlug;
   /** Точка спавна машины (на стороне финиша lz > 0) */
   spawnPosition: TVec3;
-  /**
-   * Угол носа на старте / респавне (рад).
-   * Направление заезда — против роста индекса centerline; см. `race-direction.ts`.
-   */
+  /** Угол носа на старте / респавне (рад). Направление заезда — против роста индекса centerline; см. `race-direction.ts`. */
   spawnRotationY: number;
   /** Линия старт/финиш */
   startFinishLine: TOrientedBox;
@@ -63,7 +60,7 @@ export type TTrackConfig = {
   obstacles: TTrackObstacle[];
   /** Лужи масла на асфальте (зоны потери сцепления) */
   oilSlicks: TOrientedBox[];
-  /** Центровая линия: ratio растёт с индексом; заезд идёт против роста — см. `race-direction.ts` */
+  /** Центровая линия: ratio растет с индексом; заезд идет против роста — см. `race-direction.ts` */
   centerline: TLoopPoint[];
   /** Ширина дороги */
   roadWidth: number;

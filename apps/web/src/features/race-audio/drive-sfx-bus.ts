@@ -13,7 +13,7 @@ export type TDriveSfxSample = {
   skidIntensity: number;
   /** Сила масла 0…1 */
   oilStrength: number;
-  /** Число колёс на луже 0…4 */
+  /** Число колес на луже 0…4 */
   wheelsOnOil: number;
   /** Сила оффроуда 0…1 */
   offRoadStrength: number;
@@ -53,7 +53,7 @@ export const tickDriveSfxSample = (next: TDriveSfxSample): void => {
 /** Текущий snapshot для audio tick */
 export const getDriveSfxSample = (): TDriveSfxSample => sample;
 
-/** Ставит one-shot удар (берётся max с уже ожидающим) */
+/** Ставит one-shot удар (берется max с уже ожидающим) */
 export const pulseDriveImpact = (intensity: number): void => {
   const clamped = Math.min(1, Math.max(0, intensity));
   if (clamped > pendingImpact) {
@@ -68,7 +68,7 @@ export const consumeDriveImpact = (): number => {
   return value;
 };
 
-/** One-shot «шлёп» при въезде на масло */
+/** One-shot «шлеп» при въезде на масло */
 export const pulseDriveOilSlap = (intensity: number): void => {
   const clamped = Math.min(1, Math.max(0, intensity));
   if (clamped > pendingOilSlap) {

@@ -59,10 +59,7 @@ const fbm = (x: number, y: number, seed: number, octaves: number): number => {
   return norm > 0 ? sum / norm : 0;
 };
 
-/**
- * Кора ствола: вертикальные трещины + mottling.
- * Mid-gray albedo — тинт через material.color.
- */
+/** Кора ствола: вертикальные трещины + mottling. Mid-gray albedo — тинт через material.color. */
 export const createBarkTexture = (size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -126,10 +123,7 @@ export const createBarkTexture = (size = 256): CanvasTexture => {
 
 let sharedBarkTexture: CanvasTexture | null = null;
 
-/**
- * Один CanvasTexture коры на сессию (без дублирования VRAM).
- * Не dispose из компонентов.
- */
+/** Один CanvasTexture коры на сессию (без дублирования VRAM). Не dispose из компонентов. */
 export const getSharedBarkTexture = (size = 256): CanvasTexture => {
   if (!sharedBarkTexture) {
     sharedBarkTexture = createBarkTexture(size);

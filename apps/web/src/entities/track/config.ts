@@ -90,7 +90,7 @@ const buildLoopTrack = ({
     return false;
   };
 
-  /** Высота полотна на точке (центрлайн y; верх асфальта = y + ROAD_TOP_Y в рищ-риббоне) */
+  // Высота полотна на точке (центрлайн y; верх асфальта = y + ROAD_TOP_Y в рищ-риббоне)
   const deckY = (i: number): number => points[i]?.y ?? 0;
 
   for (let i = 0; i < pointCount; i += 1) {
@@ -113,7 +113,7 @@ const buildLoopTrack = ({
     const mz = (a.z + b.z) / 2;
     const offset = roadWidth / 2 + wallThickness / 2 - 0.08;
     const segmentOverlap = len + WALL_SEGMENT_OVERLAP;
-    /** Стена стоит на полотне: центр по высоте = средняя высота сегмента + половина стены */
+    // Стена стоит на полотне: центр по высоте = средняя высота сегмента + половина стены
     const wallCenterY = (deckY(i) + deckY((i + 1) % pointCount)) / 2 + wallHeight / 2;
 
     const nx = -dz / len;
@@ -217,7 +217,7 @@ const buildLoopTrack = ({
     }
   }
 
-  /** timeOfDay: night только если явно night или если timeOfDay == night */
+  /** night только при audioTheme === 'night' */
   const derivedTimeOfDay: TTimeOfDay = audioTheme === 'night' ? 'night' : 'day';
 
   return {
@@ -329,10 +329,7 @@ const OIL_SLICK_SIZE: TVec3 = [2.2, 0.04, 3.0];
 /** Высота центра пятна над y=0 (асфальт ~0.1) */
 const OIL_SLICK_CENTER_Y = 0.12;
 
-/**
- * Размещает лужу масла вдоль centerline с боковым смещением (нормаль влево).
- * y не участвует в hit-тесте (XZ), но задаёт высоту меша.
- */
+/** Размещает лужу масла вдоль centerline с боковым смещением (нормаль влево). y не участвует в hit-тесте (XZ), но задает высоту меша. */
 const placeOilSlickAlongCenterline = (
   points: TLoopPoint[],
   ratio: number,
@@ -405,9 +402,7 @@ const buildCoastalOvalOilSlicks = (points: TLoopPoint[]): TOrientedBox[] =>
     { ratio: 0.54, lateral: -0.95 },
   ]);
 
-/**
- * Night City: первая — просвет между банками; вторая — 70 м до финиша по заезду.
- */
+/** Night City: первая — просвет между банками; вторая — 70 м до финиша по заезду. */
 const buildNightCityOilSlicks = (points: TLoopPoint[]): TOrientedBox[] => [
   placeOilSlickAlongCenterline(points, 0.23, 1.05),
   placeOilSlickMetersBeforeFinish(points, 70, -0.75),
@@ -433,7 +428,7 @@ const buildCoastalOvalObstacles = (points: TLoopPoint[], roadWidth: number): TTr
 
 /** Препятствия Night City: 4 ряда от бордюра (дорога 10 м) — шины и бочки. */
 const buildNightCityObstacles = (points: TLoopPoint[], roadWidth: number): TTrackObstacle[] => {
-  /** Четвёртый inset ≈ центр полосы с зазором; шаги ~1.15 м под габарит стопки. */
+  // Четвертый inset ≈ центр полосы с зазором; шаги ~1.15 м под габарит стопки.
   const quad = [0.7, 1.85, 3.0, 4.15] as const;
   const tires: TObstacleKind[] = ['tireStack', 'tireStack', 'tireStack', 'tireStack'];
   const barrels: TObstacleKind[] = ['fuelBarrel', 'fuelBarrel', 'fuelBarrel', 'fuelBarrel'];
@@ -486,10 +481,7 @@ const buildEllipsePoints = (radiusX: number, radiusZ: number, count: number): TL
   return points;
 };
 
-/**
- * Замкнутая полилиния → равномерная выборка по длине дуги (XZ), N точек.
- * Нужно, чтобы шаг центра и изломы heading были равномерны (тесты config + тайлинг).
- */
+/** Замкнутая полилиния → равномерная выборка по длине дуги (XZ), N точек. Нужно, чтобы шаг центра и изломы heading были равномерны (тесты config + тайлинг). */
 const resampleClosedByArcLength = (dense: TLoopPoint[], count: number): TLoopPoint[] => {
   const n = dense.length;
   const cum: number[] = new Array(n + 1).fill(0);
@@ -597,7 +589,7 @@ const buildFigureEightPoints = (count: number): TLoopPoint[] => {
  *
  * Исключение — зона пересечения: там под мостом проходит нижняя ветка, и
  * колонна встала бы на чужую проезжую часть. Такие станции остаются без
- * опор — это чистый пролёт над путепроводом (как у реальных развязок).
+ * опор — это чистый пролет над путепроводом (как у реальных развязок).
  */
 const buildDeckPiers = (points: readonly TLoopPoint[], roadWidth: number): TOrientedBox[] => {
   const n = points.length;
@@ -694,7 +686,7 @@ const buildDeckPiers = (points: readonly TLoopPoint[], roadWidth: number): TOrie
             rotationY,
           });
         }
-        // Ростверк держим только там, где есть опора; чистый пролёт не вешаем
+        // Ростверк держим только там, где есть опора; чистый пролет не вешаем
         if (columns.length > 0) {
           piers.push({
             position: [p.x, soffit - capHeight / 2 + 0.08, p.z],
@@ -769,10 +761,7 @@ const samplePathSegments = (segments: readonly TPathSegment[], count: number): T
   return points;
 };
 
-/**
- * Строит замкнутую трассу из команд «прямая / дуга» (heading 0 = +X, CCW+).
- * Сумма дуг должна быть ±2π, длины прямых — подобраны под замыкание петли.
- */
+/** Строит замкнутую трассу из команд «прямая / дуга» (heading 0 = +X, CCW+). Сумма дуг должна быть ±2π, длины прямых — подобраны под замыкание петли. */
 const buildDrivenLoopPoints = (
   start: TLoopPoint,
   startHeading: number,
@@ -886,10 +875,7 @@ const STORM_EIGHT_ROAD_WIDTH = 10;
 
 const stormEightCenterlineY = STORM_EIGHT_POINTS.map((p) => p.y ?? 0);
 
-/**
- * Ряды на плоских участках + бочки на шляпке эстакады (плато ≈0.617–0.667,
- * y ~4 м). Под мостом (≈0.125) препятствий нет.
- */
+/** Ряды на плоских участках + бочки на шляпке эстакады (плато ≈0.617–0.667, y ~4 м). Под мостом (≈0.125) препятствий нет. */
 const STORM_EIGHT_OBSTACLES = (points: TLoopPoint[], roadWidth: number): TTrackObstacle[] => {
   const triple = [0.7, 1.85, 3.0] as const;
   const tires: TObstacleKind[] = ['tireStack', 'tireStack', 'tireStack'];
@@ -954,9 +940,6 @@ export const getAllTrackConfigs = (): TTrackConfig[] => {
   return [coastalOvalTrack, nightCityTrack, stormEightTrack];
 };
 
-/**
- * Свет включен: ночью или в штормовой дождь (темное пасмурное небо).
- * True только для Night City и Storm Eight; Coastal (ясный день) — false.
- */
+/** Свет включен: ночью или в штормовой дождь (темное пасмурное небо). True только для Night City и Storm Eight; Coastal (ясный день) — false. */
 export const isTrackLightingOn = (config: TTrackConfig): boolean =>
   config.timeOfDay === 'night' || config.weather === 'rain';

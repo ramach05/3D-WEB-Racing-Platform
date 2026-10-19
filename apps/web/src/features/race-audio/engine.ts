@@ -142,7 +142,7 @@ const COASTAL_RIFF: TNote[] = [
 const COASTAL_LOOP: TNote[] = [...COASTAL_BASS, ...COASTAL_RIFF, ...COASTAL_DRUMS];
 
 // ---------------------------------------------------------------------------
-// Night — тяжёлая Rock 'n' Roll вариация мотива Storm (~124 BPM, минор E)
+// Night — тяжелая Rock 'n' Roll вариация мотива Storm (~124 BPM, минор E)
 // доля 0.484 с, петля 5.81 с (12 долей)
 // E2=82 B2=123 | C2=65 G2=98 | A2=110 E3=165 | B2=123 F#3=185
 // ---------------------------------------------------------------------------
@@ -202,7 +202,7 @@ const NIGHT_BASS: TNote[] = [
 
 /** Хук-мелодия E-минор: восходящий вопрос-ответ в высоком регистре, кодa октавой вниз */
 const NIGHT_RIFF: TNote[] = [
-  // такт 1 (Em): хук — двойной удар E, подъём к длинной B
+  // такт 1 (Em): хук — двойной удар E, подъем к длинной B
   tone(330, 0.05, N_EIGHTH * 0.8, 'sawtooth', 0.4),
   tone(330, 0.05 + N_EIGHTH, N_EIGHTH * 0.7, 'square', 0.3),
   tone(392, 0.05 + N_BEAT, N_EIGHTH * 0.8, 'sawtooth', 0.4),
@@ -383,7 +383,7 @@ export class ChiptuneEngine {
     }
   };
 
-  /** Лениво создаёт AudioContext и GainNode */
+  /** Лениво создает AudioContext и GainNode */
   private ensureContext = (): AudioContext | null => {
     if (!this.running) {
       return null;

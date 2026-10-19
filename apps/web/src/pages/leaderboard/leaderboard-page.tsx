@@ -30,7 +30,7 @@ export const LeaderboardPage = () => {
     skip: !selectedSlug,
   });
 
-  /** Переключение трассы стрелками / Home / End */
+  // Переключение трассы стрелками / Home / End
   const onTrackKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (!tracks || tracks.length === 0) {
       return;

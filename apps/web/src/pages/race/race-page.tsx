@@ -147,7 +147,7 @@ export const RacePage = () => {
     muted: false,
   });
 
-  /** Рестарт заезда: сброс сессии, canvas и toast */
+  // Рестарт заезда: сброс сессии, canvas и toast
   const restart = useCallback(() => {
     if (!trackId || !config) {
       return;
@@ -170,12 +170,12 @@ export const RacePage = () => {
     }, 2000);
   }, [config, trackId]);
 
-  /** Переключение фоновой музыки (эффекты всегда слышны) */
+  // Переключение фоновой музыки (эффекты всегда слышны)
   const toggleMute = useCallback(() => {
     setMusicMuted((value) => !value);
   }, []);
 
-  /** Выход в меню трасс: сброс сессии, чтобы музыка/статус не протекали */
+  // Выход в меню трасс: сброс сессии, чтобы музыка/статус не протекали
   const exitToTracks = useCallback(() => {
     if (trackId && config) {
       resetRaceSession(trackId, config.checkpoints.length);
@@ -183,7 +183,7 @@ export const RacePage = () => {
     void navigate('/tracks');
   }, [config, navigate, trackId]);
 
-  /** Финиш: фиксирует время и отправляет результат (если авторизован) */
+  // Финиш: фиксирует время и отправляет результат (если авторизован)
   const onFinished = useCallback(() => {
     if (!trackId || !trackSlug || submittedRef.current) {
       return;
@@ -263,7 +263,7 @@ export const RacePage = () => {
     if (hudStatus !== 'finished') {
       return;
     }
-    // Всегда даём сыграть finish-moment (FINISH! → время); CSS сам глушит motion
+    // Всегда даем сыграть finish-moment (FINISH! → время); CSS сам глушит motion
     const id = window.setTimeout(() => setShowFinishOverlay(true), FINISH_OVERLAY_DELAY_MS);
     return () => window.clearTimeout(id);
   }, [hudStatus]);

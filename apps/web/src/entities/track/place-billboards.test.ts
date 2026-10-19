@@ -181,7 +181,7 @@ describe('placeBillboards', () => {
           }
         }
 
-        // Нормаль панели сонаправлена с касательной, а не против неё
+        // Нормаль панели сонаправлена с касательной, а не против нее
         const alignment = facingX * tx + facingZ * tz;
         expect(alignment).toBeGreaterThan(0.85);
       }

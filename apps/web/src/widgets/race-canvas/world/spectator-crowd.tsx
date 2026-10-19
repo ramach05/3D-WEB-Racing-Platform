@@ -26,7 +26,7 @@ import type {
 type TSpectatorCrowdProps = {
   /** Места зрителей секции */
   seats: TSpectatorSeat[];
-  /** Палитра трассы (зарезервировано) */
+  /** Палитра трассы: accent для emissive-подкраски толпы */
   palette: TTrackPalette;
   /** Ночной неон футболок */
   isNight: boolean;
@@ -40,7 +40,7 @@ const ARM_PIVOT_OFFSET = ARM_TOTAL / 2;
 const TORSO_RADIUS = 0.11;
 const TORSO_LENGTH = 0.28;
 
-/** Берёт элемент массива по модулю индекса */
+/** Берет элемент массива по модулю индекса */
 const pick = <T,>(items: readonly T[], index: number): T => items[index % items.length] as T;
 
 /** Выбирает поведение зрителя по весам ~45/20/15/10/5/5 */
@@ -63,7 +63,7 @@ const pickBehavior = (roll: number): TSpectatorBehavior => {
   return 'cheer';
 };
 
-/** Создаёт места зрителей на секции трибуны (локальные координаты секции) */
+/** Создает места зрителей на секции трибуны (локальные координаты секции) */
 export const buildSpectatorSeats = ({
   tribuneInnerX,
   sideSign,
@@ -177,7 +177,7 @@ const applyInstanceColors = (mesh: InstancedMesh, colors: Color[]): void => {
   material.needsUpdate = true;
 };
 
-/** Подкрашивает emissive цветом инстанса + тёплый stadium-wash / neon bounce */
+/** Подкрашивает emissive цветом инстанса + теплый stadium-wash / neon bounce */
 const enableInstanceEmissiveTint = (
   material: MeshStandardMaterial,
   washAdd: number,
@@ -210,11 +210,11 @@ ${shader.fragmentShader}`.replace(
 };
 
 type TArmAngles = {
-  /** Подъём руки (локальный X) */
+  /** Подъем руки (локальный X) */
   raise: number;
   /** Взмах в сторону (локальный Z) */
   swing: number;
-  /** Вынос вперёд (локальный Y twist / pitch mix) */
+  /** Вынос вперед (локальный Y twist / pitch mix) */
   forward: number;
 };
 
@@ -614,7 +614,7 @@ export const SpectatorCrowd = ({ seats, palette, isNight }: TSpectatorCrowdProps
 
   const count = coloredSeats.length;
   // Слабый цветной glow; toneMapped=true — иначе bloom выжигает футболки в белый
-  /** Stadium-wash: тёплый fill + лёгкий neon bounce (без PointLight на каждый ряд) */
+  /** Stadium-wash: теплый fill + легкий neon bounce (без PointLight на каждый ряд) */
   const shirtEmissiveIntensity = isNight ? TRIBUNE_CROWD_WASH.shirtEmissive : 0;
   const armEmissiveIntensity = isNight ? TRIBUNE_CROWD_WASH.skinEmissive : 0;
   const headEmissiveIntensity = isNight ? TRIBUNE_CROWD_WASH.skinEmissive : 0;

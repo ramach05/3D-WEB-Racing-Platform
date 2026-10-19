@@ -8,10 +8,7 @@ const initialState: TAuthState = {
   hydrated: false,
 };
 
-/**
- * Сессия пользователя в Redux.
- * Access JWT — в памяти (shared/lib/session); refresh — httpOnly cookie.
- */
+/** Сессия пользователя в Redux. Access JWT — в памяти (shared/lib/session); refresh — httpOnly cookie. */
 export const authSlice = createSlice({
   name: 'auth',
   initialState,

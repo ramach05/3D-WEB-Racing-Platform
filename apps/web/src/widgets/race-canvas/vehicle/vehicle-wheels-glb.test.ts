@@ -28,21 +28,21 @@ import {
 } from './vehicle-wheel-rig';
 
 /*
- * Интеграция с реальными GLB колёс (scirocco / juke / hatchback-CarConcept).
+ * Интеграция с реальными GLB колес (scirocco / juke / hatchback-CarConcept).
  *
  * Проверяет:
- *  1) normalizeVehicleGltf маппит ровно по одному узлу на каждое из 4 имён колёс,
+ *  1) normalizeVehicleGltf маппит ровно по одному узлу на каждое из 4 имен колес,
  *     при этом колесо — компактная деталь, а не «весь автомобиль»;
  *  2) замеренную ось шины (measureWheelAxle) + toe-коррекцию (computeToeYawCorrection)
  *     по реальной геометрии каждой модели (у Juke перед ~20°, у CarConcept ~30°);
  *  3) математику buildWheelRig без мутаций дерева: align обнуляет toe, spin крутит
  *     вокруг замеренной оси шины, steer — вокруг мировой вертикали (в т.ч. под
- *     повёрнутым родителем BodyUnderside −90° по X у CarConcept).
+ *     повернутым родителем BodyUnderside −90° по X у CarConcept).
  *
  * Зависимости окружения:
  *  - GLTFLoader.parse требует ArrayBuffer из «своего» рилма (см. load ниже);
  *  - текстуры грузятся через fake createImageBitmap; чтобы их blob-фетчи не долетали
- *    до MSW (включённого setup.ts в режиме onUnhandledRequest: 'error'), in beforeAll
+ *    до MSW (включенного setup.ts в режиме onUnhandledRequest: 'error'), in beforeAll
  *    этого файла globalThis.fetch временно подменяется стабом с пустым blob.
  */
 
@@ -69,7 +69,7 @@ class FakeImageBitmap {
   new FakeImageBitmap();
 
 // Оригинальный fetch до того, как MSW заменит его своим перехватчиком в setup beforeAll.
-// В этом файле мы вернём собственный стаб (см. beforeAll в describe ниже), чтобы
+// В этом файле мы вернем собственный стаб (см. beforeAll в describe ниже), чтобы
 // blob-фетчи текстур из ImageBitmapLoader не долетали до MSW.
 const ORIGINAL_FETCH = globalThis.fetch;
 
@@ -95,7 +95,7 @@ const load = async (fileName: string) => {
 
 const isSkinned = (o: Object3D): o is SkinnedMesh => (o as SkinnedMesh).isSkinnedMesh === true;
 
-/** Выборка мировых точек геометрии: обычный matrixWorld или с учётом bindMatrix (rest-поза SkinnedMesh). */
+/** Выборка мировых точек геометрии: обычный matrixWorld или с учетом bindMatrix (rest-поза SkinnedMesh). */
 const samplePts = (wheel: Object3D, useBind: boolean): Vector3[] => {
   const out: Vector3[] = [];
   let budget = 4096;
@@ -171,7 +171,7 @@ const centerOf = (pts: readonly Vector3[]): { x: number; z: number } => {
 
 const bearingDeg = (x: number, z: number): number => (Math.atan2(z, x) * 180) / Math.PI;
 
-/** Разница азимутов в градусах, приведённая к (−180; 180]. */
+/** Разница азимутов в градусах, приведенная к (−180; 180]. */
 const bearingDelta = (a: number, b: number): number => {
   let d = (b - a) % 360;
   if (d > 180) {
@@ -282,7 +282,7 @@ const wheelDiag = (root: Group, name: string): TWheelDiag => {
 const FRONT_WHEEL_NAMES = ['WheelFrontL', 'WheelFrontR'] as const;
 const REAR_WHEEL_NAMES = ['WheelRearL', 'WheelRearR'] as const;
 
-/** Запечённый toe передней оси в authored-позе (градусы) по реальным GLB. */
+/** Запеченный toe передней оси в authored-позе (градусы) по реальным GLB. */
 const FRONT_YAW_DEG: Record<string, number | undefined> = {
   scirocco: 0,
   juke: 20,
@@ -377,7 +377,7 @@ describe('real glb wheel integration', () => {
       // Реплика measureWheelRadius (vehicle-model.tsx): радиус БЕЗ клампа 0.12 в модельных
       // единицах. Старый кламп ломал мини-масштабированные модели: у ram.glb (вся машина
       // ~0.06, диаметр колеса ~0.009) он давал 0.12 × fitScale(≈55) = ~6.6 м — spin в ~24
-      // раза медленнее. Безопасный нижний предел ставится на МИРОВОМ радиусе в spin-расчёте.
+      // раза медленнее. Безопасный нижний предел ставится на МИРОВОМ радиусе в spin-расчете.
       const wheel = root.getObjectByName('WheelFrontL') ?? root.getObjectByName('WheelRearL');
       expect(wheel, 'wheel pivot exists').toBeTruthy();
       if (!wheel) {
@@ -707,7 +707,7 @@ describe('real glb wheel integration', () => {
     const tmp = new Vector3();
     const line = new Vector3();
 
-    /** Максимальная радиальная удалённость вершин мешей с указанными материалами от оси (o, a). */
+    /** Максимальная радиальная удаленность вершин мешей с указанными материалами от оси (o, a). */
     const maxRadial = (pivot: Object3D, o: Vector3, a: Vector3, matNames: string[]): number => {
       let rMax = 0;
       pivot.traverse((object) => {
@@ -905,7 +905,7 @@ describe('real glb wheel integration', () => {
   }, 30000);
 
   it('scirocco (Sport): rendered wheel geometry spins about the measured axle', async () => {
-    // После bone-world bake колёса — обычный Mesh: spin вокруг центра и оси шины.
+    // После bone-world bake колеса — обычный Mesh: spin вокруг центра и оси шины.
     const gltf = await load('scirocco.glb');
     const root = cloneSkinned(gltf.scene) as Group;
     normalizeVehicleGltf(root, 'scirocco');

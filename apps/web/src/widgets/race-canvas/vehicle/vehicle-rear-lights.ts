@@ -1,4 +1,4 @@
-/** Лёгкий подсвет линзы днём в покое — глубина поликарбоната, не «включённые» габариты */
+/** Легкий подсвет линзы днем в покое — глубина поликарбоната, не «включенные» габариты */
 export const REAR_LIGHT_EMISSIVE_IDLE = 0.28;
 /** Габариты на ночной трассе (headlightsOn) — читаемее idle */
 export const REAR_LIGHT_EMISSIVE_NIGHT_IDLE = 1.6;
@@ -10,10 +10,7 @@ export const REVERSE_LIGHT_SPEED_THRESHOLD = -0.2;
 
 export type TRearLightMode = 'idle' | 'brake' | 'reverse';
 
-/**
- * Режим задних огней по педали тормоза и продольной скорости.
- * При движении назад — белый reverse; иначе при brake — красные стопы.
- */
+/** Режим задних огней по педали тормоза и продольной скорости. При движении назад — белый reverse; иначе при brake — красные стопы. */
 export const resolveRearLightMode = (brake: number, forwardSpeed: number): TRearLightMode => {
   if (forwardSpeed < REVERSE_LIGHT_SPEED_THRESHOLD) {
     return 'reverse';

@@ -36,7 +36,7 @@ export const RAIL_POST_SPACING = 1.55;
 /** Насколько стойка утоплена в бетон */
 export const RAIL_POST_EMBED = 0.08;
 
-/** Ширина лестничного пролёта у торца */
+/** Ширина лестничного пролета у торца */
 export const STAIR_WIDTH = 1.15;
 /** Глубина одной ступени лестницы (= глубина ряда) */
 export const STAIR_RUN = ROW_DEPTH;
@@ -121,9 +121,7 @@ export type TTribuneCanopyPost = {
   height: number;
 };
 
-/**
- * Задние стальные колонны навеса (±Z + центр) — фасад открыт.
- */
+/** Задние стальные колонны навеса (±Z + центр) — фасад открыт. */
 export const buildTribuneCanopyPosts = (
   tribuneInnerX: number,
   sideSign: number,
@@ -184,9 +182,7 @@ export type TTribuneRailPart = {
   rotation?: TVec3;
 };
 
-/**
- * Трубчатое ограждение заднего ряда: поручень + стойки, утопленные в бетон.
- */
+/** Трубчатое ограждение заднего ряда: поручень + стойки, утопленные в бетон. */
 export const buildTribuneBackRails = (
   tribuneInnerX: number,
   sideSign: number,
@@ -252,9 +248,7 @@ export const tribuneOuterEndSign = (sectionIndex: number): -1 | 1 | null => {
   return null;
 };
 
-/**
- * Лестницы только на внешних торцах крайних секций — вплотную к рядам.
- */
+/** Лестницы только на внешних торцах крайних секций — вплотную к рядам. */
 export const buildTribuneStairs = ({
   tribuneInnerX,
   sideSign,
@@ -278,9 +272,7 @@ export const buildTribuneStairs = ({
   return steps;
 };
 
-/**
- * Низкий бортик вдоль внешней стороны лестницы (вместо глухой бетонной стены).
- */
+/** Низкий бортик вдоль внешней стороны лестницы (вместо глухой бетонной стены). */
 export const buildTribuneStairStringer = ({
   tribuneInnerX,
   sideSign,
@@ -303,9 +295,7 @@ export const buildTribuneStairStringer = ({
   };
 };
 
-/**
- * Ограждение лестницы: стойки на каждой ступени + наклонный поручень (без «палки в воздухе»).
- */
+/** Ограждение лестницы: стойки на каждой ступени + наклонный поручень (без «палки в воздухе»). */
 export const buildTribuneStairRails = (
   stairSteps: readonly TTribuneStairStep[],
   _tribuneInnerX: number,

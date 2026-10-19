@@ -19,13 +19,13 @@ const prefersReducedMotion = (): boolean => {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 };
 
-/** Крупный SEGA-отсчёт 3-2-1-GO перед стартом таймера */
+/** Крупный SEGA-отсчет 3-2-1-GO перед стартом таймера */
 export const RaceCountdownOverlay = () => {
   const { t } = useTranslation();
   const status = useRaceHudSelector((snapshot) => snapshot.status);
   const countdownStep = useRaceHudSelector((snapshot) => snapshot.countdownStep);
 
-  // Ведёт таймеры шагов 3-2-1-GO и стартует гонку.
+  // Ведет таймеры шагов 3-2-1-GO и стартует гонку.
   useEffect(() => {
     if (status !== 'countdown') {
       return;

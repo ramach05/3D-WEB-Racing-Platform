@@ -24,10 +24,7 @@ export type TTerrainHeightfieldArgs = [
   scale: { x: number; y: number; z: number },
 ];
 
-/**
- * Высоты в column-major порядке для HeightfieldCollider.
- * nrows/ncols = число ячеек; длина heights = (nrows+1)*(ncols+1).
- */
+/** Высоты в column-major порядке для HeightfieldCollider. nrows/ncols = число ячеек; длина heights = (nrows+1)*(ncols+1). */
 export const buildTerrainHeightfieldArgs = ({
   centerline,
   roadWidth,
@@ -53,10 +50,7 @@ export const buildTerrainHeightfieldArgs = ({
   return [segs, segs, heights, { x: worldSize, y: 1, z: worldSize }];
 };
 
-/**
- * Горизонтальный heightfield в плоскости XZ: Y = sampleTerrainHeight.
- * UV покрывают весь квадрат 0..1 для тайлинга dirt-текстуры.
- */
+/** Горизонтальный heightfield в плоскости XZ: Y = sampleTerrainHeight. UV покрывают весь квадрат 0..1 для тайлинга dirt-текстуры. */
 export const buildTerrainGeometry = ({
   centerline,
   roadWidth,

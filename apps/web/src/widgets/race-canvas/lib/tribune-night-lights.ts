@@ -8,10 +8,7 @@ import {
   tribuneRowCenterX,
 } from '@/entities/track';
 
-/**
- * Stadium-прожекторы на краях крыши (визуал всегда; SpotLight только ночью).
- * Без shadow map; неон рядов — отдельно.
- */
+/** Stadium-прожекторы на краях крыши (визуал всегда; SpotLight только ночью). Без shadow map; неон рядов — отдельно. */
 export const TRIBUNE_FLOOD = {
   /** Опускание корпуса от нижней грани навеса */
   housingDropY: 0.12,
@@ -27,10 +24,7 @@ export const TRIBUNE_FLOOD = {
   lensEmissiveIntensity: 1.35,
 } as const;
 
-/**
- * Два SpotLight на ±Z краях крыши, вниз на зрителей.
- * Бюджет: ровно 2 источника на всю трибуну, castShadow=false.
- */
+/** Два SpotLight на ±Z краях крыши, вниз на зрителей. Бюджет: ровно 2 источника на всю трибуну, castShadow=false. */
 export const TRIBUNE_EDGE_SPOT = {
   intensity: 42,
   distance: 14,
@@ -51,9 +45,7 @@ export const TRIBUNE_EDGE_SPOT = {
 /** ± края крыши вдоль зала */
 export const TRIBUNE_EDGE_Z_SIGNS = [-1, 1] as const;
 
-/**
- * Запечённая заливка толпы — слабее, чем раньше: основной свет от edge Spot.
- */
+/** Фоновая заливка толпы: слабый fill, основной свет — от edge Spot */
 export const TRIBUNE_CROWD_WASH = {
   color: [1, 0.94, 0.82] as const,
   shirtAdd: 0.18,
@@ -66,7 +58,7 @@ export const TRIBUNE_CROWD_WASH = {
 /** Глубина площадки рядов по X */
 export const tribuneDepthX = () => TRIBUNE_ROWS * ROW_DEPTH;
 
-/** Полупролёт трибуны по Z (от центра до внешнего торца секции) */
+/** Полупролет трибуны по Z (от центра до внешнего торца секции) */
 export const tribuneHalfSpanZ = () => SECTION_PITCH + SECTION_WIDTH / 2;
 
 /** Локальный X корпуса / Spot на краю крыши */

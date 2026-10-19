@@ -87,10 +87,7 @@ const TEXTURE_HEIGHT = 512;
 const srgbToLinear = (c: number): number =>
   c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 
-/**
- * Средняя линейная яркость canvas (выборка каждые `stride` пикселей).
- * Нужна, чтобы ночной glow лица был одинаково читаемым у светлых и тёмных макетов.
- */
+/** Средняя линейная яркость canvas (выборка каждые `stride` пикселей). Нужна, чтобы ночной glow лица был одинаково читаемым у светлых и темных макетов. */
 const avgLuminanceOf = (ctx: CanvasRenderingContext2D, stride = 16): number => {
   const { width, height } = ctx.canvas;
   const { data } = ctx.getImageData(0, 0, width, height);

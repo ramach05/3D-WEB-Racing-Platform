@@ -5,10 +5,7 @@ import type { TPlacedStreetLamp, TPlaceStreetLampsOptions } from './place-street
 const WALL_THICKNESS = 0.25;
 /** Отступ столба за внешней гранью стены */
 const WALL_OUTSET = 1.2;
-/**
- * Шаг станций вдоль периметра (по одной лампе, стороны чередуются).
- * Реже столбы — меньше Spot-кандидатов и draw calls на Night City.
- */
+/** Шаг станций вдоль периметра (по одной лампе, стороны чередуются). Реже столбы — меньше Spot-кандидатов и draw calls на Night City. */
 const DEFAULT_SPACING = 28;
 /** Не ставить фонари слишком близко к гантри / старту */
 const START_FINISH_CLEARANCE = 14;
@@ -32,10 +29,7 @@ const distanceToStartFinishSq = (x: number, z: number, line: TOrientedBox): numb
   return dx * dx + dz * dz;
 };
 
-/**
- * Касательная и внешняя нормаль в точке на ребре centerline.
- * `t` — доля отрезка [index → index+1].
- */
+/** Касательная и внешняя нормаль в точке на ребре centerline. `t` — доля отрезка [index → index+1]. */
 const frameAtEdge = (
   points: TLoopPoint[],
   index: number,
@@ -79,10 +73,7 @@ const isFarEnough = (
   return true;
 };
 
-/**
- * yaw так, чтобы локальная +X смотрела в (towardX, towardZ) на плоскости XZ.
- * Three.js: (1,0,0) → (cos θ, 0, −sin θ).
- */
+/** yaw так, чтобы локальная +X смотрела в (towardX, towardZ) на плоскости XZ. Three.js: (1,0,0) → (cos θ, 0, −sin θ). */
 const yawToward = (towardX: number, towardZ: number): number => Math.atan2(-towardZ, towardX);
 
 /** Можно ли поставить столб в (x, z) */
@@ -105,10 +96,7 @@ const canPlaceAt = (
   return true;
 };
 
-/**
- * Расставляет уличные фонари вдоль трассы: по одному на станцию, стороны чередуются.
- * Свет включается отдельно при рендере (`timeOfDay === 'night'`).
- */
+/** Расставляет уличные фонари вдоль трассы: по одному на станцию, стороны чередуются. Свет включается отдельно при рендере (`timeOfDay === 'night'`). */
 export const placeStreetLamps = ({
   config,
   spacing = DEFAULT_SPACING,
@@ -124,7 +112,7 @@ export const placeStreetLamps = ({
 
   let nextDist = spacing * 0.5;
   let traveled = 0;
-  /** Чётные станции — внешняя сторона, нечётные — внутренняя */
+  // Четные станции — внешняя сторона, нечетные — внутренняя
   let stationIndex = 0;
 
   for (let i = 0; i < points.length; i += 1) {
@@ -201,7 +189,7 @@ export const expectedNightCityLampCount = (config: TTrackConfig): { min: number;
     perimeter += Math.hypot(b.x - a.x, b.z - a.z);
   }
   const stations = Math.max(1, Math.floor(perimeter / DEFAULT_SPACING));
-  // После отсева у трибун / старта ещё MIN_LAMP_SPACING режет близкие столбы на длинных петлях
+  // После отсева у трибун / старта еще MIN_LAMP_SPACING режет близкие столбы на длинных петлях
   const spacingCap = Math.max(3, Math.floor(perimeter / MIN_LAMP_SPACING) + 2);
   return {
     min: Math.max(3, Math.min(stations - 8, spacingCap - 6)),

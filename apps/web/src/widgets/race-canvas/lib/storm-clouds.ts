@@ -109,10 +109,7 @@ export const createStormCloudTexture = (size = 512): CanvasTexture => {
 
 let sharedStormCloudTexture: CanvasTexture | null = null;
 
-/**
- * Один CanvasTexture облаков на сессию гонки (купол неба шторма).
- * Не dispose из компонентов — переиспользуется между трассами.
- */
+/** Один CanvasTexture облаков на сессию гонки (купол неба шторма). Не dispose из компонентов — переиспользуется между трассами. */
 export const getSharedStormCloudTexture = (size = 512): CanvasTexture => {
   if (!sharedStormCloudTexture) {
     sharedStormCloudTexture = createStormCloudTexture(size);

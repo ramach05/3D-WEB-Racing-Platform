@@ -1,10 +1,10 @@
 import { BufferAttribute, BufferGeometry } from 'three';
 import type { TLoopPoint } from '@/entities/track';
 
-/** Верх асфальта (совпадает с прежним box height 0.2, center y=0) */
+/** Верх асфальта (y поверхности) */
 export const ROAD_TOP_Y = 0.1;
 
-/** Толщина дорожного объёма */
+/** Толщина дорожного объема */
 export const ROAD_THICKNESS = 0.2;
 
 export type TRoadRibbonResult = {

@@ -25,7 +25,7 @@ export const TrackMinimap = ({ config, className, children }: TTrackMinimapProps
 
   const projection = createMinimapProjection(config);
 
-  /** Мировые XZ → координаты viewBox SVG */
+  // Мировые XZ → координаты viewBox SVG
   const toSvg = (x: number, z: number): string => {
     const p = projection.project(x, z);
     return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;

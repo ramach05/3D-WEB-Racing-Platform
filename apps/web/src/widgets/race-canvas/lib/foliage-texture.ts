@@ -59,7 +59,7 @@ const fbm = (x: number, y: number, seed: number, octaves: number): number => {
   return norm > 0 ? sum / norm : 0;
 };
 
-/** Пишет mid-gray пиксель с лёгким зелёным уклоном для tint через material.color */
+/** Пишет mid-gray пиксель с легким зеленым уклоном для tint через material.color */
 const writeFoliagePixel = (
   data: Uint8ClampedArray,
   idx: number,
@@ -73,10 +73,7 @@ const writeFoliagePixel = (
   data[idx + 3] = 255;
 };
 
-/**
- * Хвоя сосны: мелкая игольчатая зернистость + тёмные карманы.
- * Mid albedo — тинт через material.color.
- */
+/** Хвоя сосны: мелкая игольчатая зернистость + темные карманы. Mid albedo — тинт через material.color. */
 export const createPineFoliageTexture = (size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -123,10 +120,7 @@ export const createPineFoliageTexture = (size = 256): CanvasTexture => {
   return texture;
 };
 
-/**
- * Листва широколиственного: пятна кластеров листьев.
- * Mid albedo — тинт через material.color.
- */
+/** Листва широколиственного: пятна кластеров листьев. Mid albedo — тинт через material.color. */
 export const createBroadleafFoliageTexture = (size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;

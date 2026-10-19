@@ -113,7 +113,7 @@ describe('RacePage', () => {
     expect(screen.queryByTestId('race-canvas')).not.toBeInTheDocument();
 
     await waitFor(() => expect(screen.getByTestId('race-canvas')).toBeInTheDocument());
-    // Canvas смонтирован, но первого кадра ещё не было: лоадер и HUD-гейт на месте.
+    // Canvas смонтирован, но первого кадра еще не было: лоадер и HUD-гейт на месте.
     expect(screen.getByText(/готовим трассу/i)).toBeInTheDocument();
 
     act(() => {

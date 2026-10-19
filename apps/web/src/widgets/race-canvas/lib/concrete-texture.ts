@@ -57,10 +57,7 @@ const fbm = (x: number, y: number, seed: number, octaves: number): number => {
   return sum / norm;
 };
 
-/**
- * Реалистичный бетон: крупные пятна + мелкий grit.
- * albedo mid-gray — тинт через material.color (palette.wall / tribunePalette).
- */
+/** Реалистичный бетон: крупные пятна + мелкий grit. albedo mid-gray — тинт через material.color (palette.wall / tribunePalette). */
 export const createConcreteTexture = (size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -95,7 +92,7 @@ export const createConcreteTexture = (size = 256): CanvasTexture => {
 
       const gray = Math.max(95, Math.min(210, tone));
       const idx = (y * size + x) * 4;
-      // Чуть тёплый нейтральный бетон
+      // Чуть теплый нейтральный бетон
       data[idx] = Math.min(255, gray * 1.02);
       data[idx + 1] = gray;
       data[idx + 2] = gray * 0.96;
@@ -119,10 +116,7 @@ export const createConcreteTexture = (size = 256): CanvasTexture => {
 
 let sharedConcreteTexture: CanvasTexture | null = null;
 
-/**
- * Один CanvasTexture бетона на walls + tribunes (без дублирования VRAM).
- * Не dispose из компонентов — живёт на время сессии гонки.
- */
+/** Один CanvasTexture бетона на walls + tribunes (без дублирования VRAM). Не dispose из компонентов — живет на время сессии гонки. */
 export const getSharedConcreteTexture = (size = 256): CanvasTexture => {
   if (!sharedConcreteTexture) {
     sharedConcreteTexture = createConcreteTexture(size);

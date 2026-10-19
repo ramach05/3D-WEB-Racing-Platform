@@ -15,8 +15,8 @@ type TRaceMinimapProps = {
 export const RaceMinimap = ({ config, className }: TRaceMinimapProps) => {
   const markerRef = useRef<SVGGElement>(null);
 
-  // Поза машины обновляется в useFrame вне React, поэтому читаем её в rAF-цикле
-  // и пишем transform прямо в DOM (тот же приём, что время/скорость в RaceHud).
+  // Поза машины обновляется в useFrame вне React, поэтому читаем ее в rAF-цикле
+  // и пишем transform прямо в DOM (тот же прием, что время/скорость в RaceHud).
   useEffect(() => {
     const projection = createMinimapProjection(config);
 

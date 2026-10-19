@@ -42,10 +42,7 @@ const valueNoise = (x: number, y: number, seed: number): number => {
   return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
 };
 
-/**
- * Тёплое дерево с продольными волокнами (для скамеек трибуны).
- * albedo mid — тинт через material.color.
- */
+/** Теплое дерево с продольными волокнами (для скамеек трибуны). albedo mid — тинт через material.color. */
 export const createWoodTexture = (size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -101,10 +98,7 @@ export const createWoodTexture = (size = 256): CanvasTexture => {
 
 let sharedWoodTexture: CanvasTexture | null = null;
 
-/**
- * Один CanvasTexture дерева на трибуны (без дублирования VRAM).
- * Не dispose из компонентов — живёт на время сессии гонки.
- */
+/** Один CanvasTexture дерева на трибуны (без дублирования VRAM). Не dispose из компонентов — живет на время сессии гонки. */
 export const getSharedWoodTexture = (size = 256): CanvasTexture => {
   if (!sharedWoodTexture) {
     sharedWoodTexture = createWoodTexture(size);

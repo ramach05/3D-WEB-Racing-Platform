@@ -26,7 +26,7 @@ export const FALLBACK_CABIN = {
   z: -0.12,
 } as const;
 
-/** Колёса: радиус, толщина диска, колея и база */
+/** Колеса: радиус, толщина диска, колея и база */
 export const FALLBACK_WHEEL = {
   radius: 0.28,
   thickness: 0.1,
@@ -34,7 +34,7 @@ export const FALLBACK_WHEEL = {
   wheelbase: VEHICLE_TARGET_LENGTH * 0.55,
 } as const;
 
-/** Позиции центров колёс [x, y, z] — FL, FR, RL, RR */
+/** Позиции центров колес [x, y, z] — FL, FR, RL, RR */
 export const FALLBACK_WHEEL_POSITIONS: ReadonlyArray<readonly [number, number, number]> = [
   [FALLBACK_WHEEL.track / 2, FALLBACK_WHEEL.radius, FALLBACK_WHEEL.wheelbase / 2],
   [-FALLBACK_WHEEL.track / 2, FALLBACK_WHEEL.radius, FALLBACK_WHEEL.wheelbase / 2],
@@ -53,10 +53,7 @@ type TVehicleModelFallbackProps = {
   carSkin: TCarSkin;
 };
 
-/**
- * Low-poly «призрачный» силуэт машины, пока грузится GLB.
- * Полупрозрачный кузов + wireframe-акценты Sega с пульсацией emissive.
- */
+/** Low-poly «призрачный» силуэт машины, пока грузится GLB. Полупрозрачный кузов + wireframe-акценты Sega с пульсацией emissive. */
 export const VehicleModelFallback = ({ carSkin }: TVehicleModelFallbackProps) => {
   const bodyFillRef = useRef<MeshStandardMaterial>(null);
   const bodyWireRef = useRef<MeshStandardMaterial>(null);

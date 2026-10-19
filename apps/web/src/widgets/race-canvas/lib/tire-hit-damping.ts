@@ -3,7 +3,7 @@ let tireHitDamping = 1;
 
 const HIT_RECOVERY_PER_SEC = 3;
 
-/** Зафиксировать штраф скорости (берётся минимум с текущим) */
+/** Зафиксировать штраф скорости (берется минимум с текущим) */
 export const registerTireHit = (factor: number) => {
   tireHitDamping = Math.min(tireHitDamping, Math.max(0, factor));
 };

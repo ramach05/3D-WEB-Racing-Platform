@@ -69,10 +69,7 @@ export const backendStatusApi = racingApi.injectEndpoints({
 
 const { useGetHealthQuery } = backendStatusApi;
 
-/**
- * Статус API: 'booting' до первого успешного /health, 'lost' после LOST_THRESHOLD
- * неудачных опросов подряд, иначе 'ready'.
- */
+/** Статус API: 'booting' до первого успешного /health, 'lost' после LOST_THRESHOLD неудачных опросов подряд, иначе 'ready'. */
 export const useBackendStatus = (): TBackendStatus => {
   const everReady = useSelector(selectEverReady);
   const failures = useSelector(selectFailures);

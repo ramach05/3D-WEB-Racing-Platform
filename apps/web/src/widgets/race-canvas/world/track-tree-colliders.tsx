@@ -21,7 +21,7 @@ type TTrackTreeCollidersProps = {
 };
 
 type TTreeColliderProps = {
-  /** Размещённое дерево */
+  /** Размещенное дерево */
   tree: TPlacedTree;
   /** Индекс для ключа */
   index: number;
@@ -72,10 +72,7 @@ const TreeCollider = ({ tree, index }: TTreeColliderProps) => {
   );
 };
 
-/**
- * Fixed-коллайдеры деревьев внутри Physics (ствол + крона).
- * Визуал остаётся в TrackTrees вне Physics.
- */
+/** Fixed-коллайдеры деревьев внутри Physics (ствол + крона). Визуал остается в TrackTrees вне Physics. */
 export const TrackTreeColliders = ({ config }: TTrackTreeCollidersProps) => {
   const trees = useMemo(() => placeTrackTreesWithGround(config), [config]);
 

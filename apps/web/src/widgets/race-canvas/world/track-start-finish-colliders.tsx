@@ -23,10 +23,7 @@ type TTrackStartFinishCollidersProps = {
 
 const FRICTION = 0.4;
 
-/**
- * Fixed-коллайдеры F1-gantry внутри Physics (столбы, балка, панель ламп).
- * Визуал остаётся в TrackStartFinishLine вне Physics.
- */
+/** Fixed-коллайдеры F1-gantry внутри Physics (столбы, балка, панель ламп). Визуал остается в TrackStartFinishLine вне Physics. */
 export const TrackStartFinishColliders = ({ line, roadWidth }: TTrackStartFinishCollidersProps) => {
   const postX = roadWidth / 2 + GANTRY_POST_OUTSET;
   const spanWidth = postX * 2 + GANTRY_POST_WIDTH;

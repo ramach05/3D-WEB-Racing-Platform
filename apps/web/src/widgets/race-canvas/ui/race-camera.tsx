@@ -22,7 +22,7 @@ type TRaceCameraProps = {
   spawnPosition: TVec3;
   /** Угол спавна (рад) */
   spawnRotationY: number;
-  /** Счётчик рестарта — сбрасывает intro и режим */
+  /** Счетчик рестарта — сбрасывает intro и режим */
   resetNonce: number;
 };
 
@@ -33,7 +33,7 @@ type TCameraSeat = {
   lookLocal: Vector3;
   /** Стиль следования */
   pursuit: 'lerp' | 'snap' | 'operator';
-  /** Скорость сходимости для lerp (меньше = жёстче) */
+  /** Скорость сходимости для lerp (меньше = жестче) */
   followPow: number;
   /** Множитель shake (близкие камеры — слабее, иначе виден салон) */
   shakeScale: number;

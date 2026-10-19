@@ -14,10 +14,7 @@ export const GANTRY_PANEL_WIDTH = 3.6;
 export const GANTRY_PANEL_HEIGHT = 0.85;
 export const GANTRY_PANEL_DEPTH = 0.28;
 
-/**
- * Геометрия одной F1 lamp bay (козырёк, ниша, bezel, диск линзы).
- * Коллайдеры панели не меняются — только визуал.
- */
+/** Геометрия одной F1 lamp bay (козырек, ниша, bezel, диск линзы). Коллайдеры панели не меняются — только визуал. */
 export const START_LAMP_BAY = {
   /** Радиус светящегося диска линзы */
   lensRadius: 0.2,
@@ -25,7 +22,7 @@ export const START_LAMP_BAY = {
   bezelOuterRadius: 0.255,
   /** Глубина кольца по Z */
   bezelDepth: 0.055,
-  /** Глубина тёмной ниши в корпусе */
+  /** Глубина темной ниши в корпусе */
   recessDepth: 0.07,
   /** Радиус ниши (чуть больше bezel) */
   recessRadius: 0.27,
@@ -39,12 +36,12 @@ export const START_LAMP_BAY = {
     depth: 0.22,
     /** Смещение центра козырька вверх от центра линзы */
     offsetY: 0.28,
-    /** Вынос козырька вперёд от плоскости линзы */
+    /** Вынос козырька вперед от плоскости линзы */
     offsetZ: 0.08,
   },
   /** Emissive выключенной линзы (еле видимая LED-сетка) */
   idleEmissiveIntensity: 0.08,
-  /** Emissive включённой линзы — ярко днём без Bloom */
+  /** Emissive включенной линзы — ярко днем без Bloom */
   litEmissiveIntensity: 6.5,
 } as const;
 
@@ -82,7 +79,7 @@ export const GANTRY_FLOOD = {
     height: 0.065,
     depth: 0.13,
   },
-  /** Козырёк над линзой */
+  /** Козырек над линзой */
   hood: {
     width: 0.12,
     height: 0.014,
@@ -90,10 +87,7 @@ export const GANTRY_FLOOD = {
     offsetY: 0.032,
     offsetZ: 0.02,
   },
-  /**
-   * Линза / Spot на передней грани (+Z после Group.lookAt).
-   * Диск, не сфера — свечение только со стороны трассы.
-   */
+  /** Линза / Spot на передней грани (+Z после Group.lookAt). Диск, не сфера — свечение только со стороны трассы. */
   lens: {
     localY: -0.005,
     localZ: 0.068,
@@ -144,7 +138,7 @@ const LIT_BY_COUNTDOWN_STEP: Record<TCountdownStep, number> = {
 /** Полный цикл мигания финишных огней (с): 0.5 on + 0.5 off */
 export const FINISH_LAMP_BLINK_PERIOD_S = 1;
 
-/** Число горящих крайних ламп по HUD-статусу (симметрично от краёв к центру). */
+/** Число горящих крайних ламп по HUD-статусу (симметрично от краев к центру). */
 export const litCountForHud = (
   status: TRaceStatus,
   countdownStep: TCountdownStep | null,
@@ -171,10 +165,7 @@ export const isLampLit = (
   return index < half || index >= lampCount - half;
 };
 
-/**
- * Square-wave мигание финишных огней (~1 Гц, 50% duty).
- * Без sin — как у реальных реле/светофоров.
- */
+/** Square-wave мигание финишных огней (~1 Гц, 50% duty). Без sin — как у реальных реле/светофоров. */
 export const isFinishLampBlinkOn = (
   elapsedSeconds: number,
   periodS = FINISH_LAMP_BLINK_PERIOD_S,

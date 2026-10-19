@@ -53,14 +53,14 @@ export const preloadVehicleModel = () => {
   }
 };
 
-/** Максимальный угол поворота передних колёс (рад ≈ 32°) */
+/** Максимальный угол поворота передних колес (рад ≈ 32°) */
 const MAX_STEER_ANGLE = 0.56;
 /** Скорость сглаживания руля (MathUtils.damp lambda) */
 const STEER_DAMP = 14;
 /** Fallback радиус колеса до fit — для spin от forwardSpeed */
 const MODEL_WHEEL_RADIUS = 0.42;
 const HEADLIGHT_EMISSIVE_ON = 1.8;
-/** Днём фары полностью выкл. (без тёплого «подсвеченного» стекла) */
+/** Днем фары полностью выкл. (без теплого «подсвеченного» стекла) */
 const HEADLIGHT_EMISSIVE_OFF = 0;
 
 const FRONT_WHEEL_NAMES = ['WheelFrontL', 'WheelFrontR'] as const;
@@ -146,10 +146,7 @@ const hideBrandingNodes = (root: Object3D) => {
   }
 };
 
-/**
- * Pivot-иерархия: steer (world-up) → align (нейтрализация toe) → spin (ось шины) → wheel.
- * attach сохраняет authored world matrix до коррекции toe.
- */
+/** Pivot-иерархия: steer (world-up) → align (нейтрализация toe) → spin (ось шины) → wheel. attach сохраняет authored world matrix до коррекции toe. */
 const buildWheelRig = (wheel: Object3D, isFront: boolean): TWheelRig | null => {
   const parent = wheel.parent;
   if (!parent) {
@@ -181,8 +178,8 @@ const buildWheelRig = (wheel: Object3D, isFront: boolean): TWheelRig | null => {
   // attach сохраняет world matrix на момент сборки
   spinPivot.attach(wheel);
 
-  // Ось шины мерим по геометрии: у моделей с identity-нодами узел колёс ничем не
-  // повёрнут, а toe запечён в вершины — из wheel.getWorldQuaternion() его не достать.
+  // Ось шины мерим по геометрии: у моделей с identity-нодами узел колес ничем не
+  // повернут, а toe запечен в вершины — из wheel.getWorldQuaternion() его не достать.
   const wheelAxleWorld = measureWheelAxle(wheel);
   const yawCorr = computeToeYawCorrection(wheelAxleWorld);
   if (Math.abs(yawCorr) > 1e-5) {
@@ -190,10 +187,10 @@ const buildWheelRig = (wheel: Object3D, isFront: boolean): TWheelRig | null => {
   }
 
   // Ось шины в локальных осях пивота вращения. measureWheelAxle возвращает направление с
-  // x ≥ 0 (обе стороны крутятся общим spinAngle вперёд), но в мировом пространстве.
+  // x ≥ 0 (обе стороны крутятся общим spinAngle вперед), но в мировом пространстве.
   // Вращение spinPivot.quaternion выполняется в локальном фрейме пивота (= фрейм
   // родителя), поэтому мировую ось нужно привести в этот фрейм — иначе у моделей под
-  // повёрнутым родителем (BodyUnderside у CarConcept, −90° по X) колесо крутится вокруг
+  // повернутым родителем (BodyUnderside у CarConcept, −90° по X) колесо крутится вокруг
   // «чужой» оси (хаотичное вращение). У корневых пивотов (sedan/pickup) конверсия тождественна.
   const axleLocal = computeAxleLocal(wheelAxleWorld, parent.getWorldQuaternion(tmpQuat));
   // Левое колесо на +X
@@ -278,10 +275,7 @@ const setHeadlightEmissive = (root: Object3D, headlightsOn: boolean) => {
   });
 };
 
-/**
- * Собирает материалы стопов один раз после клонирования.
- * Только Brakelight — Signallight (поворотники/янтарь) не участвует в brake/reverse.
- */
+/** Собирает материалы стопов один раз после клонирования. Только Brakelight — Signallight (поворотники/янтарь) не участвует в brake/reverse. */
 const collectBrakeMaterials = (root: Object3D): MeshStandardMaterial[] => {
   const result: MeshStandardMaterial[] = [];
   root.traverse((object) => {
@@ -296,7 +290,7 @@ const collectBrakeMaterials = (root: Object3D): MeshStandardMaterial[] => {
       if (material.name !== 'Brakelight') {
         continue;
       }
-      // Поликарбонат линзы: тёмный красный + глянец (не атлас / не «краска»)
+      // Поликарбонат линзы: темный красный + глянец (не атлас / не «краска»)
       material.color.set(vehiclePalette.brakeGlass);
       material.map = null;
       material.metalness = 0.12;
@@ -320,10 +314,7 @@ const rearLightEmissiveColor = (mode: TRearLightMode): string => {
   return vehiclePalette.brakeEmissive;
 };
 
-/**
- * Обновляет цвет/яркость задних огней.
- * Цвет меняется только при смене режима (дешевле set каждый кадр).
- */
+/** Обновляет цвет/яркость задних огней. Цвет меняется только при смене режима (дешевле set каждый кадр). */
 const setRearLightEmissive = (
   materials: MeshStandardMaterial[],
   mode: TRearLightMode,
@@ -347,7 +338,7 @@ const setRearLightEmissive = (
   }
 };
 
-/** Imperative-анимация колёс и задних огней (вне React render rules) */
+/** Imperative-анимация колес и задних огней (вне React render rules) */
 const applyWheelAnimation = (
   wheelRigs: TWheelRig[],
   brakeMaterials: MeshStandardMaterial[],
@@ -407,7 +398,7 @@ const measureWheelRadius = (root: Object3D): number => {
   // Не клампим в модельных единицах: для мини-масштабированных моделей (ram.glb —
   // вся машина ~0.06, диаметр колеса ~0.009) старый кламп 0.12 после × fitScale (~55)
   // давал эффективный радиус ~6.6 м → spin в ~24 раза медленнее. Нижний предел на
-  // МИРОВОМ радиусе (wheelRadius × fitScale) ставит spin-расчёт: Math.max(…, 0.05).
+  // МИРОВОМ радиусе (wheelRadius × fitScale) ставит spin-расчет: Math.max(…, 0.05).
   return Math.max(diameter * 0.5, 1e-4);
 };
 
@@ -417,8 +408,6 @@ const prepareVehicleRoot = (
   vehicleId: TVehicleId,
   hideBranding: boolean,
 ): TPreparedVehicle => {
-  // eslint-disable-next-line no-console -- ревизия нормализации: видно в консоли, какой код исполняет вкладка
-  console.debug('[vehicle-normalize]', vehicleId, 'rev', VEHICLE_VARIANT_REV);
   const cloned = cloneSkinned(source) as Group;
   cloned.traverse((object) => {
     if (isMesh(object)) {
@@ -468,7 +457,7 @@ const prepareVehicleRoot = (
   };
 };
 
-/** Скины + анимация колёс/огней для подготовленного кузова */
+/** Скины + анимация колес/огней для подготовленного кузова */
 const usePreparedVehicleVisuals = (
   prepared: TPreparedVehicle,
   vehicleId: TVehicleId,
@@ -530,7 +519,7 @@ const usePreparedVehicleVisuals = (
   });
 };
 
-/** Отдельный GLB на кузов + нормализация имён колёс/материалов */
+/** Отдельный GLB на кузов + нормализация имен колес/материалов */
 const GltfVehicleModelInner = ({
   vehicleId,
   carSkin,

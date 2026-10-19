@@ -24,7 +24,7 @@ type TSkeletonRegionProps = {
   className?: string;
 };
 
-/** Обёртка скелетона с role=status */
+/** Обертка скелетона с role=status */
 const SkeletonRegion = ({ label, children, className }: TSkeletonRegionProps) => {
   return (
     <div role="status" aria-live="polite" aria-busy="true" aria-label={label} className={className}>
@@ -166,7 +166,7 @@ export const LeaderboardTableSkeleton = () => {
   );
 };
 
-/** Скелетон профиля и лучших времён (как ProfilePage) */
+/** Скелетон профиля и лучших времен (как ProfilePage) */
 export const ProfilePageSkeleton = () => {
   const { t } = useTranslation();
 

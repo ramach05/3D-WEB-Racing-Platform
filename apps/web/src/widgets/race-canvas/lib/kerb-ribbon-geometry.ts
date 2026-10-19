@@ -31,11 +31,7 @@ const edgeNormal = (ax: number, az: number, bx: number, bz: number): TEdgeNormal
   return { nx: -dz / len, nz: dx / len };
 };
 
-/**
- * Узкая лента поребрика вдоль одного края асфальта.
- * `sideSign` +1 — левый край (внешняя нормаль), −1 — правый.
- * Поддерживает per-point Y для elevated секций.
- */
+/** Узкая лента поребрика вдоль одного края асфальта. `sideSign` +1 — левый край (внешняя нормаль), −1 — правый. Поддерживает per-point Y для elevated секций. */
 export const buildKerbRibbonGeometry = (
   centerline: readonly TLoopPoint[],
   roadWidth: number,
@@ -163,7 +159,7 @@ export const buildKerbRibbonGeometry = (
       // inner side
       pushQuad(a + 1, b + 1, b + 3, a + 3);
     } else {
-      // зеркальный winding, чтобы нормали смотрели наружу объёма
+      // зеркальный winding, чтобы нормали смотрели наружу объема
       pushQuad(a + 0, a + 1, b + 1, b + 0);
       pushQuad(a + 2, b + 2, b + 3, a + 3);
       pushQuad(a + 0, b + 0, b + 2, a + 2);

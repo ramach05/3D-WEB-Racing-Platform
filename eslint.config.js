@@ -54,17 +54,14 @@ const fsdRelativeParentBan = {
 /** Снаружи слайса — только public API; родительские относительные пути запрещены */
 const fsdPublicApiPatterns = [fsdDeepImportBan, fsdRelativeParentBan];
 
-/**
- * Внутри race-canvas разрешены deep-импорты своего слайса через @/,
- * чужие слайсы и родительские относительные пути по-прежнему запрещены.
- */
+/** Внутри race-canvas разрешены deep-импорты своего слайса через @/; чужие слайсы и родительские относительные пути запрещены */
 const raceCanvasInternalPatterns = [
   {
     group: [
       '@/app/*',
       '@/pages/*/*',
       '@/pages/*/**',
-      // чужие widgets — только public API; свой слайс (@/widgets/race-canvas/...) разрешён
+      // чужие widgets — только public API; свой слайс (@/widgets/race-canvas/...) разрешен
       '@/widgets/!(race-canvas)/*',
       '@/widgets/!(race-canvas)/**',
       '@/features/*/*',

@@ -13,7 +13,7 @@ export const raceResultApi = racingApi.injectEndpoints({
       query: ({ trackId, timeMs }) => ({
         url: '/race-results',
         method: 'POST',
-        // API ждёт целое (@IsInt); performance.now() даёт float
+        // API ждет целое (@IsInt); performance.now() дает float
         body: { trackId, timeMs: Math.round(timeMs) } satisfies TCreateRaceResultRequest,
       }),
       invalidatesTags: (_result, _error, { trackSlug }) => [

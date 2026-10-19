@@ -33,10 +33,7 @@ const valueNoise = (x: number, y: number, seed: number): number => {
   return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
 };
 
-/**
- * Процедурная лужа масла: тёмный эллипс с мягкими краями и слабым радужным бликом.
- * ClampToEdge — один спрайт на пятно, без тайлинга.
- */
+/** Процедурная лужа масла: темный эллипс с мягкими краями и слабым радужным бликом. ClampToEdge — один спрайт на пятно, без тайлинга. */
 export const createOilSlickTexture = (size = 256): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -54,7 +51,7 @@ export const createOilSlickTexture = (size = 256): CanvasTexture => {
     for (let x = 0; x < size; x += 1) {
       const u = (x + 0.5) / size;
       const v = (y + 0.5) / size;
-      // Эллипс с лёгкой деформацией края
+      // Эллипс с легкой деформацией края
       const edgeWobble = (valueNoise(u * 6, v * 6, 17) - 0.5) * 0.08;
       const dx = (u - 0.5) * 2;
       const dy = (v - 0.5) * 2;
@@ -75,12 +72,12 @@ export const createOilSlickTexture = (size = 256): CanvasTexture => {
       const n3 = valueNoise(u * 22 + n1, v * 18, 101);
       const grit = (next() - 0.5) * 8;
 
-      // База: почти чёрное масло с коричневым теплом
+      // База: почти черное масло с коричневым теплом
       let rCh = 18 + n1 * 22 + grit;
       let gCh = 14 + n1 * 16 + grit * 0.6;
       let bCh = 12 + n2 * 14;
 
-      // Слабый rainbow sheen (тонкая плёнка)
+      // Слабый rainbow sheen (тонкая пленка)
       const sheen = Math.pow(Math.max(0, n3 - 0.55), 1.6) * (0.35 + n2 * 0.4);
       const hue = (n1 * 0.55 + n2 * 0.45) * Math.PI * 2;
       rCh += sheen * (90 + Math.cos(hue) * 70);

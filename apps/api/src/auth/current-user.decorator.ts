@@ -5,7 +5,7 @@ type TAuthedRequest = {
   user: TJwtUser;
 };
 
-/** Достаёт пользователя, которого положил JwtAuthGuard */
+/** Достает пользователя, которого положил JwtAuthGuard */
 export const CurrentUser = createParamDecorator(
   (_data: undefined, ctx: ExecutionContext): TJwtUser => {
     const request = ctx.switchToHttp().getRequest<TAuthedRequest>();

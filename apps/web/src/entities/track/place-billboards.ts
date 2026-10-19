@@ -19,19 +19,13 @@ const START_FINISH_CLEARANCE = 18;
 const MIN_BILLBOARD_SPACING = 22;
 /** Минимальный зазор до уличного фонаря (чтобы столб не перекрывал панель) */
 const MIN_LAMP_CLEARANCE = 5.5;
-/**
- * Сдвиги вдоль касательной, если станция попала за столб.
- * Сначала +T (навстречу заезду / «перед столбом»), затем −T.
- */
+/** Сдвиги вдоль касательной, если станция попала за столб. Сначала +T (навстречу заезду / «перед столбом»), затем −T. */
 const TANGENT_NUDGES_M = [5, 7, 9, 11, -5, -7, -9] as const;
 /** Сколько щитов на трассу по умолчанию */
 const DEFAULT_TARGET_COUNT = 5;
 /** Индекс слота с «Место для вашей рекламы» */
 const FOR_RENT_SLOT = 2;
-/**
- * Night City: сдвиг for-rent вдоль заезда по дуге centerline (м).
- * Заезд против роста индекса → target = stationDist − offset.
- */
+/** Night City: сдвиг for-rent вдоль заезда по дуге centerline (м). Заезд против роста индекса → target = stationDist − offset. */
 const FOR_RENT_NIGHT_CITY_ALONG_TRACK_M = 15;
 /** Night City: щиты, которые ставим на сторону, противоположную обычному чередованию */
 const NIGHT_CITY_FLIP_SIDE_ADS = new Set<TBillboardAdId>(['for-rent', 'apex-tires']);
@@ -226,7 +220,7 @@ const collectAlongCenterline = (
       if (frame) {
         const { px, pz, nx, nz, tx, tz } = frame;
         const adId = adIdForSlot(slotIndex, targetCount);
-        /** Night City: отдельные щиты на стороне напротив обычного чередования */
+        // Night City: отдельные щиты на стороне напротив обычного чередования
         let preferOuter = stationIndex % 2 === 0;
         if (config.slug === TRACK_SLUG_NIGHT_CITY && NIGHT_CITY_FLIP_SIDE_ADS.has(adId)) {
           preferOuter = !preferOuter;
@@ -258,7 +252,7 @@ const collectAlongCenterline = (
               continue;
             }
             // Нормаль панели = касательная centerline (рост индекса).
-            // Заезд идёт против роста индекса → щит смотрит навстречу машинам.
+            // Заезд идет против роста индекса → щит смотрит навстречу машинам.
             placed.push({
               x,
               z,
@@ -282,10 +276,7 @@ const collectAlongCenterline = (
   }
 };
 
-/**
- * Расставляет придорожные рекламные щиты вдоль трассы.
- * Работает и днём, и ночью; целевое число — около 5, один из них for-rent.
- */
+/** Расставляет придорожные рекламные щиты вдоль трассы. Работает и днем, и ночью; целевое число — около 5, один из них for-rent. */
 export const placeBillboards = ({
   config,
   targetCount = DEFAULT_TARGET_COUNT,

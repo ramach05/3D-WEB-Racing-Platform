@@ -1,6 +1,6 @@
 # 3D WEB Racing Platform
 
-Браузерная **time-trial** 3D-гонка (заезд на время). Пет-проект для портфолио Senior Frontend: акцент на архитектуре фронта, 3D/физике и стабильных ~60fps, а не на зоопарке технологий.
+Браузерная **time-trial** 3D-гонка (заезд на время). Пет-проект для портфолио Senior Frontend: акцент на архитектуре фронта, 3D/физике и стабильных ~60fps.
 
 **English:** A local browser time-trial racer (Vite SPA + NestJS). See stack and run instructions below.
 

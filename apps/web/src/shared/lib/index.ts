@@ -7,7 +7,7 @@ import { clearAuthSession, readAuthSession, writeAuthSession } from './session';
 
 export type { TAuthSession } from './session.types';
 
-/** Достаёт текст ошибки для UI */
+/** Достает текст ошибки для UI */
 export const getErrorMessage = (error: TCaughtError): string => {
   return getSharedErrorMessage(error);
 };

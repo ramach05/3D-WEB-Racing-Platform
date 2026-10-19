@@ -32,13 +32,13 @@ type TUseRaceDrivingSfxOptions = {
 export const useRaceAudio = ({ theme, paused, enabled, muted }: TUseRaceAudioOptions): void => {
   const engineRef = useRef<ChiptuneEngine | null>(null);
 
-  /** Синхронизирует pause/mute с текущим движком */
+  // Синхронизирует pause/mute с текущим движком
   const applyTransport = useEffectEvent((engine: ChiptuneEngine) => {
     engine.setPaused(paused);
     engine.setMuted(muted);
   });
 
-  // Создаёт движок при enable/theme и останавливает при cleanup.
+  // Создает движок при enable/theme и останавливает при cleanup.
   useEffect(() => {
     if (!enabled || !theme) {
       return undefined;
@@ -77,13 +77,13 @@ export const useRaceDrivingSfx = ({ enabled, paused, muted }: TUseRaceDrivingSfx
   const engineRef = useRef<DrivingSfxEngine | null>(null);
   const rafRef = useRef<number | null>(null);
 
-  /** Синхронизирует pause/mute с текущим SFX-движком */
+  // Синхронизирует pause/mute с текущим SFX-движком
   const applyTransport = useEffectEvent((engine: DrivingSfxEngine) => {
     engine.setPaused(paused);
     engine.setMuted(muted);
   });
 
-  // Создаёт SFX-движок и rAF-цикл; на cleanup — stop + reset bus.
+  // Создает SFX-движок и rAF-цикл; на cleanup — stop + reset bus.
   useEffect(() => {
     if (!enabled) {
       resetDriveSfx();

@@ -35,7 +35,7 @@ const WALL_COLLIDER_EXTENSION = 1.5;
 type TTrackWorldProps = {
   /** Конфиг трассы: стены, препятствия, centerline */
   config: TTrackConfig;
-  /** Счётчик рестарта — пересоздаёт dynamic-шины */
+  /** Счетчик рестарта — пересоздает dynamic-шины */
   resetNonce: number;
 };
 

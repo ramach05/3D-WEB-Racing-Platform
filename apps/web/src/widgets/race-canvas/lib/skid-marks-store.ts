@@ -1,4 +1,4 @@
-/** Ёмкость кольцевого буфера следов (4 колеса × длинный заезд) */
+/** Емкость кольцевого буфера следов (4 колеса × длинный заезд) */
 export const SKID_MARK_CAPACITY = 2000;
 
 /** Минимальный шаг (м) между точками одного колеса */
@@ -7,7 +7,7 @@ export const SKID_MIN_STEP = 0.1;
 /** Ширина следа ≈ пятно контакта шины (м) */
 export const SKID_MARK_WIDTH = 0.18;
 
-/** Ёмкость пула дыма (billboard-плоскости дешевле сфер) */
+/** Емкость пула дыма (billboard-плоскости дешевле сфер) */
 export const SKID_SMOKE_CAPACITY = 96;
 
 /** Базовое время жизни дымовой частицы (с) */
@@ -19,7 +19,7 @@ const SMOKE_WAKE_FACTOR = 0.45;
 /** Горизонтальное затухание скорости дыма (1/с) */
 const SMOKE_DRAG = 1.8;
 
-/** Подъёмная сила дыма (м/с²) */
+/** Подъемная сила дыма (м/с²) */
 const SMOKE_BUOYANCY = 0.55;
 
 export type TSkidMarkSegment = {
@@ -53,7 +53,7 @@ export type TSkidSmokeParticle = {
   vz: number;
   /** Начальный размер */
   size: number;
-  /** Лёгкий spin спрайта (рад) */
+  /** Легкий spin спрайта (рад) */
   spin: number;
   /** Индивидуальная жизнь (с) */
   life: number;
@@ -102,10 +102,7 @@ const hashNoise = (x: number, z: number): number => {
   return n - Math.floor(n);
 };
 
-/**
- * Добавляет сегмент следа от предыдущей точки колеса к текущей.
- * Возвращает false, если шаг слишком мал.
- */
+/** Добавляет сегмент следа от предыдущей точки колеса к текущей. Возвращает false, если шаг слишком мал. */
 export const pushSkidSample = (
   fromX: number,
   fromZ: number,
@@ -139,10 +136,7 @@ export const pushSkidSample = (
   return true;
 };
 
-/**
- * Спавнит дымок у колеса с начальной скоростью wake от кузова.
- * vel* — мир. скорость кузова (м/с), используется как wake + jitter.
- */
+/** Спавнит дымок у колеса с начальной скоростью wake от кузова. vel* — мир. скорость кузова (м/с), используется как wake + jitter. */
 export const pushSkidSmoke = (
   x: number,
   y: number,
@@ -175,7 +169,7 @@ export const pushSkidSmoke = (
   particle.alive = true;
 };
 
-/** Старит дым; мёртвые слоты помечает alive=false. Следы живут до resetSkidMarks. */
+/** Старит дым; мертвые слоты помечает alive=false. Следы живут до resetSkidMarks. */
 export const tickSkidMarks = (dt: number): void => {
   const clampedDt = Math.max(0, dt);
   const drag = Math.exp(-SMOKE_DRAG * clampedDt);
@@ -238,10 +232,7 @@ export const skidSmokeProgress = (particle: TSkidSmokeParticle): number => {
   return Math.min(1, particle.age / life);
 };
 
-/**
- * Альфа-кривая дыма: быстрый набор плотности, затем мягкий спад.
- * Пик около 20% жизни.
- */
+/** Альфа-кривая дыма: быстрый набор плотности, затем мягкий спад. Пик около 20% жизни. */
 export const skidSmokeOpacity = (progress: number, intensityScale = 1): number => {
   if (progress <= 0 || progress >= 1) {
     return 0;

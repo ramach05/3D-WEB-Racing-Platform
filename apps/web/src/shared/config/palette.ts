@@ -189,10 +189,10 @@ export const vehiclePalette = {
   headlight: '#fff8e0',
   glass: '#88ccff',
   brake: '#ff3333',
-  /** Тёмно-красный поликарбонат линзы (выкл.) — не smoked-black и не «краска» */
+  /** Темно-красный поликарбонат линзы (выкл.) — не smoked-black и не «краска» */
   brakeGlass: '#24080a',
   brakeEmissive: '#ff0a0a',
-  /** Тёмно-янтарная линза поворотника */
+  /** Темно-янтарная линза поворотника */
   signalGlass: '#3d200a',
   reverseEmissive: '#f2f5ff',
   headlamp: '#ffffcc',
@@ -201,13 +201,13 @@ export const vehiclePalette = {
 } as const satisfies TVehiclePalette;
 
 export const startLightPalette = {
-  /** Тёмное smoked glass с красным undertone (выкл.) */
+  /** Темное smoked glass с красным undertone (выкл.) */
   idle: '#14080a',
   /** Насыщенный красный LED (countdown) */
   red: '#ff1428',
   amber: '#ffcc00',
   green: '#33ff66',
-  /** Матовый порошковый чёрный каркас (реальный F1 gantry) */
+  /** Матовый порошковый черный каркас (реальный F1 gantry) */
   steel: '#1a1c20',
   steelDark: '#0c0d10',
   /** Корпус панели ламп */
@@ -217,7 +217,7 @@ export const startLightPalette = {
   floodLight: '#fff2d6',
 } as const satisfies TStartLightPalette;
 
-/** Муниципальный LED-фонарь (~3000K тёплый белый) */
+/** Муниципальный LED-фонарь (~3000K теплый белый) */
 export const streetLampPalette = {
   pole: '#2a2e36',
   arm: '#15181e',

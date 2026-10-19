@@ -1,18 +1,12 @@
 import { type Quaternion, Vector3, type Mesh, type Object3D } from 'three';
 
-/**
- * Разница Ackermann: внутреннее колесо крутится сильнее наружного.
- * 0 = одинаковый угол, ~0.2 — заметная геометрия поворота.
- */
+/** Разница Ackermann: внутреннее колесо крутится сильнее наружного. 0 = одинаковый угол, ~0.2 — заметная геометрия поворота. */
 export const ACKERMANN_RATIO = 0.22;
 
 const WORLD_UP = new Vector3(0, 1, 0);
 const tmpFromXZ = new Vector3();
 
-/**
- * World-up в локальных осях родителя колеса.
- * У CarConcept колёса висят на BodyUnderside (−90° по X), поэтому родительский Y ≠ вертикаль.
- */
+/** World-up в локальных осях родителя колеса. У CarConcept колеса висят на BodyUnderside (−90° по X), поэтому родительский Y ≠ вертикаль. */
 export const computeSteerAxisLocal = (parentWorldQuaternion: Quaternion): Vector3 =>
   WORLD_UP.clone().applyQuaternion(parentWorldQuaternion.clone().invert()).normalize();
 
@@ -22,7 +16,7 @@ export const computeSteerAxisLocal = (parentWorldQuaternion: Quaternion): Vector
  * Вращение spinPivot.quaternion выполняется в локальном фрейме пивота, который
  * совпадает с фреймом родителя (steer/align — тождественные повороты, поэтому фрейм
  * не зависит от выравнивания toe). Мировую ось из measureWheelAxle оставлять нельзя:
- * у моделей, чьи колёса висят под повёрнутым родителем (BodyUnderside у CarConcept,
+ * у моделей, чьи колеса висят под повернутым родителем (BodyUnderside у CarConcept,
  * −90° по X), мировая ось в локальном фрейме направлена «не туда» — колесо крутится
  * вокруг чужой оси (хаотичное вращение). Sedan/pickup не страдали лишь потому, что
  * их пивоты висят на корне с identity-поворотом.
@@ -30,10 +24,7 @@ export const computeSteerAxisLocal = (parentWorldQuaternion: Quaternion): Vector
 export const computeAxleLocal = (axleWorld: Vector3, parentWorldQuaternion: Quaternion): Vector3 =>
   axleWorld.clone().applyQuaternion(parentWorldQuaternion.clone().invert()).normalize();
 
-/**
- * Угол вокруг вертикали, чтобы ось шины лежала в плоскости X (без toe).
- * CarConcept имеет ~30° toe на передних колёсах в authored-позе.
- */
+/** Угол вокруг вертикали, чтобы ось шины лежала в плоскости X (без toe). CarConcept имеет ~30° toe на передних колесах в authored-позе. */
 export const computeToeYawCorrection = (axleWorld: Vector3): number => {
   tmpFromXZ.set(axleWorld.x, 0, axleWorld.z);
   if (tmpFromXZ.lengthSq() < 1e-8) {
@@ -58,8 +49,8 @@ export const computeAckermannScale = (steerAngle: number, sideSign: number): num
  * ------------------------------------------------------------------ */
 
 /**
- * У моделей-«глухарей» (hatchback и т.п.) узлы колёс имеют identity-трансформы:
- * поворот (toe) запечён прямо в вершины геометрии. Узнать ось из quat нельзя —
+ * У моделей-«глухарей» (hatchback и т.п.) узлы колес имеют identity-трансформы:
+ * поворот (toe) запечен прямо в вершины геометрии. Узнать ось из quat нельзя —
  * поэтому меряем по точкам: ось = направление минимального разброса в горизонтали.
  */
 const MAX_WHEEL_AXLE_POINTS = 4096;
@@ -141,7 +132,7 @@ const bestYaw = (
 /**
  * Замеренная ось шины в горизонтальной плоскости (минимальный разброс геометрии,
  * т.е. направление «тонкости» колеса). Всегда возвращается с x ≥ 0 — так правая
- * и левая сторона крутятся общим spinAngle вперёд (X×Y = Z одинаково для обеих).
+ * и левая сторона крутятся общим spinAngle вперед (X×Y = Z одинаково для обеих).
  * Fallback (1, 0, 0), когда геометрии мало либо она не похожа на колесо (не тонкая).
  */
 export const measureWheelAxle = (wheel: Object3D, maxPoints = MAX_WHEEL_AXLE_POINTS): Vector3 => {

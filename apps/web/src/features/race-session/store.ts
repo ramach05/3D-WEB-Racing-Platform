@@ -65,10 +65,7 @@ const flushListeners = (): void => {
   listeners.forEach((listener) => listener());
 };
 
-/**
- * Ставит уведомление на ближайший rAF; серия emit'ов схлопывается в один.
- * setTimeout — страховка на случай, где rAF не крутится (фоновая вкладка, jsdom-таймеры).
- */
+/** Ставит уведомление на ближайший rAF; серия emit'ов схлопывается в один. setTimeout — страховка на случай, где rAF не крутится (фоновая вкладка, jsdom-таймеры). */
 const scheduleNotify = (): void => {
   if (notifyScheduled) {
     return;
@@ -89,7 +86,7 @@ const emit = (force: boolean): void => {
   scheduleNotify();
 };
 
-/** Патчит снимок HUD и шлёт emit */
+/** Патчит снимок HUD и шлет emit */
 const setSnapshot = (patch: Partial<TRaceHudSnapshot>, force = false): void => {
   snapshot = { ...snapshot, ...patch };
   emit(force);
@@ -182,10 +179,7 @@ export const tickRace = (speedKmh: number): void => {
   snapshot.speedKmh = speedKmh;
 };
 
-/**
- * Засчитывает завершённый круг (пересечение финишной линии после достаточного прогресса).
- * Возвращает true, когда пройдены все круги заезда.
- */
+/** Засчитывает завершенный круг (пересечение финишной линии после достаточного прогресса). Возвращает true, когда пройдены все круги заезда. */
 export const registerLapComplete = (): boolean => {
   if (snapshot.status !== 'racing') {
     return false;

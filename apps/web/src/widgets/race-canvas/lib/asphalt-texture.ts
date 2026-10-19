@@ -76,10 +76,7 @@ const finishTexture = (canvas: HTMLCanvasElement, colorSpace = true): CanvasText
   return texture;
 };
 
-/**
- * Реалистичный асфальт: многооктавный шум + мелкий гравий, без крупных кругов.
- * albedo mid-light gray — тинт через material.color (palette.road).
- */
+/** Реалистичный асфальт: многооктавный шум + мелкий гравий, без крупных кругов. albedo mid-light gray — тинт через material.color (palette.road). */
 export const createAsphaltTexture = (size = 512): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -98,7 +95,7 @@ export const createAsphaltTexture = (size = 512): CanvasTexture => {
       const u = x / size;
       const v = y / size;
 
-      // Крупная неоднородность покрытия (стёртые / свежие зоны)
+      // Крупная неоднородность покрытия (стертые / свежие зоны)
       const macro = fbm(u * 3.5, v * 3.5, 11, 3);
       // Средний щебень
       const mid = fbm(u * 28, v * 28, 47, 4);
@@ -117,7 +114,7 @@ export const createAsphaltTexture = (size = 512): CanvasTexture => {
       }
 
       const gray = Math.max(90, Math.min(220, tone));
-      // Нейтрально-тёплый оттенок дневного асфальта (щебень)
+      // Нейтрально-теплый оттенок дневного асфальта (щебень)
       const idx = (y * size + x) * 4;
       data[idx] = Math.min(255, gray * 1.0);
       data[idx + 1] = gray * 0.99;
@@ -148,7 +145,7 @@ export const createAsphaltRoughnessMap = (size = 512): CanvasTexture => {
     for (let x = 0; x < size; x++) {
       const u = x / size;
       const v = y / size;
-      // Крупные пятна свежего / стёртого асфальта
+      // Крупные пятна свежего / стертого асфальта
       const macro = fbm(u * 4.5, v * 4.5, 117, 4);
       const n = fbm(u * 40, v * 40, 203, 3);
       const grit = next() * 0.15;
@@ -166,9 +163,7 @@ export const createAsphaltRoughnessMap = (size = 512): CanvasTexture => {
   return finishTexture(canvas, false);
 };
 
-/**
- * Грунт / земля за пределами трассы: dirt noise, тинт через palette.ground.
- */
+/** Грунт / земля за пределами трассы: dirt noise, тинт через palette.ground. */
 export const createGroundTexture = (size = 512): CanvasTexture => {
   const canvas = document.createElement('canvas');
   canvas.width = size;

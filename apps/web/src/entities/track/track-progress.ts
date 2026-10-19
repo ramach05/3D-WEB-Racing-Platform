@@ -44,7 +44,7 @@ export const getTrackProgress = (
   };
 };
 
-/** Обновляет максимальный прогресс круга с учётом перехода через старт (0/1). */
+/** Обновляет максимальный прогресс круга с учетом перехода через старт (0/1). */
 export const advanceLapProgress = (currentMax: number, ratio: number): number => {
   if (ratio > currentMax && ratio - currentMax < 0.5) {
     return ratio;

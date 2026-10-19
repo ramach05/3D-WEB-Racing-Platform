@@ -14,10 +14,7 @@ type TIncomingRequest = {
   user?: TJwtUser;
 };
 
-/**
- * Проверяет Bearer access JWT.
- * Класс нужен Nest Guard; метод canActivate — прототип, иначе декоратор контекста не сработает.
- */
+/** Проверяет Bearer access JWT. Класс нужен Nest Guard; метод canActivate — прототип, иначе декоратор контекста не сработает. */
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(

@@ -1,7 +1,7 @@
 import type { TAppLocale } from '@/shared/config';
 import { LOCALE_STORAGE_KEY } from '@/shared/config';
 
-/** Читает сохранённый язык */
+/** Читает сохраненный язык */
 export const readStoredLocale = (): TAppLocale => {
   const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
   if (stored === 'ru' || stored === 'en') {

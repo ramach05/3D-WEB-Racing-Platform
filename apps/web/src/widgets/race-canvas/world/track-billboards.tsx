@@ -50,7 +50,7 @@ type TTrackBillboardsProps = {
 };
 
 type TBillboardProps = {
-  /** Размещённый щит */
+  /** Размещенный щит */
   billboard: TPlacedBillboard;
   /** Ночная трасса — gooseneck-подсветка включена */
   isNight: boolean;
@@ -184,7 +184,7 @@ const Billboard = ({ billboard, isNight, hasWash, texture }: TBillboardProps) =>
   const frameOuterHeight = BILLBOARD_PANEL_HEIGHT + BILLBOARD_FRAME_THICKNESS * 2;
   const frameCenterX = BILLBOARD_PANEL_FORWARD_X;
   const useFaceFallback = isNight && !hasWash;
-  /** Яркость нормирована по макету: светлый «for-rent» не выбеливается, тёмные макеты не чернеют */
+  /** Яркость нормирована по макету: светлый «for-rent» не выбеливается, темные макеты не чернеют */
   const avgLuminance = texture.userData.avgLuminance as number | undefined;
   const faceGlow = faceGlowIntensity(avgLuminance ?? BILLBOARD_NIGHT_FACE.faceGlowTargetLuma);
 
@@ -299,10 +299,7 @@ const Billboard = ({ billboard, isNight, hasWash, texture }: TBillboardProps) =>
 const billboardDistance = (billboard: TPlacedBillboard, x: number, z: number): number =>
   Math.hypot(billboard.x - x, billboard.z - z);
 
-/**
- * K ближайших щитов с hysteresis: прежние wash остаются, пока не дальше K-го + margin.
- * Возвращает отсортированные индексы (ближайший первым).
- */
+/** K ближайших щитов с hysteresis: прежние wash остаются, пока не дальше K-го + margin. Возвращает отсортированные индексы (ближайший первым). */
 const selectActiveWashIndices = (
   billboards: TPlacedBillboard[],
   x: number,
@@ -351,11 +348,7 @@ const selectActiveWashIndices = (
 const indicesKey = (indices: readonly number[]): string =>
   [...indices].sort((a, b) => a - b).join(',');
 
-/**
- * Визуал рекламных щитов вне Physics.
- * Коллайдеры — в TrackBillboardColliders.
- * Ночью RectAreaLight — только у K ближайших к машине.
- */
+/** Визуал рекламных щитов вне Physics. Коллайдеры — в TrackBillboardColliders. Ночью RectAreaLight — только у K ближайших к машине. */
 export const TrackBillboards = ({ config, bodyRef }: TTrackBillboardsProps) => {
   const { i18n } = useTranslation();
   const locale: TAppLocale = i18n.language === 'en' ? 'en' : 'ru';

@@ -8,13 +8,13 @@ type TVec2 = {
   z: number;
 };
 
-/** Минимальная доля круга до засчёта финишной линии (анти-ложный старт). */
+/** Минимальная доля круга до засчета финишной линии (анти-ложный старт). */
 export const MIN_LAP_PROGRESS = 0.85;
 
 /** Зона у старт/финиш — cooldown снимается после ухода на долю круга от линии. */
 export const START_FINISH_COOLDOWN_RATIO = 0.14;
 
-/** Локальные координаты линии: lx — поперёк, lz — вдоль трассы (спавн на lz > 0). */
+/** Локальные координаты линии: lx — поперек, lz — вдоль трассы (спавн на lz > 0). */
 export const getTrackLineLocalCoords = (
   x: number,
   z: number,
@@ -30,13 +30,13 @@ export const getTrackLineLocalCoords = (
   };
 };
 
-/** Точка внутри объёма финиша в координатах трассы. */
+/** Точка внутри объема финиша в координатах трассы. */
 export const isInsideFinishZone = (x: number, z: number, line: TOrientedBox): boolean => {
   const { lx, lz } = getTrackLineLocalCoords(x, z, line);
   return Math.abs(lx) <= line.size[0] / 2 && Math.abs(lz) <= line.size[2] / 2;
 };
 
-/** Проезд через зону чекпоинта с учётом перемещения между кадрами. */
+/** Проезд через зону чекпоинта с учетом перемещения между кадрами. */
 export const passedCheckpointZone = (
   prevX: number | null,
   prevZ: number | null,
@@ -101,10 +101,7 @@ export const crossedFinishLine = (
 
   return segmentsIntersect({ x: prevX, z: prevZ }, { x, z }, lineStart, lineEnd);
 };
-/**
- * Смена знака lz внутри ширины линии — ловит проезд, который сегментный тест
- * иногда пропускает у края дороги.
- */
+/** Смена знака lz внутри ширины линии — ловит проезд, который сегментный тест иногда пропускает у края дороги. */
 export const crossedFinishPlane = (
   prevX: number,
   prevZ: number,
@@ -138,7 +135,7 @@ export const crossedFinishPlane = (
   return Math.abs(lx) <= halfWidth;
 };
 
-/** Пересечение линии финиша с учётом перемещения между кадрами. */
+/** Пересечение линии финиша с учетом перемещения между кадрами. */
 export const passedFinishLine = (
   prevX: number | null,
   prevZ: number | null,
@@ -174,10 +171,7 @@ export const passedFinishLine = (
   return false;
 };
 
-/**
- * Проезд финиша только в направлении заезда: `lz + → −` (см. `race-direction.ts`).
- * Учитывает посадку ровно на плоскость (lz ≈ 0) между кадрами.
- */
+/** Проезд финиша только в направлении заезда: `lz + → −` (см. `race-direction.ts`). Учитывает посадку ровно на плоскость (lz ≈ 0) между кадрами. */
 export const isForwardFinishCrossing = (
   prevX: number,
   prevZ: number,

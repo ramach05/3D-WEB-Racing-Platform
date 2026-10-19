@@ -18,14 +18,14 @@ export const Select = <T extends string>({
 
   const selected = options.find((option) => option.value === value) ?? options[0];
 
-  /** Закрывает выпадающий список */
+  // Закрывает выпадающий список
   const close = useCallback(() => {
     setOpen(false);
   }, []);
 
   // Закрытие по клику вне списка
   useEffect(() => {
-    /** pointerdown вне корня → закрыть */
+    // pointerdown вне корня → закрыть
     const onPointerDown = (event: MouseEvent): void => {
       if (!rootRef.current?.contains(event.target as Node)) {
         close();
@@ -35,13 +35,13 @@ export const Select = <T extends string>({
     return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [close]);
 
-  /** Выбор опции и закрытие меню */
+  // Выбор опции и закрытие меню
   const pick = (next: T): void => {
     onChange(next);
     close();
   };
 
-  /** Клавиатура: открытие, стрелки, Enter, Escape */
+  // Клавиатура: открытие, стрелки, Enter, Escape
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>): void => {
     if (!open) {
       if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {

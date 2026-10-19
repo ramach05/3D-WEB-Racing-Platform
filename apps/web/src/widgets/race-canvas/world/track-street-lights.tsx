@@ -37,7 +37,7 @@ type TTrackStreetLightsProps = {
 };
 
 type TStreetLampProps = {
-  /** Размещённый фонарь */
+  /** Размещенный фонарь */
   lamp: TPlacedStreetLamp;
   /** Горит ли линза (ночь) */
   isOn: boolean;
@@ -63,10 +63,7 @@ type TArmSegmentProps = {
   radius: number;
 };
 
-/**
- * Цилиндр кронштейна между двумя суставами.
- * Длина чуть больше расстояния — overlap закрывает щели в суставах.
- */
+/** Цилиндр кронштейна между двумя суставами. Длина чуть больше расстояния — overlap закрывает щели в суставах. */
 const ArmSegment = ({ from, to, radius }: TArmSegmentProps) => {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
@@ -168,7 +165,7 @@ const StreetLamp = ({ lamp, isOn, hasSpot, castLightShadow }: TStreetLampProps) 
         <meshStandardMaterial color={streetLampPalette.housing} metalness={0.55} roughness={0.45} />
       </mesh>
 
-      {/* Линза: тёплая при isOn, тёмная выключенная днём */}
+      {/* Линза: теплая при isOn, темная выключенная днем */}
       <mesh position={[armTipX, luminaireY - STREET_LAMP_LENS.height * 0.35, 0]}>
         <boxGeometry
           args={[STREET_LAMP_LENS.width, STREET_LAMP_LENS.height, STREET_LAMP_LENS.depth]}
@@ -218,10 +215,7 @@ const StreetLamp = ({ lamp, isOn, hasSpot, castLightShadow }: TStreetLampProps) 
 const lampDistance = (lamp: TPlacedStreetLamp, x: number, z: number): number =>
   Math.hypot(lamp.x - x, lamp.z - z);
 
-/**
- * K ближайших фонарей с hysteresis: прежние Spot остаются, пока не дальше K-го + margin.
- * Возвращает отсортированные индексы (ближайший первым).
- */
+/** K ближайших фонарей с hysteresis: прежние Spot остаются, пока не дальше K-го + margin. Возвращает отсортированные индексы (ближайший первым). */
 const selectActiveSpotIndices = (
   lamps: TPlacedStreetLamp[],
   x: number,
@@ -267,10 +261,7 @@ const selectActiveSpotIndices = (
 const indicesKey = (indices: readonly number[]): string =>
   [...indices].sort((a, b) => a - b).join(',');
 
-/**
- * Уличные фонари вдоль трассы.
- * Столбы есть днём и ночью; Spot — только у K ближайших ночью; shadow — у одного nearest.
- */
+/** Уличные фонари вдоль трассы. Столбы есть днем и ночью; Spot — только у K ближайших ночью; shadow — у одного nearest. */
 export const TrackStreetLights = ({ config, bodyRef }: TTrackStreetLightsProps) => {
   const lamps = useMemo(() => placeStreetLamps({ config }), [config]);
   const isOn = isTrackLightingOn(config);

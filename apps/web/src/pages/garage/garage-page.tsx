@@ -9,7 +9,7 @@ import { VehiclePreview } from '@/widgets/vehicle-preview';
 const previewBody = carSkins.coastal.body;
 const previewNight = carSkins.night.body;
 
-/** Гараж: выбор кузова (цвет задаёт трасса в заезде) */
+/** Гараж: выбор кузова (цвет задает трасса в заезде) */
 export const GaragePage = () => {
   const { t } = useTranslation();
   const { vehicleId, selectVehicle } = useSelectedVehicle();

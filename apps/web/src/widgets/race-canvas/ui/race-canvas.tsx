@@ -42,7 +42,7 @@ import { WebGlContextGuard } from './webgl-context-guard';
 type TRaceSceneProps = {
   /** Конфиг трассы и палитры */
   config: TTrackConfig;
-  /** Счётчик рестарта гонки */
+  /** Счетчик рестарта гонки */
   resetNonce: number;
   /** Колбэк завершения гонки */
   onFinished: () => void;
@@ -271,14 +271,11 @@ type TRaceSceneInnerProps = TRaceSceneProps & {
 };
 
 type TRacePhysicsProps = {
-  /** Тело физики: коллајдеры трассы и машина */
+  /** Тело физики: коллайдеры трассы и машина */
   children: ReactNode;
 };
 
-/**
- * Гейт паузы физики по HUD-статусу. Подписка изолирована здесь: смена статуса
- * (countdown/GO/pause) перерисовывает только Physics, а не всё дерево сцены.
- */
+/** Гейт паузы физики по HUD-статусу. Подписка изолирована здесь: смена статуса (countdown/GO/pause) перерисовывает только Physics, а не все дерево сцены. */
 const RacePhysics = ({ children }: TRacePhysicsProps) => {
   const paused = useRaceHudSelector(
     (snapshot) =>

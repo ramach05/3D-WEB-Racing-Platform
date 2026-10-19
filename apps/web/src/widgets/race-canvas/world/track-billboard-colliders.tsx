@@ -16,7 +16,7 @@ type TTrackBillboardCollidersProps = {
 };
 
 type TBillboardColliderProps = {
-  /** Размещённый щит */
+  /** Размещенный щит */
   billboard: TPlacedBillboard;
   /** Индекс для ключа */
   index: number;
@@ -76,10 +76,7 @@ const BillboardCollider = ({ billboard, index }: TBillboardColliderProps) => {
   );
 };
 
-/**
- * Fixed-коллайдеры рекламных щитов внутри Physics.
- * Визуал остаётся в TrackBillboards вне Physics.
- */
+/** Fixed-коллайдеры рекламных щитов внутри Physics. Визуал остается в TrackBillboards вне Physics. */
 export const TrackBillboardColliders = ({ config }: TTrackBillboardCollidersProps) => {
   const billboards = useMemo(() => placeBillboards({ config }), [config]);
 
