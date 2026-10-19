@@ -17,7 +17,13 @@ export const LeaderboardTable = ({ entries, highlightUserId, maxRows }: TLeaderb
   const rows = maxRows === undefined ? entries : entries.slice(0, maxRows);
 
   return (
-    <div className="sega-panel mt-4 overflow-x-auto p-2">
+    <div
+      className="sega-panel mt-4 overflow-x-auto p-2"
+      // Keyboard users need the container focusable to scroll wide tables
+      role="region"
+      aria-label={t('a11y.tableScroll')}
+      tabIndex={0}
+    >
       <table className="w-full min-w-[28rem] table-fixed border-collapse text-left text-sm md:min-w-[32rem]">
         <caption className="sr-only">{t('leaderboard.title')}</caption>
         <colgroup>

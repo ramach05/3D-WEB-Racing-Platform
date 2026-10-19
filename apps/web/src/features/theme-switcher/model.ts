@@ -25,6 +25,15 @@ export const applyTheme = (theme: TThemeMode): void => {
 
   root.classList.toggle('dark', theme === 'dark');
   localStorage.setItem(THEME_STORAGE_KEY, theme);
+
+  // Mobile browser chrome follows the manual choice, not only the OS scheme
+  let meta = document.head.querySelector('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.setAttribute('name', 'theme-color');
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute('content', colors.bg);
 };
 
 /** Toggles between light and dark theme */

@@ -34,4 +34,14 @@ describe('theme model', () => {
     expect(root.style.getPropertyValue('--on-yellow')).toBe(uiChrome.onYellow);
     expect(root.style.getPropertyValue('--finish-wipe-dark')).toBe(uiChrome.finishWipeDark);
   });
+
+  it('syncs the theme-color meta with the palette background', () => {
+    applyTheme('dark');
+    const meta = document.head.querySelector('meta[name="theme-color"]');
+    expect(meta?.getAttribute('content')).toBe(uiPalette.dark.bg);
+
+    applyTheme('light');
+    expect(document.head.querySelectorAll('meta[name="theme-color"]')).toHaveLength(1);
+    expect(meta?.getAttribute('content')).toBe(uiPalette.light.bg);
+  });
 });

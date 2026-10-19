@@ -404,10 +404,12 @@ button:disabled,
   box-shadow: 2px 2px 0 0 var(--sega-cyan);
 }
 
-.sega-btn:hover:not(:disabled) {
-  transform: translate(var(--sega-hover-tx), var(--sega-hover-ty));
-  box-shadow: var(--sega-hover-shadow);
-  border-color: var(--sega-yellow);
+@media (hover: hover) {
+  .sega-btn:hover:not(:disabled) {
+    transform: translate(var(--sega-hover-tx), var(--sega-hover-ty));
+    box-shadow: var(--sega-hover-shadow);
+    border-color: var(--sega-yellow);
+  }
 }
 
 .sega-btn:active:not(:disabled) {
@@ -421,10 +423,12 @@ button:disabled,
   box-shadow: 3px 3px 0 0 var(--sega-magenta);
 }
 
-.sega-btn--ghost:hover:not(:disabled) {
-  background: var(--surface-hover);
-  color: var(--sega-yellow);
-  box-shadow: var(--sega-hover-shadow);
+@media (hover: hover) {
+  .sega-btn--ghost:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--sega-yellow);
+    box-shadow: var(--sega-hover-shadow);
+  }
 }
 
 .sega-card-link {
@@ -437,13 +441,15 @@ button:disabled,
     border-color 140ms ease;
 }
 
-.sega-card-link:hover {
-  transform: translate(var(--sega-hover-tx), var(--sega-hover-ty));
-  background: var(--surface-hover);
-  border-color: var(--sega-yellow);
-  box-shadow:
-    0 0 0 2px var(--bg),
-    var(--sega-hover-shadow);
+@media (hover: hover) {
+  .sega-card-link:hover {
+    transform: translate(var(--sega-hover-tx), var(--sega-hover-ty));
+    background: var(--surface-hover);
+    border-color: var(--sega-yellow);
+    box-shadow:
+      0 0 0 2px var(--bg),
+      var(--sega-hover-shadow);
+  }
 }
 
 .sega-nav-link {
@@ -453,10 +459,12 @@ button:disabled,
     transform 140ms steps(4);
 }
 
-.sega-nav-link:hover {
-  transform: translate(var(--sega-seg-hover-tx), var(--sega-seg-hover-ty));
-  background: var(--surface-hover);
-  color: var(--sega-yellow);
+@media (hover: hover) {
+  .sega-nav-link:hover {
+    transform: translate(var(--sega-seg-hover-tx), var(--sega-seg-hover-ty));
+    background: var(--surface-hover);
+    color: var(--sega-yellow);
+  }
 }
 
 /** Mobile navigation: equal cells in a pixel border */
@@ -487,14 +495,16 @@ button:disabled,
   transition: transform 140ms steps(4);
 }
 
-.sega-header-nav__link:hover {
-  transform: none;
-  background: var(--surface-hover);
-  color: var(--sega-yellow);
-}
+@media (hover: hover) {
+  .sega-header-nav__link:hover {
+    transform: none;
+    background: var(--surface-hover);
+    color: var(--sega-yellow);
+  }
 
-.sega-header-nav__link:hover .sega-header-nav__label {
-  transform: translateY(var(--sega-seg-hover-ty));
+  .sega-header-nav__link:hover .sega-header-nav__label {
+    transform: translateY(var(--sega-seg-hover-ty));
+  }
 }
 
 @media (min-width: 768px) {
@@ -534,12 +544,14 @@ button:disabled,
   min-width: 5.5rem;
 }
 
-.sega-select-trigger:hover {
-  transform: translate(var(--sega-hover-tx), var(--sega-hover-ty));
-  box-shadow: var(--sega-hover-shadow);
-  border-color: var(--sega-yellow);
-  color: var(--sega-yellow);
-  background: var(--surface-hover);
+@media (hover: hover) {
+  .sega-select-trigger:hover {
+    transform: translate(var(--sega-hover-tx), var(--sega-hover-ty));
+    box-shadow: var(--sega-hover-shadow);
+    border-color: var(--sega-yellow);
+    color: var(--sega-yellow);
+    background: var(--surface-hover);
+  }
 }
 
 .sega-select-trigger[aria-expanded='true'] {
@@ -597,10 +609,16 @@ button:disabled,
     color 140ms ease;
 }
 
-.sega-select-item--highlight,
-.sega-select-item:hover {
+.sega-select-item--highlight {
   background: var(--surface-hover);
   color: var(--sega-yellow);
+}
+
+@media (hover: hover) {
+  .sega-select-item:hover {
+    background: var(--surface-hover);
+    color: var(--sega-yellow);
+  }
 }
 
 .sega-select-item--active {
@@ -638,21 +656,23 @@ button:disabled,
   border-right: 0;
 }
 
-.sega-track-tab:hover:not(.sega-track-tab--active) {
-  transform: translateY(var(--sega-seg-hover-ty));
-  background: var(--surface-hover);
-  color: var(--sega-yellow);
+@media (hover: hover) {
+  .sega-track-tab:hover:not(.sega-track-tab--active) {
+    transform: translateY(var(--sega-seg-hover-ty));
+    background: var(--surface-hover);
+    color: var(--sega-yellow);
+  }
+
+  .sega-track-tab--active:hover {
+    background: var(--sega-yellow);
+    color: var(--on-yellow);
+  }
 }
 
 .sega-track-tab--active {
   background: var(--sega-yellow);
   color: var(--on-yellow);
   font-weight: 600;
-}
-
-.sega-track-tab--active:hover {
-  background: var(--sega-yellow);
-  color: var(--on-yellow);
 }
 
 .sega-field {

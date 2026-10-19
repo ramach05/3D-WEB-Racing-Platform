@@ -248,6 +248,7 @@ export const ruMessages = {
     skip: 'К содержимому',
     nav: 'Навигация',
     settings: 'Настройки',
+    tableScroll: 'Прокручиваемая таблица результатов',
   },
 } as const;
 
@@ -499,5 +500,6 @@ export const enMessages = {
     skip: 'Skip to content',
     nav: 'Navigation',
     settings: 'Settings',
+    tableScroll: 'Scrollable results table',
   },
 } as const;

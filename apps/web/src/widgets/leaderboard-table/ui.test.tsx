@@ -22,6 +22,23 @@ describe('LeaderboardTable', () => {
     expect(screen.getByText('00:40.12')).toBeInTheDocument();
   });
 
+  it('exposes the horizontal scroll container to the keyboard', () => {
+    const entries: TLeaderboardEntry[] = [
+      {
+        rank: 1,
+        userId: 'u1',
+        nickname: 'test_user',
+        timeMs: 40_120,
+        createdAt: '2026-01-01T12:00:00.000Z',
+      },
+    ];
+
+    render(<LeaderboardTable entries={entries} />);
+
+    const region = screen.getByRole('region', { name: /прокручиваем|scrollable/i });
+    expect(region).toHaveAttribute('tabindex', '0');
+  });
+
   it('highlights the current user nickname', () => {
     const entries: TLeaderboardEntry[] = [
       {
