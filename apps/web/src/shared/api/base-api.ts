@@ -15,6 +15,39 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
+/** Максимум повторов GET при сетевом сбое (бэк стартует или перезапускается) */
+const NETWORK_RETRIES = 4;
+/** Базовая задержка backoff */
+const NETWORK_RETRY_BASE_MS = 300;
+
+const delay = (ms: number): Promise<void> => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+};
+
+/** Сетевой сбой (сервер не отвечает), в отличие от HTTP-статуса ошибки */
+const isNetworkFailure = (result: Awaited<ReturnType<typeof rawBaseQuery>>): boolean => {
+  return result.error?.status === 'FETCH_ERROR';
+};
+
+/**
+ * Повторяет только GET при сетевом сбое с backoff: идемпотентные запросы
+ * переживают старт/рестарт API, мутации не отправляются повторно.
+ */
+const rawBaseQueryWithRetry: typeof rawBaseQuery = async (args, api, extraOptions) => {
+  const method = typeof args === 'string' ? 'GET' : (args.method ?? 'GET');
+  const isRetryable = method.toUpperCase() === 'GET';
+
+  for (let attempt = 0; ; attempt += 1) {
+    const result = await rawBaseQuery(args, api, extraOptions);
+    if (!isRetryable || !isNetworkFailure(result) || attempt >= NETWORK_RETRIES) {
+      return result;
+    }
+    await delay(NETWORK_RETRY_BASE_MS * 2 ** attempt);
+  }
+};
+
 /** Сырой POST /auth/refresh без дедупликации */
 const runRefresh = (
   api: Parameters<typeof rawBaseQuery>[1],
@@ -64,7 +97,7 @@ const baseQueryWithReauth: typeof rawBaseQuery = async (args, api, extraOptions)
     return refreshOnce(api, extraOptions);
   }
 
-  const result = await rawBaseQuery(args, api, extraOptions);
+  const result = await rawBaseQueryWithRetry(args, api, extraOptions);
 
   if (result.error?.status !== 401 || isAuthCall) {
     return result;

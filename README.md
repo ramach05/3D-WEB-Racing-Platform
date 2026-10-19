@@ -151,6 +151,20 @@ Playwright не водит машину 3 минуты: на странице з
 pnpm --filter @racing/web e2e:install
 ```
 
+## Прекоммит
+
+Husky + lint-staged, хук `.husky/pre-commit` (ставится автоматически при `pnpm install` через `prepare`):
+
+1. `lint-staged` по staged-файлам: `*.{ts,tsx}` — `eslint --fix --max-warnings=0` + `prettier --write`; прочие текстовые файлы — `prettier --write`.
+2. `pnpm typecheck` по всему проекту.
+
+```bash
+pnpm lint          # eslint по всем пакетам (--max-warnings=0)
+pnpm format        # prettier --write по всему репо
+pnpm format:check  # проверка форматирования
+pnpm typecheck     # tsc -b (+ build @racing/shared)
+```
+
 ## Правила кода
 
 - JSDoc `/** */` на русском у функций; `//` над эффектами — зачем подписка.
