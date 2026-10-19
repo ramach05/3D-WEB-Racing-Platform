@@ -1,6 +1,6 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatRaceTime } from '@/shared/lib';
+import { formatRaceTime, useFocusTrap } from '@/shared/lib';
 import { Button } from '@/shared/ui';
 import type { TFinishSubmitState } from './race-finish-overlay.types';
 
@@ -47,14 +47,9 @@ export const RaceFinishOverlay = ({
   onOpenLeaderboard,
 }: TRaceFinishOverlayProps) => {
   const { t } = useTranslation();
-  const firstButton = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  // Focus the first button when the overlay opens.
-  useEffect(() => {
-    if (open) {
-      firstButton.current?.focus();
-    }
-  }, [open]);
+  useFocusTrap({ active: open, containerRef: panelRef });
 
   if (!open) {
     return null;
@@ -75,7 +70,10 @@ export const RaceFinishOverlay = ({
         <span className="sega-finish-confetti__piece sega-finish-confetti__piece--5" />
         <span className="sega-finish-confetti__piece sega-finish-confetti__piece--6" />
       </div>
-      <div className="sega-panel relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 text-[var(--fg)]">
+      <div
+        ref={panelRef}
+        className="sega-panel relative z-10 max-h-[90dvh] w-full max-w-lg overflow-y-auto p-6 text-[var(--fg)]"
+      >
         <p className="text-xs uppercase tracking-widest text-[var(--sega-cyan)]">{trackName}</p>
         <h2
           id="finish-title"
@@ -127,9 +125,7 @@ export const RaceFinishOverlay = ({
         ) : null}
 
         <div className="mt-6 flex flex-col gap-2">
-          <Button ref={firstButton} onClick={onRestart}>
-            {t('race.restart')}
-          </Button>
+          <Button onClick={onRestart}>{t('race.restart')}</Button>
           {!isGuest ? (
             <Button variant="ghost" onClick={onOpenLeaderboard}>
               {t('race.viewLeaderboard')}

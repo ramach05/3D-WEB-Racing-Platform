@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getTrackConfig, useGetTracksQuery } from '@/entities/track';
-import { PageShell, StatusText, TracksPageSkeleton } from '@/shared/ui';
+import { PageMeta, PageShell, StatusText, TracksPageSkeleton } from '@/shared/ui';
 import { preloadVehicleModel } from '@/widgets/race-canvas';
 import { TrackMinimap } from '@/widgets/track-minimap';
 
@@ -18,6 +18,7 @@ export const TracksPage = () => {
 
   return (
     <PageShell className="lg:max-w-7xl">
+      <PageMeta title={t('tracks.title')} />
       <h1 className="text-3xl font-semibold uppercase text-[var(--sega-yellow)]">
         {t('tracks.title')}
       </h1>

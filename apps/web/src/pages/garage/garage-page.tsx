@@ -3,7 +3,7 @@ import { VEHICLES } from '@/entities/vehicle';
 import { useSelectedVehicle } from '@/features/vehicle-select';
 import { carSkins } from '@/shared/config';
 import { cx } from '@/shared/lib';
-import { PageShell } from '@/shared/ui';
+import { PageMeta, PageShell } from '@/shared/ui';
 import { VehiclePreview } from '@/widgets/vehicle-preview';
 
 const previewBody = carSkins.coastal.body;
@@ -16,6 +16,7 @@ export const GaragePage = () => {
 
   return (
     <PageShell>
+      <PageMeta title={t('garage.title')} />
       <h1 className="text-3xl font-semibold uppercase text-[var(--sega-yellow)]">
         {t('garage.title')}
       </h1>

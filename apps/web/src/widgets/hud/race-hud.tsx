@@ -123,7 +123,8 @@ export const RaceHud = ({ trackName, bestMs = null }: TRaceHudProps) => {
         </span>
         <span className="sega-race-hud__value">{trackName}</span>
       </p>
-      <p className="sega-race-hud__row" aria-live="polite">
+      {/* Countdown is announced by the assertive overlay; keep the HUD row quiet to avoid double speech */}
+      <p className="sega-race-hud__row" aria-live={status === 'countdown' ? 'off' : 'polite'}>
         <span className="sega-race-hud__label" style={{ minWidth: `${labelSlotCh}ch` }}>
           {t('race.status')}:
         </span>

@@ -4,6 +4,7 @@ import { cx } from './cx';
 import { formatGap, formatRaceTime } from './format';
 import { getRtkErrorMessage } from './rtk-error';
 import { clearAuthSession, readAuthSession, writeAuthSession } from './session';
+import { useFocusTrap } from './use-focus-trap';
 
 export type { TAuthSession } from './session.types';
 
@@ -19,5 +20,6 @@ export {
   formatRaceTime,
   getRtkErrorMessage,
   readAuthSession,
+  useFocusTrap,
   writeAuthSession,
 };

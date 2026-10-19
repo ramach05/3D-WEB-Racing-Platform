@@ -7,6 +7,7 @@ import { cx } from '@/shared/lib';
 import {
   LeaderboardTableSkeleton,
   LeaderboardTabsSkeleton,
+  PageMeta,
   PageShell,
   StatusText,
 } from '@/shared/ui';
@@ -64,6 +65,7 @@ export const LeaderboardPage = () => {
 
   return (
     <PageShell>
+      <PageMeta title={t('leaderboard.title')} />
       <h1 className="text-3xl font-semibold uppercase text-[var(--sega-yellow)]">
         {t('leaderboard.title')}
       </h1>

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { formatRaceTime } from '@/shared/lib';
-import { resetRaceSession, startRacing } from '@/features/race-session';
+import { beginCountdown, resetRaceSession, startRacing } from '@/features/race-session';
 import { RaceHud } from './race-hud';
 
 const TRACK_NAME = 'Coastal Oval';
@@ -46,5 +46,20 @@ describe('RaceHud', () => {
     expect(
       screen.queryByText(new RegExp(`(заезд|racing).+${TRACK_NAME}`, 'i')),
     ).not.toBeInTheDocument();
+  });
+
+  it('mutes the status live region during countdown to avoid double announcements', () => {
+    resetRaceSession('hud-test', 4, 3);
+    beginCountdown();
+
+    const { unmount } = render(<RaceHud trackName={TRACK_NAME} />);
+    const statusRow = screen.getByText(/статус|status/i).closest('p');
+    expect(statusRow).toHaveAttribute('aria-live', 'off');
+
+    unmount();
+    startRacing();
+    render(<RaceHud trackName={TRACK_NAME} />);
+    const racingRow = screen.getByText(/статус|status/i).closest('p');
+    expect(racingRow).toHaveAttribute('aria-live', 'polite');
   });
 });

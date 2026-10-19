@@ -17,7 +17,7 @@ import {
   togglePause,
   useRaceHudSelector,
 } from '@/features/race-session';
-import { Button, PageShell, SegaLoader, StatusText } from '@/shared/ui';
+import { Button, PageMeta, PageShell, SegaLoader, StatusText } from '@/shared/ui';
 import { RaceHud, RaceMinimap, RacePerfHud } from '@/widgets/hud';
 import {
   cycleCameraMode,
@@ -323,6 +323,7 @@ export const RacePage = () => {
   if (isError || !track || !config || !trackSlug || !trackId) {
     return (
       <PageShell>
+        <PageMeta title={t('tracks.error')} />
         <StatusText>{t('tracks.error')}</StatusText>
         <Link to="/tracks" className="mt-3 inline-block text-sm text-[var(--accent)] underline">
           {t('race.toTracks')}
@@ -333,6 +334,7 @@ export const RacePage = () => {
 
   return (
     <div className="sega-scanlines relative min-h-0 w-full flex-1 overflow-hidden bg-black">
+      <PageMeta title={track.name} />
       <div className="absolute inset-0">
         {canvasArmed ? (
           <RaceCanvas

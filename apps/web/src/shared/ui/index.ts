@@ -1,4 +1,5 @@
 export { Button } from './button';
+export { PageMeta } from './page-meta';
 export { PageShell } from './page-shell';
 export { Select } from './select';
 export type { TSelectOption } from './select.types';

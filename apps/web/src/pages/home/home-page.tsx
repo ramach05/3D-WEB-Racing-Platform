@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthHydrated, useAuthUser } from '@/features/auth';
 import { getAllTrackConfigs } from '@/entities/track';
-import { PageShell, SegaSkeleton } from '@/shared/ui';
+import { PageMeta, PageShell, SegaSkeleton } from '@/shared/ui';
 import { TrackMinimap } from '@/widgets/track-minimap';
 import { RaceMarquee } from './race-marquee';
 
@@ -23,6 +23,7 @@ export const HomePage = () => {
 
   return (
     <PageShell>
+      <PageMeta title={t('home.title')} />
       <section className="sega-panel relative p-6 md:p-10">
         <p className="text-sm uppercase tracking-[0.3em] text-[var(--sega-cyan)]">
           {t('home.tagline')}

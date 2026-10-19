@@ -5,7 +5,7 @@ import type { TUserStats, TUserTrackStat } from '@racing/shared';
 import { useAuthHydrated, useAuthUser, useGetMeQuery } from '@/features/auth';
 import { getAchievements } from '@/entities/race-result';
 import { cx, formatGap, formatRaceTime, readAuthSession } from '@/shared/lib';
-import { PageShell, ProfilePageSkeleton, StatusText } from '@/shared/ui';
+import { PageMeta, PageShell, ProfilePageSkeleton, StatusText } from '@/shared/ui';
 
 const StatsGrid = ({ stats }: { stats: TUserStats }) => {
   const { t } = useTranslation();
@@ -111,6 +111,7 @@ export const ProfilePage = () => {
   if (!user && !hydrated) {
     return (
       <PageShell>
+        <PageMeta title={t('profile.title')} />
         <h1 className="text-3xl font-semibold uppercase text-[var(--sega-yellow)]">
           {t('profile.title')}
         </h1>
@@ -122,6 +123,7 @@ export const ProfilePage = () => {
   if (!user && !isLoading) {
     return (
       <PageShell>
+        <PageMeta title={t('profile.title')} />
         <h1 className="text-3xl font-semibold uppercase text-[var(--sega-yellow)]">
           {t('profile.title')}
         </h1>
@@ -135,6 +137,7 @@ export const ProfilePage = () => {
 
   return (
     <PageShell>
+      <PageMeta title={t('profile.title')} />
       <h1 className="text-3xl font-semibold uppercase text-[var(--sega-yellow)]">
         {t('profile.title')}
       </h1>

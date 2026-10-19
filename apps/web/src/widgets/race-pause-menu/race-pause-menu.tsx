@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useFocusTrap } from '@/shared/lib';
 import { Button } from '@/shared/ui';
 
 type TRacePauseMenuProps = {
@@ -16,14 +17,9 @@ type TRacePauseMenuProps = {
 /** Pause modal: Esc, focus trap on the buttons */
 export const RacePauseMenu = ({ open, onResume, onRestart, onExit }: TRacePauseMenuProps) => {
   const { t } = useTranslation();
-  const firstButton = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  // Focus the first button when the pause opens.
-  useEffect(() => {
-    if (open) {
-      firstButton.current?.focus();
-    }
-  }, [open]);
+  useFocusTrap({ active: open, containerRef: panelRef });
 
   if (!open) {
     return null;
@@ -38,6 +34,7 @@ export const RacePauseMenu = ({ open, onResume, onRestart, onExit }: TRacePauseM
       onClick={onResume}
     >
       <div
+        ref={panelRef}
         className="sega-panel w-full max-w-sm p-6 text-[var(--fg)]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -45,9 +42,7 @@ export const RacePauseMenu = ({ open, onResume, onRestart, onExit }: TRacePauseM
           {t('race.paused')}
         </h2>
         <div className="mt-4 flex flex-col gap-2">
-          <Button ref={firstButton} onClick={onResume}>
-            {t('race.resume')}
-          </Button>
+          <Button onClick={onResume}>{t('race.resume')}</Button>
           <Button variant="ghost" onClick={onRestart}>
             {t('race.restart')}
           </Button>
