@@ -227,6 +227,24 @@ describe('API e2e', () => {
     const bestResults = (me.body as { bestResults: Array<{ trackId: string; timeMs: number }> })
       .bestResults;
     expect(bestResults.some((row) => row.trackId === coastal?.id)).toBe(true);
+
+    const stats = (
+      me.body as {
+        stats: {
+          totalRaces: number;
+          tracksCompleted: number;
+          totalTimeMs: number;
+          perTrack: Array<{ trackId: string; rank: number; gapToLeaderMs: number }>;
+        };
+      }
+    ).stats;
+    expect(stats.totalRaces).toBeGreaterThan(0);
+    expect(stats.tracksCompleted).toBeGreaterThan(0);
+    expect(stats.totalTimeMs).toBeGreaterThan(0);
+    const coastalStat = stats.perTrack.find((row) => row.trackId === coastal?.id);
+    expect(coastalStat).toBeDefined();
+    expect(coastalStat?.rank).toBeGreaterThanOrEqual(1);
+    expect(coastalStat?.gapToLeaderMs).toBeGreaterThanOrEqual(0);
   });
 
   it('returns health status', async () => {

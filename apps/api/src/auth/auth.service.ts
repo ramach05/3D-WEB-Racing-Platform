@@ -189,6 +189,10 @@ export class AuthService {
       string,
       { trackId: string; trackSlug: string; trackName: string; timeMs: number; createdAt: Date }
     >();
+    const firstFinishByTrack = new Map<string, { timeMs: number; date: Date }>();
+    let totalTimeMs = 0;
+    let firstRaceAt: Date | null = null;
+    let lastRaceAt: Date | null = null;
     for (const result of user.raceResults) {
       if (!bestByTrack.has(result.trackId)) {
         bestByTrack.set(result.trackId, {
@@ -199,7 +203,68 @@ export class AuthService {
           createdAt: result.createdAt,
         });
       }
+      const firstFinish = firstFinishByTrack.get(result.trackId);
+      if (!firstFinish || result.createdAt < firstFinish.date) {
+        firstFinishByTrack.set(result.trackId, { timeMs: result.timeMs, date: result.createdAt });
+      }
+      totalTimeMs += result.timeMs;
+      if (!firstRaceAt || result.createdAt < firstRaceAt) {
+        firstRaceAt = result.createdAt;
+      }
+      if (!lastRaceAt || result.createdAt > lastRaceAt) {
+        lastRaceAt = result.createdAt;
+      }
     }
+
+    const trackIds = [...bestByTrack.keys()];
+    // Best time of every player on the user's tracks — source for rank and gap to leader
+    const bestsPerUser =
+      trackIds.length === 0
+        ? []
+        : await this.prisma.raceResult.groupBy({
+            by: ['userId', 'trackId'],
+            where: { trackId: { in: trackIds } },
+            _min: { timeMs: true },
+          });
+    const standingsByTrack = new Map<string, { userId: string; bestMs: number }[]>();
+    for (const row of bestsPerUser) {
+      const standings = standingsByTrack.get(row.trackId) ?? [];
+      // _min on a required column is never null in practice, but Prisma types it nullable
+      standings.push({ userId: row.userId, bestMs: row._min.timeMs ?? 0 });
+      standingsByTrack.set(row.trackId, standings);
+    }
+    for (const standings of standingsByTrack.values()) {
+      standings.sort((a, b) => a.bestMs - b.bestMs);
+    }
+
+    const racesByTrack = new Map<string, number>();
+    const totalTimeByTrack = new Map<string, number>();
+    for (const result of user.raceResults) {
+      racesByTrack.set(result.trackId, (racesByTrack.get(result.trackId) ?? 0) + 1);
+      totalTimeByTrack.set(
+        result.trackId,
+        (totalTimeByTrack.get(result.trackId) ?? 0) + result.timeMs,
+      );
+    }
+
+    const perTrack = trackIds.map((trackId) => {
+      const best = bestByTrack.get(trackId);
+      const standings = standingsByTrack.get(trackId) ?? [];
+      const rank = standings.findIndex((row) => row.userId === user.id) + 1;
+      const leaderMs = standings[0]?.bestMs ?? best?.timeMs ?? 0;
+      const firstFinish = firstFinishByTrack.get(trackId);
+      return {
+        trackId,
+        trackSlug: best?.trackSlug ?? '',
+        trackName: best?.trackName ?? '',
+        races: racesByTrack.get(trackId) ?? 0,
+        bestTimeMs: best?.timeMs ?? 0,
+        totalTimeMs: totalTimeByTrack.get(trackId) ?? 0,
+        rank: rank > 0 ? rank : 1,
+        gapToLeaderMs: Math.max(0, (best?.timeMs ?? 0) - leaderMs),
+        improvementMs: Math.max(0, (firstFinish?.timeMs ?? 0) - (best?.timeMs ?? 0)),
+      };
+    });
 
     return {
       user: toUserPublic(user),
@@ -210,6 +275,14 @@ export class AuthService {
         timeMs: row.timeMs,
         createdAt: row.createdAt.toISOString(),
       })),
+      stats: {
+        totalRaces: user.raceResults.length,
+        tracksCompleted: trackIds.length,
+        totalTimeMs,
+        firstRaceAt: firstRaceAt ? firstRaceAt.toISOString() : null,
+        lastRaceAt: lastRaceAt ? lastRaceAt.toISOString() : null,
+        perTrack,
+      },
     };
   };
 

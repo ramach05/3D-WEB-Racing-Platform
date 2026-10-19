@@ -8,6 +8,7 @@ const hashOf = async (password: string): Promise<string> => bcrypt.hash(password
 
 type TPrismaMock = {
   user: { findUnique: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn> };
+  raceResult: { groupBy: ReturnType<typeof vi.fn> };
   refreshSession: {
     findUnique: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
@@ -25,6 +26,7 @@ const makeService = (): {
 } => {
   const prisma: TPrismaMock = {
     user: { findUnique: vi.fn(), create: vi.fn() },
+    raceResult: { groupBy: vi.fn().mockResolvedValue([]) },
     refreshSession: {
       findUnique: vi.fn(),
       create: vi.fn(),
@@ -232,25 +234,67 @@ describe('AuthService.me', () => {
         {
           trackId: 't1',
           timeMs: 30_000,
-          createdAt: new Date('2026-01-01T00:00:00.000Z'),
+          createdAt: new Date('2026-01-02T00:00:00.000Z'),
           track: { slug: 'coastal-oval', name: 'Coastal Oval' },
         },
         {
           trackId: 't1',
           timeMs: 40_000,
-          createdAt: new Date('2026-01-02T00:00:00.000Z'),
+          createdAt: new Date('2026-01-01T00:00:00.000Z'),
           track: { slug: 'coastal-oval', name: 'Coastal Oval' },
         },
       ],
     });
+    ctx.prisma.raceResult.groupBy.mockResolvedValue([
+      { userId: 'u1', trackId: 't1', _min: { timeMs: 30_000 } },
+      { userId: 'u2', trackId: 't1', _min: { timeMs: 25_000 } },
+    ]);
 
     const me = await ctx.service.me({ userId: 'u1', nickname: 'racer_01' });
     expect(me.bestResults).toHaveLength(1);
     expect(me.bestResults[0]?.timeMs).toBe(30_000);
 
+    expect(me.stats).toEqual({
+      totalRaces: 2,
+      tracksCompleted: 1,
+      totalTimeMs: 70_000,
+      firstRaceAt: '2026-01-01T00:00:00.000Z',
+      lastRaceAt: '2026-01-02T00:00:00.000Z',
+      perTrack: [
+        {
+          trackId: 't1',
+          trackSlug: 'coastal-oval',
+          trackName: 'Coastal Oval',
+          races: 2,
+          bestTimeMs: 30_000,
+          totalTimeMs: 70_000,
+          rank: 2,
+          gapToLeaderMs: 5_000,
+          improvementMs: 10_000,
+        },
+      ],
+    });
+
     ctx.prisma.user.findUnique.mockResolvedValue(null);
     await expect(ctx.service.me({ userId: 'x', nickname: 'x' })).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it('returns zero stats without race results and skips the standings query', async () => {
+    const ctx = makeService();
+    ctx.prisma.user.findUnique.mockResolvedValue({ ...freshUser, raceResults: [] });
+
+    const me = await ctx.service.me({ userId: 'u1', nickname: 'racer_01' });
+
+    expect(ctx.prisma.raceResult.groupBy).not.toHaveBeenCalled();
+    expect(me.stats).toEqual({
+      totalRaces: 0,
+      tracksCompleted: 0,
+      totalTimeMs: 0,
+      firstRaceAt: null,
+      lastRaceAt: null,
+      perTrack: [],
+    });
   });
 });

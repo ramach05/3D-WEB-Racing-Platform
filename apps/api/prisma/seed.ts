@@ -137,6 +137,17 @@ const seed = async (): Promise<void> => {
 
   await prisma.raceResult.deleteMany();
 
+  // Extra test_user finishes before the seeded bests: richer default profile stats (attempts, improvement, total time)
+  const testUserPractice = [
+    { trackId: coastal.id, timeMs: 58_420, createdAt: new Date('2026-06-12T17:40:00.000Z') },
+    { trackId: coastal.id, timeMs: 51_350, createdAt: new Date('2026-07-05T11:25:00.000Z') },
+    { trackId: coastal.id, timeMs: 46_910, createdAt: new Date('2026-08-09T19:05:00.000Z') },
+    { trackId: nightCity.id, timeMs: 74_250, createdAt: new Date('2026-07-19T22:10:00.000Z') },
+    { trackId: nightCity.id, timeMs: 66_130, createdAt: new Date('2026-08-15T21:20:00.000Z') },
+    { trackId: stormEight.id, timeMs: 63_540, createdAt: new Date('2026-08-02T13:50:00.000Z') },
+    { trackId: stormEight.id, timeMs: 55_210, createdAt: new Date('2026-08-24T18:15:00.000Z') },
+  ].map((row) => ({ ...row, userId: testUser.id }));
+
   const byNick = new Map<string, string>([
     ['test_user', testUser.id],
     ...demoUsers.map((user): [string, string] => [user.nickname, user.id]),
@@ -202,6 +213,7 @@ const seed = async (): Promise<void> => {
         timeMs: STORM_TIMES_MS[index],
         createdAt: new Date(STORM_DATES[index]),
       })),
+      ...testUserPractice,
     ],
   });
 };
