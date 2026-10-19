@@ -7,6 +7,8 @@ export type {
   TRegisterRequest,
   TUserBestResult,
   TUserPublic,
+  TUserStats,
+  TUserTrackStat,
 } from './auth';
 export type { TTrackPublic, TTrackSlug } from './track';
 export {
