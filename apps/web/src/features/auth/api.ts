@@ -52,17 +52,22 @@ export const authApi = racingApi.injectEndpoints({
       },
     }),
     logoutSession: build.mutation<void, void>({
-      query: () => ({ url: '/auth/logout', method: 'POST' }),
+      query: () => ({
+        url: '/auth/logout',
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      }),
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        // Чистим локальное состояние сразу, не дожидаясь ответа: revoke на сервере best-effort.
+        // invalidatesTags тут запрещен — RTK инвалидирует теги в старте мутации, и рефетч
+        // /auth/me со старым токеном воскресил бы пользователя после clearAuth.
+        dispatch(clearAuth());
         try {
           await queryFulfilled;
         } catch {
           // Локальный выход даже если revoke на сервере не удался
-        } finally {
-          dispatch(clearAuth());
         }
       },
-      invalidatesTags: ['Me'],
     }),
     getMe: build.query<TMeResponse, void>({
       query: () => '/auth/me',

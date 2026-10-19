@@ -9,7 +9,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { AuthService } from '../auth/auth.service';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { TJwtUser } from '../auth/auth.types';
@@ -19,10 +18,7 @@ import { RaceResultsService } from './race-results.service';
 @ApiTags('race-results')
 @Controller()
 export class RaceResultsController {
-  constructor(
-    private readonly raceResultsService: RaceResultsService,
-    private readonly authService: AuthService,
-  ) {}
+  constructor(private readonly raceResultsService: RaceResultsService) {}
 
   @Post('race-results')
   @UseGuards(JwtAuthGuard)
@@ -46,13 +42,5 @@ export class RaceResultsController {
   @ApiOperation({ summary: 'Лучшие личные времена по трассе (по slug)' })
   leaderboardBySlug(@Param('slug') slug: string) {
     return this.raceResultsService.leaderboard(slug);
-  }
-
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Текущий пользователь' })
-  me(@CurrentUser() user: TJwtUser) {
-    return this.authService.me(user);
   }
 }

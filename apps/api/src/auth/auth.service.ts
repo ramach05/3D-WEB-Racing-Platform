@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import {
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -10,9 +11,14 @@ import { JwtService } from '@nestjs/jwt';
 import type { TAuthTokens, TMeResponse, TUserPublic } from '@racing/shared';
 import * as bcrypt from 'bcrypt';
 import { toUserPublic } from '../common/user-mapper';
+import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   ACCESS_TOKEN_EXPIRES,
+  JWT_ALGORITHM,
+  JWT_AUDIENCE,
+  JWT_ISSUER,
+  REFRESH_PURGE_GRACE_MS,
   REFRESH_TOKEN_TTL_MS,
   type TJwtPayload,
   type TJwtUser,
@@ -24,6 +30,12 @@ const normalizeNickname = (nickname: string): string => nickname.trim().toLowerC
 
 const hashRefreshToken = (token: string): string =>
   createHash('sha256').update(token).digest('hex');
+
+/**
+ * Фиктивный bcrypt-хеш: сравнение с ним выполняется, когда юзер не найден,
+ * чтобы время ответа не отличалось от случая «юзер есть, пароль неверный».
+ */
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync('timing-equalization-dummy', 10);
 
 /** Внутренняя выдача: access в JSON, refresh уходит только в cookie */
 export type TIssuedAuth = {
@@ -38,6 +50,8 @@ export type TIssuedAuth = {
  */
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -52,12 +66,21 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const user = await this.prisma.user.create({
-      data: {
-        nickname,
-        passwordHash,
-      },
-    });
+    let user: { id: string; nickname: string; createdAt: Date };
+    try {
+      user = await this.prisma.user.create({
+        data: {
+          nickname,
+          passwordHash,
+        },
+      });
+    } catch (error) {
+      // Unique-конфликт: два конкурентных register на один ник — второй получит 409, а не 500
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Ник уже занят');
+      }
+      throw error;
+    }
 
     const tokens = await this.issueTokens({ sub: user.id, nickname: user.nickname });
     return {
@@ -70,12 +93,13 @@ export class AuthService {
   login = async (dto: LoginDto): Promise<TIssuedAuth> => {
     const nickname = normalizeNickname(dto.nickname);
     const user = await this.prisma.user.findUnique({ where: { nickname } });
-    if (!user) {
-      throw new UnauthorizedException('Неверный ник или пароль');
-    }
-
-    const matches = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!matches) {
+    // Сравнение всегда идёт по реальному bcrypt: при отсутствии юзера — по фиктивному хешу,
+    // иначе по времени ответа можно отличить «нет такого ника» от «неверный пароль».
+    const matches = await bcrypt.compare(
+      dto.password,
+      user ? user.passwordHash : DUMMY_PASSWORD_HASH,
+    );
+    if (!user || !matches) {
       throw new UnauthorizedException('Неверный ник или пароль');
     }
 
@@ -126,6 +150,15 @@ export class AuthService {
       { sub: user.id, nickname: user.nickname },
       { rotateFromSessionId: session.id },
     );
+    // Housekeeping: протухшие сессии (в т.ч. отозванные) всё равно невалидны — чистим БД.
+    // Ошибка чистки не должна ломать выдачу токенов.
+    void this.prisma.refreshSession
+      .deleteMany({
+        where: { expiresAt: { lt: new Date(Date.now() - REFRESH_PURGE_GRACE_MS) } },
+      })
+      .catch((error) => {
+        this.logger.warn(`Refresh-session purge failed: ${String(error)}`);
+      });
     return {
       user: toUserPublic(user),
       accessToken: tokens.accessToken,
@@ -197,6 +230,9 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.getOrThrow<string>('JWT_SECRET'),
       expiresIn: ACCESS_TOKEN_EXPIRES,
+      algorithm: JWT_ALGORITHM,
+      issuer: JWT_ISSUER,
+      audience: JWT_AUDIENCE,
     });
 
     const refreshToken = randomBytes(32).toString('hex');

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { racingApi } from '@/shared/api';
 import { readAuthSession } from '@/shared/lib';
 import { useGetMeQuery, useLogoutSessionMutation, useRefreshSessionMutation } from './api';
 import { selectHydrated, selectUser, setHydrated } from './model';
@@ -47,11 +48,16 @@ export const useAuthHydrated = () => {
   return useSelector(selectHydrated);
 };
 
-/** Выход: revoke refresh-cookie на сервере + локальная очистка */
+/** Выход: revoke refresh-cookie на сервере + локальная очистка и сброс кэшей запросов */
 export const useLogout = () => {
   const [logoutSession] = useLogoutSessionMutation();
+  const dispatch = useDispatch();
 
   return useCallback(() => {
-    void logoutSession();
-  }, [logoutSession]);
+    void (async () => {
+      await logoutSession();
+      // Сбрасываем кэш RTK Query, чтобы законсервированный getMe не вернул user при монтировании
+      dispatch(racingApi.util.resetApiState());
+    })();
+  }, [logoutSession, dispatch]);
 };

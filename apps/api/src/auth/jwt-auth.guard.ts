@@ -1,7 +1,13 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import type { TJwtPayload, TJwtUser } from './auth.types';
+import {
+  JWT_ALGORITHM,
+  JWT_AUDIENCE,
+  JWT_ISSUER,
+  type TJwtPayload,
+  type TJwtUser,
+} from './auth.types';
 
 type TIncomingRequest = {
   headers: { authorization?: string };
@@ -30,6 +36,9 @@ export class JwtAuthGuard implements CanActivate {
     try {
       const payload = this.jwtService.verify<TJwtPayload>(token, {
         secret: this.configService.getOrThrow<string>('JWT_SECRET'),
+        algorithms: [JWT_ALGORITHM],
+        issuer: JWT_ISSUER,
+        audience: JWT_AUDIENCE,
       });
       request.user = { userId: payload.sub, nickname: payload.nickname };
       return true;

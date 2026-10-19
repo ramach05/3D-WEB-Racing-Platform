@@ -22,14 +22,18 @@ const bootstrap = async (): Promise<void> => {
     }),
   );
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('3D WEB Racing Platform API')
-    .setDescription('Auth, tracks, race results and leaderboard')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document);
+  const isProd = process.env.NODE_ENV === 'production';
+  // Swagger недоступен в production: не публикуем поверхность API наружу
+  if (!isProd) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('3D WEB Racing Platform API')
+      .setDescription('Auth, tracks, race results and leaderboard')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('docs', app, document);
+  }
 
   const port = Number(process.env.PORT ?? 3000);
   await app.listen(port);

@@ -157,10 +157,14 @@ describe('API e2e', () => {
       .expect(201);
     const oldCookie = pickRefreshCookie(login);
 
+    // Refresh с cookie, но без CSRF-заголовка — 403 (защита кросс-сайтовых POST)
+    await request(server).post('/auth/refresh').set('Cookie', oldCookie).expect(403);
+
     const refreshed = await request(server)
       .post('/auth/refresh')
       .set('Cookie', oldCookie)
-      .expect(201);
+      .set('X-Requested-With', 'XMLHttpRequest')
+      .expect(200);
     const refreshedBody = refreshed.body as TAuthBody;
     const accessToken = refreshedBody.tokens.accessToken;
     const newCookie = pickRefreshCookie(refreshed);
@@ -168,14 +172,26 @@ describe('API e2e', () => {
     await request(server).get('/auth/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
 
     // Старый refresh после ротации больше недействителен
-    await request(server).post('/auth/refresh').set('Cookie', oldCookie).expect(401);
+    await request(server)
+      .post('/auth/refresh')
+      .set('Cookie', oldCookie)
+      .set('X-Requested-With', 'XMLHttpRequest')
+      .expect(401);
 
     // Запрос вообще без cookie — молчаливый 204 (гость), а не 401
     await request(server).post('/auth/refresh').expect(204);
 
     // Logout отзывает текущую сессию и чистит cookie
-    await request(server).post('/auth/logout').set('Cookie', newCookie).expect(204);
-    await request(server).post('/auth/refresh').set('Cookie', newCookie).expect(401);
+    await request(server)
+      .post('/auth/logout')
+      .set('Cookie', newCookie)
+      .set('X-Requested-With', 'XMLHttpRequest')
+      .expect(204);
+    await request(server)
+      .post('/auth/refresh')
+      .set('Cookie', newCookie)
+      .set('X-Requested-With', 'XMLHttpRequest')
+      .expect(401);
   });
 
   it('rejects duplicate register', async () => {

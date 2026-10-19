@@ -95,12 +95,9 @@ pnpm ready-steady-go
 | `Cannot find matching keyid` (corepack)  | `corepack disable && npm install -g pnpm@10.15.0` |
 | Временный обход без глобальной установки | `npx pnpm@10.15.0 dev`                            |
 
-### Тестовые аккаунты (seed)
+### Тестовый аккаунт (seed)
 
-| Ник           | Пароль |
-| ------------- | ------ |
-| `test_user`   | `1234` |
-| `rival_racer` | `1234` |
+`test_user` / `1234` — для входа в личный кабинет.
 
 Трассы: **Coastal Oval** (день, овал), **Night City** (ночь, стадион).
 
@@ -187,4 +184,7 @@ pnpm typecheck     # tsc -b (+ build @racing/shared)
 - Access JWT в памяти (сбрасывается при reload — поднимается через refresh-cookie).
 - Минимальное время результата на сервере — 8 секунд (анти-чит).
 - Helmet + rate limit на auth-эндпоинтах; пароль от 4 символов (демо seed `1234`).
+- Refresh-сессии в БД только как SHA-256 хеш, с ротацией и отзывом всех сессий при reuse старого токена; протухшие сессии чистятся.
+- CSRF-защита cookie-эндпоинтов (`/auth/refresh`, `/auth/logout`): обязателен заголовок `X-Requested-With` при наличии refresh-cookie.
+- Старт fail-fast при невалидном окружении (`JWT_SECRET`-плейсхолдер, отсутствие `COOKIE_SECURE`/`CORS_ORIGIN` в prod). Swagger (`/docs`) отключён в production.
 - В prod включите `COOKIE_SECURE=true` (и при необходимости `COOKIE_SAME_SITE=none` для cross-site).

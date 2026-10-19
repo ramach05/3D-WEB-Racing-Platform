@@ -48,11 +48,15 @@ const rawBaseQueryWithRetry: typeof rawBaseQuery = async (args, api, extraOption
   }
 };
 
+/** Маркер «своего» XHR для refresh/logout: сервер требует его как CSRF-защиту cookie-эндпоинтов */
+const CSRF_HEADERS = { 'X-Requested-With': 'XMLHttpRequest' };
+
 /** Сырой POST /auth/refresh без дедупликации */
 const runRefresh = (
   api: Parameters<typeof rawBaseQuery>[1],
   extraOptions: Parameters<typeof rawBaseQuery>[2],
-) => rawBaseQuery({ url: '/auth/refresh', method: 'POST' }, api, extraOptions);
+) =>
+  rawBaseQuery({ url: '/auth/refresh', method: 'POST', headers: CSRF_HEADERS }, api, extraOptions);
 
 /** Результат одного refresh-запроса (та же форма, что у baseQuery) */
 type TRefreshResult = Awaited<ReturnType<typeof runRefresh>>;
