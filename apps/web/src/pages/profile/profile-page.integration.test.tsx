@@ -25,7 +25,10 @@ describe('ProfilePage integration', () => {
 
     expect(await screen.findByText('racer_one')).toBeInTheDocument();
     expect(screen.getByText('Coastal Oval')).toBeInTheDocument();
+    expect(screen.getByText('Storm Eight')).toBeInTheDocument();
     expect(screen.getByText(formatRaceTime(65_340))).toBeInTheDocument();
+    expect(screen.getByText(/#4/)).toBeInTheDocument();
+    expect(screen.getByText(/Достижения|Achievements/i)).toBeInTheDocument();
   });
 
   it('shows guest cta without session', async () => {

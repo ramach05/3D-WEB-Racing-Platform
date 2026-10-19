@@ -1,7 +1,7 @@
 import type { TCaughtError } from '@racing/shared';
 import { getErrorMessage as getSharedErrorMessage } from '@racing/shared';
 import { cx } from './cx';
-import { formatRaceTime } from './format';
+import { formatGap, formatRaceTime } from './format';
 import { getRtkErrorMessage } from './rtk-error';
 import { clearAuthSession, readAuthSession, writeAuthSession } from './session';
 
@@ -15,6 +15,7 @@ export const getErrorMessage = (error: TCaughtError): string => {
 export {
   clearAuthSession,
   cx,
+  formatGap,
   formatRaceTime,
   getRtkErrorMessage,
   readAuthSession,

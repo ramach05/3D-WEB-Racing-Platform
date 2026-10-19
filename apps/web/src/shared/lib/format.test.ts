@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatRaceTime } from './format';
+import { formatGap, formatRaceTime } from './format';
 
 describe('formatRaceTime', () => {
   it('formats a minute plus fraction as mm:ss.hs', () => {
@@ -16,5 +16,15 @@ describe('formatRaceTime', () => {
     const formatted = formatRaceTime(ms);
 
     expect(formatted).toBe('00:00.00');
+  });
+});
+
+describe('formatGap', () => {
+  it('formats milliseconds as seconds with two decimals', () => {
+    expect(formatGap(2_450)).toBe('2.45s');
+  });
+
+  it('clamps negative values to zero', () => {
+    expect(formatGap(-100)).toBe('0.00s');
   });
 });

@@ -35,7 +35,45 @@ export const mockMe = {
       timeMs: 65_340,
       createdAt: '2024-01-01T00:00:00.000Z',
     },
+    {
+      trackId: 'track-3',
+      trackSlug: TRACK_SLUG_STORM_EIGHT,
+      trackName: 'Storm Eight',
+      timeMs: 58_000,
+      createdAt: '2024-01-03T00:00:00.000Z',
+    },
   ],
+  stats: {
+    totalRaces: 5,
+    tracksCompleted: 2,
+    totalTimeMs: 333_340,
+    firstRaceAt: '2024-01-01T00:00:00.000Z',
+    lastRaceAt: '2024-01-05T00:00:00.000Z',
+    perTrack: [
+      {
+        trackId: 'track-1',
+        trackSlug: TRACK_SLUG_COASTAL_OVAL,
+        trackName: 'Coastal Oval',
+        races: 3,
+        bestTimeMs: 65_340,
+        totalTimeMs: 210_000,
+        rank: 4,
+        gapToLeaderMs: 5_000,
+        improvementMs: 8_000,
+      },
+      {
+        trackId: 'track-3',
+        trackSlug: TRACK_SLUG_STORM_EIGHT,
+        trackName: 'Storm Eight',
+        races: 2,
+        bestTimeMs: 58_000,
+        totalTimeMs: 123_340,
+        rank: 2,
+        gapToLeaderMs: 1_500,
+        improvementMs: 0,
+      },
+    ],
+  },
 };
 
 export const handlers = [

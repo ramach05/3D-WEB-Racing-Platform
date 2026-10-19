@@ -165,6 +165,50 @@ export const ruMessages = {
     empty: 'Ещё нет финишей.',
     loading: 'Загружаем профиль…',
     error: 'Не удалось загрузить профиль.',
+    memberSince: 'В гонках с {{date}}',
+    statsTitle: 'Статистика',
+    stats: {
+      races: 'Заездов',
+      tracks: 'Трасс пройдено',
+      totalTime: 'Время за рулем',
+    },
+    tracks: {
+      rank: 'Место #{{rank}}',
+      attempts: 'Попыток: {{total}}',
+      total: 'Всего: {{time}}',
+      gapToLeader: '+{{gap}} до лидера',
+      leader: 'Лидер трека',
+      improved: 'Прогресс −{{delta}}',
+    },
+  },
+  achievements: {
+    title: 'Достижения',
+    items: {
+      'first-finish': {
+        title: 'Первый финиш',
+        description: 'Завершить первый заезд',
+      },
+      'all-tracks': {
+        title: 'Гран-при',
+        description: 'Финишировать на всех трассах',
+      },
+      'sub-forty-five': {
+        title: 'Быстрее 45',
+        description: 'Проехать трассу быстрее 45 секунд',
+      },
+      improver: {
+        title: 'Прокачка',
+        description: 'Улучшить свой результат на 2 секунды',
+      },
+      marathon: {
+        title: 'Марафонец',
+        description: 'Завершить 25 заездов',
+      },
+      podium: {
+        title: 'Подиум',
+        description: 'Попасть в топ-3 на любой трассе',
+      },
+    },
   },
   auth: {
     loading: 'Загрузка сессии',
@@ -192,7 +236,7 @@ export const ruMessages = {
     en: 'English',
   },
   boot: {
-    waiting: 'Подключаемся к серверу…',
+    waiting: 'Подключаемся к серверу',
     lost: 'Связь с сервером потеряна',
     hint: 'API еще поднимается — при первом запуске нужно несколько секунд.',
     hintLost: 'Сервер недоступен: проверь, что запущен pnpm ready-steady-go.',
@@ -372,6 +416,50 @@ export const enMessages = {
     empty: 'No finishes yet.',
     loading: 'Loading profile…',
     error: 'Failed to load the profile.',
+    memberSince: 'Racing since {{date}}',
+    statsTitle: 'Statistics',
+    stats: {
+      races: 'Races',
+      tracks: 'Tracks finished',
+      totalTime: 'Time behind the wheel',
+    },
+    tracks: {
+      rank: 'Rank #{{rank}}',
+      attempts: '{{total}} attempts',
+      total: 'Total: {{time}}',
+      gapToLeader: '+{{gap}} to the leader',
+      leader: 'Track leader',
+      improved: 'Improved −{{delta}}',
+    },
+  },
+  achievements: {
+    title: 'Achievements',
+    items: {
+      'first-finish': {
+        title: 'First finish',
+        description: 'Complete your first race',
+      },
+      'all-tracks': {
+        title: 'Grand prix',
+        description: 'Finish on every track',
+      },
+      'sub-forty-five': {
+        title: 'Sub-45',
+        description: 'Beat 45 seconds on a track',
+      },
+      improver: {
+        title: 'Leveling up',
+        description: 'Improve a result by 2 seconds',
+      },
+      marathon: {
+        title: 'Marathoner',
+        description: 'Complete 25 races',
+      },
+      podium: {
+        title: 'Podium',
+        description: 'Reach the top-3 on any track',
+      },
+    },
   },
   auth: {
     loading: 'Loading session',
@@ -399,7 +487,7 @@ export const enMessages = {
     en: 'English',
   },
   boot: {
-    waiting: 'Connecting to the server…',
+    waiting: 'Connecting to the server',
     lost: 'Connection to the server is lost',
     hint: 'The API is still starting — a first run needs a few seconds.',
     hintLost: 'The server is unavailable: check that pnpm ready-steady-go is running.',
