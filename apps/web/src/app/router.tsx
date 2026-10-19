@@ -1,16 +1,18 @@
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { HomePage } from '@/pages/home';
-import { GaragePage } from '@/pages/garage';
 import { LeaderboardPage } from '@/pages/leaderboard';
 import { LoginPage } from '@/pages/login';
 import { ProfilePage } from '@/pages/profile';
-import { RacePage } from '@/pages/race';
 import { RegisterPage } from '@/pages/register';
-import { TracksPage } from '@/pages/tracks';
-import { SegaRouteProgress } from '@/shared/ui';
+import { SegaRouteProgress, SegaSkeleton } from '@/shared/ui';
 import { AppHeader } from '@/widgets/header';
+
+// 3D pages are lazy: R3F/Rapier chunks and GLB fetches stay out of light pages
+const GaragePage = lazy(() => import('@/pages/garage').then((m) => ({ default: m.GaragePage })));
+const RacePage = lazy(() => import('@/pages/race').then((m) => ({ default: m.RacePage })));
+const TracksPage = lazy(() => import('@/pages/tracks').then((m) => ({ default: m.TracksPage })));
 
 type TAppLayoutProps = {
   /** Main content */
@@ -38,22 +40,36 @@ const AppLayout = ({ children }: TAppLayoutProps) => {
   );
 };
 
+/** Chunk-loading fallback for lazy 3D pages */
+const PageSkeleton = () => (
+  <div className="sega-panel mx-auto my-10 w-full max-w-3xl p-6" aria-hidden="true">
+    <div className="grid gap-3">
+      <SegaSkeleton className="sega-skeleton--inset h-8 w-1/2" />
+      <SegaSkeleton className="sega-skeleton--inset h-4 w-full" />
+      <SegaSkeleton className="sega-skeleton--inset h-4 w-4/5" />
+      <SegaSkeleton className="sega-skeleton--inset aspect-[16/9] w-full" />
+    </div>
+  </div>
+);
+
 /** SPA routes */
 export const AppRouter = () => {
   return (
     <BrowserRouter>
       <AppLayout>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/tracks" element={<TracksPage />} />
-          <Route path="/garage" element={<GaragePage />} />
-          <Route path="/race/:trackSlug" element={<RacePage />} />
-          <Route path="/leaderboard" element={<LeaderboardPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={<PageSkeleton />}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/tracks" element={<TracksPage />} />
+            <Route path="/garage" element={<GaragePage />} />
+            <Route path="/race/:trackSlug" element={<RacePage />} />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </AppLayout>
     </BrowserRouter>
   );

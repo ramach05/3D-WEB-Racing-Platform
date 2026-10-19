@@ -559,5 +559,3 @@ export const VehicleModel = (props: TVehicleModelProps) => (
     <GltfVehicleModelInner {...props} />
   </Suspense>
 );
-
-preloadVehicleModel();
