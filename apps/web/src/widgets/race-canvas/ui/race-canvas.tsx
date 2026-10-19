@@ -275,13 +275,10 @@ type TRacePhysicsProps = {
   children: ReactNode;
 };
 
-/** Physics pause gate driven by HUD status. Subscription is isolated here: a status change (countdown/GO/pause) re-renders only Physics, not the whole scene tree. */
+/** Physics pause gate driven by HUD status. Subscription is isolated here: a status change (pause/finish) re-renders only Physics, not the whole scene tree. */
 const RacePhysics = ({ children }: TRacePhysicsProps) => {
   const paused = useRaceHudSelector(
-    (snapshot) =>
-      snapshot.status === 'countdown' ||
-      snapshot.status === 'paused' ||
-      snapshot.status === 'finished',
+    (snapshot) => snapshot.status === 'paused' || snapshot.status === 'finished',
   );
 
   return (

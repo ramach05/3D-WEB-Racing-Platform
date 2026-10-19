@@ -626,11 +626,33 @@ export const Vehicle = ({
     driveVisualRef.current.steer = input.steer;
     driveVisualRef.current.brake = input.brake;
 
-    if (awaitingLand.current && hud.status === 'ready') {
-      if (wheelGrounded && Math.abs(linvel.y) < LAND_SETTLE_VY) {
+    if (hud.status === 'ready') {
+      if (awaitingLand.current && wheelGrounded && Math.abs(linvel.y) < LAND_SETTLE_VY) {
         awaitingLand.current = false;
+        // Drop lands with solver penetration and may bounce: snap to the rest height.
+        if (roadYCount > 0) {
+          const restY = computeGroundRestY(
+            roadYSum / roadYCount,
+            tmpGroundNormal.x,
+            tmpGroundNormal.y,
+            tmpGroundNormal.z,
+            COLLIDER_HALF_Z,
+          );
+          body.setTranslation({ x: translation.x, y: restY, z: translation.z }, true);
+          body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        }
         beginCountdown();
       }
+      tickDriveSfxSample(IDLE_DRIVE_SFX_SAMPLE);
+      return;
+    }
+
+    if (hud.status === 'countdown') {
+      // Physics stays live during the countdown so the solver holds the true contact rest pose (pausing froze the body mid-settle, sunk under the asphalt).
+      body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      clearSkidTrail();
+      driveVisualRef.current.kerbRumble = 0;
       tickDriveSfxSample(IDLE_DRIVE_SFX_SAMPLE);
       return;
     }
