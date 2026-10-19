@@ -655,8 +655,6 @@ export const Vehicle = ({
       // Physics stays live during the countdown so the solver holds the true contact rest pose (pausing froze the body mid-settle, sunk under the asphalt).
       body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-      // Contact slop at the start pad shoves the parked body along the surface normal each
-      // step — lock x/z, y keeps settling to the true rest height
       if (parkedXZ.current) {
         body.setTranslation(
           {
