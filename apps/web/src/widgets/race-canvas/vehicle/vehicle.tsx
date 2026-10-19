@@ -433,6 +433,8 @@ export const Vehicle = ({
   const { world, rapier } = useRapier();
   const lastNonce = useRef(resetNonce);
   const awaitingLand = useRef(true);
+  /** Locked x/z for the parked (countdown) pose */
+  const parkedXZ = useRef<{ x: number; z: number } | null>(null);
   const groundedGrace = useRef(0);
   const lastGroundNormal = useRef({ x: 0, y: 1, z: 0 });
   /** Smoothed target vertical velocity for sliding along the surface */
@@ -481,6 +483,7 @@ export const Vehicle = ({
     if (lastNonce.current !== resetNonce) {
       lastNonce.current = resetNonce;
       awaitingLand.current = true;
+      parkedXZ.current = null;
       resetTireHitDamping();
       resetOilGrip();
       resetDriveSfx();
@@ -641,6 +644,7 @@ export const Vehicle = ({
           body.setTranslation({ x: translation.x, y: restY, z: translation.z }, true);
           body.setLinvel({ x: 0, y: 0, z: 0 }, true);
         }
+        parkedXZ.current = { x: translation.x, z: translation.z };
         beginCountdown();
       }
       tickDriveSfxSample(IDLE_DRIVE_SFX_SAMPLE);
@@ -651,6 +655,18 @@ export const Vehicle = ({
       // Physics stays live during the countdown so the solver holds the true contact rest pose (pausing froze the body mid-settle, sunk under the asphalt).
       body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      // Contact slop at the start pad shoves the parked body along the surface normal each
+      // step — lock x/z, y keeps settling to the true rest height
+      if (parkedXZ.current) {
+        body.setTranslation(
+          {
+            x: parkedXZ.current.x,
+            y: translation.y,
+            z: parkedXZ.current.z,
+          },
+          true,
+        );
+      }
       clearSkidTrail();
       driveVisualRef.current.kerbRumble = 0;
       tickDriveSfxSample(IDLE_DRIVE_SFX_SAMPLE);

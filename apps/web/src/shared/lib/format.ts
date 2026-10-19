@@ -9,3 +9,6 @@ export const formatRaceTime = (ms: number): string => {
   const hs = String(hundredths).padStart(2, '0');
   return `${mm}:${ss}.${hs}`;
 };
+
+/** Formats a millisecond gap as seconds with two decimals, e.g. 2450 → "2.45s" */
+export const formatGap = (ms: number): string => `${(Math.max(0, ms) / 1000).toFixed(2)}s`;
