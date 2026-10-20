@@ -416,7 +416,12 @@ export const RacePage = () => {
             }
             leaderboardSlot={
               leaderboard && leaderboard.length > 0 ? (
-                <LeaderboardTable entries={leaderboard} highlightUserId={user?.id} maxRows={5} />
+                <LeaderboardTable
+                  entries={leaderboard}
+                  highlightUserId={user?.id}
+                  maxRows={5}
+                  variant="compact"
+                />
               ) : null
             }
             onRestart={restart}

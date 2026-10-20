@@ -39,6 +39,26 @@ describe('LeaderboardTable', () => {
     expect(region).toHaveAttribute('tabindex', '0');
   });
 
+  it('compact variant fits the container: no date column, no min-width, no scroll region', () => {
+    const entries: TLeaderboardEntry[] = [
+      {
+        rank: 1,
+        userId: 'u1',
+        nickname: 'test_user',
+        timeMs: 40_120,
+        createdAt: '2026-01-01T12:00:00.000Z',
+      },
+    ];
+
+    render(<LeaderboardTable entries={entries} variant="compact" />);
+
+    expect(screen.queryByRole('columnheader', { name: /дата|date/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region')).not.toBeInTheDocument();
+    const table = screen.getByRole('table');
+    expect(table.className).not.toContain('min-w');
+    expect(table.className).toContain('table-auto');
+  });
+
   it('highlights the current user nickname', () => {
     const entries: TLeaderboardEntry[] = [
       {

@@ -72,12 +72,12 @@ export const RaceFinishOverlay = ({
       </div>
       <div
         ref={panelRef}
-        className="sega-panel relative z-10 max-h-[90dvh] w-full max-w-lg overflow-y-auto p-6 text-[var(--fg)]"
+        className="sega-panel relative z-10 max-h-[90dvh] w-full max-w-lg overflow-y-auto overscroll-contain p-4 text-[var(--fg)] sm:p-6"
       >
         <p className="text-xs uppercase tracking-widest text-[var(--sega-cyan)]">{trackName}</p>
         <h2
           id="finish-title"
-          className="sega-finish-title mt-1 text-3xl font-semibold uppercase text-[var(--sega-yellow)]"
+          className="sega-finish-title mt-1 text-2xl font-semibold uppercase text-[var(--sega-yellow)] sm:text-3xl"
         >
           {t('race.finishTitle')}
         </h2>
@@ -124,7 +124,7 @@ export const RaceFinishOverlay = ({
           </div>
         ) : null}
 
-        <div className="mt-6 flex flex-col gap-2">
+        <div className="mt-4 flex flex-col gap-2 sm:mt-6">
           <Button onClick={onRestart}>{t('race.restart')}</Button>
           {!isGuest ? (
             <Button variant="ghost" onClick={onOpenLeaderboard}>
