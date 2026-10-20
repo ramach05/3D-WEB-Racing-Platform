@@ -1,5 +1,6 @@
 import type { TDriveSfxSample } from './drive-sfx-bus';
 import { mapGravelFromOffroad, shouldPulseKerbTick } from './drive-sfx-map';
+import { attachAudioUnlock } from './audio-unlock';
 
 /** Quieter than the music (~0.1) so SFX do not drown out the chiptune */
 const MASTER_GAIN = 0.12;
@@ -11,7 +12,10 @@ type TNoiseLayer = {
   gain: GainNode;
 };
 
-/** Procedural driving SFX without a continuous driving hum: tire screech, scrape, impacts, oil-slap, gravel and kerb tick. */
+/**
+ * Procedural driving SFX without a continuous driving hum:
+ * tire screech, scrape, impacts, oil-slap, gravel and kerb tick.
+ */
 export class DrivingSfxEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -22,6 +26,7 @@ export class DrivingSfxEngine {
   private paused = false;
   private muted = false;
   private generation = 0;
+  private disposeUnlock: (() => void) | null = null;
 
   private tire: TNoiseLayer | null = null;
   private scrape: TNoiseLayer | null = null;
@@ -166,12 +171,22 @@ export class DrivingSfxEngine {
       this.buildGraph(this.ctx);
     }
     this.applyMaster();
+    this.disposeUnlock?.();
+    this.disposeUnlock = null;
 
-    if (this.ctx.state === 'suspended') {
-      await this.ctx.resume();
+    try {
+      if (this.ctx.state === 'suspended') {
+        await this.ctx.resume();
+      }
+    } catch {
+      /* autoplay blocked: Safari rejects resume() without a gesture */
     }
-    if (generation !== this.generation || !this.running) {
+    if (generation !== this.generation || !this.running || !this.ctx) {
       return;
+    }
+    if (this.ctx.state !== 'running') {
+      // Started sources begin playing once the context resumes on the first gesture
+      this.disposeUnlock = attachAudioUnlock(this.ctx, () => undefined);
     }
   };
 
@@ -258,6 +273,8 @@ export class DrivingSfxEngine {
   stop = (): void => {
     this.generation += 1;
     this.running = false;
+    this.disposeUnlock?.();
+    this.disposeUnlock = null;
 
     const stopOsc = (node: AudioScheduledSourceNode | null) => {
       if (!node) {

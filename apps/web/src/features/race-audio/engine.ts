@@ -1,4 +1,5 @@
 import type { TTrackAudioTheme } from '@/entities/track';
+import { attachAudioUnlock } from './audio-unlock';
 
 /** Race BGM theme: track loop or finish victory */
 export type TRaceMusicTheme = TTrackAudioTheme | 'finish';
@@ -370,6 +371,7 @@ export class ChiptuneEngine {
   private muted = false;
   private running = false;
   private generation = 0;
+  private disposeUnlock: (() => void) | null = null;
   private readonly activeSources = new Set<AudioScheduledSourceNode>();
 
   /** Whether sound may play right now */
@@ -554,15 +556,30 @@ export class ChiptuneEngine {
     this.theme = theme;
     this.clearTimer();
     this.stopAllNotes();
+    this.disposeUnlock?.();
+    this.disposeUnlock = null;
 
     const ctx = this.ensureContext();
     if (!ctx) {
       return;
     }
-    if (ctx.state === 'suspended') {
-      await ctx.resume();
+    try {
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+    } catch {
+      /* autoplay blocked: Safari rejects resume() without a gesture */
     }
     if (generation !== this.generation || !this.running) {
+      return;
+    }
+    if (ctx.state !== 'running') {
+      // Chrome keeps resume() pending until the first gesture: retry there and start then
+      this.disposeUnlock = attachAudioUnlock(ctx, () => {
+        if (generation === this.generation && this.running) {
+          this.syncPlayback();
+        }
+      });
       return;
     }
     this.syncPlayback();
@@ -590,6 +607,8 @@ export class ChiptuneEngine {
   stop = (): void => {
     this.generation += 1;
     this.running = false;
+    this.disposeUnlock?.();
+    this.disposeUnlock = null;
     this.clearTimer();
     this.stopAllNotes();
     this.theme = null;

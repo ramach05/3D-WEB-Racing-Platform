@@ -23,7 +23,7 @@ export const HomePage = () => {
 
   return (
     <PageShell>
-      <PageMeta title={t('home.title')} />
+      <PageMeta />
       <section className="sega-panel relative p-6 md:p-10">
         <p className="text-sm uppercase tracking-[0.3em] text-[var(--sega-cyan)]">
           {t('home.tagline')}

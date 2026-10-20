@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { HomePage } from '@/pages/home';
@@ -6,12 +6,14 @@ import { LeaderboardPage } from '@/pages/leaderboard';
 import { LoginPage } from '@/pages/login';
 import { ProfilePage } from '@/pages/profile';
 import { RegisterPage } from '@/pages/register';
-import { SegaRouteProgress, SegaSkeleton } from '@/shared/ui';
+import { SegaLoader, SegaRouteProgress, SegaSkeleton } from '@/shared/ui';
 import { AppHeader } from '@/widgets/header';
 
 // 3D pages are lazy: R3F/Rapier chunks and GLB fetches stay out of light pages
-const GaragePage = lazy(() => import('@/pages/garage').then((m) => ({ default: m.GaragePage })));
-const RacePage = lazy(() => import('@/pages/race').then((m) => ({ default: m.RacePage })));
+const importGaragePage = () => import('@/pages/garage').then((m) => ({ default: m.GaragePage }));
+const importRacePage = () => import('@/pages/race').then((m) => ({ default: m.RacePage }));
+const GaragePage = lazy(importGaragePage);
+const RacePage = lazy(importRacePage);
 const TracksPage = lazy(() => import('@/pages/tracks').then((m) => ({ default: m.TracksPage })));
 
 type TAppLayoutProps = {
@@ -22,6 +24,22 @@ type TAppLayoutProps = {
 /** Root layout: header + main */
 const AppLayout = ({ children }: TAppLayoutProps) => {
   const { t } = useTranslation();
+
+  // Warms the heavy 3D chunks while idle: entering a race then skips the suspense fallback
+  useEffect(() => {
+    const prefetch = (): void => {
+      void importRacePage();
+      void importGaragePage();
+    };
+    // DOM lib types it as always-present, but older Safari lacks it
+    const requestIdle: typeof window.requestIdleCallback | undefined = window.requestIdleCallback;
+    if (requestIdle) {
+      const idleId = requestIdle.call(window, prefetch, { timeout: 5000 });
+      return (): void => window.cancelIdleCallback?.(idleId);
+    }
+    const timerId = window.setTimeout(prefetch, 2000);
+    return (): void => window.clearTimeout(timerId);
+  }, []);
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--bg)] text-[var(--fg)]">
@@ -52,6 +70,16 @@ const PageSkeleton = () => (
   </div>
 );
 
+/** Chunk-loading screen for the race: same look as the in-page scene loader */
+const RaceChunkFallback = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="sega-scanlines relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-black">
+      <SegaLoader className="min-h-0 py-16" label={t('race.loadingScene')} />
+    </div>
+  );
+};
+
 /** SPA routes */
 export const AppRouter = () => {
   return (
@@ -62,7 +90,14 @@ export const AppRouter = () => {
             <Route path="/" element={<HomePage />} />
             <Route path="/tracks" element={<TracksPage />} />
             <Route path="/garage" element={<GaragePage />} />
-            <Route path="/race/:trackSlug" element={<RacePage />} />
+            <Route
+              path="/race/:trackSlug"
+              element={
+                <Suspense fallback={<RaceChunkFallback />}>
+                  <RacePage />
+                </Suspense>
+              }
+            />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/login" element={<LoginPage />} />

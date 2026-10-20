@@ -6,7 +6,7 @@ import { useGetLeaderboardQuery } from '@/entities/leaderboard';
 import { useCreateRaceResultMutation } from '@/entities/race-result';
 import { getTrackConfig, useGetTracksQuery } from '@/entities/track';
 import { useAuthUser } from '@/features/auth';
-import { useRaceAudio, useRaceDrivingSfx } from '@/features/race-audio';
+import { useAudioAutoplayGate, useRaceAudio, useRaceDrivingSfx } from '@/features/race-audio';
 import {
   bindRaceInput,
   finishRace,
@@ -75,6 +75,7 @@ export const RacePage = () => {
   );
   const cameraMode = useCameraMode();
   const user = useAuthUser();
+  const awaitingGesture = useAudioAutoplayGate();
   const [createResult] = useCreateRaceResultMutation();
   const [resetNonce, setResetNonce] = useState(0);
   const [restartToast, setRestartToast] = useState(false);
@@ -137,7 +138,8 @@ export const RacePage = () => {
   useRaceAudio({
     theme: hudStatus === 'finished' ? 'finish' : (config?.audioTheme ?? null),
     paused: hudStatus === 'paused',
-    enabled: Boolean(config),
+    // Music starts exactly with the countdown
+    enabled: Boolean(config) && hudStatus !== 'ready',
     muted: musicMuted,
   });
 
@@ -390,6 +392,17 @@ export const RacePage = () => {
             footer={!user && hudStatus !== 'finished' ? t('race.guestHint') : undefined}
           />
           <RaceCountdownOverlay />
+          {awaitingGesture && hudStatus === 'ready' ? (
+            <div
+              className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center"
+              role="status"
+              aria-live="assertive"
+            >
+              <p className="sega-panel sega-blink bg-black/80 px-6 py-3 text-lg uppercase text-[var(--sega-yellow)]">
+                {t('race.pressStart')}
+              </p>
+            </div>
+          ) : null}
           <RaceFinishMomentOverlay
             active={hudStatus === 'finished' && !showFinishOverlay}
             timeMs={finishMeta?.timeMs ?? hudFinishMs}

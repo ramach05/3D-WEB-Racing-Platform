@@ -13,6 +13,12 @@ describe('PageMeta', () => {
     expect(document.title).toBe('Garage — 3D WEB Racing Platform');
   });
 
+  it('sets the product name as-is when title is omitted', () => {
+    render(<PageMeta />);
+
+    expect(document.title).toBe('3D WEB Racing Platform');
+  });
+
   it('replaces the title when the page changes', () => {
     const { rerender } = render(<PageMeta title="Garage" />);
     rerender(<PageMeta title="Tracks" />);

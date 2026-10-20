@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 type TPageMetaProps = {
   /** Page title without the product suffix */
-  title: string;
+  title?: string;
 };
 
 /** Sets document.title on mount/prop change; re-syncs on locale switch; renders nothing */
@@ -12,7 +12,7 @@ export const PageMeta = ({ title }: TPageMetaProps) => {
 
   // Update document.title on mount and when title or locale changes
   useEffect(() => {
-    document.title = `${title} — ${t('meta.product')}`;
+    document.title = title ? `${title} — ${t('meta.product')}` : t('meta.product');
   }, [title, t]);
 
   return null;

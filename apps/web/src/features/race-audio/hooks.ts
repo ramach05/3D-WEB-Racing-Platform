@@ -1,4 +1,5 @@
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { watchAudioGate } from './audio-gate';
 import {
   consumeDriveImpact,
   consumeDriveOilSlap,
@@ -26,6 +27,16 @@ type TUseRaceDrivingSfxOptions = {
   paused: boolean;
   /** Shared mute with the music */
   muted: boolean;
+};
+
+/** true = the browser blocked autoplay and a user gesture is still needed to start audio */
+export const useAudioAutoplayGate = (): boolean => {
+  const [awaitingGesture, setAwaitingGesture] = useState(false);
+
+  // Probes autoplay permission on mount; unlocks on the first gesture until cancel
+  useEffect(() => watchAudioGate(setAwaitingGesture), []);
+
+  return awaitingGesture;
 };
 
 /** Starts the chiptune on the race page */

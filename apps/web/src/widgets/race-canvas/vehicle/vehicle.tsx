@@ -8,6 +8,7 @@ import type { TCarSkin, TLoopPoint, TOrientedBox, TVec3 } from '@/entities/track
 import type { TVehicleId } from '@/entities/vehicle';
 import {
   IDLE_DRIVE_SFX_SAMPLE,
+  isAudioUnlocked,
   mapOilSlapFromSpeed,
   mapWallScrape,
   pulseDriveOilSlap,
@@ -630,7 +631,13 @@ export const Vehicle = ({
     driveVisualRef.current.brake = input.brake;
 
     if (hud.status === 'ready') {
-      if (awaitingLand.current && wheelGrounded && Math.abs(linvel.y) < LAND_SETTLE_VY) {
+      // Hold the countdown until audio may play: music must start exactly on "3"
+      if (
+        awaitingLand.current &&
+        wheelGrounded &&
+        Math.abs(linvel.y) < LAND_SETTLE_VY &&
+        isAudioUnlocked()
+      ) {
         awaitingLand.current = false;
         // Drop lands with solver penetration and may bounce: snap to the rest height.
         if (roadYCount > 0) {

@@ -104,6 +104,7 @@ export const ruMessages = {
     track: 'Трасса',
     status: 'Статус',
     ready: 'На старт',
+    pressStart: 'Жми любую клавишу — поехали',
     countdown: 'Отсчёт',
     countdownGo: 'GO!',
     racing: 'Заезд',
@@ -238,7 +239,7 @@ export const ruMessages = {
   boot: {
     waiting: 'Подключаемся к серверу',
     lost: 'Связь с сервером потеряна',
-    hint: 'API еще поднимается — при первом запуске нужно несколько секунд.',
+    hint: 'API ещё поднимается — при первом запуске нужно несколько секунд.',
     hintLost: 'Сервер недоступен: проверь, что запущен pnpm ready-steady-go.',
   },
   common: {
@@ -356,6 +357,7 @@ export const enMessages = {
     track: 'Track',
     status: 'Status',
     ready: 'On your marks',
+    pressStart: 'Press any key to start',
     countdown: 'Countdown',
     countdownGo: 'GO!',
     racing: 'Racing',

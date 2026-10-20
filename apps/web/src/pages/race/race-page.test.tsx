@@ -15,6 +15,8 @@ import { createTestStore } from '@/test/render';
 const mocks = vi.hoisted(() => ({
   /** onFirstFrame callback the test fires manually instead of a real scene render */
   firstFrame: null as null | (() => void),
+  /** autoplay gate state the mocked page hook reports */
+  awaitingGesture: false,
 }));
 
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -48,6 +50,7 @@ vi.mock('@/features/auth', async (importOriginal) => {
 vi.mock('@/features/race-audio', () => ({
   useRaceAudio: vi.fn(),
   useRaceDrivingSfx: vi.fn(),
+  useAudioAutoplayGate: () => mocks.awaitingGesture,
 }));
 
 vi.mock('@/widgets/race-canvas', () => ({
@@ -68,10 +71,12 @@ vi.mock('@/widgets/race-canvas', () => ({
 
 import { useGetLeaderboardQuery } from '@/entities/leaderboard';
 import { useGetTracksQuery } from '@/entities/track';
+import { useRaceAudio } from '@/features/race-audio';
 import { RacePage } from './race-page';
 
 const mockedUseGetTracksQuery = vi.mocked(useGetTracksQuery);
 const mockedUseGetLeaderboardQuery = vi.mocked(useGetLeaderboardQuery);
+const mockedUseRaceAudio = vi.mocked(useRaceAudio);
 
 type TTracksQuery = ReturnType<typeof useGetTracksQuery>;
 type TLeaderboardQuery = ReturnType<typeof useGetLeaderboardQuery>;
@@ -91,7 +96,9 @@ describe('RacePage', () => {
   beforeEach(() => {
     mockedUseGetTracksQuery.mockReset();
     mockedUseGetLeaderboardQuery.mockReset();
+    mockedUseRaceAudio.mockReset();
     mocks.firstFrame = null;
+    mocks.awaitingGesture = false;
     mockedUseGetTracksQuery.mockReturnValue(
       mockQueryResult<TTracksQuery>({
         data: [
@@ -122,5 +129,19 @@ describe('RacePage', () => {
 
     await waitFor(() => expect(screen.queryByText(/готовим трассу/i)).not.toBeInTheDocument());
     expect(screen.getByText('Coastal Oval')).toBeInTheDocument();
+  });
+
+  it('keeps music disabled in ready state and shows the press-start hint while audio is gated', async () => {
+    mocks.awaitingGesture = true;
+    renderPage(<RacePage />);
+
+    await waitFor(() => expect(screen.getByTestId('race-canvas')).toBeInTheDocument());
+    act(() => {
+      mocks.firstFrame?.();
+    });
+
+    expect(screen.getByText(/жми любую клавишу/i)).toBeInTheDocument();
+    // Before the countdown (status 'ready') the music engine must stay disabled
+    expect(mockedUseRaceAudio.mock.calls[0]?.[0]?.enabled).toBe(false);
   });
 });

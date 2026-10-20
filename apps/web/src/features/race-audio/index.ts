@@ -19,4 +19,5 @@ export {
   shouldPulseKerbTick,
 } from './drive-sfx-map';
 export { DrivingSfxEngine } from './driving-sfx-engine';
-export { useRaceAudio, useRaceDrivingSfx } from './hooks';
+export { isAudioUnlocked } from './audio-gate';
+export { useAudioAutoplayGate, useRaceAudio, useRaceDrivingSfx } from './hooks';
