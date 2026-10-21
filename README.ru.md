@@ -1,6 +1,6 @@
 # 3D WEB Racing Platform
 
-[English](README.md) | **Русский**
+[🇬🇧 English](README.md) | 🇷🇺 **Русский**
 
 Браузерная **time-trial** 3D-гонка: заезд на время против лидерборда. React 19 + React Three Fiber + физика Rapier (WASM) на фронте, NestJS 11 + Prisma 7 на бэкенде. Монорепозиторий на pnpm, Feature-Sliced Design, стабильные **~60 fps** в браузере.
 
@@ -9,6 +9,10 @@
 [![Node](https://img.shields.io/badge/node-%E2%89%A5%2022.12-3c873a)](.nvmrc)
 [![pnpm](https://img.shields.io/badge/pnpm-10.15-orange)](package.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)](tsconfig.base.json)
+[![Initial bundle](https://img.shields.io/badge/initial%20bundle-~93%20kB%20gz-blueviolet)](#производительность-и-perf-hud)
+[![Tests](https://img.shields.io/badge/tests-572%20Vitest%20%2B%205%20Playwright-brightgreen)](#тесты)
+
+**Содержание**: [Акценты](#инженерные-акценты) · [Фичи](#фичи) · [Управление](#управление) · [Архитектура](#архитектура) · [Стек](#стек-и-почему-именно-так) · [Auth и безопасность](#auth-и-безопасность) · [Производительность](#производительность-и-perf-hud) · [Тесты](#тесты) · [Быстрый старт](#быстрый-старт) · [Разработка](#разработка) · [Компромиссы](#компромиссы-и-ограничения) · [Roadmap](#roadmap) · [Автор](#автор)
 
 <!-- GAMEPLAY VIDEOS: плееры ниже указывают на заглушки github.com/user-attachments.
      Для (пере)публикации: редактировать этот README на github.com, перетащить нужной docs/video/*.mp4
@@ -74,7 +78,7 @@ Night City и Storm Eight в движении (главное видео выш�
 | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | [![Chase-камера](docs/screenshots/thumbs/race-1.png)](docs/screenshots/race-1.png) | [![Bumper-камера](docs/screenshots/thumbs/race-3-camera-bumper.png)](docs/screenshots/race-3-camera-bumper.png) | [![TV-камера](docs/screenshots/thumbs/race-3-camera-tv.png)](docs/screenshots/race-3-camera-tv.png) |
 
-**Вокруг заезда** — лидерборды по трассам (на сервере, фильтр по slug), гостевой режим с рекордами в `localStorage`, профиль со сводной статистикой, лучшими временами по трассам с местом и отставанием от лидера и 6 достижениями; i18n (EN/RU); светлая/темная тема; **мобильная поддержка**: тач-контроли (газ / тормоз / руль / ручник), компактный HUD, safe-area и адаптивная верстка до ширины телефона.
+**Вокруг заезда** — лидерборды по трассам (на сервере, фильтр по slug), гостевой режим с рекордами в `localStorage`, профиль со сводной статистикой, лучшими временами по трассам с местом и отставанием от лидера и 6 достижениями; i18n (EN/RU); светлая/темная тема; **мобильная поддержка**: тач-контроли (газ / тормоз / руль / ручник), компактный HUD, safe-area и адаптивная верстка до ширины телефона. Меню и модальные окна управляются с клавиатуры, focus trap на месте.
 
 ## Управление
 
@@ -105,9 +109,9 @@ Night City и Storm Eight в движении (главное видео выш�
 
 ```mermaid
 flowchart LR
-  Web["apps/web SPA"] -->|"REST JSON + JWT"| Api["apps/api NestJS"]
-  Api --> Db["SQLite via Prisma"]
-  Web --> Shared["packages/shared types"]
+  Web["apps/web<br/>SPA"] -->|"REST JSON<br/>+ JWT"| Api["apps/api<br/>NestJS"]
+  Api --> Db["SQLite<br/>via Prisma"]
+  Web --> Shared["packages/shared<br/>types"]
   Api --> Shared
 ```
 
@@ -120,12 +124,12 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-  Input[Клавиатура / тач] --> Ctrl[Vehicle useFrame]
-  Ctrl --> Rapier[Rapier RigidBody]
-  Sensors[Чекпоинты] --> Sim[race-session vanilla store]
+  Input["Клавиатура<br/>/ тач"] --> Ctrl["Vehicle<br/>useFrame"]
+  Ctrl --> Rapier["Rapier<br/>RigidBody"]
+  Sensors["Чекпоинты"] --> Sim["race-session<br/>vanilla store"]
   Ctrl --> Sim
-  Sim --> Hud[HUD useSyncExternalStore]
-  Sim -->|"только на финише"| Rtk[RTK Query POST race-results]
+  Sim --> Hud["HUD useSync<br/>ExternalStore"]
+  Sim -->|"только на<br/>финише"| Rtk["RTK Query POST<br/>race-results"]
 ```
 
 ```
@@ -189,6 +193,7 @@ packages/
 - Уведомления HUD троттлятся ~80 мс; время/скорость пишутся в DOM напрямую в rAF-цикле — React-стейт-апдейты внутри `useFrame` были причиной реального Chrome-фриза (коммит `1633782`).
 - Рендер: `dpr` ограничен `[1, 1.5]`, карты теней 1024, тени солнца/луны следуют за машиной, LOD прожекторов фонарей с отсечкой по дистанции, бюджеты света/теней на сцену (Night City), Bloom+Vignette только на ночной трассе.
 - Ассеты: всё процедурное, кроме 5 GLB-кузовов; патченный GLTF-загрузчик декодирует текстуры сразу в `ImageBitmap`; кузова предзагружаются до монтирования заезда; маршруты — lazy-load.
+- Форма бандла (из `pnpm build`): оболочка приложения + Redux/i18n/роутер весят **~93 kB gz** (JS 84 + CSS 9); 3D-движок — three, Rapier WASM, post-FX, 1.29 MB gz — отдельный чанк, который грузится только при открытии заезда или превью в гараже.
 - Уровень приложения: SPA гейтится по готовности API, идемпотентные GET ретраятся с backoff, WebGL-контекст восстанавливается после потери.
 
 **Perf-HUD (FPS / CPU / MEM).** Браузер не может прочитать системный CPU, поэтому HUD меряет то, что честно доступно: **FPS** — отрисованных кадров/с; **CPU%** — доля времени main-thread, уходящая на работу по фрейму (замер в цикле рендера, сэмпл каждые 250 мс), то есть «насколько эта вкладка загружает машину»; **MEM** — `performance.memory.usedJSHeapSize` (куча JS), API доступен только в Chromium, в остальных скрывается. Статистика заезда (круг, сплит, лучшее) идет рядом со стоимостью её отрисовки.
@@ -221,6 +226,17 @@ pnpm ready-steady-go                        # сборка shared → prisma mig
 
 Seed-аккаунты: `test_user` / `1234` (и соперник `rival_racer` / `1234`). Нужны Node **22.12+** и pnpm **10.15** — если что-то не стартует, таблица траблшутинга и полная матрица команд в [docs/development.ru.md](docs/development.ru.md).
 
+## Разработка
+
+| Команда                                            | Что делает                                                  |
+| -------------------------------------------------- | ----------------------------------------------------------- |
+| `pnpm ready-steady-go`                             | сборка shared → prisma migrate+seed → dev-серверы web + api |
+| `pnpm lint` / `pnpm typecheck` / `pnpm format`     | ESLint (`--max-warnings=0`), `tsc -b`, Prettier             |
+| `pnpm test` / `test:web` / `test:api` / `test:e2e` | Vitest (unit + RTL/MSW), API e2e, Playwright                |
+| `pnpm build`                                       | прод-сборка всех пакетов                                    |
+
+husky pre-commit-хук локально прогоняет lint/format/typecheck; коммиты — по Conventional Commits (`feat(web): …`). CI (GitHub Actions, Node 22.12) на каждом пуше держит те же гейты: `lint → typecheck → migrate → test → build`.
+
 ## Компромиссы и ограничения
 
 - **Arcade-физика**: yaw-only, от стен машина скользит вдоль, а не отскакивает, макс. ~108 км/ч. Симулятор с покрышками — другой проект.
@@ -244,4 +260,6 @@ Seed-аккаунты: `test_user` / `1234` (и соперник `rival_racer` /
 
 ## Автор
 
-Roman Kovalenko — [github.com/ramach05](https://github.com/ramach05)
+**Roman Kovalenko** — соло-автор: концепция продукта, архитектура, фронтенд (React / R3F / Rapier / Web Audio), бэкенд (NestJS / Prisma), тесты и CI.
+
+[github.com/ramach05](https://github.com/ramach05) · [linkedin.com/in/ramach05](https://linkedin.com/in/ramach05)
