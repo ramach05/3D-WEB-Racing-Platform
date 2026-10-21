@@ -22,3 +22,6 @@ apps/api/src/generated
 *.tsbuildinfo
 .eslintcache
 .pnpm-store/
+
+# Локальные исходники видео (тяжёлые .mov + конверт-клипы для загрузки на GitHub)
+docs/video/

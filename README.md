@@ -10,16 +10,24 @@ Browser **time-trial** 3D racer: beat the clock, chase the leaderboard. React 19
 [![pnpm](https://img.shields.io/badge/pnpm-10.15-orange)](package.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)](tsconfig.base.json)
 
-<!-- VIDEO SLOT (main hero video). After recording, replace the note below with:
-     ![Gameplay](docs/screenshots/gameplay.mp4)   — recording spec: docs/development.md -->
+<!-- GAMEPLAY VIDEOS: inline players below point at github.com/user-attachments placeholders.
+     To (re)publish: edit this README on github.com, drag the matching docs/video/*.mp4 into the editor
+     and paste the generated https://github.com/user-attachments/assets/… URL over the placeholder.
+     Recording & conversion spec: docs/development.md#gameplay-media -->
 
-> 🎥 **Gameplay video coming soon** — what it will cover and how to record it: [docs/development.md](docs/development.md#recording-gameplay-video).
+![Full Coastal Oval run — countdown, chase camera, HUD, drift, finish](https://github.com/user-attachments/assets/df39ebec-9388-4200-a915-d134cc620ee3)
 
-| **Home**                              | **Tracks**                               |
-| ------------------------------------- | ---------------------------------------- |
-| ![](docs/screenshots/home.png)        | ![](docs/screenshots/tracks.png)         |
-| **Race** — chase camera, HUD, minimap | **Leaderboard** — per-track, server-side |
-| ![](docs/screenshots/race.png)        | ![](docs/screenshots/leaderboard.png)    |
+| **Home**                                                                  | **Tracks**                                                                      | **Garage**                                                                   | **Leaderboard**                                                                             |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [![Home](docs/screenshots/thumbs/home.png)](docs/screenshots/home.png)    | [![Tracks](docs/screenshots/thumbs/tracks.png)](docs/screenshots/tracks.png)    | [![Garage](docs/screenshots/thumbs/garage.png)](docs/screenshots/garage.png) | [![Leaderboard](docs/screenshots/thumbs/leaderboard.png)](docs/screenshots/leaderboard.png) |
+| **Login**                                                                 | **Profile**                                                                     | **Race** — chase camera, HUD, minimap                                        | **Finish** — SEGA-style moment                                                              |
+| [![Login](docs/screenshots/thumbs/login.png)](docs/screenshots/login.png) | [![Profile](docs/screenshots/thumbs/profile.png)](docs/screenshots/profile.png) | [![Race](docs/screenshots/thumbs/race-1.png)](docs/screenshots/race-1.png)   | [![Finish](docs/screenshots/thumbs/finish.png)](docs/screenshots/finish.png)                |
+
+Light and dark theme, one toggle (click to open full size):
+
+| **Light**                                                                     | **Dark**                                                                               |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [![Light theme](docs/screenshots/thumbs/home.png)](docs/screenshots/home.png) | [![Dark theme](docs/screenshots/thumbs/home-dark.png)](docs/screenshots/home-dark.png) |
 
 ## Engineering highlights
 
@@ -42,6 +50,15 @@ Browser **time-trial** 3D racer: beat the clock, chase the leaderboard. React 19
 
 Every track: multi-lap with ordered checkpoints, dynamic obstacles (tire stacks, fuel barrels you can bounce off), oil slicks that cut grip, trackside props with real colliders (trees, billboards, lamps, tribunes).
 
+| **Coastal Oval** — packed grandstands, sun-aligned shadows                                | **Night City** — moon, headlights, street lamps, neon bloom                      | **Storm Eight** — rain, wet asphalt, elevated deck                                                    |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| [![Coastal Oval](docs/screenshots/thumbs/race-1.png)](docs/screenshots/race-1.png)        | [![Night City](docs/screenshots/thumbs/race-2.png)](docs/screenshots/race-2.png) | [![Storm Eight](docs/screenshots/thumbs/race-3-camera-tv.png)](docs/screenshots/race-3-camera-tv.png) |
+| Night City and Storm Eight in motion (the hero video above is the full Coastal Oval run): |
+
+| **Night City — run**                                                                               | **Storm Eight — run**                                                                               |
+| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| ![Night City run](https://github.com/user-attachments/assets/1127eeef-240b-43dc-b2da-2f36a75ebff2) | ![Storm Eight run](https://github.com/user-attachments/assets/a9c95c2d-58e7-48ea-88cb-20e53603f9ab) |
+
 **Garage — 5 GLB bodies fitted to real-world class scale** (4.14–5.71 m): hatchback, sedan, pickup, Juke, sport coupe. Paint shifts with the selected track; the garage preview is live — wheels steer and spin there, driven from measured axle positions.
 
 **Physics (Rapier WASM)** — arcade, but consistent: fixed 1/60 step, steering independent of framerate, handbrake drift, per-surface feel (asphalt / kerb / offroad), dynamic obstacle damping, and the car stays glued on descending viaduct decks and crest slopes.
@@ -51,6 +68,10 @@ Every track: multi-lap with ordered checkpoints, dynamic obstacles (tire stacks,
 **Audio — 100% synthesized in JavaScript.** Chip-rock BGM is generated at runtime by the Web Audio API (oscillators + filtered noise, ~150 BPM per-track themes, storm variations, victory theme on finish), with driving SFX and rain scene audio. Zero audio files shipped.
 
 **Race UX** — three cameras (chase / bumper / TV) with FOV and shake, live minimap with a pose-projected vehicle marker, SEGA-style finish moment, pause menu, restart.
+
+| **Chase**                                                                          | **Bumper**                                                                                                      | **TV**                                                                                              |
+| ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [![Chase camera](docs/screenshots/thumbs/race-1.png)](docs/screenshots/race-1.png) | [![Bumper camera](docs/screenshots/thumbs/race-3-camera-bumper.png)](docs/screenshots/race-3-camera-bumper.png) | [![TV camera](docs/screenshots/thumbs/race-3-camera-tv.png)](docs/screenshots/race-3-camera-tv.png) |
 
 **Around the race** — per-track leaderboards (server-side, filterable by slug), guest mode with bests in `localStorage`, profile page with aggregate stats, per-track bests with rank and gap to the leader, and 6 achievements; i18n (EN/RU); light/dark theme; **mobile support**: touch controls (throttle / brake / steering / handbrake), compact HUD, safe-area insets and responsive layouts down to phone width.
 
@@ -63,6 +84,21 @@ Every track: multi-lap with ordered checkpoints, dynamic obstacles (tire stacks,
 | Handbrake (drift)        | Space          | handbrake button        |
 | Camera (chase/bumper/TV) | C              | —                       |
 | Restart / pause          | R / Esc        | HUD buttons             |
+
+<details>
+<summary><strong>Mobile &amp; menus — screen recordings</strong>: touch controls, compact HUD, safe-area insets, responsive layouts</summary>
+
+| **App tour — desktop**                                                                                  | **Menus — phone**                                                                                    | **Race — phone, touch controls**                                                                                        |
+| ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| ![App tour on desktop](https://github.com/user-attachments/assets/8e2497d8-0f78-45ad-afbb-b4904fb35ef9) | ![Menus on a phone](https://github.com/user-attachments/assets/2658f6d5-c023-4ce1-9d45-69d95ba52dd2) | ![Race on a phone with touch controls](https://github.com/user-attachments/assets/e0c7f985-91ce-46f2-a5a4-6f91abf11f85) |
+
+Mobile layouts (click to open full size):
+
+| **Home**                                                                                              | **Tracks**                                                                                                  | **Garage**                                                                                                  | **Leaderboard**                                                                                                            | **Profile**                                                                                                    |
+| ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [![Home on mobile](docs/screenshots/mobile/home-mobile.png)](docs/screenshots/mobile/home-mobile.png) | [![Tracks on mobile](docs/screenshots/mobile/tracks-mobile.png)](docs/screenshots/mobile/tracks-mobile.png) | [![Garage on mobile](docs/screenshots/mobile/garage-mobile.png)](docs/screenshots/mobile/garage-mobile.png) | [![Leaderboard on mobile](docs/screenshots/mobile/leaderboard-mobile.png)](docs/screenshots/mobile/leaderboard-mobile.png) | [![Profile on mobile](docs/screenshots/mobile/profile-mobile.png)](docs/screenshots/mobile/profile-mobile.png) |
+
+</details>
 
 ## Architecture
 
