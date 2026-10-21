@@ -1,6 +1,6 @@
 # Screenshots
 
-[English](README.md) | [Русский](README.ru.md)
+🇬🇧 **English** | [🇷🇺 Русский](README.ru.md)
 
 Fresh frames of the current build (dev, perf HUD visible in race shots). Desktop screens are 1600 px wide; `thumbs/` keeps the 640 px versions the README tables use — each thumb links to the full-size file.
 
