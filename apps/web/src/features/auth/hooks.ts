@@ -1,15 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { racingApi } from '@/shared/api';
 import { readAuthSession } from '@/shared/lib';
-import { useGetMeQuery, useLogoutSessionMutation, useRefreshSessionMutation } from './api';
+import { useLazyGetMeQuery, useLogoutSessionMutation, useRefreshSessionMutation } from './api';
 import { selectHydrated, selectUser, setHydrated } from './model';
 
-/** Hydration: refresh cookie → access in memory → /auth/me */
+/** Hydration: refresh cookie → access in memory → /auth/me; hydrated flips only once the user identity is resolved */
 export const AuthHydrator = () => {
-  const [bootstrapped, setBootstrapped] = useState(false);
-  const [hasAccess, setHasAccess] = useState(false);
   const [refreshSession] = useRefreshSessionMutation();
+  const [getMe] = useLazyGetMeQuery();
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -19,12 +18,20 @@ export const AuthHydrator = () => {
         if (!readAuthSession()) {
           await refreshSession().unwrap();
         }
+        if (readAuthSession()) {
+          // getMe applies setUser/clearAuth via onQueryStarted before unwrap resolves,
+          // so setHydrated(true) below never lands while the user is still unknown (no login/register flash)
+          const request = getMe(undefined);
+          try {
+            await request.unwrap();
+          } finally {
+            request.unsubscribe();
+          }
+        }
       } catch {
         // Guest without a cookie / expired session
       } finally {
         if (!cancelled) {
-          setHasAccess(Boolean(readAuthSession()));
-          setBootstrapped(true);
           dispatch(setHydrated(true));
         }
       }
@@ -32,9 +39,8 @@ export const AuthHydrator = () => {
     return () => {
       cancelled = true;
     };
-  }, [refreshSession, dispatch]);
+  }, [refreshSession, getMe, dispatch]);
 
-  useGetMeQuery(undefined, { skip: !bootstrapped || !hasAccess });
   return null;
 };
 

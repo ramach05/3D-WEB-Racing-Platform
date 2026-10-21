@@ -675,6 +675,18 @@ button:disabled,
   font-weight: 600;
 }
 
+@media (max-width: 40rem) {
+  .sega-track-tabs {
+    display: flex;
+  }
+
+  .sega-track-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.55rem 0.5rem;
+  }
+}
+
 .sega-field {
   display: flex;
   flex-direction: column;

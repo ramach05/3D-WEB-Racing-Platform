@@ -24,48 +24,46 @@ export const AppHeader = () => {
   const user = useAuthUser();
   const hydrated = useAuthHydrated();
   const logout = useLogout();
-  const navCols = user ? 5 : 6;
+
+  // Auth action lives in the top-right: logout for users, login link for guests, skeleton while hydrating
+  const authAction = user ? (
+    <Button variant="ghost" size="sm" className="whitespace-nowrap" onClick={logout}>
+      {t('nav.logout')}
+    </Button>
+  ) : hydrated ? (
+    <NavLink to="/login" className="sega-btn sega-btn--ghost sega-btn--sm whitespace-nowrap">
+      {t('nav.login')}
+    </NavLink>
+  ) : (
+    <span role="status" aria-label={t('auth.loading')} className="flex cursor-default items-center">
+      <SegaSkeleton className="sega-skeleton--inset h-6 w-16" />
+    </span>
+  );
 
   return (
     <header className="border-b-4 border-[var(--border)] bg-[var(--surface)]">
-      <div className="mx-auto flex max-w-5xl flex-col gap-2 px-3 py-2 md:grid md:grid-cols-[auto_1fr_auto] md:items-center md:gap-3 md:px-4">
-        <div className="flex items-center justify-between gap-2 md:contents">
-          <NavLink
-            to="/"
-            className="sega-nav-link min-w-0 shrink text-xs font-semibold uppercase tracking-wide text-[var(--sega-cyan)] md:col-start-1 md:row-start-1 md:shrink-0 md:text-sm"
-          >
-            {t('meta.product')}
-          </NavLink>
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 md:flex-nowrap md:gap-3 md:px-4">
+        <NavLink
+          to="/"
+          className="sega-nav-link order-1 min-w-0 flex-1 text-xs font-semibold uppercase tracking-wide text-[var(--sega-cyan)] md:flex-none md:text-sm"
+        >
+          {t('meta.product')}
+        </NavLink>
 
-          <div className="flex min-w-0 items-center justify-end gap-1.5 md:col-start-3 md:row-start-1 md:gap-2">
-            {user ? (
-              <>
-                <span
-                  className="max-w-[5.5rem] truncate text-xs text-[var(--sega-magenta)] sm:max-w-[8rem] md:max-w-[10rem] md:text-sm"
-                  title={user.nickname}
-                >
-                  {user.nickname}
-                </span>
-                <Button variant="ghost" size="sm" onClick={logout}>
-                  {t('nav.logout')}
-                </Button>
-              </>
-            ) : null}
-            <div
-              role="group"
-              aria-label={t('a11y.settings')}
-              className="flex shrink-0 items-center gap-1.5 md:gap-2"
-            >
-              <ThemeSwitcher size="sm" />
-              <LocaleSwitcher size="sm" />
-            </div>
-          </div>
+        <div className="order-2 flex shrink-0 items-center md:order-4">{authAction}</div>
+
+        <div
+          role="group"
+          aria-label={t('a11y.settings')}
+          className="order-3 flex w-full shrink-0 items-center justify-end gap-1.5 [&_.sega-select-trigger]:min-w-0 md:order-3 md:w-auto md:gap-2"
+        >
+          <ThemeSwitcher size="sm" />
+          <LocaleSwitcher size="sm" />
         </div>
 
         <nav
           aria-label={t('a11y.nav')}
-          className="sega-header-nav w-full md:col-start-2 md:row-start-1 md:flex md:min-w-0 md:flex-wrap md:items-center md:justify-center md:gap-1"
-          style={{ ['--sega-nav-cols' as string]: String(navCols) }}
+          className="sega-header-nav order-4 w-full md:order-2 md:flex md:w-auto md:min-w-0 md:flex-1 md:flex-wrap md:items-center md:justify-center md:gap-1"
         >
           <NavLink to="/" className={navClass} end>
             <span className="sega-header-nav__label">{t('nav.home')}</span>
@@ -82,22 +80,6 @@ export const AppHeader = () => {
           <NavLink to="/profile" className={navClass}>
             <span className="sega-header-nav__label">{t('nav.profile')}</span>
           </NavLink>
-          {user ? null : hydrated ? (
-            <NavLink to="/login" className={navClass}>
-              <span className="sega-header-nav__label">{t('nav.login')}</span>
-            </NavLink>
-          ) : (
-            <span
-              className={cx(
-                navClass({ isActive: false }),
-                'flex cursor-default items-center justify-center',
-              )}
-              role="status"
-              aria-label={t('auth.loading')}
-            >
-              <SegaSkeleton className="sega-skeleton--inset h-3.5 w-12" />
-            </span>
-          )}
         </nav>
       </div>
     </header>

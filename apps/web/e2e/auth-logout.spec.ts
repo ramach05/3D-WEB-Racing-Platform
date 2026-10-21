@@ -10,8 +10,6 @@ test('register then logout returns to guest nav', async ({ page }) => {
   await expect(page).toHaveURL(/profile/);
 
   await page.getByRole('button', { name: /выйти|log out/i }).click();
-  await expect(
-    page.getByRole('navigation').getByRole('link', { name: /вход|log in/i }),
-  ).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('link', { name: /вход|log in/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /выйти|log out/i })).toHaveCount(0);
 });
