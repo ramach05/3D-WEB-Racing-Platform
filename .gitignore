@@ -23,5 +23,5 @@ apps/api/src/generated
 .eslintcache
 .pnpm-store/
 
-# Локальные исходники видео (тяжёлые .mov + конверт-клипы для загрузки на GitHub)
+# Local video sources (heavy .mov + converted clips for GitHub upload)
 docs/video/

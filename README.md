@@ -33,7 +33,7 @@ Light and dark theme, one toggle (click to open full size):
 
 - **Race simulation does not live in Redux.** A vanilla store + `useSyncExternalStore` feeds the HUD (~80 ms throttled); time/speed are written straight to the DOM via rAF because React re-renders inside the physics loop measurably hitched Chrome. Redux/RTK Query is used only for auth/API and the one POST at the finish line. → [Performance](#performance--perf-hud)
 - **Auth as a lifecycle, not an endpoint.** 15-min access JWT held in memory only, opaque refresh token in a path-scoped httpOnly cookie, SHA-256 at rest, rotation with lineage — and replaying a rotated token revokes **all** of the user's sessions. → [Auth & security](#auth--security)
-- **558 unit/integration tests + 5 Playwright user flows.** CI gates `lint → typecheck → migrate → test → build`; a pre-commit hook repeats lint/prettier/typecheck locally. → [Testing](#testing)
+- **572 unit/integration tests + 5 Playwright user flows.** CI gates `lint → typecheck → migrate → test → build`; a pre-commit hook repeats lint/prettier/typecheck locally. → [Testing](#testing)
 - **FSD boundaries are enforced, not documented.** ESLint forbids cross-slice deep imports, `any`/`unknown`, relative parent imports and default exports.
 - **In-game performance HUD** — FPS, main-thread busy %, JS heap: what a browser can honestly measure about its own load. → [Perf HUD](#performance--perf-hud)
 - **Upstream patched** via pnpm `patchedDependencies`: a custom three-stdlib GLTF loader decodes texture bufferViews straight into `ImageBitmap` instead of blob URLs (faster, leak-free preload).
@@ -50,10 +50,11 @@ Light and dark theme, one toggle (click to open full size):
 
 Every track: multi-lap with ordered checkpoints, dynamic obstacles (tire stacks, fuel barrels you can bounce off), oil slicks that cut grip, trackside props with real colliders (trees, billboards, lamps, tribunes).
 
-| **Coastal Oval** — packed grandstands, sun-aligned shadows                                | **Night City** — moon, headlights, street lamps, neon bloom                      | **Storm Eight** — rain, wet asphalt, elevated deck                                                    |
-| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| [![Coastal Oval](docs/screenshots/thumbs/race-1.png)](docs/screenshots/race-1.png)        | [![Night City](docs/screenshots/thumbs/race-2.png)](docs/screenshots/race-2.png) | [![Storm Eight](docs/screenshots/thumbs/race-3-camera-tv.png)](docs/screenshots/race-3-camera-tv.png) |
-| Night City and Storm Eight in motion (the hero video above is the full Coastal Oval run): |
+| **Coastal Oval** — packed grandstands, sun-aligned shadows                         | **Night City** — moon, headlights, street lamps, neon bloom                      | **Storm Eight** — rain, wet asphalt, elevated deck                                                    |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| [![Coastal Oval](docs/screenshots/thumbs/race-1.png)](docs/screenshots/race-1.png) | [![Night City](docs/screenshots/thumbs/race-2.png)](docs/screenshots/race-2.png) | [![Storm Eight](docs/screenshots/thumbs/race-3-camera-tv.png)](docs/screenshots/race-3-camera-tv.png) |
+
+Night City and Storm Eight in motion (the hero video above is the full Coastal Oval run):
 
 | **Night City — run**                                                                               | **Storm Eight — run**                                                                               |
 | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -197,7 +198,7 @@ Measured: 60 fps during MVP verification of Coastal Oval runs (dev preview, Stat
 ## Testing
 
 ```
-558 tests (Vitest) — 522 web (unit + RTL/MSW integration, 98 files) · 28 API unit · 8 API e2e (supertest on a real Nest app, temp SQLite)
+572 tests (Vitest) — 536 web (unit + RTL/MSW integration, 101 files) · 28 API unit · 8 API e2e (supertest on a real Nest app, temp SQLite)
 5 Playwright flows — auth/logout, guest profile, race flow, theme+locale, tracks+leaderboard
 ```
 
