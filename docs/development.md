@@ -88,7 +88,7 @@ ffmpeg -i clip.mov -vf "scale=1920:-2:flags=lanczos,fps=60" -c:v libx264 -preset
   -c:a aac -b:a 96k -movflags +faststart clip.mp4
 ```
 
-Update flow after re-recording: edit `README.md` on github.com → drag the new mp4 into the editor → replace the `https://github.com/user-attachments/assets/REPLACE-<clip>` placeholder URL with the generated one (keep `README.ru.md` in sync); details in the comment at the top of each README.
+Update flow after re-recording: drag the new mp4 into any open issue/PR editor on github.com and **post the comment** — user-attachments go public only with a submitted comment, unpublished uploads 404 for everyone else (see issue #5) → replace the old `https://github.com/user-attachments/assets/…` URL in `README.md` and mirror it in `README.ru.md`; details in the comment at the top of each README.
 
 ## Prisma
 
