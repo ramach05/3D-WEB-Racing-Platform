@@ -88,7 +88,7 @@ ffmpeg -i clip.mov -vf "scale=1920:-2:flags=lanczos,fps=60" -c:v libx264 -preset
   -c:a aac -b:a 96k -movflags +faststart clip.mp4
 ```
 
-Обновление после перезаписи: редактировать `README.md` на github.com → перетащить новый mp4 в редактор → заменить ссылку-заглушку `https://github.com/user-attachments/assets/REPLACE-<clip>` на сгенерированную (держать `README.ru.md` в синхроне); подробности в комментарии в начале каждого README.
+Обновление после перезаписи: перетащить новый mp4 в редактор открытого issue/PR на github.com и **опубликовать комментарий** — user-attachments становятся публичными только вместе с отправленным комментарием, неотправленные отдают 404 для всех остальных (см. issue #5) → заменить старую ссылку `https://github.com/user-attachments/assets/…` в `README.md` и в синхроне в `README.ru.md`; подробности в комментарии в начале каждого README.
 
 ## Prisma
 
