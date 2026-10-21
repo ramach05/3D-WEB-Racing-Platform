@@ -1,0 +1,27 @@
+node_modules
+dist
+build
+coverage
+.turbo
+.DS_Store
+*.log
+.env
+.env.local
+*.db
+*.db-journal
+playwright-report
+test-results
+apps/web/test-results
+apps/api/prisma/dev.db
+apps/api/prisma/test.db
+apps/api/src/generated
+.idea
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.tsbuildinfo
+.eslintcache
+.pnpm-store/
+
+# Локальные исходники видео (тяжёлые .mov + конверт-клипы для загрузки на GitHub)
+docs/video/

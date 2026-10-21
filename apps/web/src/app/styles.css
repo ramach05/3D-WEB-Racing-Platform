@@ -1,0 +1,1095 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@font-face {
+  font-family: DotumChe;
+  src: url('../shared/assets/fonts/dotumche.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* One font for the whole app */
+@theme {
+  --font-sans: DotumChe, 'Courier New', monospace;
+  --font-serif: DotumChe, 'Courier New', monospace;
+  --font-mono: DotumChe, 'Courier New', monospace;
+}
+
+/* Color --* vars are set by applyTheme from @/shared/config uiPalette / uiChrome */
+:root {
+  --pixel-border: 3px;
+  /* Single arcade hover: pixel punch */
+  --sega-hover-tx: -3px;
+  --sega-hover-ty: -3px;
+  --sega-hover-shadow: 4px 4px 0 0 var(--sega-cyan), 7px 7px 0 0 var(--sega-magenta);
+  --sega-hover-shadow-pressed: 1px 1px 0 0 var(--sega-cyan);
+  --sega-seg-hover-tx: -2px;
+  --sega-seg-hover-ty: -2px;
+}
+
+.dark {
+  --pixel-border: 4px;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: DotumChe, 'Courier New', monospace;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  text-rendering: geometricPrecision;
+  image-rendering: pixelated;
+}
+
+a,
+button,
+.sega-nav-link,
+.sega-card-link,
+.sega-select-trigger,
+.sega-select-item,
+[role='button'] {
+  cursor: pointer;
+}
+
+button:disabled,
+.sega-btn:disabled {
+  cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: 2px solid var(--sega-yellow);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sega-panel {
+  border: var(--pixel-border) solid var(--border);
+  background: var(--surface);
+  box-shadow:
+    0 0 0 2px var(--bg),
+    4px 4px 0 0 var(--sega-magenta);
+}
+
+/**
+ * Overlays on top of the 3D scene (HUD/minimap/FPS on the race page).
+ * Translucent background instead of solid --surface so the panel doesn't hide the track.
+ * Declared after .sega-panel — same specificity, wins by order.
+ */
+.sega-panel--overlay {
+  background: rgb(0 0 0 / 0.65);
+  box-shadow:
+    0 0 0 2px rgb(0 0 0 / 0.55),
+    4px 4px 0 0 var(--sega-magenta);
+}
+
+.sega-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 12rem;
+  text-align: center;
+}
+
+.sega-loader__label {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--sega-yellow);
+  text-shadow:
+    3px 0 0 var(--sega-magenta),
+    -2px 2px 0 var(--sega-cyan);
+}
+
+.sega-loader__dots {
+  color: var(--sega-cyan);
+  letter-spacing: 0.15em;
+}
+
+.sega-skeleton {
+  display: block;
+  border: var(--pixel-border) solid var(--border);
+  background: var(--surface);
+  box-shadow: 3px 3px 0 0 var(--sega-magenta);
+  animation: sega-skeleton-pulse 1s steps(2, end) infinite;
+}
+
+/** Nested skeleton without its own border/shadow (inside tab/panel) */
+.sega-skeleton--inset {
+  border: 0;
+  box-shadow: none;
+  animation: sega-skeleton-pulse-inset 1s steps(2, end) infinite;
+}
+
+@keyframes sega-skeleton-pulse {
+  0%,
+  49% {
+    background: var(--surface);
+    box-shadow: 3px 3px 0 0 var(--sega-magenta);
+  }
+  50%,
+  100% {
+    background: var(--surface-hover);
+    box-shadow: 3px 3px 0 0 var(--sega-magenta);
+  }
+}
+
+@keyframes sega-skeleton-pulse-inset {
+  0%,
+  49% {
+    background: color-mix(in srgb, var(--muted) 12%, var(--surface) 88%);
+  }
+  50%,
+  100% {
+    background: color-mix(in srgb, var(--muted) 22%, var(--surface) 78%);
+  }
+}
+
+.sega-route-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  width: 100%;
+  height: 4px;
+  transform-origin: left center;
+  background: linear-gradient(
+    90deg,
+    var(--sega-cyan) 0%,
+    var(--sega-magenta) 50%,
+    var(--sega-yellow) 100%
+  );
+  box-shadow: 0 2px 0 0 var(--border);
+  animation: sega-route-progress 0.55s steps(5, end) forwards;
+  pointer-events: none;
+}
+
+@keyframes sega-route-progress {
+  0% {
+    transform: scaleX(0);
+  }
+  40% {
+    transform: scaleX(0.4);
+  }
+  70% {
+    transform: scaleX(0.75);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+/** Race HUD: fixed slot widths so the panel doesn't jump */
+.sega-race-hud {
+  box-sizing: border-box;
+  max-width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.sega-race-hud__row {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.sega-race-hud__label {
+  flex: 0 0 auto;
+}
+
+.sega-race-hud__value {
+  display: inline-block;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sega-race-hud__value--end {
+  text-align: end;
+}
+
+/** Mobile race control touch-pad (only < md) */
+.sega-touch-pad {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 15;
+  display: none;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (max-width: 767px) {
+  .sega-touch-pad {
+    display: flex;
+  }
+}
+
+.sega-touch-pad__actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  pointer-events: auto;
+}
+
+.sega-touch-pad__row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  pointer-events: auto;
+}
+
+.sega-touch-pad__cluster {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.sega-touch-pad__cluster--stack {
+  flex-direction: column;
+}
+
+.sega-touch-pad__pedals {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.45rem;
+}
+
+.sega-touch-pad__footer {
+  margin: 0;
+  pointer-events: none;
+  text-align: center;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: rgb(255 255 255 / 0.7);
+}
+
+.sega-touch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.25rem;
+  min-height: 3.25rem;
+  border: var(--pixel-border) solid var(--border);
+  background: color-mix(in srgb, var(--surface) 30%, black 70%);
+  color: var(--sega-cyan);
+  padding: 0.35rem;
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 3px 3px 0 0 var(--sega-cyan);
+  touch-action: none;
+  -webkit-touch-callout: none;
+  transition:
+    transform 80ms steps(2),
+    box-shadow 80ms steps(2),
+    background-color 80ms ease,
+    color 80ms ease;
+}
+
+.sega-touch-btn--sm {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  font-size: 0.85rem;
+  color: var(--sega-yellow);
+  box-shadow: 2px 2px 0 0 var(--sega-magenta);
+}
+
+.sega-touch-btn--steer {
+  color: var(--sega-cyan);
+}
+
+.sega-touch-btn--throttle {
+  color: var(--sega-yellow);
+  box-shadow: 3px 3px 0 0 var(--sega-yellow);
+}
+
+.sega-touch-btn--brake {
+  color: var(--sega-magenta);
+  box-shadow: 3px 3px 0 0 var(--sega-magenta);
+}
+
+.sega-touch-btn--handbrake {
+  align-self: stretch;
+  min-height: 6.9rem;
+  color: var(--sega-cyan);
+  box-shadow: 3px 3px 0 0 var(--sega-cyan);
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+}
+
+.sega-touch-btn:active,
+.sega-touch-btn[aria-pressed='true'] {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 var(--sega-cyan);
+  background: color-mix(in srgb, var(--surface-hover) 40%, black 60%);
+}
+
+.sega-touch-btn--sm:active,
+.sega-touch-btn--sm[aria-pressed='true'] {
+  box-shadow: 1px 1px 0 0 var(--sega-magenta);
+}
+
+.sega-touch-btn--throttle:active,
+.sega-touch-btn--throttle[aria-pressed='true'] {
+  box-shadow: 1px 1px 0 0 var(--sega-yellow);
+}
+
+.sega-touch-btn--brake:active,
+.sega-touch-btn--brake[aria-pressed='true'] {
+  box-shadow: 1px 1px 0 0 var(--sega-magenta);
+}
+
+.sega-touch-btn--handbrake:active,
+.sega-touch-btn--handbrake[aria-pressed='true'] {
+  box-shadow: 1px 1px 0 0 var(--sega-cyan);
+}
+
+.sega-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--pixel-border) solid var(--border);
+  background: var(--accent);
+  color: var(--accent-fg);
+  padding: 0.5rem 1rem;
+  font: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 3px 3px 0 0 var(--sega-cyan);
+  transition:
+    transform 140ms steps(4),
+    box-shadow 140ms steps(4),
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease;
+}
+
+.sega-btn--sm {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.75rem;
+  box-shadow: 2px 2px 0 0 var(--sega-cyan);
+}
+
+@media (hover: hover) {
+  .sega-btn:hover:not(:disabled) {
+    transform: translate(var(--sega-hover-tx), var(--sega-hover-ty));
+    box-shadow: var(--sega-hover-shadow);
+    border-color: var(--sega-yellow);
+  }
+}
+
+.sega-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: var(--sega-hover-shadow-pressed);
+}
+
+.sega-btn--ghost {
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: 3px 3px 0 0 var(--sega-magenta);
+}
+
+@media (hover: hover) {
+  .sega-btn--ghost:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--sega-yellow);
+    box-shadow: var(--sega-hover-shadow);
+  }
+}
+
+.sega-card-link {
+  color: inherit;
+  transition:
+    transform 140ms steps(4),
+    box-shadow 140ms steps(4),
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease;
+}
+
+@media (hover: hover) {
+  .sega-card-link:hover {
+    transform: translate(var(--sega-hover-tx), var(--sega-hover-ty));
+    background: var(--surface-hover);
+    border-color: var(--sega-yellow);
+    box-shadow:
+      0 0 0 2px var(--bg),
+      var(--sega-hover-shadow);
+  }
+}
+
+.sega-nav-link {
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    transform 140ms steps(4);
+}
+
+@media (hover: hover) {
+  .sega-nav-link:hover {
+    transform: translate(var(--sega-seg-hover-tx), var(--sega-seg-hover-ty));
+    background: var(--surface-hover);
+    color: var(--sega-yellow);
+  }
+}
+
+/** Mobile navigation: equal cells in a pixel border */
+.sega-header-nav {
+  display: grid;
+  grid-template-columns: repeat(var(--sega-nav-cols, 5), minmax(0, 1fr));
+  gap: 0;
+  max-width: 100%;
+  border: var(--pixel-border) solid var(--border);
+  background: var(--surface);
+  box-shadow: 2px 2px 0 0 var(--sega-cyan);
+}
+
+.sega-header-nav__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  border-right: var(--pixel-border) solid var(--border);
+}
+
+.sega-header-nav__link:last-child {
+  border-right: 0;
+}
+
+.sega-header-nav__label {
+  display: inline-block;
+  transition: transform 140ms steps(4);
+}
+
+@media (hover: hover) {
+  .sega-header-nav__link:hover {
+    transform: none;
+    background: var(--surface-hover);
+    color: var(--sega-yellow);
+  }
+
+  .sega-header-nav__link:hover .sega-header-nav__label {
+    transform: translateY(var(--sega-seg-hover-ty));
+  }
+}
+
+@media (min-width: 768px) {
+  .sega-header-nav {
+    display: flex;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .sega-header-nav__link {
+    border-right: 0;
+  }
+}
+
+.sega-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  border: var(--pixel-border) solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  padding: 0.35rem 0.65rem;
+  font: inherit;
+  min-width: 6.5rem;
+  box-shadow: 2px 2px 0 0 var(--sega-magenta);
+  transition:
+    transform 140ms steps(4),
+    box-shadow 140ms steps(4),
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease;
+}
+
+.sega-select-trigger--sm {
+  padding: 0.25rem 0.45rem;
+  font-size: 0.75rem;
+  min-width: 5.5rem;
+}
+
+@media (hover: hover) {
+  .sega-select-trigger:hover {
+    transform: translate(var(--sega-hover-tx), var(--sega-hover-ty));
+    box-shadow: var(--sega-hover-shadow);
+    border-color: var(--sega-yellow);
+    color: var(--sega-yellow);
+    background: var(--surface-hover);
+  }
+}
+
+.sega-select-trigger[aria-expanded='true'] {
+  background: var(--surface-hover);
+  box-shadow: var(--sega-hover-shadow-pressed);
+  color: var(--sega-yellow);
+}
+
+.sega-select-chevron {
+  display: inline-block;
+  margin-left: 0.35rem;
+  transition: transform 150ms steps(3);
+}
+
+.sega-select-trigger[aria-expanded='true'] .sega-select-chevron {
+  transform: rotate(180deg);
+}
+
+.sega-select-menu {
+  position: absolute;
+  right: 0;
+  z-index: 40;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  min-width: 100%;
+  border: var(--pixel-border) solid var(--border);
+  background: var(--surface);
+  box-shadow: 4px 4px 0 0 var(--sega-cyan);
+  animation: sega-menu-in 150ms steps(4) both;
+}
+
+@keyframes sega-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sega-select-item {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  font: inherit;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.sega-select-item--highlight {
+  background: var(--surface-hover);
+  color: var(--sega-yellow);
+}
+
+@media (hover: hover) {
+  .sega-select-item:hover {
+    background: var(--surface-hover);
+    color: var(--sega-yellow);
+  }
+}
+
+.sega-select-item--active {
+  color: var(--sega-yellow);
+}
+
+.sega-track-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0;
+  max-width: 100%;
+  border: var(--pixel-border) solid var(--border);
+  background: var(--surface);
+  box-shadow: 3px 3px 0 0 var(--sega-magenta);
+}
+
+.sega-track-tab {
+  flex: 1 1 auto;
+  min-width: 8rem;
+  border: 0;
+  border-right: var(--pixel-border) solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  padding: 0.55rem 1.1rem;
+  font: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    transform 140ms steps(4);
+}
+
+.sega-track-tab:last-child {
+  border-right: 0;
+}
+
+@media (hover: hover) {
+  .sega-track-tab:hover:not(.sega-track-tab--active) {
+    transform: translateY(var(--sega-seg-hover-ty));
+    background: var(--surface-hover);
+    color: var(--sega-yellow);
+  }
+
+  .sega-track-tab--active:hover {
+    background: var(--sega-yellow);
+    color: var(--on-yellow);
+  }
+}
+
+.sega-track-tab--active {
+  background: var(--sega-yellow);
+  color: var(--on-yellow);
+  font-weight: 600;
+}
+
+@media (max-width: 40rem) {
+  .sega-track-tabs {
+    display: flex;
+  }
+
+  .sega-track-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.55rem 0.5rem;
+  }
+}
+
+.sega-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sega-field input {
+  border: var(--pixel-border) solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  box-shadow: inset 2px 2px 0 0 rgba(0, 0, 0, 0.15);
+}
+
+.sega-field-error {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.sega-scanlines::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12) 0,
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.35;
+}
+
+@keyframes sega-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.2;
+  }
+}
+
+.sega-blink {
+  animation: sega-blink 1.1s steps(2, end) infinite;
+}
+
+/* Pulse ring under the car marker on the minimap */
+@keyframes sega-minimap-pulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.35;
+  }
+  70%,
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+.sega-minimap-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sega-minimap-pulse 1.2s ease-out infinite;
+}
+
+.sega-race-strip-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  backface-visibility: hidden;
+  animation: sega-race-strip 18s linear infinite;
+}
+
+.sega-race-strip-content {
+  flex-shrink: 0;
+  padding-right: 0;
+  white-space: nowrap;
+  color: var(--sega-magenta);
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+}
+
+@keyframes sega-race-strip {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.sega-race-toast {
+  animation: sega-toast-in 200ms steps(4) both;
+}
+
+@keyframes sega-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sega-finish-overlay {
+  animation: sega-finish-fade 220ms steps(4) both;
+}
+
+@keyframes sega-finish-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sega-finish-title {
+  animation:
+    sega-finish-pop 320ms steps(5) both,
+    sega-blink 1.1s steps(2, end) 400ms infinite;
+}
+
+@keyframes sega-finish-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.sega-finish-confetti {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.sega-finish-confetti__piece {
+  position: absolute;
+  top: -12%;
+  width: 0.55rem;
+  height: 1.4rem;
+  border-radius: 1px;
+  animation: sega-finish-fall 2.4s linear infinite;
+}
+
+.sega-finish-confetti__piece--1 {
+  left: 12%;
+  background: var(--sega-yellow);
+  animation-delay: 0s;
+}
+
+.sega-finish-confetti__piece--2 {
+  left: 28%;
+  background: var(--sega-magenta);
+  animation-delay: 0.35s;
+}
+
+.sega-finish-confetti__piece--3 {
+  left: 44%;
+  background: var(--sega-cyan);
+  animation-delay: 0.7s;
+}
+
+.sega-finish-confetti__piece--4 {
+  left: 58%;
+  background: var(--sega-yellow);
+  animation-delay: 0.15s;
+}
+
+.sega-finish-confetti__piece--5 {
+  left: 72%;
+  background: var(--sega-magenta);
+  animation-delay: 0.9s;
+}
+
+.sega-finish-confetti__piece--6 {
+  left: 86%;
+  background: var(--sega-cyan);
+  animation-delay: 0.5s;
+}
+
+@keyframes sega-finish-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(12px, 120vh, 0) rotate(220deg);
+    opacity: 0.2;
+  }
+}
+
+.sega-finish-moment {
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0.55) 0%,
+      rgba(0, 0, 0, 0.25) 55%,
+      transparent 75%
+    ),
+    rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.sega-finish-moment__wipe {
+  position: absolute;
+  inset: 38% -20% 38% -20%;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--finish-wipe-dark) 0 12px,
+    var(--finish-wipe-light) 12px 24px
+  );
+  opacity: 0;
+  transform: translateX(-30%) skewX(-12deg);
+  animation: sega-finish-moment-wipe 520ms steps(6) both;
+  pointer-events: none;
+}
+
+.sega-finish-moment__title {
+  margin: 0;
+  font-size: clamp(4.5rem, 16vw, 8.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sega-yellow);
+  text-shadow:
+    4px 4px 0 var(--sega-magenta),
+    -2px -2px 0 var(--sega-cyan);
+  animation:
+    sega-finish-moment-pop 320ms steps(5) both,
+    sega-blink 0.5s steps(2, end) 320ms 2;
+}
+
+.sega-finish-moment__time-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  animation: sega-finish-moment-pop 280ms steps(4) both;
+}
+
+.sega-finish-moment__time {
+  margin: 0;
+  font-size: clamp(3rem, 12vw, 6.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  color: var(--sega-cyan);
+  text-shadow:
+    4px 4px 0 var(--sega-yellow),
+    -2px -2px 0 var(--sega-magenta);
+}
+
+.sega-finish-moment__new-best {
+  margin: 0;
+  font-size: clamp(1rem, 3.5vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sega-magenta);
+  text-shadow: 2px 2px 0 var(--sega-cyan);
+  animation: sega-blink 0.55s steps(2, end) infinite;
+}
+
+@keyframes sega-finish-moment-pop {
+  from {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sega-finish-moment-wipe {
+  0% {
+    opacity: 0;
+    transform: translateX(-40%) skewX(-12deg);
+  }
+  20% {
+    opacity: 0.85;
+  }
+  70% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(40%) skewX(-12deg);
+  }
+}
+
+.sega-countdown__digit {
+  margin: 0;
+  font-size: clamp(4.5rem, 18vw, 9rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sega-yellow);
+  text-shadow:
+    4px 4px 0 var(--sega-magenta),
+    -2px -2px 0 var(--sega-cyan);
+  animation: sega-countdown-pop 280ms steps(4) both;
+}
+
+.sega-countdown__digit--go {
+  color: var(--sega-cyan);
+  text-shadow:
+    4px 4px 0 var(--sega-yellow),
+    -2px -2px 0 var(--sega-magenta);
+  animation:
+    sega-countdown-pop 280ms steps(4) both,
+    sega-blink 0.45s steps(2, end) 280ms 2;
+}
+
+@keyframes sega-countdown-pop {
+  from {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/** Narrow screens: selects, track tabs and HUD don't inflate the layout */
+@media (max-width: 767px) {
+  .sega-select-trigger,
+  .sega-select-trigger--sm {
+    min-width: 0;
+    width: auto;
+  }
+
+  .sega-track-tab {
+    min-width: 5.5rem;
+    padding: 0.45rem 0.75rem;
+  }
+}
+
+/* Keep the compact HUD up to lg: on ~800–1000px windows it otherwise eats a third of the screen */
+@media (max-width: 1023px) {
+  .sega-race-hud {
+    padding: 0.45rem 0.6rem;
+    font-size: 0.7rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sega-race-strip-track,
+  .sega-blink,
+  .sega-skeleton,
+  .sega-skeleton--inset,
+  .sega-route-progress,
+  .sega-minimap-pulse,
+  .sega-finish-title,
+  .sega-finish-overlay,
+  .sega-finish-confetti__piece,
+  .sega-finish-moment__wipe,
+  .sega-finish-moment__title,
+  .sega-finish-moment__time-block,
+  .sega-finish-moment__new-best,
+  .sega-countdown__digit {
+    animation: none;
+  }
+
+  .sega-route-progress {
+    transform: scaleX(1);
+  }
+
+  .sega-btn,
+  .sega-card-link,
+  .sega-nav-link,
+  .sega-header-nav__label,
+  .sega-select-trigger,
+  .sega-select-menu,
+  .sega-select-item,
+  .sega-track-tab,
+  .sega-touch-btn {
+    transition: none;
+  }
+
+  .sega-btn:hover:not(:disabled),
+  .sega-card-link:hover,
+  .sega-nav-link:hover,
+  .sega-header-nav__link:hover .sega-header-nav__label,
+  .sega-select-trigger:hover,
+  .sega-track-tab:hover:not(.sega-track-tab--active) {
+    transform: none;
+  }
+}

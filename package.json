@@ -1,0 +1,46 @@
+{
+  "name": "3d-web-racing-platform",
+  "private": true,
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "preready-steady-go": "node scripts/check-node.mjs",
+    "ready-steady-go": "pnpm --filter @racing/shared build && pnpm --filter @racing/api prisma:setup && pnpm --parallel --filter @racing/web --filter @racing/api dev",
+    "build": "pnpm -r --filter @racing/shared --filter @racing/api --filter @racing/web run build",
+    "typecheck": "pnpm --filter @racing/shared build && pnpm exec tsc -b --pretty false",
+    "lint": "eslint apps/web/src apps/api/src packages/shared/src --max-warnings=0 --ignore-pattern '**/*.js'",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm --filter @racing/api test && pnpm --filter @racing/web test",
+    "test:watch": "pnpm --parallel --filter @racing/api --filter @racing/web test:watch",
+    "test:api": "pnpm --filter @racing/api test",
+    "test:web": "pnpm --filter @racing/web test",
+    "test:e2e": "pnpm --filter @racing/web e2e",
+    "e2e": "pnpm test:e2e",
+    "test:all": "pnpm test && pnpm test:e2e"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "*.{js,cjs,mjs,json,md,css,html,yml,yaml}": "prettier --write"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-check-file": "^3.3.2",
+    "eslint-plugin-jsdoc": "^64.3.6",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.11.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.69.0"
+  }
+}

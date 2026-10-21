@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id              String           @id @default(cuid())
+  nickname        String           @unique
+  passwordHash    String
+  createdAt       DateTime         @default(now())
+  raceResults     RaceResult[]
+  refreshSessions RefreshSession[]
+}
+
+/** Server-side refresh session: the DB stores only the opaque token hash */
+model RefreshSession {
+  id           String    @id @default(cuid())
+  userId       String
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Track {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  isAvailable Boolean      @default(true)
+  raceResults RaceResult[]
+}
+
+model RaceResult {
+  id        String   @id @default(cuid())
+  timeMs    Int
+  userId    String
+  trackId   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([trackId, timeMs])
+}

@@ -1,0 +1,303 @@
+import { describe, expect, it } from 'vitest';
+import {
+  ANGLE_SMOOTH_MAX_RATE,
+  computeGroundFollowVy,
+  computeGroundRestY,
+  computeGroundStickY,
+  computeSlopePitchFromNormal,
+  computeSteerStrength,
+  dampLateralVelocity,
+  GROUND_STICK_MARGIN,
+  GROUND_STICK_MAX_DROP,
+  HANDBRAKE_DECEL,
+  HANDBRAKE_STEER_BOOST,
+  HANDBRAKE_THROTTLE_FACTOR,
+  integrateDriveForward,
+  integrateSteerYaw,
+  MAX_CLIMB_VY,
+  resolveGroundFollowVy,
+  smoothAngleToward,
+  smoothVyToward,
+  SLOPE_MAX_GRADE,
+  VEHICLE_ACCEL,
+  VEHICLE_HIGH_SPEED_STEER,
+  VEHICLE_LATERAL_GRIP,
+  VEHICLE_LOW_SPEED_STEER,
+  VEHICLE_MAX_SPEED,
+  VEHICLE_STEER_ENGAGE_SPEED,
+  VEHICLE_STEER_YAW_RATE,
+} from './vehicle-physics';
+
+describe('vehicle physics tuning', () => {
+  it('keeps arcade top speed', () => {
+    expect(VEHICLE_MAX_SPEED).toBe(30);
+  });
+
+  it('does not steer while standing still', () => {
+    expect(computeSteerStrength(0)).toBe(0);
+    expect(computeSteerStrength(0.05)).toBe(0);
+  });
+
+  it('steers stronger at low rolling speed than near top speed', () => {
+    const low = computeSteerStrength(VEHICLE_STEER_ENGAGE_SPEED);
+    const high = computeSteerStrength(VEHICLE_MAX_SPEED);
+    expect(low).toBeGreaterThan(high);
+    expect(low).toBeGreaterThan(VEHICLE_HIGH_SPEED_STEER);
+    expect(low).toBeLessThanOrEqual(VEHICLE_LOW_SPEED_STEER);
+    expect(high).toBeCloseTo(VEHICLE_HIGH_SPEED_STEER, 2);
+  });
+
+  it('keeps crawl-speed steer soft so the car does not pivot in place', () => {
+    const crawl = computeSteerStrength(1.2);
+    const rolling = computeSteerStrength(VEHICLE_STEER_ENGAGE_SPEED);
+    expect(crawl).toBeLessThan(rolling * 0.35);
+    expect(crawl).toBeLessThan(0.2);
+  });
+
+  it('boosts steer strength while handbrake is held', () => {
+    const base = computeSteerStrength(15, 0);
+    const drifted = computeSteerStrength(15, 1);
+    expect(drifted).toBeCloseTo(base * HANDBRAKE_STEER_BOOST, 5);
+  });
+
+  it('converges to the same yaw rate at 30fps and 60fps', () => {
+    const strength = 1;
+    const steer = 1;
+    const sign = 1;
+
+    let yaw60 = 0;
+    for (let i = 0; i < 120; i += 1) {
+      yaw60 = integrateSteerYaw(yaw60, steer, strength, sign, 1 / 60);
+    }
+
+    let yaw30 = 0;
+    for (let i = 0; i < 60; i += 1) {
+      yaw30 = integrateSteerYaw(yaw30, steer, strength, sign, 1 / 30);
+    }
+
+    expect(yaw60).toBeCloseTo(VEHICLE_STEER_YAW_RATE, 2);
+    expect(yaw30).toBeCloseTo(VEHICLE_STEER_YAW_RATE, 2);
+    expect(Math.abs(yaw60 - yaw30)).toBeLessThan(0.05);
+  });
+});
+
+describe('handbrake longitudinal', () => {
+  const dt = 1 / 60;
+
+  it('slowly decelerates when handbrake and throttle are held together', () => {
+    const speed = 20;
+    const next = integrateDriveForward(speed, {
+      throttle: 1,
+      brake: 0,
+      handbrake: 1,
+      dt,
+    });
+    const expectedNet = VEHICLE_ACCEL * HANDBRAKE_THROTTLE_FACTOR - HANDBRAKE_DECEL;
+    expect(expectedNet).toBeLessThan(0);
+    expect(next).toBeLessThan(speed);
+    expect(next).toBeCloseTo(speed + expectedNet * dt, 5);
+  });
+
+  it('decelerates toward zero with handbrake alone and does not reverse', () => {
+    const next = integrateDriveForward(5, {
+      throttle: 0,
+      brake: 0,
+      handbrake: 1,
+      dt: 1,
+    });
+    expect(next).toBe(0);
+  });
+
+  it('decelerates reverse speed toward zero with handbrake alone', () => {
+    const speed = -8;
+    const next = integrateDriveForward(speed, {
+      throttle: 0,
+      brake: 0,
+      handbrake: 1,
+      dt,
+    });
+    expect(next).toBeGreaterThan(speed);
+    expect(next).toBeLessThanOrEqual(0);
+    expect(next).toBeCloseTo(speed + HANDBRAKE_DECEL * dt, 5);
+  });
+
+  it('prioritizes handbrake over foot-brake when both are held', () => {
+    const withBoth = integrateDriveForward(20, {
+      throttle: 0,
+      brake: 1,
+      handbrake: 1,
+      dt,
+    });
+    const handbrakeOnly = integrateDriveForward(20, {
+      throttle: 0,
+      brake: 0,
+      handbrake: 1,
+      dt,
+    });
+    expect(withBoth).toBeCloseTo(handbrakeOnly, 5);
+  });
+
+  it('stops reverse when handbrake is held with brake (S+Space)', () => {
+    const speed = -8;
+    const next = integrateDriveForward(speed, {
+      throttle: 0,
+      brake: 1,
+      handbrake: 1,
+      dt,
+    });
+    expect(next).toBeGreaterThan(speed);
+    expect(next).toBeLessThanOrEqual(0);
+    expect(next).toBeCloseTo(speed + HANDBRAKE_DECEL * dt, 5);
+  });
+});
+
+describe('handbrake lateral', () => {
+  const dt = 1 / 60;
+  const lateral = 8;
+
+  it('damps lateral much less with handbrake than with normal grip', () => {
+    const gripped = dampLateralVelocity(lateral, 0, 0, dt);
+    const drifting = dampLateralVelocity(lateral, 1, 1, dt);
+    expect(drifting).toBeGreaterThan(gripped);
+    expect(gripped).toBeCloseTo(lateral * Math.exp(-VEHICLE_LATERAL_GRIP * dt), 5);
+  });
+
+  it('keeps more lateral slip when surfaceGrip is below asphalt grip', () => {
+    const asphalt = dampLateralVelocity(lateral, 0, 0, dt);
+    const oily = dampLateralVelocity(lateral, 0, 0, dt, 2.2);
+    expect(oily).toBeGreaterThan(asphalt);
+    expect(oily).toBeCloseTo(lateral * Math.exp(-2.2 * dt), 5);
+  });
+
+  it('does not raise grip above handbrake when surfaceGrip is high', () => {
+    const handbrake = dampLateralVelocity(lateral, 1, 0, dt);
+    const withSurface = dampLateralVelocity(lateral, 1, 0, dt, VEHICLE_LATERAL_GRIP);
+    expect(withSurface).toBeCloseTo(handbrake, 5);
+  });
+});
+
+describe('ground slope following', () => {
+  it('keeps vertical velocity zero on flat ground', () => {
+    expect(computeGroundFollowVy(0, 1, 0, 20, -5)).toBe(0);
+  });
+
+  it('produces the upward velocity needed to climb an inclined surface', () => {
+    const theta = (10 * Math.PI) / 180;
+    const vy = computeGroundFollowVy(0, Math.cos(theta), -Math.sin(theta), 0, 10);
+    expect(vy).toBeGreaterThan(0);
+    expect(vy).toBeCloseTo(10 * Math.tan(theta), 5);
+  });
+
+  it('ignores near-vertical (wall) contact normals', () => {
+    expect(computeGroundFollowVy(1, 0.1, 0, 10, 0)).toBe(0);
+  });
+
+  it('clamps the climb rate so a steep normal cannot launch the car', () => {
+    const theta = (19 * Math.PI) / 180; // just under the 20° threshold — still "ground", but steep
+    const vy = computeGroundFollowVy(0, Math.cos(theta), -Math.sin(theta), 0, 25);
+    // 25 * tan(19°) ≈ 8.6 > MAX_CLIMB_VY → clamped
+    expect(vy).toBeLessThanOrEqual(MAX_CLIMB_VY);
+    expect(vy).toBeGreaterThan(MAX_CLIMB_VY - 1.5);
+  });
+
+  it('keeps the old clamp on flat ground and climb', () => {
+    // flat ground: vertical is always zeroed, never allowed upward
+    expect(resolveGroundFollowVy(0, -2)).toBe(0);
+    expect(resolveGroundFollowVy(0, 3)).toBe(0);
+    // climb: target = slide velocity along the plane
+    expect(resolveGroundFollowVy(2.5, -1)).toBe(2.5);
+  });
+
+  it('descends along the slope instead of waiting for gravity to build up', () => {
+    // the deck runs downhill at -3 m/s, gravity has only built up -0.4 over the frames
+    expect(resolveGroundFollowVy(-3, -0.4)).toBe(-3);
+  });
+
+  it('does not slow a descent already faster than the slope requires', () => {
+    expect(resolveGroundFollowVy(-3, -6)).toBe(-6);
+  });
+
+  it('smooths vy steps FPS-independently', () => {
+    const one60 = smoothVyToward(0, -3, 1 / 60);
+    expect(one60).toBeLessThan(0);
+    expect(one60).toBeGreaterThan(-3);
+    // two 1/30 steps are equivalent to one 1/15 step
+    expect(smoothVyToward(smoothVyToward(0, -3, 1 / 30), -3, 1 / 30)).toBeCloseTo(
+      smoothVyToward(0, -3, 1 / 15),
+      6,
+    );
+  });
+
+  it('sticks the body to the equilibrium height (descent and crest overshoot)', () => {
+    // target = equilibrium rest height + margin
+    expect(computeGroundStickY(2.5, 2.6)).toBeCloseTo(2.5 + GROUND_STICK_MARGIN, 6);
+    // overshoot above equilibrium beyond the limit — per-frame drop capped at MaxDrop
+    expect(computeGroundStickY(4.08, 4.35)).toBeCloseTo(4.35 - GROUND_STICK_MAX_DROP, 6);
+  });
+
+  it('raises the rest height on a slope: the flat capsule digs its tail into the deck', () => {
+    // flat ground: no offset
+    expect(computeGroundRestY(2, 0, 1, 0, 1.65)).toBeCloseTo(2, 6);
+    // 10% grade along x (n=(0.0995,0.995,0)): the body sits halfLen*tanθ above the deck
+    const ny = 0.995;
+    const nx = Math.sqrt(1 - ny * ny);
+    expect(computeGroundRestY(2, nx, ny, 0, 1.65)).toBeCloseTo(2 + 1.65 * (nx / ny), 10);
+  });
+
+  it('does not stick when the body is within the margin or below the equilibrium', () => {
+    expect(computeGroundStickY(3, 3.01)).toBeNull();
+    // body below the target — never lift it
+    expect(computeGroundStickY(3.5, 3.1)).toBeNull();
+  });
+
+  it('derives the visual pitch from the ground normal, not from speed', () => {
+    // climbing forward (+Z): normal tilts toward -Z → nose up (negative angle)
+    const up = computeSlopePitchFromNormal(0, Math.cos(0.1), -Math.sin(0.1), 0, 1);
+    expect(up).toBeLessThan(0);
+    expect(up).toBeCloseTo(-0.1, 3);
+    // descending forward → positive
+    const down = computeSlopePitchFromNormal(0, Math.cos(0.1), Math.sin(0.1), 0, 1);
+    expect(down).toBeGreaterThan(0);
+    // flat ground → 0 regardless of speed
+    expect(computeSlopePitchFromNormal(0, 1, 0, 0, 1)).toBe(0);
+  });
+
+  it('keeps the slope pitch independent of heading (no turn spike)', () => {
+    // same longitudinal slope but heading sideways — grade not along forward → 0
+    const sideways = computeSlopePitchFromNormal(0, Math.cos(0.1), -Math.sin(0.1), 1, 0);
+    expect(sideways).toBeCloseTo(0, 6);
+  });
+
+  it('treats a wall normal as flat and caps the tilt at the max grade', () => {
+    // ny = 0.5 < cos(20°) → a wall, not a road → no tilt
+    expect(computeSlopePitchFromNormal(0, 0.5, -Math.sqrt(0.75), 0, 1)).toBe(0);
+    // steepest allowed grade = exactly SLOPE_MAX_GRADE
+    const border = computeSlopePitchFromNormal(
+      0,
+      Math.cos(SLOPE_MAX_GRADE),
+      -Math.sin(SLOPE_MAX_GRADE),
+      0,
+      1,
+    );
+    expect(border).toBeCloseTo(-SLOPE_MAX_GRADE, 4);
+  });
+
+  it('smooths toward the target monotonically without overshoot', () => {
+    const dt = 1 / 60;
+    const target = 0.2;
+    let angle = 0;
+    for (let i = 0; i < 120; i += 1) {
+      const next = smoothAngleToward(angle, target, dt);
+      expect(next).toBeLessThanOrEqual(target + 1e-9); // never overshoots the target
+      expect(next).toBeGreaterThanOrEqual(angle - 1e-9); // monotonic from below
+      angle = next;
+    }
+    expect(angle).toBeCloseTo(target, 2);
+  });
+
+  it('rate-limits the per-frame visual angle step', () => {
+    const dt = 1 / 60;
+    const step = smoothAngleToward(0, 1, dt); // large gap → capped at MAX_RATE*dt
+    expect(step).toBeCloseTo(ANGLE_SMOOTH_MAX_RATE * dt, 6);
+  });
+});

@@ -1,0 +1,46 @@
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import {
+  JWT_ALGORITHM,
+  JWT_AUDIENCE,
+  JWT_ISSUER,
+  type TJwtPayload,
+  type TJwtUser,
+} from './auth.types';
+
+type TIncomingRequest = {
+  headers: { authorization?: string };
+  user?: TJwtUser;
+};
+
+/** Verifies the Bearer access JWT. Class is required by Nest Guard; canActivate must be a prototype method, otherwise the context decorator won't work. */
+@Injectable()
+export class JwtAuthGuard implements CanActivate {
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest<TIncomingRequest>();
+    const header = request.headers.authorization;
+    if (!header || !header.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Bearer token required');
+    }
+
+    const token = header.slice('Bearer '.length);
+    try {
+      const payload = this.jwtService.verify<TJwtPayload>(token, {
+        secret: this.configService.getOrThrow<string>('JWT_SECRET'),
+        algorithms: [JWT_ALGORITHM],
+        issuer: JWT_ISSUER,
+        audience: JWT_AUDIENCE,
+      });
+      request.user = { userId: payload.sub, nickname: payload.nickname };
+      return true;
+    } catch {
+      throw new UnauthorizedException('Token is invalid');
+    }
+  }
+}

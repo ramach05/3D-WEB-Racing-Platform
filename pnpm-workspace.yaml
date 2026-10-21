@@ -1,0 +1,24 @@
+packages:
+  - apps/*
+  - packages/*
+
+allowBuilds:
+  '@nestjs/core': true
+  '@prisma/client': true
+  '@prisma/engines': true
+  bcrypt: true
+  better-sqlite3: true
+  esbuild: true
+  prisma: true
+
+onlyBuiltDependencies:
+  - esbuild
+  - '@nestjs/core'
+  - prisma
+  - '@prisma/client'
+  - '@prisma/engines'
+  - bcrypt
+  - better-sqlite3
+
+patchedDependencies:
+  three-stdlib@2.36.1: patches/three-stdlib@2.36.1.patch

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="Браузерная 3D time-trial гонка: React Three Fiber, Rapier, трассы, гараж и таблица лидеров"
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#f4f0ff" />
+    <title>3D WEB Racing Platform</title>
+    <script>
+      (function () {
+        // Keep the values in sync with uiPalette bg in @/shared/config/palette.ts
+        var THEME_COLORS = { light: '#f4f0ff', dark: '#08040f' };
+        try {
+          var theme = localStorage.getItem('racing-theme');
+          var dark =
+            theme === 'dark' ||
+            (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) {
+            document.documentElement.classList.add('dark');
+          }
+          var color = dark ? THEME_COLORS.dark : THEME_COLORS.light;
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', color);
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
