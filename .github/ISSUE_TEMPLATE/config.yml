@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup & troubleshooting guide
+    url: https://github.com/ramach05/3D-WEB-Racing-Platform/blob/main/docs/development.md
+    about: Most environment and startup problems are covered here — check it before opening an issue.

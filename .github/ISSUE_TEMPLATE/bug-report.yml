@@ -1,0 +1,38 @@
+name: Bug report
+description: Report a reproducible problem
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Actual vs expected behavior.
+      placeholder: The HUD timer freezes after tab switch…
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - web (game / UI)
+        - api
+        - tests / CI
+        - docs
+        - other
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser/OS; Node and pnpm versions if running locally.
+      placeholder: Chrome 131 / macOS 15; Node 22.12, pnpm 10.15
