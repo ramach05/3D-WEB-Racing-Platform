@@ -67,7 +67,7 @@ Style is locked in `eslint.config.js` and Prettier; new code must pass `pnpm lin
 
 ## Gameplay media
 
-Current clips (`docs/video/`, gitignored — originals `.mov`, README clips `.mp4`; the READMEs embed the mp4s as github.com/user-attachments links, which is the only way GitHub autoplays video in markdown):
+Current clips (`docs/video/`, gitignored — originals `.mov`, README clips `.mp4`; GitHub renders a video player only in issues/PRs, never inside markdown files, so the READMEs use clickable posters that open the mp4 hosted as github.com/user-attachments assets):
 
 - `race-1-desktop.mp4` — hero: full Coastal Oval run, countdown → drift → finish (27 s)
 - `race-2-desktop.mp4` — Night City run (22 s)
@@ -88,7 +88,15 @@ ffmpeg -i clip.mov -vf "scale=1920:-2:flags=lanczos,fps=60" -c:v libx264 -preset
   -c:a aac -b:a 96k -movflags +faststart clip.mp4
 ```
 
-Update flow after re-recording: drag the new mp4 into any open issue/PR editor on github.com and **post the comment** — user-attachments go public only with a submitted comment, unpublished uploads 404 for everyone else (see issue #5) → replace the old `https://github.com/user-attachments/assets/…` URL in `README.md` and mirror it in `README.ru.md`; details in the comment at the top of each README.
+Posters (committed `docs/screenshots/video-posters/`): a real frame per clip — pick mid-game (race clips at ~70-75% length, past the countdown; menu clips on the leaderboard; mobile race with touch controls visible), then:
+
+```bash
+ffmpeg -ss <seconds> -i clip.mp4 -frames:v 1 -vf scale=640:-2 -y poster.png   # portrait clips: scale=379:-2
+```
+
+Play badge on top: Pillow draws a centered circle `rgba(12,12,20,175)` (radius ≈ 19% of the short edge) with a white ring and white triangle on a 4× supersampled overlay, downsampled with Lanczos. Widths match the screenshot thumbs below (640/379) so the sections read as one gallery.
+
+Update flow after re-recording: drag the new mp4 into any open issue/PR editor on github.com and **post the comment** — user-attachments go public only with a submitted comment, unpublished uploads 404 for everyone else (see issue #5) → replace the old `https://github.com/user-attachments/assets/…` URL in `README.md`, regenerate the linked poster, and mirror both in `README.ru.md`; details in the comment at the top of each README.
 
 ## Prisma
 

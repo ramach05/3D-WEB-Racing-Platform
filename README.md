@@ -14,24 +14,19 @@ Browser **time-trial** 3D racer: beat the clock, chase the leaderboard. React 19
 
 **Contents**: [Gameplay](#gameplay) · [Screenshots](#screenshots) · [Highlights](#engineering-highlights) · [Features](#features) · [Controls](#controls) · [Architecture](#architecture) · [Stack & why](#stack--why) · [Auth & security](#auth--security) · [Performance](#performance--perf-hud) · [Testing](#testing) · [Quick start](#quick-start) · [Development](#development) · [Trade-offs](#trade-offs--limitations) · [Roadmap](#roadmap) · [Author](#author)
 
-<!-- GAMEPLAY VIDEOS: players below link to github.com/user-attachments assets published in issue #5.
-     Only assets from a *submitted* comment are public — placeholders return 404. To (re)publish: drag the
-     matching docs/video/*.mp4 into an issue/PR editor on github.com, submit, and paste the generated URL
-     over the old one. Recording & conversion spec: docs/development.md#gameplay-media -->
-
 ## Gameplay
 
-The whole game in six recordings — a full Coastal Oval run, the other two tracks, and menus/touch on a real phone:
+The whole game in six recordings — a full Coastal Oval run, the other two tracks, and menus/touch on a real phone. Click any frame to play (native players also render in [issue #5](https://github.com/ramach05/3D-WEB-Racing-Platform/issues/5)):
 
-![Full Coastal Oval run — countdown, chase camera, HUD, drift, finish](https://github.com/user-attachments/assets/c498ecdd-30b5-44a9-b9c0-831a17f0abd7)
+[![Full Coastal Oval run — countdown, chase camera, HUD, drift, finish](docs/screenshots/video-posters/race-1-desktop.png)](https://github.com/user-attachments/assets/c498ecdd-30b5-44a9-b9c0-831a17f0abd7)
 
-| **Night City — run**                                                                               | **Storm Eight — run**                                                                               |
-| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| ![Night City run](https://github.com/user-attachments/assets/9c5c004c-9ea9-42fe-ab98-77eb79ba5eec) | ![Storm Eight run](https://github.com/user-attachments/assets/20de4b3d-45f6-46e0-a3dc-69d301d81a75) |
+| **Night City — run**                                                                                                                                    | **Storm Eight — run**                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [![Night City run](docs/screenshots/video-posters/race-2-desktop.png)](https://github.com/user-attachments/assets/9c5c004c-9ea9-42fe-ab98-77eb79ba5eec) | [![Storm Eight run](docs/screenshots/video-posters/race-3-desktop.png)](https://github.com/user-attachments/assets/20de4b3d-45f6-46e0-a3dc-69d301d81a75) |
 
-| **App tour — desktop**                                                                                  | **Menus — phone**                                                                                    | **Race — phone, touch controls**                                                                                        |
-| ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| ![App tour on desktop](https://github.com/user-attachments/assets/2d415ffd-749e-4cc5-af74-33c140c13d3a) | ![Menus on a phone](https://github.com/user-attachments/assets/a147ac49-a1af-473c-8050-914c22742344) | ![Race on a phone with touch controls](https://github.com/user-attachments/assets/a7a69c8b-74ad-4631-a6b6-faa01e2892c7) |
+| **App tour — desktop**                                                                                                                                     | **Menus — phone**                                                                                                                                      | **Race — phone, touch controls**                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [![App tour on desktop](docs/screenshots/video-posters/menu-desktop.png)](https://github.com/user-attachments/assets/2d415ffd-749e-4cc5-af74-33c140c13d3a) | [![Menus on a phone](docs/screenshots/video-posters/menu-mobile.png)](https://github.com/user-attachments/assets/a147ac49-a1af-473c-8050-914c22742344) | [![Race on a phone with touch controls](docs/screenshots/video-posters/race-1-mobile.png)](https://github.com/user-attachments/assets/a7a69c8b-74ad-4631-a6b6-faa01e2892c7) |
 
 ## Screenshots
 
