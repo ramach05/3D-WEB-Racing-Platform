@@ -255,7 +255,7 @@ A husky pre-commit hook reruns lint/format/typecheck locally; commits follow Con
 
 - Gamepad support
 - Per-wheel physics (independent suspension, per-tire grip)
-- Third track / marketplace GLTF environment
+- New tracks / marketplace GLTF environment
 - Ghost replays from recorded telemetry
 - Hosted demo (web on a static host, API on a small VPS/Fly)
 
