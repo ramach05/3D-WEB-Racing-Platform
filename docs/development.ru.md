@@ -2,7 +2,7 @@
 
 [English](development.md) | [Русский](development.ru.md)
 
-Вспомогательные детали для разработки: команды, траблшутинг, прекоммит, правила кода, запись геймплейного видео. В README сознательно не вошло.
+Все, что нужно после клонирования репозитория: первый запуск, полный список команд, траблшутинг, прекоммит, правила кода и видеоматериалы. В README — только быстрый старт.
 
 ## Требования и первый запуск
 
@@ -67,28 +67,11 @@ Husky + lint-staged (ставится автоматически при `pnpm in
 
 ## Медиа: запись и обновление
 
-Текущие ролики (`docs/video/`, в gitignore — исходники `.mov`, ролики для README `.mp4`; в README они встроены ссылками github.com/user-attachments — только так GitHub автоплеит видео в markdown):
+Ролики лежат в `docs/video/` (в gitignore — исходники `.mov`, ролики для README `.mp4`) и встроены в README как ссылки на github.com/user-attachments: GitHub показывает видеоплеер только в issues/PR и не играет mp4 из репозитория внутри markdown, поэтому в README — кликабельные постеры, открывающие опубликованный mp4.
 
-- `race-1-desktop.mp4` — главное: полный заезд Coastal Oval, отсчет → занос → финиш (27 с)
-- `race-2-desktop.mp4` — заезд Night City (22 с)
-- `race-3-desktop.mp4` — заезд Storm Eight, дождь и эстакада (25 с)
-- `menu-desktop.mp4` — обзор приложения: home, garage, tracks, profile (32 с)
-- `race-1-mobile.mp4` / `menu-mobile.mp4` — телефон: тач-контроли, компактный HUD (27/38 с, вертикальное)
+Обновление после перезаписи: перетащить новый mp4 в редактор открытого issue/PR на github.com и **опубликовать комментарий** — user-attachments становятся публичными только вместе с отправленным комментарием, неотправленные отдают 404 для всех остальных (см. issue #5) → заменить старую ссылку `https://github.com/user-attachments/assets/…` в `README.md` → перегенерировать связанный постер в `docs/screenshots/video-posters/` → продублировать оба в `README.ru.md`.
 
-Запись на macOS: `Cmd+Shift+5` → record portion, окно браузера на весь экран. Перед записью: dev-режим, светлая тема и EN — в едином стиле с README; perf-HUD оставить в кадре — это часть продакшена демо. Звук: в рейс-роликах — синтезированные BGM/SFX, в menu-роликах тишина (`-an`).
-
-Конвертация — 2-pass H.264 под лимит вложений GitHub ~10 МБ (mp4 по относительному пути из репо в markdown не играется, а файл тяжелее 100 МБ вообще не запушится):
-
-```bash
-# бюджет: видеобитрейт ≈ target_bytes*8/длительность − 96000; для тихой записи "-c:a aac -b:a 96k" убрать, добавить "-an"
-ffmpeg -i clip.mov -vf "scale=1920:-2:flags=lanczos,fps=60" -c:v libx264 -preset slow \
-  -b:v 2600k -maxrate 3900k -bufsize 6500k -pix_fmt yuv420p -profile:v high -pass 1 -an -f mp4 /dev/null
-ffmpeg -i clip.mov -vf "scale=1920:-2:flags=lanczos,fps=60" -c:v libx264 -preset slow \
-  -b:v 2600k -maxrate 3900k -bufsize 6500k -pix_fmt yuv420p -profile:v high -pass 2 \
-  -c:a aac -b:a 96k -movflags +faststart clip.mp4
-```
-
-Обновление после перезаписи: перетащить новый mp4 в редактор открытого issue/PR на github.com и **опубликовать комментарий** — user-attachments становятся публичными только вместе с отправленным комментарием, неотправленные отдают 404 для всех остальных (см. issue #5) → заменить старую ссылку `https://github.com/user-attachments/assets/…` в `README.md` и в синхроне в `README.ru.md`; подробности в комментарии в начале каждого README.
+Ролики: `race-1-desktop.mp4` (заезд Coastal Oval), `race-2-desktop.mp4` (Night City), `race-3-desktop.mp4` (Storm Eight), `menu-desktop.mp4` (обзор приложения), `race-1-mobile.mp4` / `menu-mobile.mp4` (телефон, вертикальный). Полный pipeline записи, конвертации и постеров — в истории git этого файла: `git log -p -- docs/development.ru.md`.
 
 ## Prisma
 
@@ -99,3 +82,5 @@ ffmpeg -i clip.mov -vf "scale=1920:-2:flags=lanczos,fps=60" -c:v libx264 -preset
 ## CI
 
 `.github/workflows/ci.yml`: install → shared build → prisma generate → **lint → typecheck → migrate → test → build**. Локально должно быть зеленым то же самое перед push.
+
+Бейдж «Tests» и секция «Тесты» обоих README хранят число тестов вручную — при изменении набора тестов обновляйте цифры.

@@ -2,7 +2,7 @@
 
 [English](development.md) | [Русский](development.ru.md)
 
-Supporting details for development: commands, troubleshooting, pre-commit, code rules, gameplay video recording. Deliberately kept out of the README.
+Everything needed after cloning the repo: first run, the full command list, troubleshooting, pre-commit, code rules and the video assets. The README keeps only the quick start.
 
 ## Requirements and first run
 
@@ -67,28 +67,11 @@ Style is locked in `eslint.config.js` and Prettier; new code must pass `pnpm lin
 
 ## Gameplay media
 
-Current clips (`docs/video/`, gitignored — originals `.mov`, README clips `.mp4`; the READMEs embed the mp4s as github.com/user-attachments links, which is the only way GitHub autoplays video in markdown):
+Race/menu clips live in `docs/video/` (gitignored — source `.mov`, README clips `.mp4`) and are embedded in the READMEs as github.com/user-attachments links: GitHub renders a video player only in issues/PRs and never plays a repo mp4 inside markdown, so the READMEs use clickable posters that open the hosted mp4.
 
-- `race-1-desktop.mp4` — hero: full Coastal Oval run, countdown → drift → finish (27 s)
-- `race-2-desktop.mp4` — Night City run (22 s)
-- `race-3-desktop.mp4` — Storm Eight run, rain and elevated deck (25 s)
-- `menu-desktop.mp4` — app tour: home, garage, tracks, profile (32 s)
-- `race-1-mobile.mp4` / `menu-mobile.mp4` — phone: touch controls, compact HUD (27/38 s, portrait)
+Update flow after re-recording: drag the new mp4 into any open issue/PR editor on github.com and **submit the comment** — user-attachments go public only with a submitted comment, unpublished uploads 404 for everyone else (see issue #5) → replace the old `https://github.com/user-attachments/assets/…` URL in `README.md` → regenerate the linked poster in `docs/screenshots/video-posters/` → mirror both in `README.ru.md`.
 
-Recording on macOS: `Cmd+Shift+5` → record portion, browser window fullscreen. Before recording: dev mode, light theme and EN — consistent with the README; keep the perf HUD in frame, it is part of the show. Audio: race clips carry the synthesized BGM/SFX, menu clips are silent (`-an`).
-
-Conversion — 2-pass H.264 sized to fit GitHub's ~10 MB attachment limit (repo-relative mp4s do not play in markdown, and a repo file over 100 MB cannot be pushed at all):
-
-```bash
-# budget: video bps ≈ target_bytes*8/duration − 96000; drop "-c:a aac -b:a 96k" and add "-an" when silent
-ffmpeg -i clip.mov -vf "scale=1920:-2:flags=lanczos,fps=60" -c:v libx264 -preset slow \
-  -b:v 2600k -maxrate 3900k -bufsize 6500k -pix_fmt yuv420p -profile:v high -pass 1 -an -f mp4 /dev/null
-ffmpeg -i clip.mov -vf "scale=1920:-2:flags=lanczos,fps=60" -c:v libx264 -preset slow \
-  -b:v 2600k -maxrate 3900k -bufsize 6500k -pix_fmt yuv420p -profile:v high -pass 2 \
-  -c:a aac -b:a 96k -movflags +faststart clip.mp4
-```
-
-Update flow after re-recording: drag the new mp4 into any open issue/PR editor on github.com and **post the comment** — user-attachments go public only with a submitted comment, unpublished uploads 404 for everyone else (see issue #5) → replace the old `https://github.com/user-attachments/assets/…` URL in `README.md` and mirror it in `README.ru.md`; details in the comment at the top of each README.
+Clips: `race-1-desktop.mp4` (Coastal Oval run), `race-2-desktop.mp4` (Night City), `race-3-desktop.mp4` (Storm Eight), `menu-desktop.mp4` (app tour), `race-1-mobile.mp4` / `menu-mobile.mp4` (phone, portrait). The full recording / ffmpeg / poster pipeline behind them is kept in this file's git history: `git log -p -- docs/development.md`.
 
 ## Prisma
 
@@ -99,3 +82,5 @@ Update flow after re-recording: drag the new mp4 into any open issue/PR editor o
 ## CI
 
 `.github/workflows/ci.yml`: install → shared build → prisma generate → **lint → typecheck → migrate → test → build**. The same must be green locally before pushing.
+
+The `Tests` badge and the Testing section of both READMEs carry the test count by hand — update the numbers when the suite changes.
