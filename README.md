@@ -2,7 +2,7 @@
 
 🇬🇧 **English** | [🇷🇺 Русский](README.ru.md)
 
-Browser **time-trial** 3D racer: beat the clock, chase the leaderboard. React 19 + React Three Fiber + Rapier (WASM) physics on the front, NestJS 11 + Prisma 7 on the back. pnpm monorepo, Feature-Sliced Design, steady **~60 fps** in the browser.
+Browser 3D racer in **time-trial** format: every run is a solo lap against the clock, and your finishing time lands on the track leaderboard. React 19 + React Three Fiber + Rapier (WASM) physics on the front, NestJS 11 + Prisma 7 on the back. pnpm monorepo, Feature-Sliced Design, steady **~60 fps** in the browser.
 
 [![CI](https://github.com/ramach05/3D-WEB-Racing-Platform/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ramach05/3D-WEB-Racing-Platform/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -16,17 +16,17 @@ Browser **time-trial** 3D racer: beat the clock, chase the leaderboard. React 19
 
 ## Gameplay
 
-The whole game in six recordings — a full Coastal Oval run, the other two tracks, and menus/touch on a real phone. Click any frame to play (native players also render in [issue #5](https://github.com/ramach05/3D-WEB-Racing-Platform/issues/5)):
+The whole game in six recordings — the app tour on desktop, all three track runs, and menus/touch on a real phone. Click any frame to play:
 
-[![Full Coastal Oval run — countdown, chase camera, HUD, drift, finish](docs/screenshots/video-posters/race-1-desktop.png)](https://github.com/user-attachments/assets/c498ecdd-30b5-44a9-b9c0-831a17f0abd7)
+[![App tour on desktop — home, garage, tracks, profile](docs/screenshots/video-posters/menu-desktop.png)](https://github.com/user-attachments/assets/2d415ffd-749e-4cc5-af74-33c140c13d3a)
 
-| **Night City — run**                                                                                                                                    | **Storm Eight — run**                                                                                                                                    |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [![Night City run](docs/screenshots/video-posters/race-2-desktop.png)](https://github.com/user-attachments/assets/9c5c004c-9ea9-42fe-ab98-77eb79ba5eec) | [![Storm Eight run](docs/screenshots/video-posters/race-3-desktop.png)](https://github.com/user-attachments/assets/20de4b3d-45f6-46e0-a3dc-69d301d81a75) |
+| **Coastal Oval — run**                                                                                                                                                                                       | **Night City — run**                                                                                                                                    | **Storm Eight — run**                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [![Full Coastal Oval run — countdown, chase camera, HUD, drift, finish](docs/screenshots/video-posters/race-1-desktop.png)](https://github.com/user-attachments/assets/c498ecdd-30b5-44a9-b9c0-831a17f0abd7) | [![Night City run](docs/screenshots/video-posters/race-2-desktop.png)](https://github.com/user-attachments/assets/9c5c004c-9ea9-42fe-ab98-77eb79ba5eec) | [![Storm Eight run](docs/screenshots/video-posters/race-3-desktop.png)](https://github.com/user-attachments/assets/20de4b3d-45f6-46e0-a3dc-69d301d81a75) |
 
-| **App tour — desktop**                                                                                                                                     | **Menus — phone**                                                                                                                                      | **Race — phone, touch controls**                                                                                                                                            |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [![App tour on desktop](docs/screenshots/video-posters/menu-desktop.png)](https://github.com/user-attachments/assets/2d415ffd-749e-4cc5-af74-33c140c13d3a) | [![Menus on a phone](docs/screenshots/video-posters/menu-mobile.png)](https://github.com/user-attachments/assets/a147ac49-a1af-473c-8050-914c22742344) | [![Race on a phone with touch controls](docs/screenshots/video-posters/race-1-mobile.png)](https://github.com/user-attachments/assets/a7a69c8b-74ad-4631-a6b6-faa01e2892c7) |
+| **Menus — phone**                                                                                                                                                                           | **Race — phone, touch controls**                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <a href="https://github.com/user-attachments/assets/a147ac49-a1af-473c-8050-914c22742344"><img src="docs/screenshots/video-posters/menu-mobile.png" alt="Menus on a phone" width="300"></a> | <a href="https://github.com/user-attachments/assets/a7a69c8b-74ad-4631-a6b6-faa01e2892c7"><img src="docs/screenshots/video-posters/race-1-mobile.png" alt="Race on a phone with touch controls" width="300"></a> |
 
 ## Screenshots
 
@@ -64,12 +64,12 @@ Mobile layouts:
 
 ## Engineering highlights
 
-- **Race simulation does not live in Redux.** A vanilla store + `useSyncExternalStore` feeds the HUD (~80 ms throttled); time/speed are written straight to the DOM via rAF because React re-renders inside the physics loop measurably hitched Chrome. Redux/RTK Query is used only for auth/API and the one POST at the finish line. → [Performance](#performance--perf-hud)
-- **Auth as a lifecycle, not an endpoint.** 15-min access JWT held in memory only, opaque refresh token in a path-scoped httpOnly cookie, SHA-256 at rest, rotation with lineage — and replaying a rotated token revokes **all** of the user's sessions. → [Auth & security](#auth--security)
-- **572 unit/integration tests + 5 Playwright user flows.** CI gates `lint → typecheck → migrate → test → build`; a pre-commit hook repeats lint/prettier/typecheck locally. → [Testing](#testing)
+- **Race simulation does not live in Redux.** Per-frame state lives in a small vanilla store; the HUD reads it via `useSyncExternalStore` with updates throttled to ~80 ms, and the timer/speed are written straight into the DOM. The reason: React re-rendering every physics frame measurably hitched Chrome. Redux/RTK Query is used only for auth/API and the one POST at the finish line. → [Performance](#performance--perf-hud)
+- **A full token lifecycle, not a "login endpoint".** The short-lived access JWT (15 min) never leaves memory. The refresh token lives in a path-scoped httpOnly cookie, and the database stores only its SHA-256 hash. Every refresh replaces the token; reusing an already-replaced token is treated as theft — it revokes **all** of the user's sessions. → [Auth & security](#auth--security)
+- **572 unit/integration tests + 5 Playwright user flows.** CI runs `lint → typecheck → migrate → test → build` on every push; a pre-commit hook repeats lint/prettier/typecheck locally. → [Testing](#testing)
 - **FSD boundaries are enforced, not documented.** ESLint forbids cross-slice deep imports, `any`/`unknown`, relative parent imports and default exports.
-- **In-game performance HUD** — FPS, main-thread busy %, JS heap: what a browser can honestly measure about its own load. → [Perf HUD](#performance--perf-hud)
-- **Upstream patched** via pnpm `patchedDependencies`: a custom three-stdlib GLTF loader decodes texture bufferViews straight into `ImageBitmap` instead of blob URLs (faster, leak-free preload).
+- **In-game performance HUD** — FPS, main-thread busy %, JS heap: everything a browser can honestly measure about itself. → [Perf HUD](#performance--perf-hud)
+- **Patched upstream library** ships with the repo via pnpm `patchedDependencies`: the three-stdlib GLTF loader decodes textures straight into `ImageBitmap` instead of blob URLs — faster preload, no memory leaks.
 
 ## Features
 
@@ -173,7 +173,7 @@ Packages: `@racing/web`, `@racing/api`, `@racing/shared`. Node **22.12+**, pnpm 
 
 1. Login/register returns a **15-min access JWT** (HS256, issuer/audience pinned) that the client keeps **in memory only** — never in `localStorage`, so an XSS payload can't exfiltrate a persisted token; a reload transparently restores the session via the refresh cookie.
 2. The **refresh token is an opaque random string in an httpOnly, `path=/auth` cookie** (`Secure`/`SameSite` configurable for production). The database stores only its **SHA-256 hash** — a DB leak yields nothing usable.
-3. Every `/auth/refresh` **rotates** the session: the old row is revoked, `replacedById` records lineage. Replaying an already-rotated token (the theft signature) **revokes every session of the user**. Dead sessions are purged.
+3. Every `/auth/refresh` **replaces** the token: the old session is revoked, and the database records which token replaced it (`replacedById`). Reusing an already-replaced token is the signature of token theft — it **revokes every session of the user**. Expired sessions are purged.
 
 **Hardening**
 
@@ -187,7 +187,7 @@ Honest scope: this is portfolio-grade, not payment-grade — symmetric HS256, no
 
 ## Performance & perf HUD
 
-The budget is **~60 fps**, and the techniques are boring on purpose:
+The budget is **~60 fps**. No tricks — only standard techniques, each with a measured reason:
 
 - Fixed 1/60 physics step; input and handling depend on `dt`, never on frame count.
 - HUD notifications throttled to ~80 ms; time/speed written directly to the DOM in a rAF loop — React state updates inside `useFrame` were the root cause of a real Chrome hitch (see `1633782` in history).
@@ -228,14 +228,14 @@ Seed accounts: `test_user` / `1234` (plus rival `rival_racer` / `1234`). Require
 
 ## Development
 
-| Command                                            | What it does                                               |
-| -------------------------------------------------- | ---------------------------------------------------------- |
-| `pnpm ready-steady-go`                             | build shared → prisma migrate+seed → web + api dev servers |
-| `pnpm lint` / `pnpm typecheck` / `pnpm format`     | ESLint (`--max-warnings=0`), `tsc -b`, Prettier            |
-| `pnpm test` / `test:web` / `test:api` / `test:e2e` | Vitest (unit + RTL/MSW), API e2e, Playwright               |
-| `pnpm build`                                       | production build of all packages                           |
+| Command                                            | What it does                                        |
+| -------------------------------------------------- | --------------------------------------------------- |
+| `pnpm ready-steady-go`                             | the full dev cycle from [Quick start](#quick-start) |
+| `pnpm lint` / `pnpm typecheck` / `pnpm format`     | ESLint (`--max-warnings=0`), `tsc -b`, Prettier     |
+| `pnpm test` / `test:web` / `test:api` / `test:e2e` | Vitest (unit + RTL/MSW), API e2e, Playwright        |
+| `pnpm build`                                       | production build of all packages                    |
 
-A husky pre-commit hook reruns lint/format/typecheck locally; commits follow Conventional Commits (`feat(web): …`). CI (GitHub Actions, Node 22.12) enforces the same gates on every push: `lint → typecheck → migrate → test → build`.
+A husky pre-commit hook reruns lint/format/typecheck locally; commits follow Conventional Commits (`feat(web): …`). CI (GitHub Actions, Node 22.12) enforces the same gates on every push: `lint → typecheck → migrate → test → build`. The full command matrix, troubleshooting and code rules live in [docs/development.md](docs/development.md).
 
 ## Trade-offs & limitations
 
